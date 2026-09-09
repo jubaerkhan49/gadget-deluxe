@@ -40,4 +40,8 @@ class AuthViewModel : ViewModel() {
             }
         }
     }
+
+    fun logout() {
+        _authState.value = AuthState.Idle
+    }
 }

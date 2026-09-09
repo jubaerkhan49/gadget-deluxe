@@ -4,54 +4,33 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <group
-        android:scaleX="0.72"
-        android:scaleY="0.72"
-        android:translateX="15.12"
-        android:translateY="15.12">
 
-        <!-- Outer Phone Shadow / Glow -->
-        <path
-            android:fillColor="#30000000"
-            android:pathData="M33,13 C25.5,13 19,19.5 19,27 L19,83 C19,90.5 25.5,97 33,97 L75,97 C82.5,97 89,90.5 89,83 L89,27 C89,19.5 82.5,13 75,13 Z" />
+    <!-- Minimalist Phone Contour (Stroke) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M42,24 L66,24 A9,9 0 0,1 75,33 L75,75 A9,9 0 0,1 66,84 L42,84 A9,9 0 0,1 33,75 L33,33 A9,9 0 0,1 42,24 Z" />
 
-        <!-- Phone Body Frame (Crisp Pure White) -->
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M34,14 C27.373,14 22,19.373 22,26 L22,82 C22,88.627 27.373,94 34,94 L74,94 C80.627,94 86,88.627 86,82 L86,26 C86,19.373 80.627,14 74,14 Z" />
+    <!-- Minimalist Dynamic Island Pill -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,30 L58,30 A2,2 0 0,1 60,32 A2,2 0 0,1 58,34 L50,34 A2,2 0 0,1 48,32 A2,2 0 0,1 50,30 Z" />
 
-        <!-- Phone Inner Display (Deep Sleek Navy) -->
-        <path
-            android:fillColor="#1E1B4B"
-            android:pathData="M27,21 C27,19.34 28.34,18 30,18 L78,18 C79.66,18 81,19.34 81,21 L81,87 C81,88.66 79.66,90 78,90 L30,90 C28.34,90 27,88.66 27,87 Z" />
+    <!-- Minimalist Golden Diamond Glyph (Centerpiece) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M54,43 L65,54 L54,65 L43,54 Z" />
 
-        <!-- Dynamic Island / Speaker Pill -->
-        <path
-            android:fillColor="#312E81"
-            android:pathData="M46,21 C46,19.9 46.9,19 48,19 L60,19 C61.1,19 62,19.9 62,21 C62,22.1 61.1,23 60,23 L48,23 C46.9,23 46,22.1 46,21 Z" />
+    <path
+        android:fillColor="#FDE68A"
+        android:pathData="M54,47 L61,54 L54,61 L47,54 Z" />
 
-        <!-- Deluxe Radiant Diamond (Warm Amber & Gold Emblem) -->
-        <path
-            android:fillColor="#F59E0B"
-            android:pathData="M54,36 L70,52 L54,68 L38,52 Z" />
+    <!-- Minimalist Home Indicator Bar -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,76 L60,76 A1.5,1.5 0 0,1 61.5,77.5 A1.5,1.5 0 0,1 60,79 L48,79 A1.5,1.5 0 0,1 46.5,77.5 A1.5,1.5 0 0,1 48,76 Z" />
 
-        <path
-            android:fillColor="#FBBF24"
-            android:pathData="M54,40 L66,52 L54,64 L42,52 Z" />
-
-        <!-- Diamond Inner Core Sparkle -->
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M54,45 L61,52 L54,59 L47,52 Z" />
-
-        <!-- Modern UI Accent Line Top -->
-        <path
-            android:fillColor="#38BDF8"
-            android:pathData="M38,74 L70,74 A1.5,1.5 0 0,1 70,77 L38,77 A1.5,1.5 0 0,1 38,74 Z" />
-
-        <!-- Home Bar Indicator -->
-        <path
-            android:fillColor="#E0E7FF"
-            android:pathData="M45,86 L63,86 A1,1 0 0,1 63,88 L45,88 A1,1 0 0,1 45,86 Z" />
-    </group>
 </vector>

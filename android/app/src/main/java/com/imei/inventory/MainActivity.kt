@@ -197,6 +197,7 @@ class MainActivity : ComponentActivity() {
                                                     text = { Text("🚪 Logout", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold) },
                                                     onClick = {
                                                         showTopMenu = false
+                                                        authViewModel.logout()
                                                         userToken = null
                                                     }
                                                 )
