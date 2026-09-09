@@ -132,10 +132,16 @@ fun ShipmentCard(
                 )
 
                 shipment.shippingCost?.let { cost ->
+                    val unit = shipment.unitShippingCost
+                    val text = if (!unit.isNullOrBlank() && shipment.devicesCount > 1) {
+                        "Bill: BDT $cost (BDT $unit/u)"
+                    } else {
+                        "Shipment Bill: BDT $cost"
+                    }
                     Text(
-                        text = "Cost: BDT $cost",
+                        text = text,
                         color = Color(0xFFD97706),
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold
                     )
                 }

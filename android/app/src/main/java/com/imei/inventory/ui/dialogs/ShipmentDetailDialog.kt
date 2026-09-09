@@ -67,21 +67,48 @@ fun ShipmentDetailDialog(
                     .heightIn(max = 440.dp)
             ) {
                 // Shipment Metadata
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                val count = if (devicesInShipment.isNotEmpty()) devicesInShipment.size else shipment.devicesCount
+                val totalShipCost = shipment.shippingCost?.toDoubleOrNull() ?: 0.0
+                val unitFee = shipment.unitShippingCost?.toDoubleOrNull() 
+                    ?: if (count > 0 && totalShipCost > 0) (totalShipCost / count) else 0.0
+                val totalBatchCost = devicesInShipment.sumOf { it.buyingPrice ?: 0.0 }
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+                        .padding(10.dp)
+                ) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Supplier:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         Text(shipment.supplierName ?: "Unknown", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
-                    shipment.shippingCost?.let { cost ->
+
+                    if (totalShipCost > 0 || unitFee > 0) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Shipping Cost:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                            Text("BDT $cost", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Total Shipment Bill:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text("BDT ${String.format("%.2f", totalShipCost)}", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        if (count > 0 && unitFee > 0) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Shipment Fee / Unit:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                                Text("BDT ${String.format("%.2f", unitFee)} × $count units", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            }
                         }
                     }
+
+                    if (totalBatchCost > 0) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Total Batch Cost:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text("BDT ${String.format("%.2f", totalBatchCost)}", color = Color(0xFF16A34A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
                     shipment.createdAt?.let { date ->
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Registered Date:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                            Text(date.take(10), color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
+                            Text("Registered Date:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text(date.take(10), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                         }
                     }
                 }
@@ -105,7 +132,7 @@ fun ShipmentDetailDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Devices in this Shipment Batch:",
+                    text = "Devices in this Shipment Batch ($count units):",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 13.sp
@@ -174,6 +201,14 @@ fun ShipmentDeviceItem(
             Spacer(modifier = Modifier.height(4.dp))
 
             CopyableText(label = "IMEI", value = device.imei)
+
+            device.buyingPrice?.let { bp ->
+                Spacer(modifier = Modifier.height(3.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Cost (Item + Ship):", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    Text("BDT ${String.format("%.2f", bp)}", color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
 
             Spacer(modifier = Modifier.height(6.dp))
 

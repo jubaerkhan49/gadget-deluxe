@@ -48,11 +48,9 @@ class ShipmentListView(LoginRequiredMixin, View):
             shipment = Shipment.objects.create(
                 tracking_number=tracking_number,
                 supplier=supplier,
-                shipping_cost=shipment_fees
+                shipping_cost=Decimal('0.00')
             )
         else:
-            if shipment_fees > 0:
-                shipment.shipping_cost = shipment_fees
             if supplier_name:
                 shipment.supplier = supplier
             shipment.save()
@@ -142,8 +140,16 @@ class ShipmentListView(LoginRequiredMixin, View):
                     created_count += 1
 
         total_processed = created_count + updated_count
+        
+        # Calculate total shipment bill: shipment_fees (per unit) * total devices in this shipment batch
+        if shipment_fees > 0:
+            dev_count = shipment.devices.count()
+            shipment.shipping_cost = shipment_fees * max(dev_count, 1)
+            shipment.save(update_fields=['shipping_cost'])
+
         if total_processed > 0:
-            messages.success(request, f"Shipment #{tracking_number} saved. Successfully registered/updated {total_processed} device(s) in inventory.")
+            total_bill = shipment.shipping_cost
+            messages.success(request, f"Shipment #{tracking_number} saved. Registered/updated {total_processed} device(s). Total Shipment Bill: BDT {total_bill} (BDT {shipment_fees}/unit).")
         else:
             messages.success(request, f"Shipment #{tracking_number} saved successfully.")
 

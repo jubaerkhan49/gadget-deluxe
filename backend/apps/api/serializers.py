@@ -23,6 +23,7 @@ class DeviceSerializer(serializers.ModelSerializer):
 class ShipmentSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     devices_count = serializers.IntegerField(source='total_devices_count', read_only=True)
+    unit_shipping_cost = serializers.DecimalField(source='unit_shipping_cost', max_digits=12, decimal_places=2, read_only=True)
 
     class Meta:
         model = Shipment

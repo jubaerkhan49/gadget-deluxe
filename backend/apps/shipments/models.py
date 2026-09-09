@@ -36,3 +36,11 @@ class Shipment(TimeStampedModel):
     @property
     def total_devices_count(self) -> int:
         return self.devices.count()
+
+    @property
+    def unit_shipping_cost(self):
+        count = self.total_devices_count
+        if count > 0 and self.shipping_cost:
+            from decimal import Decimal
+            return (self.shipping_cost / count).quantize(Decimal('0.01'))
+        return self.shipping_cost or 0.00
