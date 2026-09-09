@@ -21,7 +21,7 @@
                     <th>Tracking #</th>
                     <th>Supplier</th>
                     <th>Products & Identifiers</th>
-                    <th>Logistics Carrier</th>
+                    <th>Shipping Agent</th>
                     <th>Shipping Cost</th>
                     <th>Receive Date</th>
                     <th>Device Count</th>
@@ -110,7 +110,7 @@
                             </datalist>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Logistics Carrier / Shipping Company</label>
+                            <label class="form-label fw-semibold">Shipping Agent</label>
                             <input type="text" name="shipping_company" class="form-control" value="{{ shipment.shipping_company|default:'' }}" placeholder="e.g. SF Express, DHL, FedEx, Standard Freight">
                         </div>
                         <div class="col-md-6">
@@ -264,7 +264,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="row g-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Tracking Number *</label>
                             <input type="text" name="tracking_number" id="tracking_number_input" list="tracking-list" class="form-control" required
                                 placeholder="Type new or pick existing tracking #..." autocomplete="off">
@@ -274,10 +274,10 @@
                                 {% endfor %}
                             </datalist>
                             <div id="shipment_match_info" class="small mt-1 text-success d-none">
-                                <i class="fa-solid fa-circle-check me-1"></i> Existing shipment matched: supplier auto-filled.
+                                <i class="fa-solid fa-circle-check me-1"></i> Existing shipment matched: supplier & agent auto-filled.
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Supplier Name *</label>
                             <input type="text" name="supplier_name" id="supplier_name_input" list="supplier-list" class="form-control" required
                                 placeholder="Enter supplier name or choose existing..." autocomplete="off">
@@ -286,6 +286,11 @@
                                 <option value="{{ supplier.name }}"></option>
                                 {% endfor %}
                             </datalist>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Shipping Agent</label>
+                            <input type="text" name="shipping_company" id="shipping_agent_input" class="form-control"
+                                placeholder="e.g. SF Express, DHL, FedEx..." autocomplete="off">
                         </div>
 
                         <div class="col-md-12 mt-3">
@@ -469,6 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {% for s in shipments %}
         "{{ s.tracking_number|escapejs }}": {
             supplier: "{{ s.supplier.name|escapejs }}",
+            shippingCompany: "{{ s.shipping_company|default:''|escapejs }}",
             cost: "{{ s.shipping_cost }}",
             unitCost: "{{ s.unit_shipping_cost }}",
             discount: "{{ s.discount }}"
@@ -478,6 +484,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const trackingInput = document.getElementById('tracking_number_input');
     const supplierInput = document.getElementById('supplier_name_input');
+    const shippingAgentInput = document.getElementById('shipping_agent_input');
     const feesInput = document.getElementById('shipment_fees');
     const discountInput = document.getElementById('shipment_discount');
     const itemPriceInput = document.getElementById('item_price');
@@ -536,6 +543,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (val && existingShipments[val]) {
                 const data = existingShipments[val];
                 if (data.supplier && supplierInput) supplierInput.value = data.supplier;
+                if (data.shippingCompany && shippingAgentInput) shippingAgentInput.value = data.shippingCompany;
                 if (data.unitCost && feesInput && (!feesInput.value || feesInput.value === '0.00' || feesInput.value === '0')) {
                     feesInput.value = data.unitCost;
                 }

@@ -27,6 +27,7 @@ class ShipmentListView(LoginRequiredMixin, View):
         capacity = request.POST.get('capacity', '').strip()
         color = request.POST.get('color', '').strip()
 
+        shipping_company = request.POST.get('shipping_company', '').strip()
         item_price = Decimal(request.POST.get('item_price', '0.00') or '0.00')
         shipment_fees = Decimal(request.POST.get('shipment_fees', '0.00') or '0.00')
         discount = Decimal(request.POST.get('discount', '0.00') or '0.00')
@@ -48,12 +49,15 @@ class ShipmentListView(LoginRequiredMixin, View):
             shipment = Shipment.objects.create(
                 tracking_number=tracking_number,
                 supplier=supplier,
+                shipping_company=shipping_company or None,
                 shipping_cost=Decimal('0.00'),
                 discount=discount
             )
         else:
             if supplier_name:
                 shipment.supplier = supplier
+            if shipping_company:
+                shipment.shipping_company = shipping_company
             if discount > 0:
                 shipment.discount = discount
             shipment.save()
