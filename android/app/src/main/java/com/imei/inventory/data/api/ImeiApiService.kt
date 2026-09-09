@@ -4,6 +4,7 @@ import com.imei.inventory.data.model.AuthResponse
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.DeviceScanResult
 import com.imei.inventory.data.model.LoginRequest
+import com.imei.inventory.data.model.PaginatedResponse
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -17,7 +18,7 @@ interface ImeiApiService {
         @Header("Authorization") token: String,
         @Query("search") search: String? = null,
         @Query("current_status") status: String? = null
-    ): Response<List<DeviceDto>>
+    ): Response<PaginatedResponse<DeviceDto>>
 
     @GET("api/devices/{id}/")
     suspend fun getDeviceDetail(

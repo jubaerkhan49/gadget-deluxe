@@ -33,15 +33,18 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("IMEI Pro Inventory", color = Color.White, fontWeight = FontWeight.Bold) },
+                title = { Text("Gadget Deluxe", color = Color.White, fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A)),
                 actions = {
+                    IconButton(onClick = { deviceViewModel.fetchDevices(token, searchQuery) }) {
+                        Text("🔄", fontSize = 18.sp)
+                    }
                     Button(
                         onClick = onOpenScanner,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Text("Scan QR/Barcode")
+                        Text("Scan Barcode", color = Color.White)
                     }
                 }
             )
@@ -60,11 +63,13 @@ fun DashboardScreen(
                     searchQuery = it
                     deviceViewModel.fetchDevices(token, searchQuery)
                 },
-                placeholder = { Text("Search IMEI, Model, Serial...", color = Color.Gray) },
+                placeholder = { Text("Search IMEI, Model, Serial...", color = Color(0xFF64748B)) },
+                singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
-                    focusedBorderColor = Color(0xFF6366F1)
+                    focusedBorderColor = Color(0xFF6366F1),
+                    unfocusedBorderColor = Color(0xFF334155)
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
@@ -78,14 +83,33 @@ fun DashboardScreen(
                     }
                 }
                 is DeviceListState.Success -> {
-                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(state.devices) { device ->
-                            DeviceItemCard(device)
+                    if (state.devices.isEmpty()) {
+                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Text("No devices found", color = Color(0xFF94A3B8))
+                        }
+                    } else {
+                        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            items(state.devices) { device ->
+                                DeviceItemCard(
+                                    device = device,
+                                    onStatusChange = { newStatus ->
+                                        deviceViewModel.updateStatus(token, device.id, newStatus)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
                 is DeviceListState.Error -> {
-                    Text(text = state.message, color = Color.Red)
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(text = state.message, color = Color(0xFFF87171))
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(onClick = { deviceViewModel.fetchDevices(token, searchQuery) }) {
+                                Text("Retry")
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -93,31 +117,114 @@ fun DashboardScreen(
 }
 
 @Composable
-fun DeviceItemCard(device: DeviceDto) {
+fun DeviceItemCard(
+    device: DeviceDto,
+    onStatusChange: (String) -> Unit
+) {
+    var expandedMenu by remember { mutableStateOf(false) }
+
     Card(
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = device.model, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Text(
-                    text = device.currentStatus,
-                    color = Color(0xFF10B981),
+                    text = device.model,
+                    color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 16.sp
                 )
+                
+                val statusColor = when (device.currentStatus) {
+                    "IN_STOCK" -> Color(0xFF22C55E)
+                    "SOLD" -> Color(0xFF3B82F6)
+                    "UNDER_REPAIR" -> Color(0xFFEAB308)
+                    else -> Color(0xFF94A3B8)
+                }
+
+                Surface(
+                    color = statusColor.copy(alpha = 0.2f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Text(
+                        text = device.statusDisplay ?: device.currentStatus,
+                        color = statusColor,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = "IMEI: ${device.imei}", color = Color(0xFF818CF8), fontSize = 14.sp)
-            Text(
-                text = "${device.capacity ?: ""} ${device.color ?: ""} | Battery: ${device.batteryHealth ?: "N/A"}%",
-                color = Color.Gray,
-                fontSize = 12.sp
-            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text("IMEI: ${device.imei}", color = Color(0xFFCBD5E1), fontSize = 13.sp)
+            if (!device.serialNumber.isNullOrBlank()) {
+                Text("Serial: ${device.serialNumber}", color = Color(0xFF94A3B8), fontSize = 12.sp)
+            }
+            if (!device.variant.isNullOrBlank()) {
+                Text("Variant: ${device.variant}", color = Color(0xFFF59E0B), fontSize = 12.sp)
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    device.capacity?.let {
+                        Text(it, color = Color(0xFF818CF8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    device.batteryHealth?.let {
+                        Text("🔋 $it%", color = Color(0xFF4ADE80), fontSize = 12.sp)
+                    }
+                }
+
+                Box {
+                    Button(
+                        onClick = { expandedMenu = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        modifier = Modifier.height(32.dp)
+                    ) {
+                        Text("Update Status ▾", fontSize = 11.sp, color = Color.White)
+                    }
+                    DropdownMenu(
+                        expanded = expandedMenu,
+                        onDismissRequest = { expandedMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("In Stock") },
+                            onClick = {
+                                expandedMenu = false
+                                onStatusChange("IN_STOCK")
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Under Repair") },
+                            onClick = {
+                                expandedMenu = false
+                                onStatusChange("UNDER_REPAIR")
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Sold") },
+                            onClick = {
+                                expandedMenu = false
+                                onStatusChange("SOLD")
+                            }
+                        )
+                    }
+                }
+            }
         }
     }
 }

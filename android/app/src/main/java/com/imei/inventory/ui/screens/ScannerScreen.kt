@@ -22,6 +22,7 @@ fun ScannerScreen(
     var scannedCode by remember { mutableStateOf("") }
     var scannedDevice by remember { mutableStateOf<DeviceDto?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isSearching by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     Column(
@@ -36,35 +37,30 @@ fun ScannerScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("IMEI / QR Scanner", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Button(onClick = onBack, colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)) {
-                Text("Close")
+            Text("IMEI / Barcode Scanner", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+            Button(
+                onClick = onBack,
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155))
+            ) {
+                Text("Back", color = Color.White)
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
-        ) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Camera Scanner View\n(CameraX / ML Kit Active)", color = Color.Gray)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         OutlinedTextField(
             value = scannedCode,
             onValueChange = { scannedCode = it },
-            label = { Text("Or Type Scanned Code / IMEI") },
+            label = { Text("Scan or Enter IMEI / Serial") },
+            placeholder = { Text("e.g. 356789012345678", color = Color.DarkGray) },
+            singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedTextColor = Color.White,
                 unfocusedTextColor = Color.White,
-                focusedBorderColor = Color(0xFF6366F1)
+                focusedBorderColor = Color(0xFF6366F1),
+                unfocusedBorderColor = Color(0xFF334155),
+                focusedLabelColor = Color(0xFF818CF8),
+                unfocusedLabelColor = Color(0xFF94A3B8)
             ),
             modifier = Modifier.fillMaxWidth()
         )
@@ -74,6 +70,7 @@ fun ScannerScreen(
         Button(
             onClick = {
                 if (scannedCode.isBlank()) return@Button
+                isSearching = true
                 scope.launch {
                     try {
                         val response = ApiClient.apiService.scanCode("Bearer $token", scannedCode.trim())
@@ -82,37 +79,49 @@ fun ScannerScreen(
                             errorMessage = null
                         } else {
                             scannedDevice = null
-                            errorMessage = "No device found matching code: $scannedCode"
+                            errorMessage = "No matching device found for '$scannedCode'"
                         }
                     } catch (e: Exception) {
-                        errorMessage = "Error: ${e.localizedMessage}"
+                        errorMessage = "Scan error: ${e.localizedMessage}"
+                    } finally {
+                        isSearching = false
                     }
                 }
             },
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
         ) {
-            Text("Verify Code & Fetch Device")
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        scannedDevice?.let { dev ->
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF065F46)),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "MATCH FOUND", color = Color.Green, fontWeight = FontWeight.Bold)
-                    Text(text = dev.model, color = Color.White, fontWeight = FontWeight.Bold)
-                    Text(text = "IMEI: ${dev.imei}", color = Color.White)
-                    Text(text = "Status: ${dev.currentStatus}", color = Color.White)
-                }
+            if (isSearching) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+            } else {
+                Text("Search & Verify IMEI", fontSize = 15.sp, color = Color.White)
             }
         }
 
-        errorMessage?.let { err ->
-            Text(text = err, color = Color.Red, modifier = Modifier.padding(top = 12.dp))
+        errorMessage?.let {
+            Spacer(modifier = Modifier.height(14.dp))
+            Text(text = it, color = Color(0xFFF87171), fontSize = 13.sp)
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        scannedDevice?.let { dev ->
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = "✅ Device Found in Cloud DB", color = Color(0xFF4ADE80), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(text = dev.model, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(text = "IMEI: ${dev.imei}", color = Color(0xFFCBD5E1), fontSize = 13.sp)
+                    dev.serialNumber?.let { Text(text = "Serial: $it", color = Color(0xFF94A3B8), fontSize = 12.sp) }
+                    dev.variant?.let { Text(text = "Variant: $it", color = Color(0xFFF59E0B), fontSize = 12.sp) }
+                    Text(text = "Status: ${dev.statusDisplay ?: dev.currentStatus}", color = Color(0xFF818CF8), fontSize = 13.sp)
+                }
+            }
         }
     }
 }

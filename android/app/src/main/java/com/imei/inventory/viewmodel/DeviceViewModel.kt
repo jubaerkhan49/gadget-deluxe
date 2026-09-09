@@ -25,12 +25,32 @@ class DeviceViewModel : ViewModel() {
                 val bearerToken = "Bearer $token"
                 val response = ApiClient.apiService.getDevices(bearerToken, search = query)
                 if (response.isSuccessful && response.body() != null) {
-                    _devicesState.value = DeviceListState.Success(response.body()!!)
+                    val list = response.body()!!.results
+                    _devicesState.value = DeviceListState.Success(list)
                 } else {
                     _devicesState.value = DeviceListState.Error("Error fetching devices (${response.code()})")
                 }
             } catch (e: Exception) {
                 _devicesState.value = DeviceListState.Error("Network error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun updateStatus(token: String, deviceId: Int, newStatus: String, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val bearerToken = "Bearer $token"
+                val response = ApiClient.apiService.updateDeviceStatus(
+                    token = bearerToken,
+                    id = deviceId,
+                    payload = mapOf("current_status" to newStatus)
+                )
+                if (response.isSuccessful) {
+                    onSuccess()
+                    fetchDevices(token)
+                }
+            } catch (e: Exception) {
+                // handle error
             }
         }
     }
