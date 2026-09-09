@@ -45,7 +45,7 @@
                 <option value="">All Owners</option>
                 <option value="unassigned" {% if current_owner_filter == 'unassigned' %}selected{% endif %}>-- Unassigned (None) --</option>
                 {% for owner in owners %}
-                    <option value="{{ owner.id }}" {% if current_owner_filter == owner.id|stringformat:"s" %}selected{% endif %}>{{ owner.get_full_name|default:owner.username }} ({{ owner.username }})</option>
+                    <option value="{{ owner.id }}" {% if current_owner_filter == owner.id|stringformat:"s" %}selected{% endif %}>{{ owner.username }} ({{ owner.get_role_display|lower }})</option>
                 {% endfor %}
             </select>
         </div>
