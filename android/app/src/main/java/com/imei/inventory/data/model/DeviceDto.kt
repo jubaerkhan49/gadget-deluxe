@@ -28,6 +28,7 @@ data class DeviceDto(
     @SerializedName("selling_price") val sellingPrice: Double? = null,
     @SerializedName("current_owner_name") val currentOwnerName: String? = null,
     @SerializedName("icloud_status") val icloudStatus: String? = null,
+    @SerializedName("sim_lock_status") val simLockStatus: String? = null,
     @SerializedName("purchase_country") val purchaseCountry: String? = null,
     @SerializedName("current_shipment") val currentShipment: Int? = null,
     @SerializedName("created_at") val createdAt: String? = null
