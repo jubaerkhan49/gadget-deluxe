@@ -40,7 +40,7 @@ class DeviceViewModel : ViewModel() {
         viewModelScope.launch {
             try {
                 val bearerToken = "Bearer $token"
-                val response = ApiClient.apiService.updateDeviceStatus(
+                val response = ApiClient.apiService.updateDevice(
                     token = bearerToken,
                     id = deviceId,
                     payload = mapOf("current_status" to newStatus)
