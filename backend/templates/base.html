@@ -55,6 +55,8 @@
             max-height: 400px;
             overflow-y: auto;
             z-index: 1050;
+        }
+
         .copy-imei-btn {
             cursor: pointer;
             transition: all 0.15s ease-in-out;
@@ -64,6 +66,10 @@
         .copy-imei-btn:hover {
             opacity: 0.8;
             text-decoration: underline !important;
+        }
+
+        .alert-dismissible {
+            transition: opacity 0.5s ease, max-height 0.5s ease, margin 0.5s ease, padding 0.5s ease;
         }
     </style>
     {% block extra_head %}{% endblock %}
@@ -259,6 +265,30 @@
                 searchResults.innerHTML = '';
             }
         });
+
+        // Auto-dismiss Alerts (Welcome back, success/error banners) after 3.5 seconds
+        function initAutoDismissAlerts(container = document) {
+            const alerts = container.querySelectorAll('.alert-dismissible');
+            alerts.forEach(alert => {
+                if (alert.dataset.autodismissed) return;
+                alert.dataset.autodismissed = 'true';
+                setTimeout(() => {
+                    alert.style.opacity = '0';
+                    setTimeout(() => {
+                        alert.style.maxHeight = '0';
+                        alert.style.paddingTop = '0';
+                        alert.style.paddingBottom = '0';
+                        alert.style.marginTop = '0';
+                        alert.style.marginBottom = '0';
+                        alert.style.overflow = 'hidden';
+                        setTimeout(() => alert.remove(), 500);
+                    }, 250);
+                }, 3500);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => initAutoDismissAlerts());
+        document.addEventListener('htmx:afterSwap', (e) => initAutoDismissAlerts(e.detail.target));
     </script>
     {% block extra_js %}{% endblock %}
 </body>
