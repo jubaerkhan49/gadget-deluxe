@@ -199,3 +199,48 @@ BEGIN
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
+
+-- ==============================================================================
+-- 10. DJANGO MIGRATIONS HISTORY (PREVENTS MIGRATION CONFLICTS ON RENDER)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS django_migrations (
+    id BIGSERIAL PRIMARY KEY,
+    app VARCHAR(255) NOT NULL,
+    name VARCHAR(255) NOT NULL,
+    applied TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS django_migrations_app_name_key ON django_migrations(app, name);
+
+INSERT INTO django_migrations (app, name, applied) VALUES
+    ('contenttypes', '0001_initial', NOW()),
+    ('contenttypes', '0002_remove_content_type_name', NOW()),
+    ('auth', '0001_initial', NOW()),
+    ('auth', '0002_alter_permission_name_max_length', NOW()),
+    ('auth', '0003_alter_user_email_max_length', NOW()),
+    ('auth', '0004_alter_user_username_opts', NOW()),
+    ('auth', '0005_alter_user_last_login_null', NOW()),
+    ('auth', '0006_require_contenttypes_0002', NOW()),
+    ('auth', '0007_alter_validators_add_error_messages', NOW()),
+    ('auth', '0008_alter_user_username_max_length', NOW()),
+    ('auth', '0009_alter_user_last_name_max_length', NOW()),
+    ('auth', '0010_alter_group_name_max_length', NOW()),
+    ('auth', '0011_update_proxy_permissions', NOW()),
+    ('auth', '0012_alter_user_first_name_max_length', NOW()),
+    ('accounts', '0001_initial', NOW()),
+    ('admin', '0001_initial', NOW()),
+    ('admin', '0002_logentry_remove_auto_add', NOW()),
+    ('admin', '0003_logentry_add_action_flag_choices', NOW()),
+    ('sessions', '0001_initial', NOW()),
+    ('customers', '0001_initial', NOW()),
+    ('shipments', '0001_initial', NOW()),
+    ('shipments', '0002_alter_shipment_shipping_cost', NOW()),
+    ('shipments', '0003_shipment_discount_alter_shipment_shipping_cost', NOW()),
+    ('inventory', '0001_initial', NOW()),
+    ('inventory', '0002_device_current_shipment_alter_device_buying_price_and_more', NOW()),
+    ('inventory', '0003_device_variant', NOW()),
+    ('inventory', '0004_device_battery_cycle', NOW()),
+    ('sales', '0001_initial', NOW()),
+    ('repairs', '0001_initial', NOW()),
+    ('sickw', '0001_initial', NOW())
+ON CONFLICT DO NOTHING;
