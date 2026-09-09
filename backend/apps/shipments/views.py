@@ -156,6 +156,50 @@ class ShipmentListView(LoginRequiredMixin, View):
         return redirect('shipments:list')
 
 
+class ShipmentUpdateView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        shipment = get_object_or_404(Shipment, pk=pk)
+
+        tracking_number = request.POST.get('tracking_number', '').strip()
+        supplier_name = request.POST.get('supplier_name', '').strip()
+        shipping_company = request.POST.get('shipping_company', '').strip()
+        receive_date = request.POST.get('receive_date', '').strip()
+        country = request.POST.get('country', '').strip()
+        notes = request.POST.get('notes', '').strip()
+
+        shipping_cost_raw = request.POST.get('shipping_cost', '').strip()
+        fee_per_unit_raw = request.POST.get('fee_per_unit', '').strip()
+
+        if tracking_number:
+            shipment.tracking_number = tracking_number
+
+        if supplier_name:
+            supplier, _ = Supplier.objects.get_or_create(name=supplier_name)
+            shipment.supplier = supplier
+
+        shipment.shipping_company = shipping_company or None
+        shipment.receive_date = receive_date if receive_date else None
+        shipment.country = country or None
+        shipment.notes = notes or None
+
+        dev_count = shipment.devices.count()
+        if fee_per_unit_raw:
+            try:
+                fee_per_unit = Decimal(fee_per_unit_raw)
+                shipment.shipping_cost = fee_per_unit * max(dev_count, 1)
+            except Exception:
+                pass
+        elif shipping_cost_raw:
+            try:
+                shipment.shipping_cost = Decimal(shipping_cost_raw)
+            except Exception:
+                pass
+
+        shipment.save()
+        messages.success(request, f"Shipment #{shipment.tracking_number} updated successfully.")
+        return redirect('shipments:list')
+
+
 class ShipmentDeleteView(LoginRequiredMixin, View):
     def post(self, request, pk):
         shipment = get_object_or_404(Shipment, pk=pk)
