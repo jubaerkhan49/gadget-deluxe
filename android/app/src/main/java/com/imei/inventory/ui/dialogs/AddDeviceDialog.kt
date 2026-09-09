@@ -2,6 +2,7 @@ package com.imei.inventory.ui.dialogs
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,9 +32,15 @@ fun AddDeviceDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF1E293B),
+        containerColor = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(18.dp),
         title = {
-            Text("Add Device to Inventory", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text(
+                text = "Add Device to Inventory",
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp
+            )
         },
         text = {
             Column(
@@ -47,11 +54,10 @@ fun AddDeviceDialog(
                     onValueChange = { imei = it },
                     label = { Text("IMEI (Required)") },
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color(0xFF6366F1),
-                        unfocusedBorderColor = Color(0xFF475569)
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -61,11 +67,10 @@ fun AddDeviceDialog(
                     onValueChange = { model = it },
                     label = { Text("Model (e.g. iPhone 15 Pro)") },
                     singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White,
-                        focusedBorderColor = Color(0xFF6366F1),
-                        unfocusedBorderColor = Color(0xFF475569)
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -75,24 +80,22 @@ fun AddDeviceDialog(
                         value = capacity,
                         onValueChange = { capacity = it },
                         label = { Text("Storage") },
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFF6366F1),
-                            unfocusedBorderColor = Color(0xFF475569)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
                     OutlinedTextField(
                         value = color,
                         onValueChange = { color = it },
                         label = { Text("Color") },
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFF6366F1),
-                            unfocusedBorderColor = Color(0xFF475569)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
                 }
@@ -104,16 +107,15 @@ fun AddDeviceDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Device Variant") },
+                        shape = RoundedCornerShape(10.dp),
                         trailingIcon = {
                             TextButton(onClick = { variantMenuExpanded = true }) {
-                                Text("▾", color = Color(0xFF818CF8), fontSize = 18.sp)
+                                Text("▾", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp)
                             }
                         },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFF6366F1),
-                            unfocusedBorderColor = Color(0xFF475569)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -138,24 +140,22 @@ fun AddDeviceDialog(
                         value = batteryHealth,
                         onValueChange = { batteryHealth = it },
                         label = { Text("Battery %") },
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFF6366F1),
-                            unfocusedBorderColor = Color(0xFF475569)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
                     OutlinedTextField(
                         value = buyingPrice,
                         onValueChange = { buyingPrice = it },
                         label = { Text("Buying Price") },
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White,
-                            focusedBorderColor = Color(0xFF6366F1),
-                            unfocusedBorderColor = Color(0xFF475569)
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         )
                     )
                 }
@@ -178,14 +178,15 @@ fun AddDeviceDialog(
                         onSave(dev)
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                shape = RoundedCornerShape(10.dp)
             ) {
                 Text("Save to Cloud", color = Color.White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel", color = Color(0xFF94A3B8))
+                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     )

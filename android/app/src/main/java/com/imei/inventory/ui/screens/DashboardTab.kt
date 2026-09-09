@@ -38,18 +38,18 @@ fun DashboardTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Top Banner / Header
+        // Top Header
         item {
             Column {
                 Text(
-                    text = "Operational Overview",
-                    color = Color.White,
+                    text = "Operational Dashboard",
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Live inventory & commercial tracking",
-                    color = Color(0xFF94A3B8),
+                    text = "Real-time inventory status & sales performance",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp
                 )
             }
@@ -63,14 +63,14 @@ fun DashboardTab(
                         title = "TOTAL DEVICES",
                         value = "${stats.totalDevices}",
                         icon = "📦",
-                        accentColor = Color(0xFF818CF8),
+                        accentColor = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "IN STOCK",
                         value = "${stats.inStock}",
                         icon = "🏢",
-                        accentColor = Color(0xFF4ADE80),
+                        accentColor = Color(0xFF16A34A),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -79,30 +79,30 @@ fun DashboardTab(
                         title = "UNDER REPAIR",
                         value = "${stats.underRepair}",
                         icon = "🛠️",
-                        accentColor = Color(0xFFFBBF24),
+                        accentColor = Color(0xFFD97706),
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "SOLD UNITS",
                         value = "${stats.sold}",
                         icon = "🛍️",
-                        accentColor = Color(0xFF60A5FA),
+                        accentColor = Color(0xFF2563EB),
                         modifier = Modifier.weight(1f)
                     )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatCard(
-                        title = "TOTAL REVENUE",
+                        title = "TODAY'S REVENUE",
                         value = "BDT ${stats.totalSalesAmount.toInt()}",
                         icon = "💵",
-                        accentColor = Color(0xFF34D399),
+                        accentColor = Color(0xFF059669),
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "TOTAL PROFIT",
                         value = "BDT ${stats.totalProfit.toInt()}",
                         icon = "📈",
-                        accentColor = Color(0xFF38BDF8),
+                        accentColor = Color(0xFF0284C7),
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -113,7 +113,7 @@ fun DashboardTab(
         item {
             Text(
                 text = "Quick Actions",
-                color = Color(0xFFCBD5E1),
+                color = MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.SemiBold
             )
@@ -121,24 +121,24 @@ fun DashboardTab(
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = onOpenAddDevice,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("+ Add Device", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = { onNavigateToTab(4) }, // Scanner / Sickw
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
+                    onClick = { onNavigateToTab(4) },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("⚡ Sickw Parser", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("⚡ Sickw Import", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
-        // Recent Devices
+        // Recent Devices List
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -147,12 +147,12 @@ fun DashboardTab(
             ) {
                 Text(
                     text = "Recent Inventory",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
                 TextButton(onClick = { onNavigateToTab(1) }) {
-                    Text("View All (${devices.size}) →", color = Color(0xFF818CF8), fontSize = 12.sp)
+                    Text("View All (${devices.size}) →", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -160,14 +160,15 @@ fun DashboardTab(
         if (devices.isEmpty()) {
             item {
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Box(modifier = Modifier.padding(24.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
                         if (isLoading) {
-                            CircularProgressIndicator(color = Color(0xFF6366F1))
+                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                         } else {
-                            Text("No devices found", color = Color(0xFF94A3B8))
+                            Text("No devices found in inventory", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -175,11 +176,12 @@ fun DashboardTab(
         } else {
             items(devices.take(6)) { device ->
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable { onSelectDevice(device) },
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
                         Row(
@@ -187,7 +189,7 @@ fun DashboardTab(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(device.model, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                            Text(device.model, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                             StatusBadge(device.currentStatus, device.statusDisplay)
                         }
                         Spacer(modifier = Modifier.height(6.dp))

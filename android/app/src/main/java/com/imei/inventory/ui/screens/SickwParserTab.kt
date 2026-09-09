@@ -1,25 +1,21 @@
 package com.imei.inventory.ui.screens
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.imei.inventory.data.api.ApiClient
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.viewmodel.MainInventoryViewModel
-import kotlinx.coroutines.launch
 
 @Composable
 fun SickwParserTab(
@@ -39,7 +35,6 @@ fun SickwParserTab(
 
     var isParsed by remember { mutableStateOf(false) }
     var isImporting by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
     Column(
@@ -50,8 +45,8 @@ fun SickwParserTab(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Column {
-            Text("⚡ Sickw & IMEI Parser", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Text("Paste raw Sickw check report to auto-extract specs", color = Color(0xFF94A3B8), fontSize = 13.sp)
+            Text("⚡ Sickw & IMEI Parser", color = MaterialTheme.colorScheme.onBackground, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text("Paste raw Sickw check report to auto-extract specs", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
         }
 
         OutlinedTextField(
@@ -60,17 +55,20 @@ fun SickwParserTab(
             placeholder = {
                 Text(
                     "Paste Sickw output here...\nExample:\nModel: iPhone 15 Pro 256GB Natural Titanium\nIMEI: 356789012345678\niCloud: CLEAN\nSIM Lock: Unlocked\nPurchase Country: United States",
-                    color = Color(0xFF64748B),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
                 )
             },
             minLines = 5,
-            maxLines = 10,
+            maxLines = 8,
+            shape = RoundedCornerShape(12.dp),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                focusedBorderColor = Color(0xFF6366F1),
-                unfocusedBorderColor = Color(0xFF334155)
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.outline
             ),
             modifier = Modifier.fillMaxWidth()
         )
@@ -79,7 +77,6 @@ fun SickwParserTab(
             Button(
                 onClick = {
                     if (rawText.isBlank()) return@Button
-                    // Simple regex/heuristic parser
                     val text = rawText
                     val lines = text.lines()
 
@@ -132,7 +129,8 @@ fun SickwParserTab(
                     parsedCountry = foundCountry
                     isParsed = true
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.weight(1f)
             ) {
                 Text("⚡ Parse Specs", color = Color.White, fontWeight = FontWeight.Bold)
@@ -143,28 +141,30 @@ fun SickwParserTab(
                     rawText = ""
                     isParsed = false
                 },
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier.weight(0.5f)
             ) {
-                Text("Clear", color = Color(0xFF94A3B8))
+                Text("Clear", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
         if (isParsed) {
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(14.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("✅ Parsed Specification Preview", color = Color(0xFF4ADE80), fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("✅ Parsed Specification Preview", color = Color(0xFF16A34A), fontWeight = FontWeight.Bold, fontSize = 16.sp)
 
                     OutlinedTextField(
                         value = parsedModel,
                         onValueChange = { parsedModel = it },
                         label = { Text("Model Name") },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -174,8 +174,8 @@ fun SickwParserTab(
                         onValueChange = { parsedImei = it },
                         label = { Text("IMEI") },
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -187,8 +187,8 @@ fun SickwParserTab(
                             label = { Text("Storage") },
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             )
                         )
                         OutlinedTextField(
@@ -197,8 +197,8 @@ fun SickwParserTab(
                             label = { Text("Variant") },
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
-                                focusedTextColor = Color.White,
-                                unfocusedTextColor = Color.White
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             )
                         )
                     }
@@ -247,7 +247,8 @@ fun SickwParserTab(
                                 }
                             )
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E)),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(46.dp)

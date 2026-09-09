@@ -30,74 +30,98 @@ fun InventoryTab(
     onOpenAddDevice: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
+    var selectedVariantFilter by remember { mutableStateOf<String?>(null) }
+    val selectedStatusFilter by viewModel.selectedStatusFilter.collectAsState()
+
     val devices by viewModel.devices.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val selectedFilter by viewModel.selectedStatusFilter.collectAsState()
 
-    val filterOptions = listOf(
-        null to "All Devices",
+    val statusOptions = listOf(
+        null to "All Status",
         "IN_STOCK" to "In Stock",
         "UNDER_REPAIR" to "Under Repair",
         "SOLD" to "Sold"
     )
 
+    val variantOptions = listOf(
+        null to "All Variants",
+        "Modified" to "Modified",
+        "USA eSim" to "USA eSim",
+        "Canada" to "Canada",
+        "Mexican" to "Mexican",
+        "Korea" to "Korea",
+        "Singapore" to "Singapore",
+        "Bypass" to "Bypass"
+    )
+
+    // Filter devices in-memory for instant responsive search + variant matching
+    val filteredDevices = remember(devices, selectedVariantFilter, searchQuery) {
+        devices.filter { dev ->
+            val matchesVariant = selectedVariantFilter == null || dev.variant?.equals(selectedVariantFilter, ignoreCase = true) == true
+            val matchesQuery = searchQuery.isBlank() ||
+                    dev.model.contains(searchQuery, ignoreCase = true) ||
+                    dev.imei.contains(searchQuery, ignoreCase = true) ||
+                    (dev.serialNumber?.contains(searchQuery, ignoreCase = true) == true) ||
+                    (dev.capacity?.contains(searchQuery, ignoreCase = true) == true)
+            matchesVariant && matchesQuery
+        }
+    }
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = onOpenAddDevice,
-                containerColor = Color(0xFF6366F1),
-                contentColor = Color.White
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Text("+", fontSize = 28.sp, fontWeight = FontWeight.Bold)
             }
         },
-        containerColor = Color(0xFF0F172A)
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             // Search Input
             OutlinedTextField(
                 value = searchQuery,
-                onValueChange = {
-                    searchQuery = it
-                    viewModel.fetchDevices(token, searchQuery)
-                },
-                placeholder = { Text("Search IMEI, Model, Serial...", color = Color(0xFF64748B)) },
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search IMEI, Model, Serial...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                 singleLine = true,
+                shape = RoundedCornerShape(12.dp),
                 trailingIcon = {
                     if (searchQuery.isNotBlank()) {
-                        IconButton(onClick = {
-                            searchQuery = ""
-                            viewModel.fetchDevices(token, "")
-                        }) {
-                            Text("✕", color = Color.Gray)
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Text("✕", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 },
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = Color(0xFF6366F1),
-                    unfocusedBorderColor = Color(0xFF334155)
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Filter Chips
+            // Status Filter Chips
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                filterOptions.forEach { (statusKey, label) ->
-                    val isSelected = selectedFilter == statusKey
+                statusOptions.forEach { (statusKey, label) ->
+                    val isSelected = selectedStatusFilter == statusKey
                     FilterChip(
                         selected = isSelected,
                         onClick = {
@@ -107,36 +131,104 @@ fun InventoryTab(
                         label = {
                             Text(
                                 text = label,
-                                color = if (isSelected) Color.White else Color(0xFF94A3B8),
-                                fontSize = 12.sp,
+                                fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
                         },
+                        shape = RoundedCornerShape(8.dp),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFF4F46E5),
-                            containerColor = Color(0xFF1E293B)
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // Variant Filter Chips
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                variantOptions.forEach { (vKey, label) ->
+                    val isSelected = selectedVariantFilter == vKey
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { selectedVariantFilter = if (isSelected) null else vKey },
+                        label = {
+                            Text(
+                                text = label,
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        shape = RoundedCornerShape(8.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFFF97316),
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Results summary header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "${filteredDevices.size} Devices Found",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (selectedStatusFilter != null || selectedVariantFilter != null || searchQuery.isNotBlank()) {
+                    Text(
+                        text = "Reset Filters",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.clickable {
+                            searchQuery = ""
+                            selectedVariantFilter = null
+                            viewModel.setStatusFilter(null)
+                            viewModel.fetchDevices(token, "")
+                        }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Devices List
-            if (isLoading) {
+            if (isLoading && filteredDevices.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Color(0xFF6366F1))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
-            } else if (devices.isEmpty()) {
+            } else if (filteredDevices.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No matching devices found in cloud inventory", color = Color(0xFF94A3B8), fontSize = 14.sp)
+                    Text(
+                        text = "No matching devices found",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp
+                    )
                 }
             } else {
                 LazyColumn(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    items(devices) { device ->
+                    items(filteredDevices) { device ->
                         InventoryDeviceCard(
                             device = device,
                             onClick = { onSelectDevice(device) },
@@ -163,12 +255,12 @@ fun InventoryDeviceCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
-            // Header: Model + Status Badge
+            // Top: Model + Status Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -176,7 +268,7 @@ fun InventoryDeviceCard(
             ) {
                 Text(
                     text = device.model,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
@@ -202,7 +294,7 @@ fun InventoryDeviceCard(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Bottom Bar: Specs + Status Action Dropdown
+            // Bottom Bar: Specs + Status Action Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -210,24 +302,25 @@ fun InventoryDeviceCard(
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                     device.capacity?.let {
-                        Text(it, color = Color(0xFF818CF8), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(it, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                     device.batteryHealth?.let {
-                        Text("🔋 $it%", color = Color(0xFF4ADE80), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text("🔋 $it%", color = Color(0xFF16A34A), fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     }
                     device.buyingPrice?.let {
-                        Text("৳${it.toInt()}", color = Color(0xFFFBBF24), fontSize = 12.sp)
+                        Text("৳${it.toInt()}", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
                 Box {
                     Button(
                         onClick = { expandedMenu = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.height(30.dp)
                     ) {
-                        Text("Status ▾", fontSize = 11.sp, color = Color.White)
+                        Text("Status ▾", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
                     }
                     DropdownMenu(
                         expanded = expandedMenu,

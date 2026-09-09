@@ -23,6 +23,7 @@ fun SalesTab(
 ) {
     val sales by viewModel.sales.collectAsState()
     val stats by viewModel.stats.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
 
     LaunchedEffect(Unit) {
         viewModel.fetchSales(token)
@@ -33,18 +34,9 @@ fun SalesTab(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text("Commercial Sales", color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text("Completed customer transactions", color = Color(0xFF94A3B8), fontSize = 13.sp)
-            }
-            IconButton(onClick = { viewModel.fetchSales(token) }) {
-                Text("🔄", fontSize = 18.sp)
-            }
+        Column {
+            Text("Commercial Sales", color = MaterialTheme.colorScheme.onBackground, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text("Customer orders & margin performance", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
         }
 
         Spacer(modifier = Modifier.height(14.dp))
@@ -52,8 +44,9 @@ fun SalesTab(
         // Revenue summary card
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-            shape = RoundedCornerShape(12.dp)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            shape = RoundedCornerShape(14.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -63,22 +56,26 @@ fun SalesTab(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Total Revenue", color = Color(0xFF94A3B8), fontSize = 12.sp)
-                    Text("BDT ${stats.totalSalesAmount.toInt()}", color = Color(0xFF34D399), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Total Revenue", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text("BDT ${stats.totalSalesAmount.toInt()}", color = Color(0xFF16A34A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
-                VerticalDivider(modifier = Modifier.height(36.dp), color = Color(0xFF334155))
+                VerticalDivider(modifier = Modifier.height(36.dp), color = MaterialTheme.colorScheme.outline)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Total Profit", color = Color(0xFF94A3B8), fontSize = 12.sp)
-                    Text("BDT ${stats.totalProfit.toInt()}", color = Color(0xFF38BDF8), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Total Profit", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text("BDT ${stats.totalProfit.toInt()}", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (sales.isEmpty()) {
+        if (isLoading && sales.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No sales invoices recorded yet", color = Color(0xFF94A3B8))
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        } else if (sales.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No sales invoices recorded yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -94,8 +91,9 @@ fun SalesTab(
 fun SaleCard(sale: SaleDto) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-        shape = RoundedCornerShape(12.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
             Row(
@@ -105,13 +103,13 @@ fun SaleCard(sale: SaleDto) {
             ) {
                 Text(
                     text = sale.invoiceNumber,
-                    color = Color(0xFF818CF8),
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
                 Text(
                     text = "BDT ${sale.finalPrice.toInt()}",
-                    color = Color(0xFF4ADE80),
+                    color = Color(0xFF16A34A),
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
                 )
@@ -130,9 +128,9 @@ fun SaleCard(sale: SaleDto) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Customer: ${sale.customerName ?: "Direct Sale"}", color = Color(0xFFCBD5E1), fontSize = 12.sp)
+                Text("Customer: ${sale.customerName ?: "Direct Sale"}", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
                 sale.profit?.let {
-                    Text("+BDT ${it.toInt()} profit", color = Color(0xFF38BDF8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("+BDT ${it.toInt()} profit", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
         }
