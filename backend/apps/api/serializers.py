@@ -21,13 +21,32 @@ class DeviceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ShipmentSerializer(serializers.ModelSerializer):
-    supplier_name = serializers.CharField(source='supplier.name', read_only=True)
-    devices_count = serializers.IntegerField(source='total_devices_count', read_only=True)
-    unit_shipping_cost = serializers.DecimalField(source='unit_shipping_cost', max_digits=12, decimal_places=2, read_only=True)
+    supplier_name = serializers.SerializerMethodField()
+    devices_count = serializers.SerializerMethodField()
+    unit_shipping_cost = serializers.SerializerMethodField()
 
     class Meta:
         model = Shipment
         fields = '__all__'
+
+    def get_supplier_name(self, obj):
+        try:
+            return obj.supplier.name if obj.supplier else "Unknown"
+        except Exception:
+            return "Unknown"
+
+    def get_devices_count(self, obj):
+        try:
+            return obj.total_devices_count
+        except Exception:
+            return 0
+
+    def get_unit_shipping_cost(self, obj):
+        try:
+            val = obj.unit_shipping_cost
+            return str(val) if val is not None else "0.00"
+        except Exception:
+            return "0.00"
 
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:
