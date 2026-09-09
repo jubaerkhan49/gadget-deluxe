@@ -183,6 +183,60 @@ ALTER TABLE sales_sale ENABLE ROW LEVEL SECURITY;
 ALTER TABLE customers_customer ENABLE ROW LEVEL SECURITY;
 ALTER TABLE accounts_user ENABLE ROW LEVEL SECURITY;
 
+-- 10. SESSIONS & CORE DJANGO TABLES (REQUIRED FOR WEB APP SESSIONS)
+CREATE TABLE IF NOT EXISTS django_session (
+    session_key VARCHAR(40) PRIMARY KEY,
+    session_data TEXT NOT NULL,
+    expire_date TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS django_session_expire_date_idx ON django_session(expire_date);
+
+CREATE TABLE IF NOT EXISTS django_content_type (
+    id SERIAL PRIMARY KEY,
+    app_label VARCHAR(100) NOT NULL,
+    model VARCHAR(100) NOT NULL,
+    CONSTRAINT django_content_type_app_label_model_key UNIQUE (app_label, model)
+);
+
+CREATE TABLE IF NOT EXISTS auth_permission (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    content_type_id INTEGER NOT NULL REFERENCES django_content_type(id) ON DELETE CASCADE,
+    codename VARCHAR(100) NOT NULL,
+    CONSTRAINT auth_permission_content_type_id_codename_key UNIQUE (content_type_id, codename)
+);
+
+CREATE TABLE IF NOT EXISTS auth_group (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(150) UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS accounts_user_groups (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE CASCADE,
+    group_id INTEGER NOT NULL REFERENCES auth_group(id) ON DELETE CASCADE,
+    CONSTRAINT accounts_user_groups_user_id_group_id_key UNIQUE (user_id, group_id)
+);
+
+CREATE TABLE IF NOT EXISTS accounts_user_user_permissions (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE CASCADE,
+    permission_id INTEGER NOT NULL REFERENCES auth_permission(id) ON DELETE CASCADE,
+    CONSTRAINT accounts_user_user_permissions_user_id_permission_id_key UNIQUE (user_id, permission_id)
+);
+
+CREATE TABLE IF NOT EXISTS django_admin_log (
+    id SERIAL PRIMARY KEY,
+    action_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    object_id TEXT,
+    object_repr VARCHAR(200) NOT NULL,
+    action_flag SMALLINT NOT NULL,
+    change_message TEXT NOT NULL,
+    content_type_id INTEGER REFERENCES django_content_type(id) ON DELETE SET NULL,
+    user_id BIGINT NOT NULL REFERENCES accounts_user(id) ON DELETE CASCADE
+);
+
+-- RLS Policies
 DO $$
 BEGIN
     CREATE POLICY "Allow all public read" ON inventory_device FOR SELECT USING (true);
@@ -196,6 +250,7 @@ BEGIN
     CREATE POLICY "Allow all public read customers" ON customers_customer FOR SELECT USING (true);
     CREATE POLICY "Allow all public write customers" ON customers_customer FOR ALL USING (true);
     CREATE POLICY "Allow all public read users" ON accounts_user FOR SELECT USING (true);
+    CREATE POLICY "Allow all public write users" ON accounts_user FOR ALL USING (true);
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
