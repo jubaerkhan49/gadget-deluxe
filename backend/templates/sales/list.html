@@ -1,0 +1,260 @@
+{% extends 'base.html' %}
+
+{% block title %}Sales Invoices - Gadget Deluxe{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-0">Sales & Financial Transactions</h3>
+        <p class="text-muted small mb-0">Record device sales, calculate automatic profit margins & issue invoices</p>
+    </div>
+    <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#newSaleModal">
+        <i class="fa-solid fa-cart-plus me-1"></i> Record New Sale
+    </button>
+</div>
+
+<div class="card border shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Invoice #</th>
+                    <th>Device / IMEI</th>
+                    <th>Buying Cost</th>
+                    <th>Repair Cost</th>
+                    <th>Selling Price</th>
+                    <th>Discount</th>
+                    <th>Commission</th>
+                    <th>Net Profit</th>
+                    <th>Seller</th>
+                    <th>Date</th>
+                    <th class="text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sale in sales %}
+                    <tr>
+                        <td><span class="badge bg-secondary-subtle text-secondary-emphasis fs-6">{{ sale.invoice_number }}</span></td>
+                        <td>
+                            <div class="fw-bold">{{ sale.device.model }}</div>
+                            <div class="small text-primary">IMEI: {{ sale.device.imei }}</div>
+                        </td>
+                        <td>BDT {{ sale.buying_price }}</td>
+                        <td class="text-danger fw-semibold">BDT {{ sale.total_repair_cost }}</td>
+                        <td class="fw-bold text-success">BDT {{ sale.selling_price }}</td>
+                        <td class="text-muted">BDT {{ sale.discount }}</td>
+                        <td class="text-warning fw-semibold">BDT {{ sale.commission_amount }}</td>
+                        <td class="fw-bold text-info fs-6">+BDT {{ sale.profit }}</td>
+                        <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ sale.seller.username }}</span></td>
+                        <td class="small text-muted">{{ sale.sale_date|date:"Y-m-d H:i" }}</td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteSaleModal{{ sale.id }}" title="Delete Sale Invoice">
+                                <i class="fa-solid fa-trash-can me-1"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="11" class="text-muted text-center py-4">No sales records logged yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modals: Delete Sale Invoice -->
+{% for sale in sales %}
+<div class="modal fade" id="deleteSaleModal{{ sale.id }}" tabindex="-1" aria-labelledby="deleteSaleLabel{{ sale.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border">
+            <form method="post" action="{% url 'sales:delete' sale.id %}">
+                {% csrf_token %}
+                <div class="modal-header bg-danger-subtle text-danger border-bottom">
+                    <h5 class="modal-title fw-bold" id="deleteSaleLabel{{ sale.id }}">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i> Delete Sale Invoice
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-3">
+                        Are you sure you want to delete invoice <strong class="text-primary">{{ sale.invoice_number }}</strong>?
+                    </p>
+                    <div class="p-3 bg-body-tertiary border rounded small mb-2">
+                        <div><strong>Device:</strong> {{ sale.device.model }} (<code class="text-primary">{{ sale.device.imei }}</code>)</div>
+                        <div><strong>Customer:</strong> {{ sale.customer.name|default:'N/A' }}</div>
+                        <div><strong>Selling Price:</strong> BDT {{ sale.selling_price }}</div>
+                        <div><strong>Calculated Profit:</strong> +BDT {{ sale.profit }}</div>
+                    </div>
+                    <div class="alert alert-info py-2 px-3 small mt-3 mb-0">
+                        <i class="fa-solid fa-arrow-rotate-left me-1"></i>
+                        Deleting this sale invoice will automatically revert the device status back to <strong>In Stock</strong>.
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-body-tertiary">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger btn-sm fw-bold">
+                        <i class="fa-solid fa-trash-can me-1"></i> Confirm Delete
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Modal: New Sale -->
+<div class="modal fade" id="newSaleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border">
+            <form method="post" action="{% url 'sales:list' %}">
+                {% csrf_token %}
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-cart-shopping text-success me-1"></i> Process New Device Sale
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Select In-Stock Device *</label>
+                            <select name="device_id" id="sale_device_select" class="form-select" required>
+                                {% for dev in in_stock_devices %}
+                                    <option value="{{ dev.id }}" data-buying-price="{{ dev.buying_price }}" {% if forloop.first %}selected{% endif %}>
+                                        {{ dev.model }} (IMEI: {{ dev.imei }}) - Cost: BDT {{ dev.buying_price }}
+                                    </option>
+                                {% empty %}
+                                    <option value="">No In-Stock devices available</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Select Customer *</label>
+                            <select name="customer_id" class="form-select" required>
+                                {% for cust in customers %}
+                                    <option value="{{ cust.id }}">{{ cust.name }} ({{ cust.phone }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">
+                                Buying Price (BDT) <span class="badge bg-secondary-subtle text-secondary small fw-normal ms-1"><i class="fa-solid fa-lock me-1"></i>Auto-loaded</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold bg-body-secondary">BDT</span>
+                                <input type="number" step="0.01" name="buying_price" id="sale_buying_price" class="form-control bg-body-tertiary fw-semibold" readonly required placeholder="Auto-loaded from device">
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-primary">Selling Price (BDT) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">BDT</span>
+                                <input type="number" step="0.01" min="0" name="selling_price" id="sale_selling_price" class="form-control fw-bold text-success fs-6" required placeholder="Enter sale price">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Commission (BDT)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">BDT</span>
+                                <input type="number" step="0.01" min="0" name="commission_amount" id="sale_commission" class="form-control" value="0.00">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Discount (BDT)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">BDT</span>
+                                <input type="number" step="0.01" min="0" name="discount" id="sale_discount" class="form-control" value="0.00">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Payment Method</label>
+                            <select name="payment_method" class="form-select">
+                                <option value="CASH">Cash</option>
+                                <option value="BANK">Bank Transfer</option>
+                                <option value="CARD">Credit/Debit Card</option>
+                                <option value="MOBILE">Mobile Banking</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="p-3 bg-body-tertiary border rounded d-flex justify-content-between align-items-center">
+                                <div>
+                                    <i class="fa-solid fa-calculator text-success me-1"></i>
+                                    <strong>Estimated Net Profit:</strong>
+                                    <span class="text-muted small ms-1">(Selling Price - Buying Price - Commission - Discount)</span>
+                                </div>
+                                <div>
+                                    <span class="badge bg-success fs-6 px-3 py-2" id="calc_profit_display">+BDT 0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-body-tertiary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success px-4 fw-bold">
+                        <i class="fa-solid fa-check me-1"></i> Complete Sale & Issue Invoice
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deviceSelect = document.getElementById('sale_device_select');
+    const buyingPriceInput = document.getElementById('sale_buying_price');
+    const sellingPriceInput = document.getElementById('sale_selling_price');
+    const commissionInput = document.getElementById('sale_commission');
+    const discountInput = document.getElementById('sale_discount');
+    const profitDisplay = document.getElementById('calc_profit_display');
+
+    function syncBuyingPrice() {
+        if (!deviceSelect || !buyingPriceInput) return;
+        const selectedOpt = deviceSelect.options[deviceSelect.selectedIndex];
+        if (selectedOpt && selectedOpt.dataset.buyingPrice !== undefined) {
+            buyingPriceInput.value = parseFloat(selectedOpt.dataset.buyingPrice || 0).toFixed(2);
+        }
+        calcProfit();
+    }
+
+    function calcProfit() {
+        const bp = parseFloat(buyingPriceInput ? buyingPriceInput.value : 0) || 0;
+        const sp = parseFloat(sellingPriceInput ? sellingPriceInput.value : 0) || 0;
+        const comm = parseFloat(commissionInput ? commissionInput.value : 0) || 0;
+        const disc = parseFloat(discountInput ? discountInput.value : 0) || 0;
+
+        const netProfit = (sp - bp - comm - disc);
+        if (profitDisplay) {
+            if (netProfit >= 0) {
+                profitDisplay.className = 'badge bg-success fs-6 px-3 py-2';
+                profitDisplay.textContent = '+BDT ' + netProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            } else {
+                profitDisplay.className = 'badge bg-danger fs-6 px-3 py-2';
+                profitDisplay.textContent = '-BDT ' + Math.abs(netProfit).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            }
+        }
+    }
+
+    if (deviceSelect) {
+        deviceSelect.addEventListener('change', syncBuyingPrice);
+    }
+    if (sellingPriceInput) {
+        sellingPriceInput.addEventListener('input', calcProfit);
+    }
+    if (commissionInput) {
+        commissionInput.addEventListener('input', calcProfit);
+    }
+    if (discountInput) {
+        discountInput.addEventListener('input', calcProfit);
+    }
+
+    syncBuyingPrice();
+});
+</script>
+{% endblock %}

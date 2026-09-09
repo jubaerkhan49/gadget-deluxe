@@ -1,0 +1,49 @@
+<div class="p-2">
+    {% if devices %}
+        <div class="text-muted small px-2 py-1 fw-bold text-uppercase">Devices</div>
+        {% for d in devices %}
+            <a href="{% url 'inventory:detail' d.id %}" class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-body border-bottom">
+                <div>
+                    <div class="fw-bold">{{ d.model }}</div>
+                    <div class="small text-primary">IMEI: {{ d.imei }} {% if d.serial_number %}| SN: {{ d.serial_number }}{% endif %}</div>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-secondary-subtle text-secondary-emphasis">{{ d.get_current_status_display }}</span>
+                    {% if d.current_owner %}
+                        <div class="small text-muted mt-1" style="font-size: 0.75rem;"><i class="fa-solid fa-user me-1"></i>{{ d.current_owner.username }}</div>
+                    {% endif %}
+                </div>
+            </a>
+        {% endfor %}
+    {% endif %}
+
+    {% if shipments %}
+        <div class="text-muted small px-2 py-1 fw-bold text-uppercase mt-2">Shipments</div>
+        {% for s in shipments %}
+            <a href="{% url 'shipments:list' %}" class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-body border-bottom">
+                <div>
+                    <div class="fw-bold">Tracking #{{ s.tracking_number }}</div>
+                    <div class="small text-muted">{{ s.supplier.name }} ({{ s.shipping_company }})</div>
+                </div>
+                <span class="badge bg-info">Shipment</span>
+            </a>
+        {% endfor %}
+    {% endif %}
+
+    {% if sales %}
+        <div class="text-muted small px-2 py-1 fw-bold text-uppercase mt-2">Sales</div>
+        {% for sl in sales %}
+            <a href="{% url 'sales:list' %}" class="d-flex justify-content-between align-items-center p-2 text-decoration-none text-body border-bottom">
+                <div>
+                    <div class="fw-bold">Invoice {{ sl.invoice_number }}</div>
+                    <div class="small text-muted">{{ sl.customer.name }} - BDT {{ sl.selling_price }}</div>
+                </div>
+                <span class="badge bg-success">Sale</span>
+            </a>
+        {% endfor %}
+    {% endif %}
+
+    {% if not devices and not shipments and not sales %}
+        <div class="p-3 text-center text-muted small">No records match "{{ query }}"</div>
+    {% endif %}
+</div>

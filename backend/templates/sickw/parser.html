@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}SICKW Parser - Gadget Deluxe{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-0"><i class="fa-solid fa-bolt text-warning me-2"></i>Sickw Raw Text Importer</h3>
+        <p class="text-muted small mb-0">Paste raw Sickw output blocks for automated extraction into structured inventory database records</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Raw Text Input Box -->
+    <div class="col-lg-6">
+        <div class="card border p-4 shadow-sm">
+            <h5 class="fw-bold mb-3">Paste Sickw Text Block</h5>
+            <form method="post" action="{% url 'sickw:parser' %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <textarea name="raw_text" 
+                              class="form-control font-monospace" 
+                              rows="16" 
+                              placeholder="Model Description: iPhone 15 Pro Max 256GB Natural Titanium&#10;Model: iPhone 15 Pro Max&#10;IMEI: 352049102938475&#10;IMEI2: 352049102938476&#10;Serial Number: F2LDK948H1&#10;Estimated Purchase Date: 2024-01-15&#10;Warranty Status: AppleCare+&#10;iCloud Lock: OFF&#10;Sim-Lock Status: Unlocked..."
+                              hx-post="{% url 'sickw:parser' %}"
+                              hx-target="#parsed-preview-container"
+                              hx-trigger="keyup changed delay:400ms">{{ raw_text }}</textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" name="action" value="save_device" class="btn btn-warning w-100 py-2 fw-bold">
+                        <i class="fa-solid fa-cloud-arrow-up me-2"></i> Save & Import to Inventory
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Live Parsed Preview Container -->
+    <div class="col-lg-6">
+        <div id="parsed-preview-container">
+            {% include 'sickw/partials/parsed_preview.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}

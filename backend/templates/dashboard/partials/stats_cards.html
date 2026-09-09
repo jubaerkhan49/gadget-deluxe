@@ -1,0 +1,118 @@
+<div class="row g-3">
+    <!-- Total Devices -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat border shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">TOTAL DEVICES</span>
+                    <h2 class="fw-bold mb-0 text-primary mt-1">{{ total_devices }}</h2>
+                </div>
+                <div class="p-3 bg-primary bg-opacity-10 rounded-circle text-primary">
+                    <i class="fa-solid fa-boxes-stacked fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- In Stock -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat border shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">IN STOCK</span>
+                    <h2 class="fw-bold mb-0 text-success mt-1">{{ in_stock_count }}</h2>
+                </div>
+                <div class="p-3 bg-success bg-opacity-10 rounded-circle text-success">
+                    <i class="fa-solid fa-warehouse fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sold -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat border shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">SOLD</span>
+                    <h2 class="fw-bold mb-0 text-info mt-1">{{ sold_count }}</h2>
+                </div>
+                <div class="p-3 bg-info bg-opacity-10 rounded-circle text-info">
+                    <i class="fa-solid fa-cart-check fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Under Repair -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat border shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">UNDER REPAIR</span>
+                    <h2 class="fw-bold mb-0 text-warning mt-1">{{ repair_count }}</h2>
+                </div>
+                <div class="p-3 bg-warning bg-opacity-10 rounded-circle text-warning">
+                    <i class="fa-solid fa-screwdriver-wrench fa-2x"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Performance Cards -->
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat border shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">TODAY'S SALES</span>
+                    <h3 class="fw-bold mb-0 text-success mt-1">BDT {{ today_sales }}</h3>
+                </div>
+                <div class="p-3 bg-success bg-opacity-10 rounded-circle text-success">
+                    <i class="fa-solid fa-dollar-sign fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat border shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">TODAY'S PROFIT</span>
+                    <h3 class="fw-bold mb-0 text-primary mt-1">BDT {{ today_profit }}</h3>
+                </div>
+                <div class="p-3 bg-primary bg-opacity-10 rounded-circle text-primary">
+                    <i class="fa-solid fa-chart-line fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat border shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">MONTHLY PROFIT</span>
+                    <h3 class="fw-bold mb-0 text-info mt-1">BDT {{ monthly_profit }}</h3>
+                </div>
+                <div class="p-3 bg-info bg-opacity-10 rounded-circle text-info">
+                    <i class="fa-solid fa-vault fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card card-stat border shadow-sm p-3">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold">TOP SELLER</span>
+                    <h4 class="fw-bold mb-0 text-warning mt-1">{{ top_seller }}</h4>
+                </div>
+                <div class="p-3 bg-warning bg-opacity-10 rounded-circle text-warning">
+                    <i class="fa-solid fa-trophy fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

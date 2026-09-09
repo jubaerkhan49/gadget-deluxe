@@ -1,0 +1,29 @@
+{% load custom_filters %}
+<div class="card border p-4 shadow-sm">
+    <h5 class="fw-bold mb-3"><i class="fa-solid fa-square-poll-vertical text-info me-2"></i>Live Structured Extracted Data</h5>
+    {% if parsed %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle mb-0 small">
+                <thead>
+                    <tr>
+                        <th class="text-muted">Attribute</th>
+                        <th class="text-primary">Extracted Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for key, val in parsed.items %}
+                        <tr>
+                            <td class="fw-semibold text-capitalize">{{ key|replace_underscores }}</td>
+                            <td><code>{{ val }}</code></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="p-5 text-center text-muted">
+            <i class="fa-solid fa-bolt-lightning fa-3x mb-3 d-block text-secondary"></i>
+            Paste raw text on the left to view real-time extracted attributes.
+        </div>
+    {% endif %}
+</div>

@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Gadget Deluxe{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="fw-bold mb-0">Operational Dashboard</h3>
+        <p class="text-muted small mb-0">Real-time inventory status, sales performance & shipment tracking</p>
+    </div>
+    <div>
+        <a href="{% url 'inventory:add' %}" class="btn btn-primary me-2">
+            <i class="fa-solid fa-plus me-1"></i> Add Device
+        </a>
+        <a href="{% url 'sickw:parser' %}" class="btn btn-outline-info">
+            <i class="fa-solid fa-bolt me-1"></i> Sickw Import
+        </a>
+    </div>
+</div>
+
+<!-- Dashboard Stats Cards Grid -->
+<div id="stats-container">
+    {% include 'dashboard/partials/stats_cards.html' %}
+</div>
+
+<!-- Lower Section: Recent Sales & Latest Devices -->
+<div class="row g-4 mt-2">
+    <!-- Recent Sales -->
+    <div class="col-lg-6">
+        <div class="card border shadow-sm rounded-3">
+            <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center py-3">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-receipt text-success me-2"></i>Recent Sales</h5>
+                <a href="{% url 'sales:list' %}" class="btn btn-sm btn-link text-decoration-none">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Invoice</th>
+                                <th>Device / IMEI</th>
+                                <th>Price</th>
+                                <th>Net Profit</th>
+                                <th>Seller</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in recent_sales %}
+                                <tr>
+                                    <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ sale.invoice_number }}</span></td>
+                                    <td>
+                                        <div class="fw-semibold">{{ sale.device.model }}</div>
+                                        <div class="small text-muted">{{ sale.device.imei }}</div>
+                                    </td>
+                                    <td class="fw-bold text-success">BDT {{ sale.selling_price }}</td>
+                                    <td class="fw-bold text-info">BDT {{ sale.profit }}</td>
+                                    <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ sale.seller.username }}</span></td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted py-4">No sales recorded yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recently Added Devices -->
+    <div class="col-lg-6">
+        <div class="card border shadow-sm rounded-3">
+            <div class="card-header bg-transparent border-bottom d-flex justify-content-between align-items-center py-3">
+                <h5 class="fw-bold mb-0"><i class="fa-solid fa-mobile text-primary me-2"></i>Recently Added Devices</h5>
+                <a href="{% url 'inventory:list' %}" class="btn btn-sm btn-link text-decoration-none">View Inventory</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>IMEI</th>
+                                <th>Model</th>
+                                <th>Specs</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for device in recent_devices %}
+                                <tr>
+                                    <td><code class="text-primary copy-imei-btn" onclick="copyText('{{ device.imei }}', this)" title="Click to copy IMEI">{{ device.imei }} <i class="fa-regular fa-copy ms-1 opacity-50" style="font-size: 0.75rem;"></i></code></td>
+                                    <td class="fw-semibold">{{ device.model }}</td>
+                                    <td class="small">
+                                        {% if device.variant %}<span class="badge bg-secondary-subtle text-secondary-emphasis">{{ device.variant }}</span>, {% endif %}
+                                        {% if device.battery_health %}{{ device.battery_health }}% Health{% else %}Health: N/A{% endif %}{% if device.battery_cycle %}, CC {{ device.battery_cycle }}{% endif %}
+                                    </td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if device.current_status == 'IN_STOCK' %}bg-success
+                                            {% elif device.current_status == 'SOLD' %}bg-primary
+                                            {% elif device.current_status == 'UNDER_REPAIR' %}bg-warning text-dark
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ device.get_current_status_display }}
+                                        </span>
+                                        {% if device.current_owner %}
+                                            <div class="small text-muted mt-1" style="font-size: 0.75rem;"><i class="fa-solid fa-user me-1"></i>{{ device.current_owner.username }}</div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'inventory:detail' device.id %}" class="btn btn-sm btn-outline-secondary">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="5" class="text-center text-muted py-4">No devices registered in system.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
