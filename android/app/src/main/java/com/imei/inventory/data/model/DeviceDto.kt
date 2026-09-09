@@ -41,6 +41,8 @@ data class ShipmentDto(
     @SerializedName("supplier_name") val supplierName: String? = null,
     @SerializedName("receive_date") val receiveDate: String? = null,
     @SerializedName("shipping_cost") val shippingCost: String? = null,
+    @SerializedName("discount") val discount: String? = null,
+    @SerializedName("net_shipping_cost") val netShippingCost: String? = null,
     @SerializedName("unit_shipping_cost") val unitShippingCost: String? = null,
     val country: String? = null,
     val notes: String? = null,

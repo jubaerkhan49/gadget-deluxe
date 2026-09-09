@@ -24,6 +24,7 @@ class ShipmentSerializer(serializers.ModelSerializer):
     supplier_name = serializers.SerializerMethodField()
     devices_count = serializers.SerializerMethodField()
     unit_shipping_cost = serializers.SerializerMethodField()
+    net_shipping_cost = serializers.SerializerMethodField()
 
     class Meta:
         model = Shipment
@@ -44,6 +45,13 @@ class ShipmentSerializer(serializers.ModelSerializer):
     def get_unit_shipping_cost(self, obj):
         try:
             val = obj.unit_shipping_cost
+            return str(val) if val is not None else "0.00"
+        except Exception:
+            return "0.00"
+
+    def get_net_shipping_cost(self, obj):
+        try:
+            val = obj.net_shipping_cost
             return str(val) if val is not None else "0.00"
         except Exception:
             return "0.00"

@@ -23,7 +23,8 @@ class Shipment(TimeStampedModel):
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT, related_name='shipments')
     shipping_company = models.CharField(max_length=100, blank=True, null=True)
     receive_date = models.DateField(blank=True, null=True)
-    shipping_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    shipping_cost = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Gross total shipping cost in BDT")
+    discount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00, help_text="Cashback or discount from shipping agent in BDT")
     country = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
 
@@ -38,9 +39,17 @@ class Shipment(TimeStampedModel):
         return self.devices.count()
 
     @property
+    def net_shipping_cost(self):
+        from decimal import Decimal
+        gross = Decimal(str(self.shipping_cost or '0.00'))
+        disc = Decimal(str(self.discount or '0.00'))
+        return max(gross - disc, Decimal('0.00'))
+
+    @property
     def unit_shipping_cost(self):
+        from decimal import Decimal
         count = self.total_devices_count
-        if count > 0 and self.shipping_cost:
-            from decimal import Decimal
-            return (self.shipping_cost / count).quantize(Decimal('0.01'))
-        return self.shipping_cost or 0.00
+        if count > 0:
+            return (self.net_shipping_cost / Decimal(str(count))).quantize(Decimal('0.01'))
+        return self.net_shipping_cost
+

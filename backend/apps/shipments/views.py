@@ -29,7 +29,7 @@ class ShipmentListView(LoginRequiredMixin, View):
 
         item_price = Decimal(request.POST.get('item_price', '0.00') or '0.00')
         shipment_fees = Decimal(request.POST.get('shipment_fees', '0.00') or '0.00')
-        total_buying_price = item_price + shipment_fees
+        discount = Decimal(request.POST.get('discount', '0.00') or '0.00')
 
         if not tracking_number:
             messages.error(request, "Tracking Number is required.")
@@ -48,11 +48,14 @@ class ShipmentListView(LoginRequiredMixin, View):
             shipment = Shipment.objects.create(
                 tracking_number=tracking_number,
                 supplier=supplier,
-                shipping_cost=Decimal('0.00')
+                shipping_cost=Decimal('0.00'),
+                discount=discount
             )
         else:
             if supplier_name:
                 shipment.supplier = supplier
+            if discount > 0:
+                shipment.discount = discount
             shipment.save()
 
         # Process product entry if product_name or product_identifier provided
@@ -62,10 +65,17 @@ class ShipmentListView(LoginRequiredMixin, View):
         created_count = 0
         updated_count = 0
 
+        raw_identifiers = []
         if product_name or product_identifier:
             raw_identifiers = [i.strip() for i in re.split(r'[\r\n,\s]+', product_identifier) if i.strip()]
             if not raw_identifiers and product_name:
                 raw_identifiers = ['']
+
+            total_units = len(raw_identifiers) if raw_identifiers else 1
+            gross_shipping = shipment_fees * total_units
+            net_shipping = max(gross_shipping - discount, Decimal('0.00'))
+            effective_unit_shipping = (net_shipping / Decimal(str(total_units))).quantize(Decimal('0.01')) if total_units > 0 else Decimal('0.00')
+            total_buying_price = item_price + effective_unit_shipping
 
             for identifier in raw_identifiers:
                 if not identifier and not product_name:
@@ -99,7 +109,7 @@ class ShipmentListView(LoginRequiredMixin, View):
                         device=device,
                         user=request.user,
                         action_type='UPDATE',
-                        new_state=f"Device updated via Shipment #{tracking_number} (Price: BDT {total_buying_price})"
+                        new_state=f"Device updated via Shipment #{tracking_number} (Cost: BDT {total_buying_price})"
                     )
                     updated_count += 1
                 else:
@@ -135,7 +145,7 @@ class ShipmentListView(LoginRequiredMixin, View):
                         device=new_device,
                         user=request.user,
                         action_type='CREATION',
-                        new_state=f"Device registered via Shipment #{tracking_number} (Price: BDT {total_buying_price})"
+                        new_state=f"Device registered via Shipment #{tracking_number} (Cost: BDT {total_buying_price})"
                     )
                     created_count += 1
 
@@ -145,11 +155,12 @@ class ShipmentListView(LoginRequiredMixin, View):
         if shipment_fees > 0:
             dev_count = shipment.devices.count()
             shipment.shipping_cost = shipment_fees * max(dev_count, 1)
-            shipment.save(update_fields=['shipping_cost'])
+            shipment.discount = discount
+            shipment.save(update_fields=['shipping_cost', 'discount'])
 
         if total_processed > 0:
-            total_bill = shipment.shipping_cost
-            messages.success(request, f"Shipment #{tracking_number} saved. Registered/updated {total_processed} device(s). Total Shipment Bill: BDT {total_bill} (BDT {shipment_fees}/unit).")
+            net_bill = shipment.net_shipping_cost
+            messages.success(request, f"Shipment #{tracking_number} saved ({total_processed} items). Net Shipment Bill: BDT {net_bill} (Discount/Cashback: BDT {discount}).")
         else:
             messages.success(request, f"Shipment #{tracking_number} saved successfully.")
 
@@ -164,11 +175,11 @@ class ShipmentUpdateView(LoginRequiredMixin, View):
         supplier_name = request.POST.get('supplier_name', '').strip()
         shipping_company = request.POST.get('shipping_company', '').strip()
         receive_date = request.POST.get('receive_date', '').strip()
-        country = request.POST.get('country', '').strip()
         notes = request.POST.get('notes', '').strip()
 
-        shipping_cost_raw = request.POST.get('shipping_cost', '').strip()
         fee_per_unit_raw = request.POST.get('fee_per_unit', '').strip()
+        discount_raw = request.POST.get('discount', '').strip()
+        shipping_cost_raw = request.POST.get('shipping_cost', '').strip()
 
         if tracking_number:
             shipment.tracking_number = tracking_number
@@ -179,10 +190,20 @@ class ShipmentUpdateView(LoginRequiredMixin, View):
 
         shipment.shipping_company = shipping_company or None
         shipment.receive_date = receive_date if receive_date else None
-        shipment.country = country or None
         shipment.notes = notes or None
 
         dev_count = shipment.devices.count()
+
+        # Update Discount/Cashback
+        if discount_raw:
+            try:
+                shipment.discount = Decimal(discount_raw)
+            except Exception:
+                pass
+        else:
+            shipment.discount = Decimal('0.00')
+
+        # Update Gross shipping cost
         if fee_per_unit_raw:
             try:
                 fee_per_unit = Decimal(fee_per_unit_raw)
@@ -196,7 +217,7 @@ class ShipmentUpdateView(LoginRequiredMixin, View):
                 pass
 
         shipment.save()
-        messages.success(request, f"Shipment #{shipment.tracking_number} updated successfully.")
+        messages.success(request, f"Shipment #{shipment.tracking_number} updated. Net Bill: BDT {shipment.net_shipping_cost} (Gross: BDT {shipment.shipping_cost}, Cashback: BDT {shipment.discount}).")
         return redirect('shipments:list')
 
 

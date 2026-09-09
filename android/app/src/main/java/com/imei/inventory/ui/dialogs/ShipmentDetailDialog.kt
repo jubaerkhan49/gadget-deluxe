@@ -69,9 +69,11 @@ fun ShipmentDetailDialog(
             ) {
                 // Shipment Metadata
                 val count = if (devicesInShipment.isNotEmpty()) devicesInShipment.size else shipment.devicesCount
-                val totalShipCost = shipment.shippingCost?.toDoubleOrNull() ?: 0.0
+                val totalGrossCost = shipment.shippingCost?.toDoubleOrNull() ?: 0.0
+                val discountAmount = shipment.discount?.toDoubleOrNull() ?: 0.0
+                val netCost = shipment.netShippingCost?.toDoubleOrNull() ?: maxOf(totalGrossCost - discountAmount, 0.0)
                 val unitFee = shipment.unitShippingCost?.toDoubleOrNull() 
-                    ?: if (count > 0 && totalShipCost > 0) (totalShipCost / count) else 0.0
+                    ?: if (count > 0 && netCost > 0) (netCost / count) else 0.0
                 val totalBatchCost = devicesInShipment.sumOf { it.buyingPrice ?: 0.0 }
 
                 Column(
@@ -86,14 +88,20 @@ fun ShipmentDetailDialog(
                         Text(shipment.supplierName ?: "Unknown", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
 
-                    if (totalShipCost > 0 || unitFee > 0) {
+                    if (netCost > 0 || totalGrossCost > 0) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Shipment Bill:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                            Text("BDT ${String.format("%.2f", totalShipCost)}", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("Net Shipment Bill:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text("BDT ${String.format("%.2f", netCost)}", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                        if (discountAmount > 0) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text("Agent Cashback:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                                Text("- BDT ${String.format("%.2f", discountAmount)}", color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            }
                         }
                         if (count > 0 && unitFee > 0) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Shipment Fee / Unit:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                                Text("Net Freight / Unit:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                                 Text("BDT ${String.format("%.2f", unitFee)} × $count units", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                             }
                         }

@@ -49,9 +49,12 @@
                     </td>
                     <td>{{ shipment.shipping_company|default:'Standard Freight' }}</td>
                     <td>
-                        <div class="fw-semibold text-warning-emphasis">BDT {{ shipment.shipping_cost }}</div>
-                        {% if shipment.total_devices_count > 0 %}
+                        <div class="fw-bold text-warning-emphasis">BDT {{ shipment.net_shipping_cost }}</div>
                         <div class="small text-muted">BDT {{ shipment.unit_shipping_cost }} / unit</div>
+                        {% if shipment.discount > 0 %}
+                        <span class="badge bg-success-subtle text-success mt-1">
+                            <i class="fa-solid fa-tag me-1"></i>Cashback: BDT {{ shipment.discount }}
+                        </span>
                         {% endif %}
                     </td>
                     <td>{{ shipment.receive_date|date:"Y-m-d"|default:'In Transit' }}</td>
@@ -114,28 +117,34 @@
                             <label class="form-label fw-semibold">Receive Date</label>
                             <input type="date" name="receive_date" class="form-control" value="{{ shipment.receive_date|date:'Y-m-d'|default:'' }}">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Shipment Fee (BDT / unit)</label>
                             <div class="input-group">
                                 <span class="input-group-text fw-bold">BDT</span>
-                                <input type="number" step="0.01" min="0" name="fee_per_unit" class="form-control" value="{{ shipment.unit_shipping_cost }}" placeholder="Fee per unit">
-                            </div>
-                            <div class="small text-muted mt-1">
-                                Updating this recalculates the total bill for {{ shipment.total_devices_count }} units.
+                                <input type="number" step="0.01" min="0" name="fee_per_unit" id="edit_fee_{{ shipment.id }}"
+                                    class="form-control edit-fee-input" data-id="{{ shipment.id }}" data-count="{{ shipment.total_devices_count }}"
+                                    value="{{ shipment.unit_shipping_cost }}" placeholder="Fee per unit">
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Total Shipment Bill (BDT)</label>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-success">Agent Cashback / Discount (BDT)</label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold bg-success-subtle text-success">BDT</span>
+                                <input type="number" step="0.01" min="0" name="discount" id="edit_discount_{{ shipment.id }}"
+                                    class="form-control edit-discount-input" data-id="{{ shipment.id }}" data-count="{{ shipment.total_devices_count }}"
+                                    value="{{ shipment.discount }}" placeholder="Cashback">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Net Total Shipment Bill (BDT)</label>
                             <div class="input-group">
                                 <span class="input-group-text fw-bold">BDT</span>
-                                <input type="number" step="0.01" min="0" name="shipping_cost" class="form-control" value="{{ shipment.shipping_cost }}">
+                                <input type="number" step="0.01" min="0" name="shipping_cost" id="edit_bill_{{ shipment.id }}"
+                                    class="form-control edit-bill-input" data-id="{{ shipment.id }}"
+                                    value="{{ shipment.net_shipping_cost }}">
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-semibold">Source Country</label>
-                            <input type="text" name="country" class="form-control" value="{{ shipment.country|default:'' }}" placeholder="e.g. China, USA, Japan">
-                        </div>
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label class="form-label fw-semibold">Notes</label>
                             <input type="text" name="notes" class="form-control" value="{{ shipment.notes|default:'' }}" placeholder="Optional shipment notes...">
                         </div>
@@ -386,7 +395,7 @@
                             <textarea name="product_identifier" id="product_identifier_textarea" class="form-control font-monospace" rows="3"
                                 placeholder="Paste IMEIs (one per line or comma-separated) e.g.&#10;354379777740382&#10;359897657236655&#10;355430971672464"></textarea>
                             <div class="small text-muted mt-1">
-                                <i class="fa-solid fa-circle-info me-1"></i> Each IMEI pasted will be created as a separate device with the above specs, unit price, and shipment fee.
+                                <i class="fa-solid fa-circle-info me-1"></i> Each IMEI pasted will be created as a separate device with the above specs, unit price, and net shipment fee.
                             </div>
                         </div>
 
@@ -396,7 +405,7 @@
                             </h6>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Item Unit Price (BDT)</label>
                             <div class="input-group">
                                 <span class="input-group-text fw-bold">BDT</span>
@@ -404,7 +413,7 @@
                                     value="0.00" placeholder="Base price per unit">
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Shipment Fee (BDT / unit)</label>
                             <div class="input-group">
                                 <span class="input-group-text fw-bold">BDT</span>
@@ -412,13 +421,22 @@
                                     class="form-control" value="0.00" placeholder="Freight fee per unit">
                             </div>
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold text-success">Agent Cashback / Discount (BDT)</label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold bg-success-subtle text-success">BDT</span>
+                                <input type="number" step="0.01" min="0" name="discount" id="shipment_discount"
+                                    class="form-control" value="0.00" placeholder="Cashback discount">
+                            </div>
+                        </div>
+
                         <div class="col-md-12">
                             <div class="p-3 bg-body-tertiary border rounded">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div>
                                         <i class="fa-solid fa-calculator me-1 text-primary"></i>
                                         <strong>Total Buying Price per Unit:</strong>
-                                        <span class="text-muted small ms-1">(Item Unit Price + Shipment Fee)</span>
+                                        <span class="text-muted small ms-1">(Base Item Price + Net Freight Fee/Unit)</span>
                                     </div>
                                     <div>
                                         <span class="badge bg-primary fs-6 px-3 py-1" id="calc_total_display">BDT 0.00</span>
@@ -426,9 +444,9 @@
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center pt-2 border-top small">
                                     <span class="text-muted">
-                                        <i class="fa-solid fa-boxes-stacked me-1"></i> Total Shipment Bill (<span id="calc_units_count">0</span> items × <span id="calc_unit_fee">BDT 0.00</span>):
+                                        <i class="fa-solid fa-boxes-stacked me-1"></i> Net Shipment Bill (<span id="calc_units_count">0</span> items × <span id="calc_unit_fee">BDT 0.00</span> - <span id="calc_discount_display" class="text-success fw-semibold">Cashback: BDT 0.00</span>):
                                     </span>
-                                    <strong class="text-warning-emphasis" id="calc_total_shipment_bill">BDT 0.00</strong>
+                                    <strong class="text-warning-emphasis fs-6" id="calc_total_shipment_bill">BDT 0.00</strong>
                                 </div>
                             </div>
                         </div>
@@ -452,7 +470,8 @@ document.addEventListener('DOMContentLoaded', function() {
         "{{ s.tracking_number|escapejs }}": {
             supplier: "{{ s.supplier.name|escapejs }}",
             cost: "{{ s.shipping_cost }}",
-            unitCost: "{{ s.unit_shipping_cost }}"
+            unitCost: "{{ s.unit_shipping_cost }}",
+            discount: "{{ s.discount }}"
         },
         {% endfor %}
     };
@@ -460,12 +479,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const trackingInput = document.getElementById('tracking_number_input');
     const supplierInput = document.getElementById('supplier_name_input');
     const feesInput = document.getElementById('shipment_fees');
+    const discountInput = document.getElementById('shipment_discount');
     const itemPriceInput = document.getElementById('item_price');
     const imeiTextarea = document.getElementById('product_identifier_textarea');
     const matchInfo = document.getElementById('shipment_match_info');
     const calcTotalDisplay = document.getElementById('calc_total_display');
     const calcUnitsCount = document.getElementById('calc_units_count');
     const calcUnitFee = document.getElementById('calc_unit_fee');
+    const calcDiscountDisplay = document.getElementById('calc_discount_display');
     const calcTotalShipmentBill = document.getElementById('calc_total_shipment_bill');
 
     function countIMEIs() {
@@ -479,12 +500,16 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateTotalBuyingPrice() {
         const itemP = parseFloat(itemPriceInput ? itemPriceInput.value : 0) || 0;
         const feesP = parseFloat(feesInput ? feesInput.value : 0) || 0;
-        const total = itemP + feesP;
+        const discP = parseFloat(discountInput ? discountInput.value : 0) || 0;
         const count = countIMEIs();
-        const totalShipmentCost = feesP * count;
+
+        const grossFreight = feesP * count;
+        const netFreight = Math.max(grossFreight - discP, 0);
+        const effectiveUnitFee = count > 0 ? (netFreight / count) : 0;
+        const totalUnitBuying = itemP + effectiveUnitFee;
 
         if (calcTotalDisplay) {
-            calcTotalDisplay.textContent = 'BDT ' + total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            calcTotalDisplay.textContent = 'BDT ' + totalUnitBuying.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
         if (calcUnitsCount) {
             calcUnitsCount.textContent = count;
@@ -492,39 +517,34 @@ document.addEventListener('DOMContentLoaded', function() {
         if (calcUnitFee) {
             calcUnitFee.textContent = 'BDT ' + feesP.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
+        if (calcDiscountDisplay) {
+            calcDiscountDisplay.textContent = 'Cashback: BDT ' + discP.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
         if (calcTotalShipmentBill) {
-            calcTotalShipmentBill.textContent = 'BDT ' + totalShipmentCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            calcTotalShipmentBill.textContent = 'BDT ' + netFreight.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
     }
 
-    if (itemPriceInput) {
-        itemPriceInput.addEventListener('input', updateTotalBuyingPrice);
-    }
-    if (feesInput) {
-        feesInput.addEventListener('input', updateTotalBuyingPrice);
-    }
-    if (imeiTextarea) {
-        imeiTextarea.addEventListener('input', updateTotalBuyingPrice);
-    }
+    if (itemPriceInput) itemPriceInput.addEventListener('input', updateTotalBuyingPrice);
+    if (feesInput) feesInput.addEventListener('input', updateTotalBuyingPrice);
+    if (discountInput) discountInput.addEventListener('input', updateTotalBuyingPrice);
+    if (imeiTextarea) imeiTextarea.addEventListener('input', updateTotalBuyingPrice);
 
     if (trackingInput) {
         function checkTracking() {
             const val = trackingInput.value.trim();
             if (val && existingShipments[val]) {
                 const data = existingShipments[val];
-                if (data.supplier && supplierInput) {
-                    supplierInput.value = data.supplier;
-                }
-                if (data.unitCost && feesInput && (feesInput.value === '0.00' || feesInput.value === '0' || !feesInput.value)) {
+                if (data.supplier && supplierInput) supplierInput.value = data.supplier;
+                if (data.unitCost && feesInput && (!feesInput.value || feesInput.value === '0.00' || feesInput.value === '0')) {
                     feesInput.value = data.unitCost;
                 }
-                if (matchInfo) {
-                    matchInfo.classList.remove('d-none');
+                if (data.discount && discountInput && (!discountInput.value || discountInput.value === '0.00' || discountInput.value === '0')) {
+                    discountInput.value = data.discount;
                 }
+                if (matchInfo) matchInfo.classList.remove('d-none');
             } else {
-                if (matchInfo) {
-                    matchInfo.classList.add('d-none');
-                }
+                if (matchInfo) matchInfo.classList.add('d-none');
             }
             updateTotalBuyingPrice();
         }
@@ -532,6 +552,24 @@ document.addEventListener('DOMContentLoaded', function() {
         trackingInput.addEventListener('input', checkTracking);
         trackingInput.addEventListener('change', checkTracking);
     }
+
+    // Live calculation for all Edit Modals
+    document.querySelectorAll('.edit-fee-input, .edit-discount-input').forEach(input => {
+        input.addEventListener('input', function() {
+            const id = this.getAttribute('data-id');
+            const count = parseFloat(this.getAttribute('data-count')) || 1;
+            const feeInput = document.getElementById('edit_fee_' + id);
+            const discountInput = document.getElementById('edit_discount_' + id);
+            const billInput = document.getElementById('edit_bill_' + id);
+
+            if (feeInput && billInput) {
+                const f = parseFloat(feeInput.value) || 0;
+                const d = parseFloat(discountInput ? discountInput.value : 0) || 0;
+                const net = Math.max((f * count) - d, 0);
+                billInput.value = net.toFixed(2);
+            }
+        });
+    });
 
     updateTotalBuyingPrice();
 });
