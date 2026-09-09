@@ -88,6 +88,12 @@ fun DeviceDetailDialog(
                         fontWeight = FontWeight.Bold
                     )
                 }
+                device.batteryCycle?.let { cycle ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Battery Cycle Count:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                        Text("$cycle Cycles", color = Color(0xFF16A34A), fontWeight = FontWeight.Bold)
+                    }
+                }
                 device.buyingPrice?.let { price ->
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Buying Price:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)

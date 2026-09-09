@@ -21,6 +21,7 @@ data class DeviceDto(
     val color: String? = null,
     val variant: String? = null,
     @SerializedName("battery_health") val batteryHealth: Int? = null,
+    @SerializedName("battery_cycle") val batteryCycle: Int? = null,
     @SerializedName("current_status") val currentStatus: String = "IN_STOCK",
     @SerializedName("status_display") val statusDisplay: String? = null,
     @SerializedName("buying_price") val buyingPrice: Double? = null,

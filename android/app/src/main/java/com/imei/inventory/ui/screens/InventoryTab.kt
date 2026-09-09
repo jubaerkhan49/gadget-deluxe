@@ -55,13 +55,12 @@ fun InventoryTab(
         "Bypass" to "Bypass"
     )
 
-    // Distinct owners extracted dynamically
+    // Distinct owners extracted dynamically (only active owner names)
     val ownerOptions = remember(devices) {
-        val owners = devices.mapNotNull { it.currentOwnerName?.trim() }
+        devices.mapNotNull { it.currentOwnerName?.trim() }
             .filter { it.isNotBlank() }
             .distinct()
             .sorted()
-        listOf(null to "All Owners", "unassigned" to "Unassigned") + owners.map { it to it }
     }
 
     // Filter devices in-memory for instant responsive search + multi-filter matching
@@ -69,11 +68,7 @@ fun InventoryTab(
         devices.filter { dev ->
             val matchesStatus = selectedStatusFilter == null || dev.currentStatus.equals(selectedStatusFilter, ignoreCase = true)
             val matchesVariant = selectedVariantFilter == null || dev.variant?.equals(selectedVariantFilter, ignoreCase = true) == true
-            val matchesOwner = when (selectedOwnerFilter) {
-                null -> true
-                "unassigned" -> dev.currentOwnerName.isNullOrBlank()
-                else -> dev.currentOwnerName?.equals(selectedOwnerFilter, ignoreCase = true) == true
-            }
+            val matchesOwner = selectedOwnerFilter == null || dev.currentOwnerName?.equals(selectedOwnerFilter, ignoreCase = true) == true
             val matchesQuery = searchQuery.isBlank() ||
                     dev.model.contains(searchQuery, ignoreCase = true) ||
                     dev.imei.contains(searchQuery, ignoreCase = true) ||
@@ -174,14 +169,14 @@ fun InventoryTab(
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 // Owner Filters
-                ownerOptions.forEach { (ownerKey, label) ->
-                    val isSelected = selectedOwnerFilter == ownerKey
+                ownerOptions.forEach { ownerName ->
+                    val isSelected = selectedOwnerFilter == ownerName
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedOwnerFilter = if (isSelected) null else ownerKey },
+                        onClick = { selectedOwnerFilter = if (isSelected) null else ownerName },
                         label = {
                             Text(
-                                text = if (ownerKey == null) label else "👤 $label",
+                                text = "👤 $ownerName",
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
@@ -325,7 +320,7 @@ fun CompactDeviceCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Row 2: IMEI + Storage + Battery Health
+            // Row 2: IMEI + Storage + Battery Health & Cycle Count
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -337,8 +332,16 @@ fun CompactDeviceCard(
                     device.capacity?.let {
                         Text(it, color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
-                    device.batteryHealth?.let {
-                        Text("🔋 $it%", color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                    if (device.batteryHealth != null || device.batteryCycle != null) {
+                        val batteryText = buildString {
+                            append("🔋 ")
+                            if (device.batteryHealth != null) append("${device.batteryHealth}%")
+                            if (device.batteryCycle != null) {
+                                if (device.batteryHealth != null) append(" • ")
+                                append("${device.batteryCycle}c")
+                            }
+                        }
+                        Text(batteryText, color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.Medium)
                     }
                 }
             }
