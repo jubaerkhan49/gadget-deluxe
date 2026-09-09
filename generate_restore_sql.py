@@ -60,6 +60,9 @@ output.append("""
 ALTER TABLE accounts_user ALTER COLUMN phone DROP NOT NULL;
 ALTER TABLE accounts_user ALTER COLUMN employee_code DROP NOT NULL;
 ALTER TABLE accounts_user ALTER COLUMN notes DROP NOT NULL;
+
+-- Clean existing placeholder accounts to preserve exact original IDs (1=jubaer, 2=ashraf, 3=emon, 4=ochi)
+DELETE FROM accounts_user WHERE username IN ('jubaer', 'ashraf', 'emon', 'ochi');
 """)
 
 # Order of tables for foreign key constraints:
@@ -87,4 +90,4 @@ WHERE username = 'jubaer';
 with open('restore_data.sql', 'w', encoding='utf-8') as f:
     f.write("\n".join(output))
 
-print("Successfully regenerated restore_data.sql with NOT NULL drop and empty string fallback")
+print("Successfully generated clean restore_data.sql with DELETE fallback")
