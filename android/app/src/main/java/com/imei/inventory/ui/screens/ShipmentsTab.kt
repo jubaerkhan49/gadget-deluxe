@@ -22,7 +22,8 @@ import com.imei.inventory.viewmodel.MainInventoryViewModel
 fun ShipmentsTab(
     token: String,
     viewModel: MainInventoryViewModel,
-    onSelectShipment: (ShipmentDto) -> Unit
+    onSelectShipment: (ShipmentDto) -> Unit,
+    onOpenAddShipment: () -> Unit
 ) {
     val shipments by viewModel.shipments.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -31,45 +32,61 @@ fun ShipmentsTab(
         viewModel.fetchShipments(token)
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Column {
-            Text(
-                text = "Inbound Shipments",
-                color = MaterialTheme.colorScheme.onBackground,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = "Tap any shipment card to view & update devices",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 13.sp
-            )
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        if (isLoading && shipments.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+    Scaffold(
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = onOpenAddShipment,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.size(52.dp)
+            ) {
+                Text("+", fontSize = 26.sp, fontWeight = FontWeight.Bold)
             }
-        } else if (shipments.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Column {
                 Text(
-                    text = "No shipment batches registered in cloud",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Inbound Shipments",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "Tap any shipment card to view & update devices",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 13.sp
                 )
             }
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(shipments) { shipment ->
-                    ShipmentCard(
-                        shipment = shipment,
-                        onClick = { onSelectShipment(shipment) }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            if (isLoading && shipments.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            } else if (shipments.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "No shipment batches registered in cloud",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(shipments) { shipment ->
+                        ShipmentCard(
+                            shipment = shipment,
+                            onClick = { onSelectShipment(shipment) }
+                        )
+                    }
                 }
             }
         }
@@ -81,9 +98,12 @@ fun ShipmentCard(
     shipment: ShipmentDto,
     onClick: () -> Unit
 ) {
-    val netBill = shipment.netShippingCost ?: shipment.shippingCost ?: "0.00"
-    val unitCost = shipment.unitShippingCost
     val count = shipment.devicesCount
+    val totalGrossCost = shipment.shippingCost?.toDoubleOrNull() ?: 0.0
+    val discountAmount = shipment.discount?.toDoubleOrNull() ?: 0.0
+    val netCost = shipment.netShippingCost?.toDoubleOrNull() ?: maxOf(totalGrossCost - discountAmount, 0.0)
+    val unitFee = shipment.unitShippingCost?.toDoubleOrNull() 
+        ?: if (count > 0 && netCost > 0) (netCost / count) else 0.0
 
     Card(
         modifier = Modifier
@@ -161,27 +181,27 @@ fun ShipmentCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 4. Bill (Clean distinct row under Supplier)
+            // 4. Shipment Bill (Clean distinct row under Supplier matching Detail Dialog exactly)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFFD97706).copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                    .padding(horizontal = 10.dp, vertical = 7.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Bill:", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Text("Shipment Bill:", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "BDT $netBill",
+                        text = "BDT ${String.format("%.2f", netCost)}",
                         color = Color(0xFFD97706),
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    if (!unitCost.isNullOrBlank() && count > 0) {
+                    if (count > 0 && unitFee > 0) {
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "(BDT $unitCost/u)",
+                            text = "(BDT ${String.format("%.2f", unitFee)} × $count)",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp
                         )

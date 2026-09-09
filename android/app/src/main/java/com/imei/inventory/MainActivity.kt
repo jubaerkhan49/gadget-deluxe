@@ -292,7 +292,8 @@ class MainActivity : ComponentActivity() {
                                     2 -> ShipmentsTab(
                                         token = token,
                                         viewModel = mainViewModel,
-                                        onSelectShipment = { shipment -> selectedShipmentForDetail = shipment }
+                                        onSelectShipment = { shipment -> selectedShipmentForDetail = shipment },
+                                        onOpenAddShipment = { showAddShipmentDialog = true }
                                     )
                                     3 -> SalesTab(
                                         token = token,
