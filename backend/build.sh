@@ -11,14 +11,21 @@ python manage.py collectstatic --no-input
 # Apply database migrations
 python manage.py migrate --fake-initial
 
-# Ensure default admin user exists in fresh database
+# Ensure default admin user exists and password is set to 787898
 python -c "
 import os, django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 from django.contrib.auth import get_user_model
 User = get_user_model()
-if not User.objects.filter(is_superuser=True).exists():
-    User.objects.create_superuser('jubaer', 'jubaer@gadgetdeluxe.com', 'admin123', role='ADMIN')
-    print('Default superuser jubaer created')
+u, created = User.objects.get_or_create(
+    username='jubaer',
+    defaults={'email': 'jubaer@gadgetdeluxe.com', 'role': 'ADMIN', 'is_staff': True, 'is_superuser': True}
+)
+u.set_password('787898')
+u.is_staff = True
+u.is_superuser = True
+u.role = 'ADMIN'
+u.save()
+print('User jubaer configured with requested credentials')
 " || true

@@ -299,3 +299,30 @@ INSERT INTO django_migrations (app, name, applied) VALUES
     ('repairs', '0001_initial', NOW()),
     ('sickw', '0001_initial', NOW())
 ON CONFLICT DO NOTHING;
+
+-- ==============================================================================
+-- 11. DEFAULT ADMIN USER CREDENTIALS (USERNAME: jubaer / PASSWORD: requested)
+-- ==============================================================================
+INSERT INTO accounts_user (
+    username, password, first_name, last_name, email, is_staff, is_active, is_superuser, role, phone, employee_code, notes, date_joined
+) VALUES (
+    'jubaer',
+    'pbkdf2_sha256$1500000$8PgcRq8pxdNMtqYYy4R3Xf$TWRvTnYqwUFtabgI7DR0BQSJRrCjfm89iZKH/uLZrko=',
+    'Jubaer',
+    'Admin',
+    'jubaer@gadgetdeluxe.com',
+    TRUE,
+    TRUE,
+    TRUE,
+    'ADMIN',
+    '',
+    '',
+    '',
+    NOW()
+)
+ON CONFLICT (username) DO UPDATE SET
+    password = EXCLUDED.password,
+    is_staff = TRUE,
+    is_superuser = TRUE,
+    role = 'ADMIN',
+    is_active = TRUE;
