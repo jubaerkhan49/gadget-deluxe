@@ -10,6 +10,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,8 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
+import com.imei.inventory.data.model.ShipmentDto
 import com.imei.inventory.ui.dialogs.AddDeviceDialog
 import com.imei.inventory.ui.dialogs.DeviceDetailDialog
+import com.imei.inventory.ui.dialogs.ShipmentDetailDialog
 import com.imei.inventory.ui.screens.*
 import com.imei.inventory.ui.theme.AppTheme
 import com.imei.inventory.viewmodel.AuthViewModel
@@ -44,9 +51,11 @@ class MainActivity : ComponentActivity() {
                     var userToken by remember { mutableStateOf<String?>(null) }
                     var selectedTab by remember { mutableStateOf(0) }
                     var selectedDeviceForDetail by remember { mutableStateOf<DeviceDto?>(null) }
+                    var selectedShipmentForDetail by remember { mutableStateOf<ShipmentDto?>(null) }
                     var showAddDeviceDialog by remember { mutableStateOf(false) }
 
                     val isLoading by mainViewModel.isLoading.collectAsState()
+                    val devices by mainViewModel.devices.collectAsState()
 
                     // Rotation animation for sync button
                     val infiniteTransition = rememberInfiniteTransition(label = "sync_spin")
@@ -82,7 +91,12 @@ class MainActivity : ComponentActivity() {
                                                 modifier = Modifier.size(34.dp)
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
-                                                    Text("📱", fontSize = 18.sp)
+                                                    Icon(
+                                                        imageVector = Icons.Default.PhoneAndroid,
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(20.dp)
+                                                    )
                                                 }
                                             }
                                             Spacer(modifier = Modifier.width(10.dp))
@@ -141,7 +155,7 @@ class MainActivity : ComponentActivity() {
                                     tonalElevation = 6.dp
                                 ) {
                                     NavigationBarItem(
-                                        icon = { Text("📊", fontSize = 18.sp) },
+                                        icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard", modifier = Modifier.size(22.dp)) },
                                         label = { Text("Dashboard", fontSize = 10.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
                                         selected = selectedTab == 0,
                                         onClick = { selectedTab = 0 },
@@ -154,7 +168,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     )
                                     NavigationBarItem(
-                                        icon = { Text("📱", fontSize = 18.sp) },
+                                        icon = { Icon(Icons.Default.PhoneAndroid, contentDescription = "Inventory", modifier = Modifier.size(22.dp)) },
                                         label = { Text("Inventory", fontSize = 10.sp, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
                                         selected = selectedTab == 1,
                                         onClick = { selectedTab = 1 },
@@ -167,7 +181,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     )
                                     NavigationBarItem(
-                                        icon = { Text("🚚", fontSize = 18.sp) },
+                                        icon = { Icon(Icons.Default.LocalShipping, contentDescription = "Shipments", modifier = Modifier.size(22.dp)) },
                                         label = { Text("Shipments", fontSize = 10.sp, fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
                                         selected = selectedTab == 2,
                                         onClick = { selectedTab = 2 },
@@ -180,7 +194,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     )
                                     NavigationBarItem(
-                                        icon = { Text("💵", fontSize = 18.sp) },
+                                        icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "Sales", modifier = Modifier.size(22.dp)) },
                                         label = { Text("Sales", fontSize = 10.sp, fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
                                         selected = selectedTab == 3,
                                         onClick = { selectedTab = 3 },
@@ -193,7 +207,7 @@ class MainActivity : ComponentActivity() {
                                         )
                                     )
                                     NavigationBarItem(
-                                        icon = { Text("⚡", fontSize = 18.sp) },
+                                        icon = { Icon(Icons.Default.Bolt, contentDescription = "Sickw", modifier = Modifier.size(22.dp)) },
                                         label = { Text("Sickw", fontSize = 10.sp, fontWeight = if (selectedTab == 4) FontWeight.Bold else FontWeight.Normal) },
                                         selected = selectedTab == 4,
                                         onClick = { selectedTab = 4 },
@@ -231,7 +245,8 @@ class MainActivity : ComponentActivity() {
                                     )
                                     2 -> ShipmentsTab(
                                         token = token,
-                                        viewModel = mainViewModel
+                                        viewModel = mainViewModel,
+                                        onSelectShipment = { shipment -> selectedShipmentForDetail = shipment }
                                     )
                                     3 -> SalesTab(
                                         token = token,
@@ -259,6 +274,32 @@ class MainActivity : ComponentActivity() {
                                         onSuccess = { showAddDeviceDialog = false },
                                         onError = { /* show error */ }
                                     )
+                                }
+                            )
+                        }
+
+                        // Shipment Detail & Device Status Edit Modal
+                        selectedShipmentForDetail?.let { shipment ->
+                            val devicesInShipment = devices.filter { it.currentShipment == shipment.id }
+                            ShipmentDetailDialog(
+                                shipment = shipment,
+                                devicesInShipment = devicesInShipment,
+                                onDismiss = { selectedShipmentForDetail = null },
+                                onUpdateDeviceStatus = { devId, newStatus ->
+                                    mainViewModel.updateDevice(
+                                        token = token,
+                                        deviceId = devId,
+                                        updates = mapOf("current_status" to newStatus)
+                                    )
+                                },
+                                onReceiveAllToInStock = {
+                                    devicesInShipment.forEach { dev ->
+                                        mainViewModel.updateDevice(
+                                            token = token,
+                                            deviceId = dev.id,
+                                            updates = mapOf("current_status" to "IN_STOCK")
+                                        )
+                                    }
                                 }
                             )
                         }

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.65"
+        android:scaleY="0.65"
+        android:translateX="18.9"
+        android:translateY="18.9">
+        <!-- Smartphone Outer Body -->
+        <path
+            android:fillColor="#6366F1"
+            android:pathData="M34,14 C27.373,14 22,19.373 22,26 L22,82 C22,88.627 27.373,94 34,94 L74,94 C80.627,94 86,88.627 86,82 L86,26 C86,19.373 80.627,14 74,14 Z" />
+        <!-- Screen Inner -->
+        <path
+            android:fillColor="#0F172A"
+            android:pathData="M27,24 C27,21.79 28.79,20 31,20 L77,20 C79.21,20 81,21.79 81,24 L81,84 C81,86.21 79.21,88 77,88 L31,88 C28.79,88 27,86.21 27,84 Z" />
+        <!-- Top Speaker Notch -->
+        <path
+            android:fillColor="#818CF8"
+            android:pathData="M46,17 L62,17 A1.5,1.5 0 0,1 62,20 L46,20 A1.5,1.5 0 0,1 46,17 Z" />
+        <!-- Diamond / Deluxe Emblem Inside Screen -->
+        <path
+            android:fillColor="#818CF8"
+            android:pathData="M54,34 L68,48 L54,62 L40,48 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M54,40 L62,48 L54,56 L46,48 Z" />
+        <!-- Bottom Home Indicator -->
+        <path
+            android:fillColor="#818CF8"
+            android:pathData="M44,84 L64,84 A1.5,1.5 0 0,1 64,86 L44,86 A1.5,1.5 0 0,1 44,84 Z" />
+    </group>
+</vector>

@@ -1,5 +1,6 @@
 package com.imei.inventory.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,7 +20,8 @@ import com.imei.inventory.viewmodel.MainInventoryViewModel
 @Composable
 fun ShipmentsTab(
     token: String,
-    viewModel: MainInventoryViewModel
+    viewModel: MainInventoryViewModel,
+    onSelectShipment: (ShipmentDto) -> Unit
 ) {
     val shipments by viewModel.shipments.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -41,13 +43,13 @@ fun ShipmentsTab(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Track incoming cargo batches & suppliers",
+                text = "Tap any shipment card to view & update devices",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 13.sp
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         if (isLoading && shipments.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -63,7 +65,10 @@ fun ShipmentsTab(
         } else {
             LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 items(shipments) { shipment ->
-                    ShipmentCard(shipment)
+                    ShipmentCard(
+                        shipment = shipment,
+                        onClick = { onSelectShipment(shipment) }
+                    )
                 }
             }
         }
@@ -71,9 +76,14 @@ fun ShipmentsTab(
 }
 
 @Composable
-fun ShipmentCard(shipment: ShipmentDto) {
+fun ShipmentCard(
+    shipment: ShipmentDto,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -85,7 +95,7 @@ fun ShipmentCard(shipment: ShipmentDto) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = shipment.supplierName ?: "Supplier Order",
+                    text = shipment.shippingCompany ?: "Supplier Order",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
@@ -95,7 +105,7 @@ fun ShipmentCard(shipment: ShipmentDto) {
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
-                        text = "📦 ${shipment.devicesCount} Units",
+                        text = "📦 ${shipment.devicesCount} Units →",
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
@@ -108,15 +118,6 @@ fun ShipmentCard(shipment: ShipmentDto) {
 
             CopyableText(label = "Tracking #", value = shipment.trackingNumber)
 
-            if (!shipment.shippingCompany.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Carrier: ${shipment.shippingCompany}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp
-                )
-            }
-
             Spacer(modifier = Modifier.height(8.dp))
 
             Row(
@@ -124,20 +125,18 @@ fun ShipmentCard(shipment: ShipmentDto) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Text(
+                    text = "Supplier: ${shipment.supplierName ?: "Unknown"}",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp
+                )
+
                 shipment.shippingCost?.let { cost ->
                     Text(
                         text = "Cost: BDT $cost",
-                        color = Color(0xFFEAB308),
+                        color = Color(0xFFD97706),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold
-                    )
-                } ?: Spacer(modifier = Modifier.width(1.dp))
-
-                shipment.createdAt?.let { date ->
-                    Text(
-                        text = date.take(10),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp
                     )
                 }
             }
