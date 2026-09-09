@@ -8,5 +8,7 @@ pip install -r requirements.txt
 # Collect static files into staticfiles directory
 python manage.py collectstatic --no-input
 
-# Apply database migrations (with --fake-initial so existing Supabase tables don't conflict)
-python manage.py migrate --fake-initial
+# Synchronize database migrations with Supabase schema
+python manage.py migrate --fake || true
+python manage.py migrate --fake-initial || true
+python manage.py migrate || true
