@@ -1,3 +1,9 @@
+databases:
+  - name: imei-inventory-db
+    databaseName: imei_db
+    user: imei_user
+    plan: free
+
 services:
   - type: web
     name: imei-inventory-system
@@ -15,3 +21,7 @@ services:
         value: "False"
       - key: ALLOWED_HOSTS
         value: ".onrender.com,localhost,127.0.0.1"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: imei-inventory-db
+          property: connectionString

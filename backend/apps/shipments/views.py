@@ -207,6 +207,8 @@ class ShipmentUpdateView(LoginRequiredMixin, View):
         else:
             shipment.discount = Decimal('0.00')
 
+        old_unit_cost = shipment.unit_shipping_cost
+
         # Update Gross shipping cost
         if fee_per_unit_raw:
             try:
@@ -221,6 +223,16 @@ class ShipmentUpdateView(LoginRequiredMixin, View):
                 pass
 
         shipment.save()
+
+        # Recalculate and synchronize device buying prices in this shipment batch
+        new_unit_cost = shipment.unit_shipping_cost
+        diff = new_unit_cost - old_unit_cost
+        if diff != 0 and dev_count > 0:
+            for dev in shipment.devices.all():
+                if dev.buying_price is not None:
+                    dev.buying_price = max(dev.buying_price + diff, Decimal('0.00'))
+                    dev.save(update_fields=['buying_price'])
+
         messages.success(request, f"Shipment #{shipment.tracking_number} updated. Net Bill: BDT {shipment.net_shipping_cost} (Gross: BDT {shipment.shipping_cost}, Cashback: BDT {shipment.discount}).")
         return redirect('shipments:list')
 
