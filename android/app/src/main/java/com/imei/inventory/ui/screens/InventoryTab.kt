@@ -31,6 +31,7 @@ fun InventoryTab(
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedVariantFilter by remember { mutableStateOf<String?>(null) }
+    var selectedOwnerFilter by remember { mutableStateOf<String?>(null) }
     val selectedStatusFilter by viewModel.selectedStatusFilter.collectAsState()
 
     val devices by viewModel.devices.collectAsState()
@@ -54,16 +55,32 @@ fun InventoryTab(
         "Bypass" to "Bypass"
     )
 
-    // Filter devices in-memory for instant responsive search + variant matching
-    val filteredDevices = remember(devices, selectedVariantFilter, searchQuery) {
+    // Distinct owners extracted dynamically
+    val ownerOptions = remember(devices) {
+        val owners = devices.mapNotNull { it.currentOwnerName?.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .sorted()
+        listOf(null to "All Owners", "unassigned" to "Unassigned") + owners.map { it to it }
+    }
+
+    // Filter devices in-memory for instant responsive search + multi-filter matching
+    val filteredDevices = remember(devices, selectedVariantFilter, selectedOwnerFilter, selectedStatusFilter, searchQuery) {
         devices.filter { dev ->
+            val matchesStatus = selectedStatusFilter == null || dev.currentStatus.equals(selectedStatusFilter, ignoreCase = true)
             val matchesVariant = selectedVariantFilter == null || dev.variant?.equals(selectedVariantFilter, ignoreCase = true) == true
+            val matchesOwner = when (selectedOwnerFilter) {
+                null -> true
+                "unassigned" -> dev.currentOwnerName.isNullOrBlank()
+                else -> dev.currentOwnerName?.equals(selectedOwnerFilter, ignoreCase = true) == true
+            }
             val matchesQuery = searchQuery.isBlank() ||
                     dev.model.contains(searchQuery, ignoreCase = true) ||
                     dev.imei.contains(searchQuery, ignoreCase = true) ||
                     (dev.serialNumber?.contains(searchQuery, ignoreCase = true) == true) ||
-                    (dev.capacity?.contains(searchQuery, ignoreCase = true) == true)
-            matchesVariant && matchesQuery
+                    (dev.capacity?.contains(searchQuery, ignoreCase = true) == true) ||
+                    (dev.currentOwnerName?.contains(searchQuery, ignoreCase = true) == true)
+            matchesStatus && matchesVariant && matchesOwner && matchesQuery
         }
     }
 
@@ -73,9 +90,10 @@ fun InventoryTab(
                 onClick = onOpenAddDevice,
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.size(52.dp)
             ) {
-                Text("+", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                Text("+", fontSize = 26.sp, fontWeight = FontWeight.Bold)
             }
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -84,19 +102,19 @@ fun InventoryTab(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .padding(horizontal = 14.dp, vertical = 6.dp)
         ) {
-            // Search Input
+            // Search Input (Compact 44dp height)
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search IMEI, Model, Serial...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                placeholder = { Text("Search IMEI, Model, Serial, Owner...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(10.dp),
                 trailingIcon = {
                     if (searchQuery.isNotBlank()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Text("✕", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("✕", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         }
                     }
                 },
@@ -106,28 +124,27 @@ fun InventoryTab(
                     focusedTextColor = MaterialTheme.colorScheme.onSurface,
                     unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
                     focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                 ),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(50.dp)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Status Filter Chips
+            // Status Filter Row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 statusOptions.forEach { (statusKey, label) ->
                     val isSelected = selectedStatusFilter == statusKey
                     FilterChip(
                         selected = isSelected,
-                        onClick = {
-                            viewModel.setStatusFilter(statusKey)
-                            viewModel.fetchDevices(token, searchQuery)
-                        },
+                        onClick = { viewModel.setStatusFilter(statusKey) },
                         label = {
                             Text(
                                 text = label,
@@ -135,7 +152,8 @@ fun InventoryTab(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
                         },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.height(28.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = Color.White,
@@ -146,16 +164,41 @@ fun InventoryTab(
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // Variant Filter Chips
+            // Variant & Owner Filter Row
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-                variantOptions.forEach { (vKey, label) ->
+                // Owner Filters
+                ownerOptions.forEach { (ownerKey, label) ->
+                    val isSelected = selectedOwnerFilter == ownerKey
+                    FilterChip(
+                        selected = isSelected,
+                        onClick = { selectedOwnerFilter = if (isSelected) null else ownerKey },
+                        label = {
+                            Text(
+                                text = if (ownerKey == null) label else "👤 $label",
+                                fontSize = 11.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            )
+                        },
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.height(28.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = Color(0xFF0284C7),
+                            selectedLabelColor = Color.White,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
+
+                // Variant Filters
+                variantOptions.drop(1).forEach { (vKey, label) ->
                     val isSelected = selectedVariantFilter == vKey
                     FilterChip(
                         selected = isSelected,
@@ -167,7 +210,8 @@ fun InventoryTab(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
                         },
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.height(28.dp),
                         colors = FilterChipDefaults.filterChipColors(
                             selectedContainerColor = Color(0xFFF97316),
                             selectedLabelColor = Color.White,
@@ -178,39 +222,39 @@ fun InventoryTab(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Results summary header
+            // Results count + reset button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${filteredDevices.size} Devices Found",
+                    text = "${filteredDevices.size} Devices Listed",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
                 )
-                if (selectedStatusFilter != null || selectedVariantFilter != null || searchQuery.isNotBlank()) {
+                if (selectedStatusFilter != null || selectedVariantFilter != null || selectedOwnerFilter != null || searchQuery.isNotBlank()) {
                     Text(
-                        text = "Reset Filters",
+                        text = "Clear Filters",
                         color = MaterialTheme.colorScheme.primary,
-                        fontSize = 12.sp,
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.clickable {
                             searchQuery = ""
                             selectedVariantFilter = null
+                            selectedOwnerFilter = null
                             viewModel.setStatusFilter(null)
-                            viewModel.fetchDevices(token, "")
                         }
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Devices List
+            // Compact Devices List (High-density 4-6 items on screen)
             if (isLoading && filteredDevices.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -220,16 +264,16 @@ fun InventoryTab(
                     Text(
                         text = "No matching devices found",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp
+                        fontSize = 13.sp
                     )
                 }
             } else {
                 LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxSize()
                 ) {
                     items(filteredDevices) { device ->
-                        InventoryDeviceCard(
+                        CompactDeviceCard(
                             device = device,
                             onClick = { onSelectDevice(device) },
                             onStatusChange = { newStatus ->
@@ -244,7 +288,7 @@ fun InventoryTab(
 }
 
 @Composable
-fun InventoryDeviceCard(
+fun CompactDeviceCard(
     device: DeviceDto,
     onClick: () -> Unit,
     onStatusChange: (String) -> Unit
@@ -256,11 +300,11 @@ fun InventoryDeviceCard(
             .fillMaxWidth()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(10.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            // Top: Model + Status Badge
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)) {
+            // Row 1: Model Name + Variant Badge + Status Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -270,78 +314,91 @@ fun InventoryDeviceCard(
                     text = device.model,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    fontSize = 14.sp,
+                    modifier = Modifier.weight(1f)
                 )
-                StatusBadge(device.currentStatus, device.statusDisplay)
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    VariantBadge(device.variant)
+                    StatusBadge(device.currentStatus, device.statusDisplay)
+                }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // IMEI + Variant
+            // Row 2: IMEI + Storage + Battery Health
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 CopyableText(label = "IMEI", value = device.imei)
-                VariantBadge(device.variant)
+
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    device.capacity?.let {
+                        Text(it, color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
+                    device.batteryHealth?.let {
+                        Text("🔋 $it%", color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                    }
+                }
             }
 
-            device.serialNumber?.let { serial ->
-                Spacer(modifier = Modifier.height(4.dp))
-                CopyableText(label = "Serial", value = serial)
-            }
+            Spacer(modifier = Modifier.height(4.dp))
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Bottom Bar: Specs + Status Action Button
+            // Row 3: Assigned Owner (instead of buying price) + Quick Status Action
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    device.capacity?.let {
-                        Text(it, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                    }
-                    device.batteryHealth?.let {
-                        Text("🔋 $it%", color = Color(0xFF16A34A), fontSize = 12.sp, fontWeight = FontWeight.Medium)
-                    }
-                    device.buyingPrice?.let {
-                        Text("৳${it.toInt()}", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    }
+                val ownerDisplay = if (!device.currentOwnerName.isNullOrBlank()) {
+                    "👤 ${device.currentOwnerName}"
+                } else {
+                    "👤 Unassigned"
                 }
+
+                Text(
+                    text = ownerDisplay,
+                    color = if (device.currentOwnerName.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
 
                 Box {
                     Button(
                         onClick = { expandedMenu = true },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.height(30.dp)
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        modifier = Modifier.height(26.dp)
                     ) {
-                        Text("Status ▾", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = "Status ▾",
+                            fontSize = 10.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                     DropdownMenu(
                         expanded = expandedMenu,
                         onDismissRequest = { expandedMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("In Stock") },
+                            text = { Text("In Stock", fontSize = 13.sp) },
                             onClick = {
                                 expandedMenu = false
                                 onStatusChange("IN_STOCK")
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Under Repair") },
+                            text = { Text("Under Repair", fontSize = 13.sp) },
                             onClick = {
                                 expandedMenu = false
                                 onStatusChange("UNDER_REPAIR")
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Sold") },
+                            text = { Text("Sold", fontSize = 13.sp) },
                             onClick = {
                                 expandedMenu = false
                                 onStatusChange("SOLD")
