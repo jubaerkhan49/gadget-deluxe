@@ -289,7 +289,8 @@ class MainActivity : ComponentActivity() {
                                     mainViewModel.updateDevice(
                                         token = token,
                                         deviceId = devId,
-                                        updates = mapOf("current_status" to newStatus)
+                                        updates = mapOf("current_status" to newStatus),
+                                        onSuccess = {}
                                     )
                                 },
                                 onReceiveAllToInStock = {
@@ -297,7 +298,8 @@ class MainActivity : ComponentActivity() {
                                         mainViewModel.updateDevice(
                                             token = token,
                                             deviceId = dev.id,
-                                            updates = mapOf("current_status" to "IN_STOCK")
+                                            updates = mapOf("current_status" to "IN_STOCK"),
+                                            onSuccess = {}
                                         )
                                     }
                                 }

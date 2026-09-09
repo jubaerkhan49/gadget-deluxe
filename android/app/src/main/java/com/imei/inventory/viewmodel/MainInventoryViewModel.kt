@@ -106,7 +106,7 @@ class MainInventoryViewModel : ViewModel() {
         }
     }
 
-    fun updateDevice(token: String, deviceId: Int, updates: Map<String, Any>, onSuccess: () -> Unit) {
+    fun updateDevice(token: String, deviceId: Int, updates: Map<String, Any>, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             try {
                 val bearer = "Bearer $token"
@@ -121,7 +121,7 @@ class MainInventoryViewModel : ViewModel() {
         }
     }
 
-    fun deleteDevice(token: String, deviceId: Int, onSuccess: () -> Unit) {
+    fun deleteDevice(token: String, deviceId: Int, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             try {
                 val bearer = "Bearer $token"
