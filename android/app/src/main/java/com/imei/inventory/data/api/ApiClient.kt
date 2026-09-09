@@ -7,8 +7,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    // 10.0.2.2 points to local backend when running on Android Emulator
-    private const val BASE_URL = "http://10.0.2.2:8000/"
+    // Production Cloud Server
+    private const val BASE_URL = "https://gadget-deluxe.onrender.com/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
