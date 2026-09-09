@@ -13,6 +13,8 @@ BOOLEAN_FIELDS_BY_TABLE = {
 
 def format_val(table_name, col, val):
     if val is None:
+        if table_name == 'accounts_user' and col in ('phone', 'notes'):
+            return "''"
         return 'NULL'
     bool_cols = BOOLEAN_FIELDS_BY_TABLE.get(table_name, set())
     if col in bool_cols:
@@ -53,6 +55,13 @@ output.append("-- GADGET DELUXE - DATA RESTORATION SCRIPT")
 output.append(f"-- Exported on {datetime.now().isoformat()} from local sqlite backup")
 output.append("-- ==============================================================================\n")
 
+output.append("""
+-- Ensure column constraints allow standard nullable values
+ALTER TABLE accounts_user ALTER COLUMN phone DROP NOT NULL;
+ALTER TABLE accounts_user ALTER COLUMN employee_code DROP NOT NULL;
+ALTER TABLE accounts_user ALTER COLUMN notes DROP NOT NULL;
+""")
+
 # Order of tables for foreign key constraints:
 output.append(dump_table('accounts_user', 'id'))
 output.append(dump_table('shipments_supplier', 'id'))
@@ -78,4 +87,4 @@ WHERE username = 'jubaer';
 with open('restore_data.sql', 'w', encoding='utf-8') as f:
     f.write("\n".join(output))
 
-print("Successfully generated clean restore_data.sql")
+print("Successfully regenerated restore_data.sql with NOT NULL drop and empty string fallback")

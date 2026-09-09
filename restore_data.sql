@@ -1,13 +1,19 @@
 -- ==============================================================================
 -- GADGET DELUXE - DATA RESTORATION SCRIPT
--- Exported on 2026-09-10T02:43:06.461510 from local sqlite backup
+-- Exported on 2026-09-10T02:46:04.066983 from local sqlite backup
 -- ==============================================================================
 
+
+-- Ensure column constraints allow standard nullable values
+ALTER TABLE accounts_user ALTER COLUMN phone DROP NOT NULL;
+ALTER TABLE accounts_user ALTER COLUMN employee_code DROP NOT NULL;
+ALTER TABLE accounts_user ALTER COLUMN notes DROP NOT NULL;
+
 -- DATA RESTORE FOR accounts_user (4 rows)
-INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (1, 'pbkdf2_sha256$1500000$knQFKBjL8cMRZUEbcxtJxD$Y5MmE9CyD2Owa/oE7propeRSucDrfQl6t228bVmzZD8=', '2026-09-08 21:15:11.107737', TRUE, 'jubaer', 'jubaer', '', 'admin@inventory.local', TRUE, TRUE, '2026-08-03 19:07:42.547420', 'ADMIN', NULL, NULL, NULL) ON CONFLICT (id) DO NOTHING;
-INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (2, 'pbkdf2_sha256$1200000$dCbEOvMGWV80JIIYn0iz2O$EeYLZTtkawP+EfPGEquNeW6AN4+5Fd6ycC8BbT3PlAw=', NULL, FALSE, 'ashraf', 'Ashraf', 'Employee', '', FALSE, TRUE, '2026-08-03 19:07:43.053907', 'EMPLOYEE', NULL, 'EMP001', NULL) ON CONFLICT (id) DO NOTHING;
-INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (3, 'pbkdf2_sha256$1200000$lF021KAbYVDjRFhCb6TIGe$0MBJREi6v9cKpX52Xe0hzReZT8oUQEPIkBjgRevQKJM=', NULL, FALSE, 'emon', 'Emon', 'Employee', '', FALSE, TRUE, '2026-08-03 19:07:43.577906', 'EMPLOYEE', NULL, 'EMP002', NULL) ON CONFLICT (id) DO NOTHING;
-INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (4, 'pbkdf2_sha256$1200000$ANqxkd24YDAasbQMDuYpwW$R3VTe3MOlwy5D544rPDGswYC0YOnpEvI6TfG7BYX+jI=', NULL, FALSE, 'ochi', 'Ochi', 'Employee', '', FALSE, TRUE, '2026-08-03 19:07:44.102087', 'EMPLOYEE', NULL, 'EMP003', NULL) ON CONFLICT (id) DO NOTHING;
+INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (1, 'pbkdf2_sha256$1500000$knQFKBjL8cMRZUEbcxtJxD$Y5MmE9CyD2Owa/oE7propeRSucDrfQl6t228bVmzZD8=', '2026-09-08 21:15:11.107737', TRUE, 'jubaer', 'jubaer', '', 'admin@inventory.local', TRUE, TRUE, '2026-08-03 19:07:42.547420', 'ADMIN', '', NULL, '') ON CONFLICT (id) DO NOTHING;
+INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (2, 'pbkdf2_sha256$1200000$dCbEOvMGWV80JIIYn0iz2O$EeYLZTtkawP+EfPGEquNeW6AN4+5Fd6ycC8BbT3PlAw=', NULL, FALSE, 'ashraf', 'Ashraf', 'Employee', '', FALSE, TRUE, '2026-08-03 19:07:43.053907', 'EMPLOYEE', '', 'EMP001', '') ON CONFLICT (id) DO NOTHING;
+INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (3, 'pbkdf2_sha256$1200000$lF021KAbYVDjRFhCb6TIGe$0MBJREi6v9cKpX52Xe0hzReZT8oUQEPIkBjgRevQKJM=', NULL, FALSE, 'emon', 'Emon', 'Employee', '', FALSE, TRUE, '2026-08-03 19:07:43.577906', 'EMPLOYEE', '', 'EMP002', '') ON CONFLICT (id) DO NOTHING;
+INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (4, 'pbkdf2_sha256$1200000$ANqxkd24YDAasbQMDuYpwW$R3VTe3MOlwy5D544rPDGswYC0YOnpEvI6TfG7BYX+jI=', NULL, FALSE, 'ochi', 'Ochi', 'Employee', '', FALSE, TRUE, '2026-08-03 19:07:44.102087', 'EMPLOYEE', '', 'EMP003', '') ON CONFLICT (id) DO NOTHING;
 SELECT setval(pg_get_serial_sequence('accounts_user', 'id'), COALESCE((SELECT MAX(id) FROM accounts_user), 1));
 
 -- DATA RESTORE FOR shipments_supplier (2 rows)
