@@ -19,4 +19,12 @@ local_settings.py
 staticfiles/
 backend/staticfiles/
 
+# Android build cache
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/build_log.txt
+android/.idea/
+
 # Note: db.sqlite3 is NOT ignored so your current database is included when deployed
