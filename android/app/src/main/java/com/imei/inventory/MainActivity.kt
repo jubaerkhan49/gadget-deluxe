@@ -198,6 +198,7 @@ class MainActivity : ComponentActivity() {
                                                     onClick = {
                                                         showTopMenu = false
                                                         authViewModel.logout()
+                                                        mainViewModel.stopRealtimeSync()
                                                         userToken = null
                                                     }
                                                 )

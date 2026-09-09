@@ -8,4 +8,6 @@ def system_context(request):
         'CURRENT_YEAR': datetime.now().year,
         'USER_ROLE': request.user.role if hasattr(request.user, 'role') else 'GUEST',
         'IS_ADMIN_OR_MANAGER': request.user.role in ['ADMIN', 'MANAGER'] if hasattr(request.user, 'role') else False,
+        'SUPABASE_URL': getattr(settings, 'SUPABASE_URL', ''),
+        'SUPABASE_ANON_KEY': getattr(settings, 'SUPABASE_ANON_KEY', ''),
     }

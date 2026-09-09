@@ -290,6 +290,61 @@
         document.addEventListener('DOMContentLoaded', () => initAutoDismissAlerts());
         document.addEventListener('htmx:afterSwap', (e) => initAutoDismissAlerts(e.detail.target));
     </script>
+
+    <!-- Supabase JS Client for Real-Time Sync -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = "{{ SUPABASE_URL|default:'' }}";
+        const SUPABASE_ANON_KEY = "{{ SUPABASE_ANON_KEY|default:'' }}";
+
+        if (SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase) {
+            try {
+                const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                
+                supabaseClient
+                    .channel('gadget-deluxe-live-sync')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'inventory_device' }, (payload) => {
+                        showLiveSyncNotification('Device database updated live from cloud!');
+                    })
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'shipments_shipment' }, (payload) => {
+                        showLiveSyncNotification('Shipment data updated live from cloud!');
+                    })
+                    .subscribe();
+            } catch (err) {
+                console.warn('Supabase realtime initialization:', err);
+            }
+        }
+
+        function showLiveSyncNotification(msg) {
+            let toast = document.getElementById('sync-live-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'sync-live-toast';
+                toast.className = 'position-fixed top-0 end-0 p-3';
+                toast.style.zIndex = '9999';
+                toast.innerHTML = `
+                    <div class="toast align-items-center text-bg-primary border-0 show shadow-lg" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body fw-bold py-2">
+                                <i class="fa-solid fa-bolt me-2 text-warning"></i><span id="sync-live-toast-text">${msg}</span>
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+            } else {
+                const textElem = document.getElementById('sync-live-toast-text');
+                if (textElem) textElem.innerText = msg;
+                const t = toast.querySelector('.toast');
+                if (t) t.classList.add('show');
+            }
+            setTimeout(() => {
+                const t = toast?.querySelector('.toast');
+                if (t) t.classList.remove('show');
+            }, 3000);
+        }
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 

@@ -53,11 +53,47 @@ class MainInventoryViewModel : ViewModel() {
         _selectedStatusFilter.value = status
     }
 
+    private var realtimeJob: kotlinx.coroutines.Job? = null
+
     fun loadAllData(token: String) {
         fetchDevices(token)
         fetchShipments(token)
         fetchSales(token)
         fetchRepairs(token)
+        startRealtimeSync(token)
+    }
+
+    fun startRealtimeSync(token: String) {
+        realtimeJob?.cancel()
+        realtimeJob = viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(4000) // Poll sync every 4 seconds quietly in background
+                try {
+                    val bearer = "Bearer $token"
+                    val devRes = ApiClient.apiService.getDevices(bearer, null, _selectedStatusFilter.value)
+                    if (devRes.isSuccessful && devRes.body() != null) {
+                        val list = devRes.body()!!.results
+                        _devices.value = list
+                        computeStats(list, _sales.value)
+                    }
+                    val shipRes = ApiClient.apiService.getShipments(bearer)
+                    if (shipRes.isSuccessful && shipRes.body() != null) {
+                        _shipments.value = shipRes.body()!!.results
+                    }
+                } catch (e: Exception) {
+                    // silent background sync
+                }
+            }
+        }
+    }
+
+    fun stopRealtimeSync() {
+        realtimeJob?.cancel()
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        realtimeJob?.cancel()
     }
 
     fun fetchDevices(token: String, query: String? = null) {
