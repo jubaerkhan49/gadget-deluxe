@@ -13,6 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Refresh
@@ -28,8 +29,10 @@ import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.ShipmentDto
 import com.imei.inventory.ui.dialogs.AddDeviceDialog
+import com.imei.inventory.ui.dialogs.AddShipmentDialog
 import com.imei.inventory.ui.dialogs.DeviceDetailDialog
 import com.imei.inventory.ui.dialogs.ShipmentDetailDialog
+import com.imei.inventory.ui.dialogs.SickwParserDialog
 import com.imei.inventory.ui.screens.*
 import com.imei.inventory.ui.theme.AppTheme
 import com.imei.inventory.viewmodel.AuthViewModel
@@ -53,9 +56,13 @@ class MainActivity : ComponentActivity() {
                     var selectedDeviceForDetail by remember { mutableStateOf<DeviceDto?>(null) }
                     var selectedShipmentForDetail by remember { mutableStateOf<ShipmentDto?>(null) }
                     var showAddDeviceDialog by remember { mutableStateOf(false) }
+                    var showAddShipmentDialog by remember { mutableStateOf(false) }
+                    var showSickwDialog by remember { mutableStateOf(false) }
+                    var showTopMenu by remember { mutableStateOf(false) }
 
                     val isLoading by mainViewModel.isLoading.collectAsState()
                     val devices by mainViewModel.devices.collectAsState()
+                    val shipments by mainViewModel.shipments.collectAsState()
 
                     // Rotation animation for sync button
                     val infiniteTransition = rememberInfiniteTransition(label = "sync_spin")
@@ -135,17 +142,68 @@ class MainActivity : ComponentActivity() {
                                             )
                                         }
 
-                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Spacer(modifier = Modifier.width(6.dp))
 
-                                        // Logout Action
-                                        TextButton(
-                                            onClick = { userToken = null },
-                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                            shape = RoundedCornerShape(8.dp),
-                                            colors = ButtonDefaults.textButtonColors(contentColor = Color(0xFFDC2626))
-                                        ) {
-                                            Text("Logout", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                        // Vertical 3-Dot Overflow Menu
+                                        Box {
+                                            IconButton(
+                                                onClick = { showTopMenu = true },
+                                                modifier = Modifier
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                                                    .size(36.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.MoreVert,
+                                                    contentDescription = "More Options",
+                                                    tint = MaterialTheme.colorScheme.onSurface,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+
+                                            DropdownMenu(
+                                                expanded = showTopMenu,
+                                                onDismissRequest = { showTopMenu = false }
+                                            ) {
+                                                DropdownMenuItem(
+                                                    text = { Text("⚡ Sickw IMEI Parser", fontWeight = FontWeight.Medium) },
+                                                    onClick = {
+                                                        showTopMenu = false
+                                                        showSickwDialog = true
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("📦 New Shipment Entry", fontWeight = FontWeight.Medium) },
+                                                    onClick = {
+                                                        showTopMenu = false
+                                                        showAddShipmentDialog = true
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("📱 Add Single Device", fontWeight = FontWeight.Medium) },
+                                                    onClick = {
+                                                        showTopMenu = false
+                                                        showAddDeviceDialog = true
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    text = { Text("🔄 Sync Cloud Data", fontWeight = FontWeight.Medium) },
+                                                    onClick = {
+                                                        showTopMenu = false
+                                                        mainViewModel.loadAllData(token)
+                                                    }
+                                                )
+                                                HorizontalDivider()
+                                                DropdownMenuItem(
+                                                    text = { Text("🚪 Logout", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold) },
+                                                    onClick = {
+                                                        showTopMenu = false
+                                                        userToken = null
+                                                    }
+                                                )
+                                            }
                                         }
+
+                                        Spacer(modifier = Modifier.width(4.dp))
                                     }
                                 )
                             },
@@ -206,19 +264,6 @@ class MainActivity : ComponentActivity() {
                                             indicatorColor = MaterialTheme.colorScheme.surfaceVariant
                                         )
                                     )
-                                    NavigationBarItem(
-                                        icon = { Icon(Icons.Default.Bolt, contentDescription = "Sickw", modifier = Modifier.size(22.dp)) },
-                                        label = { Text("Sickw", fontSize = 10.sp, fontWeight = if (selectedTab == 4) FontWeight.Bold else FontWeight.Normal) },
-                                        selected = selectedTab == 4,
-                                        onClick = { selectedTab = 4 },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            indicatorColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
-                                    )
                                 }
                             },
                             containerColor = MaterialTheme.colorScheme.background
@@ -235,7 +280,8 @@ class MainActivity : ComponentActivity() {
                                         viewModel = mainViewModel,
                                         onNavigateToTab = { tabIndex -> selectedTab = tabIndex },
                                         onSelectDevice = { dev -> selectedDeviceForDetail = dev },
-                                        onOpenAddDevice = { showAddDeviceDialog = true }
+                                        onOpenAddDevice = { showAddDeviceDialog = true },
+                                        onOpenAddShipment = { showAddShipmentDialog = true }
                                     )
                                     1 -> InventoryTab(
                                         token = token,
@@ -252,15 +298,36 @@ class MainActivity : ComponentActivity() {
                                         token = token,
                                         viewModel = mainViewModel
                                     )
-                                    4 -> SickwParserTab(
-                                        token = token,
-                                        viewModel = mainViewModel,
-                                        onDeviceCreated = {
-                                            selectedTab = 1
-                                        }
-                                    )
                                 }
                             }
+                        }
+
+                        // Add Shipment Modal (Full Batch Entry like Web App)
+                        if (showAddShipmentDialog) {
+                            AddShipmentDialog(
+                                existingShipments = shipments,
+                                onDismiss = { showAddShipmentDialog = false },
+                                onSave = { payload ->
+                                    mainViewModel.createBatchShipment(
+                                        token = token,
+                                        payload = payload,
+                                        onSuccess = { showAddShipmentDialog = false },
+                                        onError = { /* show error */ }
+                                    )
+                                }
+                            )
+                        }
+
+                        // Sickw Parser Dialog (Opened from 3-dot overflow menu)
+                        if (showSickwDialog) {
+                            SickwParserDialog(
+                                token = token,
+                                viewModel = mainViewModel,
+                                onDismiss = { showSickwDialog = false },
+                                onDeviceCreated = {
+                                    selectedTab = 1
+                                }
+                            )
                         }
 
                         // Add Device Modal

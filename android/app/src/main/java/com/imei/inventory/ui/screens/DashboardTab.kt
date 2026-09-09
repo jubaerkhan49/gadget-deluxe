@@ -26,7 +26,8 @@ fun DashboardTab(
     viewModel: MainInventoryViewModel,
     onNavigateToTab: (Int) -> Unit,
     onSelectDevice: (DeviceDto) -> Unit,
-    onOpenAddDevice: () -> Unit
+    onOpenAddDevice: () -> Unit,
+    onOpenAddShipment: () -> Unit
 ) {
     val stats by viewModel.stats.collectAsState()
     val devices by viewModel.devices.collectAsState()
@@ -128,12 +129,12 @@ fun DashboardTab(
                     Text("+ Add Device", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Button(
-                    onClick = { onNavigateToTab(4) },
+                    onClick = onOpenAddShipment,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("⚡ Sickw Import", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("📦 New Shipment", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

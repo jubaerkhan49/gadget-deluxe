@@ -54,6 +54,12 @@ interface ImeiApiService {
         @Header("Authorization") token: String
     ): Response<PaginatedResponse<ShipmentDto>>
 
+    @POST("api/shipments/create-batch/")
+    suspend fun createBatchShipment(
+        @Header("Authorization") token: String,
+        @Body payload: Map<String, @JvmSuppressWildcards Any>
+    ): Response<Map<String, Any>>
+
     // Sales Endpoint
     @GET("api/sales/")
     suspend fun getSales(

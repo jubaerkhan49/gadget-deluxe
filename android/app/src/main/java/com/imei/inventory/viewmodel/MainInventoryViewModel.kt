@@ -149,6 +149,31 @@ class MainInventoryViewModel : ViewModel() {
         }
     }
 
+    fun createBatchShipment(
+        token: String,
+        payload: Map<String, Any>,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val bearer = "Bearer $token"
+                val response = ApiClient.apiService.createBatchShipment(bearer, payload)
+                if (response.isSuccessful) {
+                    onSuccess()
+                    loadAllData(token)
+                } else {
+                    onError("Failed to create shipment (HTTP ${response.code()})")
+                }
+            } catch (e: Exception) {
+                onError(e.localizedMessage ?: "Network error creating shipment")
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
     fun fetchSales(token: String) {
         viewModelScope.launch {
             try {
