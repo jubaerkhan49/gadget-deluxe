@@ -19,33 +19,102 @@
     transition: background-color 0.15s ease-in-out;
 }
 .shipment-row:hover {
-    background-color: rgba(var(--bs-primary-rgb), 0.05) !important;
+    background-color: rgba(13, 110, 253, 0.04) !important;
 }
-.copy-imei-badge {
-    cursor: pointer;
-    transition: all 0.2s ease;
-    user-select: none;
+.devices-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+.devices-list::-webkit-scrollbar {
+    width: 4px;
+}
+.devices-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+.devices-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.devices-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+.device-entry {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.device-model-name {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: #1e293b;
+}
+[data-bs-theme="dark"] .device-model-name {
+    color: #f1f5f9;
+}
+
+.copy-imei-btn {
     display: inline-flex;
     align-items: center;
+    gap: 6px;
+    background-color: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 3px 10px;
+    cursor: pointer;
+    transition: all 0.18s ease-in-out;
+    user-select: none;
+    line-height: 1.3;
 }
-.copy-imei-badge:hover {
-    background-color: var(--bs-primary) !important;
-    color: #fff !important;
-    border-color: var(--bs-primary) !important;
+[data-bs-theme="dark"] .copy-imei-btn {
+    background-color: #1e293b;
+    border-color: #334155;
+}
+.copy-imei-btn .imei-val {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.95rem; /* Larger, very legible IMEI font */
+    font-weight: 700;
+    color: #0284c7;
+    letter-spacing: 0.6px;
+}
+[data-bs-theme="dark"] .copy-imei-btn .imei-val {
+    color: #38bdf8;
+}
+.copy-imei-btn .copy-icon {
+    font-size: 0.82rem;
+    color: #64748b;
+    transition: transform 0.15s ease, color 0.15s ease;
+}
+.copy-imei-btn:hover {
+    background-color: #e0f2fe;
+    border-color: #38bdf8;
+    box-shadow: 0 2px 5px rgba(2, 132, 199, 0.15);
     transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.copy-imei-badge:hover code,
-.copy-imei-badge:hover i {
-    color: #fff !important;
+.copy-imei-btn:hover .imei-val {
+    color: #0369a1;
 }
-.copy-imei-badge:active {
+.copy-imei-btn:hover .copy-icon {
+    color: #0284c7;
+    transform: scale(1.15);
+}
+.copy-imei-btn:active {
     transform: scale(0.96);
 }
-.devices-scroll-container {
-    max-height: 140px;
-    overflow-y: auto;
-    scrollbar-width: thin;
+.copy-imei-btn.copied {
+    background-color: #dcfce7 !important;
+    border-color: #4ade80 !important;
+}
+.copy-imei-btn.copied .imei-val {
+    color: #15803d !important;
+}
+.copy-imei-btn.copied .copy-icon {
+    color: #16a34a !important;
 }
 </style>
 
@@ -70,17 +139,18 @@
                     <td><code class="text-primary fs-6 fw-bold">#{{ shipment.tracking_number }}</code></td>
                     <td class="fw-semibold">{{ shipment.supplier.name }}</td>
                     <td>
-                        <div class="devices-scroll-container pe-1">
+                        <div class="devices-list">
                             {% for dev in shipment.devices.all %}
-                            <div class="small d-flex align-items-center gap-1 mb-1">
-                                <span class="fw-semibold text-truncate" style="max-width: 150px;">{{ dev.model }}</span>
+                            <div class="device-entry">
+                                <span class="device-model-name">{{ dev.model }}</span>
                                 {% if dev.imei %}
-                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle copy-imei-badge py-1 px-2" data-imei="{{ dev.imei }}" title="Click to copy IMEI">
-                                    <i class="fa-regular fa-copy me-1"></i><code class="text-primary">{{ dev.imei }}</code>
+                                <span class="copy-imei-btn" data-imei="{{ dev.imei }}" title="Click to copy IMEI">
+                                    <i class="fa-regular fa-copy copy-icon"></i>
+                                    <span class="imei-val">{{ dev.imei }}</span>
                                 </span>
                                 {% endif %}
                                 {% if dev.serial_number and dev.serial_number != dev.imei %}
-                                <span class="text-muted" style="font-size: 0.75rem;">(SN: {{ dev.serial_number }})</span>
+                                <span class="badge bg-light text-muted border border-light-subtle small fw-normal">SN: {{ dev.serial_number }}</span>
                                 {% endif %}
                             </div>
                             {% empty %}
@@ -243,8 +313,9 @@
                                                 <td class="fw-semibold">{{ dev.model }}</td>
                                                 <td>
                                                     {% if dev.imei %}
-                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle copy-imei-badge py-1 px-2" data-imei="{{ dev.imei }}" title="Click to copy IMEI">
-                                                        <i class="fa-regular fa-copy me-1"></i><code class="text-primary">{{ dev.imei }}</code>
+                                                    <span class="copy-imei-btn py-1" data-imei="{{ dev.imei }}" title="Click to copy IMEI">
+                                                        <i class="fa-regular fa-copy copy-icon"></i>
+                                                        <span class="imei-val">{{ dev.imei }}</span>
                                                     </span>
                                                     {% else %}
                                                     <span class="text-muted">-</span>
@@ -707,23 +778,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Global event listener for click-to-copy IMEI badges
+    // Global event listener for click-to-copy IMEI buttons
     document.addEventListener('click', function(e) {
-        const copyBadge = e.target.closest('.copy-imei-badge');
-        if (copyBadge) {
+        const copyBtn = e.target.closest('.copy-imei-btn');
+        if (copyBtn) {
             e.stopPropagation();
             e.preventDefault();
-            const imei = copyBadge.getAttribute('data-imei');
+            const imei = copyBtn.getAttribute('data-imei');
             if (imei) {
-                const originalHtml = copyBadge.innerHTML;
+                const originalHtml = copyBtn.innerHTML;
                 copyTextToClipboard(imei).then(() => {
-                    copyBadge.innerHTML = '<i class="fa-solid fa-check text-success me-1"></i>Copied!';
-                    copyBadge.classList.add('bg-success-subtle', 'text-success', 'border-success-subtle');
-                    copyBadge.classList.remove('bg-primary-subtle', 'text-primary', 'border-primary-subtle');
+                    copyBtn.classList.add('copied');
+                    copyBtn.innerHTML = '<i class="fa-solid fa-check copy-icon"></i><span class="imei-val">Copied!</span>';
                     setTimeout(() => {
-                        copyBadge.innerHTML = originalHtml;
-                        copyBadge.classList.remove('bg-success-subtle', 'text-success', 'border-success-subtle');
-                        copyBadge.classList.add('bg-primary-subtle', 'text-primary', 'border-primary-subtle');
+                        copyBtn.classList.remove('copied');
+                        copyBtn.innerHTML = originalHtml;
                     }, 1500);
                 }).catch(err => {
                     console.error('Failed to copy IMEI: ', err);
