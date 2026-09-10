@@ -114,6 +114,12 @@ fun DeviceDetailDialog(
                         Text("BDT $price", color = Color(0xFFD97706), fontWeight = FontWeight.SemiBold)
                     }
                 }
+                device.sellingPrice?.let { sPrice ->
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Selling Price:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                        Text("BDT $sPrice", color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
+                    }
+                }
 
                 // Interactive Assigned Owner Row with Dropdown Picker
                 Row(
@@ -206,7 +212,11 @@ fun DeviceDetailDialog(
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                // Quick Status Changer
+                // Quick Status Changer with dynamic active color feedback
+                val isStock = device.currentStatus == "IN_STOCK"
+                val isRepair = device.currentStatus in listOf("UNDER_REPAIR", "REPAIR")
+                val isSold = device.currentStatus == "SOLD"
+
                 Text("Update Device Status:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -214,30 +224,104 @@ fun DeviceDetailDialog(
                 ) {
                     Button(
                         onClick = { onStatusChange("IN_STOCK") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0x2222C55E)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isStock) Color(0xFF16A34A) else Color(0x1822C55E)
+                        ),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
                     ) {
-                        Text("In Stock", color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (isStock) "✓ In Stock" else "In Stock",
+                            color = if (isStock) Color.White else Color(0xFF16A34A),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                     Button(
                         onClick = { onStatusChange("UNDER_REPAIR") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0x22EAB308)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isRepair) Color(0xFFD97706) else Color(0x18EAB308)
+                        ),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
                     ) {
-                        Text("Repair", color = Color(0xFFCA8A04), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (isRepair) "✓ Repair" else "Repair",
+                            color = if (isRepair) Color.White else Color(0xFFCA8A04),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                     Button(
                         onClick = { onStatusChange("SOLD") },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0x223B82F6)),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isSold) Color(0xFF2563EB) else Color(0x183B82F6)
+                        ),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.weight(1f),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
                     ) {
-                        Text("Sold", color = Color(0xFF2563EB), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(
+                            text = if (isSold) "✓ Sold" else "Sold",
+                            color = if (isSold) Color.White else Color(0xFF2563EB),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // If Sold, render Selling Price input box
+                if (isSold) {
+                    var sellingPriceInput by remember(device.sellingPrice) {
+                        mutableStateOf(
+                            device.sellingPrice?.let {
+                                if (it % 1.0 == 0.0) it.toLong().toString() else it.toString()
+                            } ?: ""
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF3B82F6).copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Selling Price:",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedTextField(
+                                value = sellingPriceInput,
+                                onValueChange = { sellingPriceInput = it },
+                                placeholder = { Text("e.g. 75000") },
+                                prefix = { Text("BDT ", fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), fontSize = 13.sp) },
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                singleLine = true,
+                                modifier = Modifier.weight(1f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            Button(
+                                onClick = {
+                                    val sp = sellingPriceInput.toDoubleOrNull()
+                                    onUpdateSpecs(mapOf("selling_price" to sp, "current_status" to "SOLD"))
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                            ) {
+                                Text("Save", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            }
+                        }
                     }
                 }
             }
@@ -285,13 +369,13 @@ fun DeviceDetailDialog(
                     Button(
                         onClick = onDismiss,
                         shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
                     ) {
                         Text(
                             text = "Done",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
                             fontSize = 13.sp
                         )
                     }
@@ -352,6 +436,13 @@ fun EditDeviceSpecsDialog(
     var buyingPrice by remember {
         mutableStateOf(
             device.buyingPrice?.let {
+                if (it % 1.0 == 0.0) it.toLong().toString() else it.toString()
+            } ?: ""
+        )
+    }
+    var sellingPrice by remember {
+        mutableStateOf(
+            device.sellingPrice?.let {
                 if (it % 1.0 == 0.0) it.toLong().toString() else it.toString()
             } ?: ""
         )
@@ -435,6 +526,19 @@ fun EditDeviceSpecsDialog(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(10.dp)
                 )
+
+                if (device.currentStatus == "SOLD") {
+                    OutlinedTextField(
+                        value = sellingPrice,
+                        onValueChange = { sellingPrice = it },
+                        label = { Text("Selling Price (BDT)") },
+                        placeholder = { Text("e.g. 75000") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+                }
             }
         },
         confirmButton = {
@@ -446,6 +550,9 @@ fun EditDeviceSpecsDialog(
                     updates["capacity"] = capacity.trim().ifEmpty { null }
                     updates["color"] = color.trim().ifEmpty { null }
                     updates["buying_price"] = buyingPrice.toDoubleOrNull()
+                    if (device.currentStatus == "SOLD") {
+                        updates["selling_price"] = sellingPrice.toDoubleOrNull()
+                    }
 
                     onSave(updates)
                     onDismiss()

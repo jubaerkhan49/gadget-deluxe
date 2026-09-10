@@ -415,7 +415,9 @@ class MainActivity : FragmentActivity() {
                                             batteryCycle = if (updates.containsKey("battery_cycle")) updates["battery_cycle"] as? Int else device.batteryCycle,
                                             capacity = if (updates.containsKey("capacity")) updates["capacity"] as? String else device.capacity,
                                             color = if (updates.containsKey("color")) updates["color"] as? String else device.color,
-                                            buyingPrice = if (updates.containsKey("buying_price")) updates["buying_price"] as? Double else device.buyingPrice
+                                            buyingPrice = if (updates.containsKey("buying_price")) updates["buying_price"] as? Double else device.buyingPrice,
+                                            sellingPrice = if (updates.containsKey("selling_price")) updates["selling_price"] as? Double else device.sellingPrice,
+                                            currentStatus = if (updates.containsKey("current_status")) (updates["current_status"] as? String) ?: device.currentStatus else device.currentStatus
                                         )
                                     }
                                 },

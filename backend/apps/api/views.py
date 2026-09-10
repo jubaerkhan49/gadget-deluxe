@@ -173,6 +173,9 @@ class DeviceViewSet(viewsets.ModelViewSet):
                                 invoice_number=invoice_number,
                                 payment_status='PAID'
                             )
+                        elif device.selling_price is not None and existing_sale.selling_price != device.selling_price:
+                            existing_sale.selling_price = device.selling_price
+                            existing_sale.save()
                 except Exception:
                     pass
 
