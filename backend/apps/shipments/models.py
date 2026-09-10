@@ -53,3 +53,17 @@ class Shipment(TimeStampedModel):
             return (self.net_shipping_cost / Decimal(str(count))).quantize(Decimal('0.01'))
         return self.net_shipping_cost
 
+    @property
+    def base_item_price(self):
+        from decimal import Decimal
+        first_dev = self.devices.filter(buying_price__isnull=False).first()
+        if first_dev and first_dev.buying_price is not None:
+            unit_shipping = self.unit_shipping_cost
+            base = Decimal(str(first_dev.buying_price)) - unit_shipping
+            return max(base, Decimal('0.00'))
+        return Decimal('0.00')
+
+    @property
+    def total_buying_price_per_unit(self):
+        return self.base_item_price + self.unit_shipping_cost
+

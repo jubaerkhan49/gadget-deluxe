@@ -181,6 +181,7 @@ class ShipmentUpdateView(LoginRequiredMixin, View):
         receive_date = request.POST.get('receive_date', '').strip()
         notes = request.POST.get('notes', '').strip()
 
+        item_price_raw = request.POST.get('item_price', '').strip()
         fee_per_unit_raw = request.POST.get('fee_per_unit', '').strip()
         discount_raw = request.POST.get('discount', '').strip()
         shipping_cost_raw = request.POST.get('shipping_cost', '').strip()
@@ -226,14 +227,25 @@ class ShipmentUpdateView(LoginRequiredMixin, View):
 
         # Recalculate and synchronize device buying prices in this shipment batch
         new_unit_cost = shipment.unit_shipping_cost
-        diff = new_unit_cost - old_unit_cost
-        if diff != 0 and dev_count > 0:
-            for dev in shipment.devices.all():
-                if dev.buying_price is not None:
-                    dev.buying_price = max(dev.buying_price + diff, Decimal('0.00'))
-                    dev.save(update_fields=['buying_price'])
+        if item_price_raw:
+            try:
+                base_item_price = Decimal(item_price_raw)
+                total_buying_per_unit = base_item_price + new_unit_cost
+                if dev_count > 0:
+                    for dev in shipment.devices.all():
+                        dev.buying_price = total_buying_per_unit
+                        dev.save(update_fields=['buying_price'])
+            except Exception:
+                pass
+        else:
+            diff = new_unit_cost - old_unit_cost
+            if diff != 0 and dev_count > 0:
+                for dev in shipment.devices.all():
+                    if dev.buying_price is not None:
+                        dev.buying_price = max(dev.buying_price + diff, Decimal('0.00'))
+                        dev.save(update_fields=['buying_price'])
 
-        messages.success(request, f"Shipment #{shipment.tracking_number} updated. Net Bill: BDT {shipment.net_shipping_cost} (Gross: BDT {shipment.shipping_cost}, Cashback: BDT {shipment.discount}).")
+        messages.success(request, f"Shipment #{shipment.tracking_number} updated. Net Bill: BDT {shipment.net_shipping_cost} (Discount/Cashback: BDT {shipment.discount}).")
         return redirect('shipments:list')
 
 

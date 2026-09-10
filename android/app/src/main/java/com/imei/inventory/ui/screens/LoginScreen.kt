@@ -150,7 +150,7 @@ fun LoginScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Cloud Inventory & IMEI Management",
+                        text = "Cloud Inventory & Phone Management",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp,
                         modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)

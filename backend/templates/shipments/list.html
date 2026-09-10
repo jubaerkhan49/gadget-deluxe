@@ -117,13 +117,28 @@
                             <label class="form-label fw-semibold">Receive Date</label>
                             <input type="date" name="receive_date" class="form-control" value="{{ shipment.receive_date|date:'Y-m-d'|default:'' }}">
                         </div>
+                        <div class="col-md-12 mt-3">
+                            <h6 class="fw-bold border-bottom pb-2 text-primary">
+                                <i class="fa-solid fa-coins me-1"></i> Cost & Pricing per Unit
+                            </h6>
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Item Unit Price (BDT)</label>
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold">BDT</span>
+                                <input type="number" step="0.01" min="0" name="item_price" id="edit_item_price_{{ shipment.id }}"
+                                    class="form-control edit-item-price-input" data-id="{{ shipment.id }}" data-count="{{ shipment.total_devices_count }}"
+                                    value="{{ shipment.base_item_price }}" placeholder="Base price per unit">
+                            </div>
+                        </div>
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Shipment Fee (BDT / unit)</label>
                             <div class="input-group">
                                 <span class="input-group-text fw-bold">BDT</span>
                                 <input type="number" step="0.01" min="0" name="fee_per_unit" id="edit_fee_{{ shipment.id }}"
                                     class="form-control edit-fee-input" data-id="{{ shipment.id }}" data-count="{{ shipment.total_devices_count }}"
-                                    value="{{ shipment.unit_shipping_cost }}" placeholder="Fee per unit">
+                                    value="{{ shipment.unit_shipping_cost }}" placeholder="Freight fee per unit">
                             </div>
                         </div>
                         <div class="col-md-4">
@@ -132,18 +147,31 @@
                                 <span class="input-group-text fw-bold bg-success-subtle text-success">BDT</span>
                                 <input type="number" step="0.01" min="0" name="discount" id="edit_discount_{{ shipment.id }}"
                                     class="form-control edit-discount-input" data-id="{{ shipment.id }}" data-count="{{ shipment.total_devices_count }}"
-                                    value="{{ shipment.discount }}" placeholder="Cashback">
+                                    value="{{ shipment.discount }}" placeholder="Cashback discount">
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Net Total Shipment Bill (BDT)</label>
-                            <div class="input-group">
-                                <span class="input-group-text fw-bold">BDT</span>
-                                <input type="number" step="0.01" min="0" name="shipping_cost" id="edit_bill_{{ shipment.id }}"
-                                    class="form-control edit-bill-input" data-id="{{ shipment.id }}"
-                                    value="{{ shipment.net_shipping_cost }}">
+
+                        <div class="col-md-12">
+                            <div class="p-3 bg-body-tertiary border rounded">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <i class="fa-solid fa-calculator me-1 text-primary"></i>
+                                        <strong>Total Buying Price per Unit:</strong>
+                                        <span class="text-muted small ms-1">(Base Item Price + Net Freight Fee/Unit)</span>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-primary fs-6 px-3 py-1" id="edit_calc_total_{{ shipment.id }}">BDT {{ shipment.total_buying_price_per_unit }}</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center pt-2 border-top small">
+                                    <span class="text-muted">
+                                        <i class="fa-solid fa-boxes-stacked me-1"></i> Net Shipment Bill (<span id="edit_calc_units_{{ shipment.id }}">{{ shipment.total_devices_count }}</span> items × <span id="edit_calc_unit_fee_{{ shipment.id }}">BDT {{ shipment.unit_shipping_cost }}</span> - <span id="edit_calc_discount_display_{{ shipment.id }}" class="text-success fw-semibold">Cashback: BDT {{ shipment.discount }}</span>):
+                                    </span>
+                                    <strong class="text-warning-emphasis fs-6" id="edit_calc_total_shipment_bill_{{ shipment.id }}">BDT {{ shipment.net_shipping_cost }}</strong>
+                                </div>
                             </div>
                         </div>
+
                         <div class="col-md-12">
                             <label class="form-label fw-semibold">Notes</label>
                             <input type="text" name="notes" class="form-control" value="{{ shipment.notes|default:'' }}" placeholder="Optional shipment notes...">
@@ -562,20 +590,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Live calculation for all Edit Modals
-    document.querySelectorAll('.edit-fee-input, .edit-discount-input').forEach(input => {
+    function updateEditModalCalculation(id, count) {
+        const itemPriceInput = document.getElementById('edit_item_price_' + id);
+        const feeInput = document.getElementById('edit_fee_' + id);
+        const discountInput = document.getElementById('edit_discount_' + id);
+
+        const calcTotalDisplay = document.getElementById('edit_calc_total_' + id);
+        const calcUnits = document.getElementById('edit_calc_units_' + id);
+        const calcUnitFee = document.getElementById('edit_calc_unit_fee_' + id);
+        const calcDiscountDisplay = document.getElementById('edit_calc_discount_display_' + id);
+        const calcTotalBill = document.getElementById('edit_calc_total_shipment_bill_' + id);
+
+        const itemP = parseFloat(itemPriceInput ? itemPriceInput.value : 0) || 0;
+        const feesP = parseFloat(feeInput ? feeInput.value : 0) || 0;
+        const discP = parseFloat(discountInput ? discountInput.value : 0) || 0;
+        const effectiveCount = count > 0 ? count : 1;
+
+        const grossFreight = feesP * effectiveCount;
+        const netFreight = Math.max(grossFreight - discP, 0);
+        const effectiveUnitFee = effectiveCount > 0 ? (netFreight / effectiveCount) : 0;
+        const totalUnitBuying = itemP + effectiveUnitFee;
+
+        if (calcTotalDisplay) {
+            calcTotalDisplay.textContent = 'BDT ' + totalUnitBuying.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        if (calcUnits) {
+            calcUnits.textContent = count;
+        }
+        if (calcUnitFee) {
+            calcUnitFee.textContent = 'BDT ' + feesP.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        if (calcDiscountDisplay) {
+            calcDiscountDisplay.textContent = 'Cashback: BDT ' + discP.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        if (calcTotalBill) {
+            calcTotalBill.textContent = 'BDT ' + netFreight.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+    }
+
+    document.querySelectorAll('.edit-item-price-input, .edit-fee-input, .edit-discount-input').forEach(input => {
         input.addEventListener('input', function() {
             const id = this.getAttribute('data-id');
-            const count = parseFloat(this.getAttribute('data-count')) || 1;
-            const feeInput = document.getElementById('edit_fee_' + id);
-            const discountInput = document.getElementById('edit_discount_' + id);
-            const billInput = document.getElementById('edit_bill_' + id);
-
-            if (feeInput && billInput) {
-                const f = parseFloat(feeInput.value) || 0;
-                const d = parseFloat(discountInput ? discountInput.value : 0) || 0;
-                const net = Math.max((f * count) - d, 0);
-                billInput.value = net.toFixed(2);
-            }
+            const count = parseFloat(this.getAttribute('data-count')) || 0;
+            updateEditModalCalculation(id, count);
         });
     });
 
