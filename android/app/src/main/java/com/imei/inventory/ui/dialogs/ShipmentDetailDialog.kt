@@ -352,7 +352,7 @@ fun ShipmentDeviceItem(
                         onDismissRequest = { expandedMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("In Stock (Set Receive Date)", fontSize = 12.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.SemiBold) },
+                            text = { Text("In Stock", fontSize = 12.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.SemiBold) },
                             onClick = {
                                 expandedMenu = false
                                 showReceiveDateInput = true

@@ -13,6 +13,42 @@
     </button>
 </div>
 
+<style>
+.shipment-row {
+    cursor: pointer;
+    transition: background-color 0.15s ease-in-out;
+}
+.shipment-row:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05) !important;
+}
+.copy-imei-badge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+}
+.copy-imei-badge:hover {
+    background-color: var(--bs-primary) !important;
+    color: #fff !important;
+    border-color: var(--bs-primary) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.copy-imei-badge:hover code,
+.copy-imei-badge:hover i {
+    color: #fff !important;
+}
+.copy-imei-badge:active {
+    transform: scale(0.96);
+}
+.devices-scroll-container {
+    max-height: 140px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+}
+</style>
+
 <div class="card border shadow-sm">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -30,22 +66,27 @@
             </thead>
             <tbody>
                 {% for shipment in shipments %}
-                <tr>
-                    <td><code class="text-primary fs-6">#{{ shipment.tracking_number }}</code></td>
+                <tr class="shipment-row" data-bs-toggle="modal" data-bs-target="#editShipmentModal{{ shipment.id }}" title="Click row to edit shipment">
+                    <td><code class="text-primary fs-6 fw-bold">#{{ shipment.tracking_number }}</code></td>
                     <td class="fw-semibold">{{ shipment.supplier.name }}</td>
                     <td>
-                        {% for dev in shipment.devices.all|slice:":3" %}
-                        <div class="small">
-                            <strong>{{ dev.model }}</strong>
-                            {% if dev.imei %}- <code class="text-primary">{{ dev.imei }}</code>{% endif %}
-                            {% if dev.serial_number and dev.serial_number != dev.imei %}<span class="text-muted">(SN: {{ dev.serial_number }})</span>{% endif %}
+                        <div class="devices-scroll-container pe-1">
+                            {% for dev in shipment.devices.all %}
+                            <div class="small d-flex align-items-center gap-1 mb-1">
+                                <span class="fw-semibold text-truncate" style="max-width: 150px;">{{ dev.model }}</span>
+                                {% if dev.imei %}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle copy-imei-badge py-1 px-2" data-imei="{{ dev.imei }}" title="Click to copy IMEI">
+                                    <i class="fa-regular fa-copy me-1"></i><code class="text-primary">{{ dev.imei }}</code>
+                                </span>
+                                {% endif %}
+                                {% if dev.serial_number and dev.serial_number != dev.imei %}
+                                <span class="text-muted" style="font-size: 0.75rem;">(SN: {{ dev.serial_number }})</span>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <span class="text-muted small">No items added</span>
+                            {% endfor %}
                         </div>
-                        {% empty %}
-                        <span class="text-muted small">No items added</span>
-                        {% endfor %}
-                        {% if shipment.devices.count > 3 %}
-                        <div class="small text-muted">+ {{ shipment.devices.count|add:"-3" }} more item(s)</div>
-                        {% endif %}
                     </td>
                     <td>{{ shipment.shipping_company|default:'Standard Freight' }}</td>
                     <td>
@@ -59,7 +100,7 @@
                     </td>
                     <td>{{ shipment.receive_date|date:"Y-m-d"|default:'In Transit' }}</td>
                     <td><span class="badge bg-primary">{{ shipment.total_devices_count }} Units</span></td>
-                    <td class="text-end text-nowrap">
+                    <td class="text-end text-nowrap" onclick="event.stopPropagation();">
                         <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal"
                             data-bs-target="#editShipmentModal{{ shipment.id }}" title="Edit Shipment">
                             <i class="fa-solid fa-pen-to-square"></i>
@@ -200,7 +241,15 @@
                                             {% for dev in shipment.devices.all %}
                                             <tr>
                                                 <td class="fw-semibold">{{ dev.model }}</td>
-                                                <td><code>{{ dev.imei }}</code></td>
+                                                <td>
+                                                    {% if dev.imei %}
+                                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle copy-imei-badge py-1 px-2" data-imei="{{ dev.imei }}" title="Click to copy IMEI">
+                                                        <i class="fa-regular fa-copy me-1"></i><code class="text-primary">{{ dev.imei }}</code>
+                                                    </span>
+                                                    {% else %}
+                                                    <span class="text-muted">-</span>
+                                                    {% endif %}
+                                                </td>
                                                 <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ dev.get_variant_display|default:'Standard' }}</span></td>
                                                 <td><span class="badge bg-primary-subtle text-primary">{{ dev.get_current_status_display }}</span></td>
                                                 <td class="text-success fw-semibold">BDT {{ dev.buying_price }}</td>
@@ -634,6 +683,53 @@ document.addEventListener('DOMContentLoaded', function() {
             const count = parseFloat(this.getAttribute('data-count')) || 0;
             updateEditModalCalculation(id, count);
         });
+    });
+
+    // Helper function to copy text to clipboard with fallback
+    function copyTextToClipboard(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        } else {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            return new Promise((resolve, reject) => {
+                const successful = document.execCommand('copy');
+                textArea.remove();
+                if (successful) resolve();
+                else reject(new Error('execCommand copy failed'));
+            });
+        }
+    }
+
+    // Global event listener for click-to-copy IMEI badges
+    document.addEventListener('click', function(e) {
+        const copyBadge = e.target.closest('.copy-imei-badge');
+        if (copyBadge) {
+            e.stopPropagation();
+            e.preventDefault();
+            const imei = copyBadge.getAttribute('data-imei');
+            if (imei) {
+                const originalHtml = copyBadge.innerHTML;
+                copyTextToClipboard(imei).then(() => {
+                    copyBadge.innerHTML = '<i class="fa-solid fa-check text-success me-1"></i>Copied!';
+                    copyBadge.classList.add('bg-success-subtle', 'text-success', 'border-success-subtle');
+                    copyBadge.classList.remove('bg-primary-subtle', 'text-primary', 'border-primary-subtle');
+                    setTimeout(() => {
+                        copyBadge.innerHTML = originalHtml;
+                        copyBadge.classList.remove('bg-success-subtle', 'text-success', 'border-success-subtle');
+                        copyBadge.classList.add('bg-primary-subtle', 'text-primary', 'border-primary-subtle');
+                    }, 1500);
+                }).catch(err => {
+                    console.error('Failed to copy IMEI: ', err);
+                });
+            }
+        }
     });
 
     updateTotalBuyingPrice();
