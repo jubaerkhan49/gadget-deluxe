@@ -404,6 +404,21 @@ class MainActivity : FragmentActivity() {
                                         )
                                     }
                                 },
+                                onUpdateSpecs = { updates ->
+                                    mainViewModel.updateDevice(
+                                        token = token,
+                                        deviceId = device.id,
+                                        updates = updates
+                                    ) {
+                                        selectedDeviceForDetail = device.copy(
+                                            batteryHealth = if (updates.containsKey("battery_health")) updates["battery_health"] as? Int else device.batteryHealth,
+                                            batteryCycle = if (updates.containsKey("battery_cycle")) updates["battery_cycle"] as? Int else device.batteryCycle,
+                                            capacity = if (updates.containsKey("capacity")) updates["capacity"] as? String else device.capacity,
+                                            color = if (updates.containsKey("color")) updates["color"] as? String else device.color,
+                                            buyingPrice = if (updates.containsKey("buying_price")) updates["buying_price"] as? Double else device.buyingPrice
+                                        )
+                                    }
+                                },
                                 onDelete = {
                                     mainViewModel.deleteDevice(token, device.id) {
                                         selectedDeviceForDetail = null
