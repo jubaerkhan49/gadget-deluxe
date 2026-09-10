@@ -94,14 +94,14 @@ fun DashboardTab(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatCard(
                         title = "TODAY'S REVENUE",
-                        value = "BDT ${stats.totalSalesAmount.toInt()}",
+                        value = "${stats.totalSalesAmount.toInt()}",
                         icon = "💵",
                         accentColor = Color(0xFF059669),
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "TOTAL ASSETS",
-                        value = "BDT ${stats.totalAssets.toInt()}",
+                        value = "${stats.totalAssets.toInt()}",
                         icon = "💰",
                         accentColor = Color(0xFF2563EB),
                         modifier = Modifier.weight(1f)

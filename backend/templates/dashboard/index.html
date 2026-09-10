@@ -52,8 +52,8 @@
                                         <div class="fw-semibold">{{ sale.device.model }}</div>
                                         <div class="small text-muted">{{ sale.device.imei }}</div>
                                     </td>
-                                    <td class="fw-bold text-success">BDT {{ sale.selling_price }}</td>
-                                    <td class="fw-bold text-info">BDT {{ sale.profit }}</td>
+                                    <td class="fw-bold text-success">{{ sale.selling_price|floatformat:0 }}</td>
+                                    <td class="fw-bold text-info">{{ sale.profit|floatformat:0 }}</td>
                                     <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ sale.seller.username }}</span></td>
                                 </tr>
                             {% empty %}

@@ -65,7 +65,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <span class="text-muted small fw-semibold">TODAY'S SALES</span>
-                    <h3 class="fw-bold mb-0 text-success mt-1">BDT {{ today_sales }}</h3>
+                    <h3 class="fw-bold mb-0 text-success mt-1">{{ today_sales|floatformat:0 }}</h3>
                 </div>
                 <div class="p-3 bg-success bg-opacity-10 rounded-circle text-success">
                     <i class="fa-solid fa-dollar-sign fa-xl"></i>
@@ -79,7 +79,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <span class="text-muted small fw-semibold">TOTAL ASSETS</span>
-                    <h3 class="fw-bold mb-0 text-primary mt-1">BDT {{ total_assets }}</h3>
+                    <h3 class="fw-bold mb-0 text-primary mt-1">{{ total_assets|floatformat:0 }}</h3>
                 </div>
                 <div class="p-3 bg-primary bg-opacity-10 rounded-circle text-primary">
                     <i class="fa-solid fa-coins fa-xl"></i>
@@ -93,7 +93,7 @@
             <div class="d-flex align-items-center justify-content-between">
                 <div>
                     <span class="text-muted small fw-semibold">MONTHLY PROFIT</span>
-                    <h3 class="fw-bold mb-0 text-info mt-1">BDT {{ monthly_profit }}</h3>
+                    <h3 class="fw-bold mb-0 text-info mt-1">{{ monthly_profit|floatformat:0 }}</h3>
                 </div>
                 <div class="p-3 bg-info bg-opacity-10 rounded-circle text-info">
                     <i class="fa-solid fa-vault fa-xl"></i>
