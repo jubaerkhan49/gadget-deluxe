@@ -27,7 +27,15 @@ fun AddDeviceDialog(
     var batteryHealth by remember { mutableStateOf("100") }
     var buyingPrice by remember { mutableStateOf("") }
 
-    val variants = listOf("Modified", "USA eSim", "Canada", "Mexican", "Korea", "Singapore", "Bypass", "Global")
+    val variants = listOf(
+        "Modified",
+        "USA eSim",
+        "Canada",
+        "Mexican",
+        "Korea",
+        "Singapore",
+        "Bypass"
+    )
     var variantMenuExpanded by remember { mutableStateOf(false) }
 
     AlertDialog(

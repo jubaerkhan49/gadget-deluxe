@@ -37,13 +37,13 @@ fun AddShipmentDialog(
     var discountStr by remember { mutableStateOf("0.00") }
 
     val variants = listOf(
-        "USA Single Physical SIM",
-        "CN Dual Physical SIM",
-        "Global eSIM + pSIM",
         "Modified",
-        "Bypass",
-        "Carrier Locked",
-        "Standard"
+        "USA eSim",
+        "Canada",
+        "Mexican",
+        "Korea",
+        "Singapore",
+        "Bypass"
     )
     var variantMenuExpanded by remember { mutableStateOf(false) }
 
