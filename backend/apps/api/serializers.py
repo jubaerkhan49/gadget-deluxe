@@ -15,10 +15,20 @@ class UserSerializer(serializers.ModelSerializer):
 class DeviceSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_current_status_display', read_only=True)
     current_owner_name = serializers.CharField(source='current_owner.username', read_only=True)
+    selling_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Device
         fields = '__all__'
+
+    def get_selling_price(self, obj):
+        try:
+            sale = obj.sales.order_by('-sale_date').first()
+            if sale and sale.selling_price is not None:
+                return float(sale.selling_price)
+            return None
+        except Exception:
+            return None
 
 class ShipmentSerializer(serializers.ModelSerializer):
     supplier_name = serializers.SerializerMethodField()

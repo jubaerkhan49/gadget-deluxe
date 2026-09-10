@@ -152,32 +152,60 @@ class DeviceViewSet(viewsets.ModelViewSet):
                 except Exception:
                     pass
 
-            # If moved to SOLD, ensure sales record exists
-            if device.current_status == DeviceStatus.SOLD:
-                try:
-                    seller = device.current_owner or user or User.objects.filter(is_superuser=True).first()
-                    if seller:
-                        existing_sale = Sale.objects.filter(device=device).first()
-                        if not existing_sale:
-                            buying = device.buying_price if device.buying_price is not None else Decimal('0.00')
-                            selling = device.selling_price if device.selling_price is not None else buying
-                            invoice_number = f"INV-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-                            Sale.objects.create(
+        # 3. Handle Selling Price & Sales Record Management
+        has_selling_price_in_req = 'selling_price' in self.request.data
+        selling_price_raw = self.request.data.get('selling_price')
+
+        if device.current_status == DeviceStatus.SOLD or has_selling_price_in_req:
+            try:
+                seller = device.current_owner or user or User.objects.filter(is_superuser=True).first()
+                if seller:
+                    existing_sale = Sale.objects.filter(device=device).first()
+                    buying = device.buying_price if device.buying_price is not None else Decimal('0.00')
+
+                    if selling_price_raw is not None and str(selling_price_raw).strip() != '':
+                        sp_dec = Decimal(str(selling_price_raw))
+                    elif existing_sale and existing_sale.selling_price is not None:
+                        sp_dec = existing_sale.selling_price
+                    elif device.buying_price is not None:
+                        sp_dec = device.buying_price
+                    else:
+                        sp_dec = Decimal('0.00')
+
+                    if not existing_sale:
+                        invoice_number = f"INV-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+                        Sale.objects.create(
+                            device=device,
+                            customer=None,
+                            seller=seller,
+                            buying_price=buying,
+                            selling_price=sp_dec,
+                            discount=Decimal('0.00'),
+                            commission_amount=Decimal('0.00'),
+                            invoice_number=invoice_number,
+                            payment_status='PAID'
+                        )
+                        DeviceHistory.objects.create(
+                            device=device,
+                            user=user,
+                            action_type='STATUS_UPDATE',
+                            new_state=f"Marked as Sold (Invoice: {invoice_number}, Price: BDT {sp_dec})"
+                        )
+                    else:
+                        old_sp = existing_sale.selling_price
+                        if selling_price_raw is not None and str(selling_price_raw).strip() != '':
+                            existing_sale.selling_price = sp_dec
+                        existing_sale.seller = seller
+                        existing_sale.save()
+                        if old_sp != existing_sale.selling_price:
+                            DeviceHistory.objects.create(
                                 device=device,
-                                customer=None,
-                                seller=seller,
-                                buying_price=buying,
-                                selling_price=selling,
-                                discount=Decimal('0.00'),
-                                commission_amount=Decimal('0.00'),
-                                invoice_number=invoice_number,
-                                payment_status='PAID'
+                                user=user,
+                                action_type='STATUS_UPDATE',
+                                new_state=f"Selling price updated to BDT {existing_sale.selling_price} (Invoice: {existing_sale.invoice_number})"
                             )
-                        elif device.selling_price is not None and existing_sale.selling_price != device.selling_price:
-                            existing_sale.selling_price = device.selling_price
-                            existing_sale.save()
-                except Exception:
-                    pass
+            except Exception:
+                pass
 
 class ShipmentViewSet(viewsets.ModelViewSet):
     queryset = Shipment.objects.select_related('supplier').all()

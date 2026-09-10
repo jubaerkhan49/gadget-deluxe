@@ -281,6 +281,7 @@ fun DeviceDetailDialog(
                             } ?: ""
                         )
                     }
+                    var isSaved by remember { mutableStateOf(false) }
 
                     Column(
                         modifier = Modifier
@@ -302,7 +303,10 @@ fun DeviceDetailDialog(
                         ) {
                             OutlinedTextField(
                                 value = sellingPriceInput,
-                                onValueChange = { sellingPriceInput = it },
+                                onValueChange = { 
+                                    sellingPriceInput = it
+                                    isSaved = false
+                                },
                                 placeholder = { Text("e.g. 75000") },
                                 prefix = { Text("BDT ", fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), fontSize = 13.sp) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
@@ -314,12 +318,20 @@ fun DeviceDetailDialog(
                                 onClick = {
                                     val sp = sellingPriceInput.toDoubleOrNull()
                                     onUpdateSpecs(mapOf("selling_price" to sp, "current_status" to "SOLD"))
+                                    isSaved = true
                                 },
                                 shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2563EB)),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isSaved) Color(0xFF16A34A) else Color(0xFF2563EB)
+                                ),
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
                             ) {
-                                Text("Save", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                Text(
+                                    text = if (isSaved) "Saved ✓" else "Save",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
                             }
                         }
                     }
