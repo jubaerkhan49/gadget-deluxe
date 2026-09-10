@@ -156,20 +156,6 @@ fun ShipmentCard(
     onDelete: () -> Unit
 ) {
     val count = shipment.devicesCount
-    val totalGrossCost = shipment.shippingCost?.toDoubleOrNull() ?: 0.0
-    val discountAmount = shipment.discount?.toDoubleOrNull() ?: 0.0
-    val netCost = shipment.netShippingCost?.toDoubleOrNull() ?: maxOf(totalGrossCost - discountAmount, 0.0)
-    val unitFee = shipment.unitShippingCost?.toDoubleOrNull() 
-        ?: if (count > 0 && netCost > 0) (netCost / count) else 0.0
-
-    val totalFormatted = if (netCost % 1.0 == 0.0) "${netCost.toLong()}" else String.format(java.util.Locale.US, "%.2f", netCost)
-    val unitFormatted = if (unitFee % 1.0 == 0.0) "${unitFee.toLong()}" else String.format(java.util.Locale.US, "%.2f", unitFee)
-
-    val billText = if (count > 0 && unitFee > 0) {
-        "Shipment Bill: $totalFormatted ($unitFormatted x $count)"
-    } else {
-        "Shipment Bill: $totalFormatted"
-    }
 
     Card(
         modifier = Modifier
@@ -267,24 +253,6 @@ fun ShipmentCard(
                         fontWeight = FontWeight.SemiBold
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 5. Shipment Bill
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFD97706).copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = billText,
-                    color = Color(0xFFD97706),
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
 
             Spacer(modifier = Modifier.height(10.dp))
