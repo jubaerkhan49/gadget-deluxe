@@ -10,6 +10,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -18,15 +19,26 @@ import com.imei.inventory.data.model.ShipmentDto
 import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ShipmentDetailDialog(
     shipment: ShipmentDto,
     devicesInShipment: List<DeviceDto>,
     onDismiss: () -> Unit,
-    onUpdateDeviceStatus: (Int, String) -> Unit,
-    onReceiveAllToInStock: () -> Unit
+    onUpdateDeviceStatus: (deviceId: Int, newStatus: String, receiveDate: String?) -> Unit,
+    onReceiveAllToInStock: (receiveDate: String?) -> Unit
 ) {
+    val context = LocalContext.current
+    var showReceiveAllDateSection by remember { mutableStateOf(false) }
+    var receiveAllDate by remember {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        mutableStateOf(shipment.receiveDate?.take(10) ?: sdf.format(Date()))
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
@@ -124,20 +136,101 @@ fun ShipmentDetailDialog(
                             Text(date.take(10), color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
                         }
                     }
+
+                    shipment.receiveDate?.let { rDate ->
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Receive Date:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text(rDate.take(10), color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
                 // Bulk Quick Action
-                Button(
-                    onClick = onReceiveAllToInStock,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(34.dp)
-                ) {
-                    Text("✅ Receive All (Set All to In Stock)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                if (!showReceiveAllDateSection) {
+                    Button(
+                        onClick = { showReceiveAllDateSection = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(34.dp)
+                    ) {
+                        Text("✅ Receive All (Set All to In Stock)", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    }
+                } else {
+                    Surface(
+                        color = Color(0xFF16A34A).copy(alpha = 0.09f),
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Receive Date for All Units:",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        val cal = Calendar.getInstance()
+                                        try {
+                                            val parts = receiveAllDate.split("-")
+                                            if (parts.size == 3) {
+                                                cal.set(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt())
+                                            }
+                                        } catch (e: Exception) { }
+
+                                        android.app.DatePickerDialog(
+                                            context,
+                                            { _, y, m, d ->
+                                                receiveAllDate = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
+                                            },
+                                            cal.get(Calendar.YEAR),
+                                            cal.get(Calendar.MONTH),
+                                            cal.get(Calendar.DAY_OF_MONTH)
+                                        ).show()
+                                    },
+                                    shape = RoundedCornerShape(6.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(34.dp)
+                                ) {
+                                    Text("📅 $receiveAllDate", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+                                }
+
+                                Button(
+                                    onClick = {
+                                        showReceiveAllDateSection = false
+                                        onReceiveAllToInStock(receiveAllDate)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                                    shape = RoundedCornerShape(6.dp),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                    modifier = Modifier.height(34.dp)
+                                ) {
+                                    Text("Confirm All", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                                }
+
+                                IconButton(
+                                    onClick = { showReceiveAllDateSection = false },
+                                    modifier = Modifier.size(30.dp)
+                                ) {
+                                    Text("✕", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
@@ -165,7 +258,10 @@ fun ShipmentDetailDialog(
                         items(devicesInShipment) { dev ->
                             ShipmentDeviceItem(
                                 device = dev,
-                                onStatusChange = { newStatus -> onUpdateDeviceStatus(dev.id, newStatus) }
+                                defaultReceiveDate = shipment.receiveDate?.take(10),
+                                onStatusChange = { newStatus, receiveDate ->
+                                    onUpdateDeviceStatus(dev.id, newStatus, receiveDate)
+                                }
                             )
                         }
                     }
@@ -176,9 +272,10 @@ fun ShipmentDetailDialog(
             Button(
                 onClick = onDismiss,
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
             ) {
-                Text("Close", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Done", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
         }
     )
@@ -187,13 +284,21 @@ fun ShipmentDetailDialog(
 @Composable
 fun ShipmentDeviceItem(
     device: DeviceDto,
-    onStatusChange: (String) -> Unit
+    defaultReceiveDate: String? = null,
+    onStatusChange: (String, String?) -> Unit
 ) {
     var expandedMenu by remember { mutableStateOf(false) }
+    var showReceiveDateInput by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
+    var selectedReceiveDate by remember {
+        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        mutableStateOf(defaultReceiveDate ?: sdf.format(Date()))
+    }
 
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
@@ -238,38 +343,123 @@ fun ShipmentDeviceItem(
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surface),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                         shape = RoundedCornerShape(6.dp),
-                        modifier = Modifier.height(24.dp)
+                        modifier = Modifier.height(26.dp)
                     ) {
-                        Text("Change ▾", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Change ▾", fontSize = 11.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                     }
                     DropdownMenu(
                         expanded = expandedMenu,
                         onDismissRequest = { expandedMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("In Stock", fontSize = 12.sp) },
+                            text = { Text("In Stock (Set Receive Date)", fontSize = 12.sp, color = Color(0xFF16A34A), fontWeight = FontWeight.SemiBold) },
                             onClick = {
                                 expandedMenu = false
-                                onStatusChange("IN_STOCK")
+                                showReceiveDateInput = true
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Under Repair", fontSize = 12.sp) },
+                            text = { Text("Under Repair", fontSize = 12.sp, color = Color(0xFFCA8A04)) },
                             onClick = {
                                 expandedMenu = false
-                                onStatusChange("UNDER_REPAIR")
+                                showReceiveDateInput = false
+                                onStatusChange("UNDER_REPAIR", null)
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Sold", fontSize = 12.sp) },
+                            text = { Text("Sold", fontSize = 12.sp, color = Color(0xFF2563EB)) },
                             onClick = {
                                 expandedMenu = false
-                                onStatusChange("SOLD")
+                                showReceiveDateInput = false
+                                onStatusChange("SOLD", null)
                             }
                         )
+                    }
+                }
+            }
+
+            // Calendar / Receive Date Input Box when In Stock is selected
+            if (showReceiveDateInput) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Surface(
+                    color = Color(0xFF16A34A).copy(alpha = 0.09f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Text(
+                            text = "Receive Date for In Stock:",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            OutlinedButton(
+                                onClick = {
+                                    val cal = Calendar.getInstance()
+                                    try {
+                                        val parts = selectedReceiveDate.split("-")
+                                        if (parts.size == 3) {
+                                            cal.set(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt())
+                                        }
+                                    } catch (e: Exception) { }
+
+                                    android.app.DatePickerDialog(
+                                        context,
+                                        { _, y, m, d ->
+                                            selectedReceiveDate = String.format(Locale.US, "%04d-%02d-%02d", y, m + 1, d)
+                                        },
+                                        cal.get(Calendar.YEAR),
+                                        cal.get(Calendar.MONTH),
+                                        cal.get(Calendar.DAY_OF_MONTH)
+                                    ).show()
+                                },
+                                shape = RoundedCornerShape(6.dp),
+                                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(34.dp)
+                            ) {
+                                Text(
+                                    text = "📅 $selectedReceiveDate",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+
+                            Button(
+                                onClick = {
+                                    showReceiveDateInput = false
+                                    onStatusChange("IN_STOCK", selectedReceiveDate)
+                                },
+                                shape = RoundedCornerShape(6.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                modifier = Modifier.height(34.dp)
+                            ) {
+                                Text("Confirm", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 11.sp)
+                            }
+
+                            IconButton(
+                                onClick = { showReceiveDateInput = false },
+                                modifier = Modifier.size(30.dp)
+                            ) {
+                                Text("✕", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
+

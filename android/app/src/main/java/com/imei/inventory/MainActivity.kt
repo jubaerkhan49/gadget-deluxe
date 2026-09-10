@@ -356,15 +356,36 @@ class MainActivity : FragmentActivity() {
                                 shipment = shipment,
                                 devicesInShipment = devicesInShipment,
                                 onDismiss = { selectedShipmentForDetail = null },
-                                onUpdateDeviceStatus = { devId, newStatus ->
+                                onUpdateDeviceStatus = { devId, newStatus, receiveDate ->
                                     mainViewModel.updateDevice(
                                         token = token,
                                         deviceId = devId,
                                         updates = mapOf("current_status" to newStatus),
-                                        onSuccess = {}
+                                        onSuccess = {
+                                            if (newStatus == "IN_STOCK" && receiveDate != null) {
+                                                mainViewModel.updateShipment(
+                                                    token = token,
+                                                    shipmentId = shipment.id,
+                                                    updates = mapOf("receive_date" to receiveDate),
+                                                    onSuccess = {
+                                                        selectedShipmentForDetail = shipment.copy(receiveDate = receiveDate)
+                                                    }
+                                                )
+                                            }
+                                        }
                                     )
                                 },
-                                onReceiveAllToInStock = {
+                                onReceiveAllToInStock = { receiveDate ->
+                                    if (receiveDate != null) {
+                                        mainViewModel.updateShipment(
+                                            token = token,
+                                            shipmentId = shipment.id,
+                                            updates = mapOf("receive_date" to receiveDate),
+                                            onSuccess = {
+                                                selectedShipmentForDetail = shipment.copy(receiveDate = receiveDate)
+                                            }
+                                        )
+                                    }
                                     devicesInShipment.forEach { dev ->
                                         mainViewModel.updateDevice(
                                             token = token,

@@ -203,6 +203,21 @@ class MainInventoryViewModel : ViewModel() {
         }
     }
 
+    fun updateShipment(token: String, shipmentId: Int, updates: Map<String, Any?>, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val bearer = "Bearer $token"
+                val response = ApiClient.apiService.updateShipment(bearer, shipmentId, updates)
+                if (response.isSuccessful) {
+                    onSuccess()
+                    fetchShipments(token)
+                }
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+    }
+
     fun createBatchShipment(
         token: String,
         payload: Map<String, Any>,
