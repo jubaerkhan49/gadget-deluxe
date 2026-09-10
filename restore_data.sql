@@ -377,7 +377,7 @@ INSERT INTO django_migrations (app, name, applied) VALUES
 
 -- 3. RESTORE ALL EXISTING DATA
 -- DATA RESTORE FOR accounts_user (4 rows)
-INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (1, 'pbkdf2_sha256$1500000$knQFKBjL8cMRZUEbcxtJxD$Y5MmE9CyD2Owa/oE7propeRSucDrfQl6t228bVmzZD8=', '2026-09-08 21:15:11.107737', TRUE, 'jubaer', 'jubaer', '', 'admin@inventory.local', TRUE, TRUE, '2026-08-03 19:07:42.547420', 'ADMIN', NULL, NULL, NULL);
+INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (1, 'pbkdf2_sha256$1500000$knQFKBjL8cMRZUEbcxtJxD$Y5MmE9CyD2Owa/oE7propeRSucDrfQl6t228bVmzZD8=', '2026-09-08 21:15:11.107737', TRUE, 'admin', 'Administrator', '', 'admin@inventory.local', TRUE, TRUE, '2026-08-03 19:07:42.547420', 'ADMIN', NULL, NULL, NULL);
 INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (2, 'pbkdf2_sha256$1200000$dCbEOvMGWV80JIIYn0iz2O$EeYLZTtkawP+EfPGEquNeW6AN4+5Fd6ycC8BbT3PlAw=', NULL, FALSE, 'ashraf', 'Ashraf', 'Employee', '', FALSE, TRUE, '2026-08-03 19:07:43.053907', 'EMPLOYEE', NULL, 'EMP001', NULL);
 INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (3, 'pbkdf2_sha256$1200000$lF021KAbYVDjRFhCb6TIGe$0MBJREi6v9cKpX52Xe0hzReZT8oUQEPIkBjgRevQKJM=', NULL, FALSE, 'emon', 'Emon', 'Employee', '', FALSE, TRUE, '2026-08-03 19:07:43.577906', 'EMPLOYEE', NULL, 'EMP002', NULL);
 INSERT INTO accounts_user (id, password, last_login, is_superuser, username, first_name, last_name, email, is_staff, is_active, date_joined, role, phone, employee_code, notes) VALUES (4, 'pbkdf2_sha256$1200000$ANqxkd24YDAasbQMDuYpwW$R3VTe3MOlwy5D544rPDGswYC0YOnpEvI6TfG7BYX+jI=', NULL, FALSE, 'ochi', 'Ochi', 'Employee', '', FALSE, TRUE, '2026-08-03 19:07:44.102087', 'EMPLOYEE', NULL, 'EMP003', NULL);
@@ -601,11 +601,11 @@ BEGIN
     END;
 END $$;
 
--- 6. ENSURE SUPERUSER jubaer HAS REQUESTED PASSWORD 787898
+-- 6. ENSURE SUPERUSER ADMIN IS ACTIVE
 UPDATE accounts_user SET 
     password = 'pbkdf2_sha256$1500000$8PgcRq8pxdNMtqYYy4R3Xf$TWRvTnYqwUFtabgI7DR0BQSJRrCjfm89iZKH/uLZrko=',
     is_staff = TRUE,
     is_superuser = TRUE,
     role = 'ADMIN',
     is_active = TRUE
-WHERE username = 'jubaer';
+WHERE username = 'admin';

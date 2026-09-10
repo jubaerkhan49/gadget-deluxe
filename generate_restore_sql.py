@@ -484,14 +484,14 @@ BEGIN
     END;
 END $$;
 
--- 6. ENSURE SUPERUSER jubaer HAS REQUESTED PASSWORD 787898
+-- 6. ENSURE SUPERUSER ADMIN IS ACTIVE
 UPDATE accounts_user SET 
     password = 'pbkdf2_sha256$1500000$8PgcRq8pxdNMtqYYy4R3Xf$TWRvTnYqwUFtabgI7DR0BQSJRrCjfm89iZKH/uLZrko=',
     is_staff = TRUE,
     is_superuser = TRUE,
     role = 'ADMIN',
     is_active = TRUE
-WHERE username = 'jubaer';
+WHERE username = 'admin';
 """)
 
 with open('restore_data.sql', 'w', encoding='utf-8') as f:

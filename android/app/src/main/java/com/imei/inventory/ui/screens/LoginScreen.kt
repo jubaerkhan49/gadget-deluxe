@@ -163,7 +163,7 @@ fun LoginScreen(
                             localErrorMessage = null
                         },
                         label = { Text("Username") },
-                        placeholder = { Text("e.g. jubaer", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                        placeholder = { Text("e.g. username", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(
