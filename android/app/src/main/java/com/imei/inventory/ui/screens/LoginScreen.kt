@@ -1,5 +1,6 @@
 package com.imei.inventory.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -7,17 +8,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
+import com.imei.inventory.util.BiometricHelper
+import com.imei.inventory.util.PreferencesManager
 import com.imei.inventory.viewmodel.AuthState
 import com.imei.inventory.viewmodel.AuthViewModel
 
@@ -26,14 +33,65 @@ fun LoginScreen(
     authViewModel: AuthViewModel,
     onLoginSuccess: (String) -> Unit
 ) {
-    var username by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val prefsManager = remember { PreferencesManager(context) }
+    var username by remember { mutableStateOf(prefsManager.getSavedUsername() ?: "") }
     var password by remember { mutableStateOf("") }
+    var localErrorMessage by remember { mutableStateOf<String?>(null) }
     val authState by authViewModel.authState.collectAsState()
     val scrollState = rememberScrollState()
 
+    fun triggerBiometricAuth() {
+        localErrorMessage = null
+        val activity = context as? FragmentActivity
+        if (activity == null) {
+            localErrorMessage = "Activity not found for Biometric auth"
+            return
+        }
+
+        if (!BiometricHelper.isBiometricAvailable(context)) {
+            localErrorMessage = "Biometric authentication is not supported or setup on this device."
+            return
+        }
+
+        val savedUser = prefsManager.getSavedUsername()
+        val savedPass = prefsManager.getSavedPassword()
+
+        if (savedUser.isNullOrBlank() || savedPass.isNullOrBlank()) {
+            localErrorMessage = "Please sign in with password first to enable Fingerprint login."
+            Toast.makeText(context, "Sign in with password first to enable Fingerprint login", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        BiometricHelper.showBiometricPrompt(
+            activity = activity,
+            title = "Biometric Sign-In",
+            subtitle = "Verify fingerprint to unlock Gadget Deluxe",
+            onSuccess = {
+                username = savedUser
+                password = savedPass
+                authViewModel.login(savedUser, savedPass)
+            },
+            onError = { err ->
+                localErrorMessage = err
+            }
+        )
+    }
+
+    // Auto-prompt biometric on launch if credentials exist
+    LaunchedEffect(Unit) {
+        if (prefsManager.isBiometricEnabled()) {
+            triggerBiometricAuth()
+        }
+    }
+
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
-            onLoginSuccess((authState as AuthState.Success).token)
+            val token = (authState as AuthState.Success).token
+            if (username.isNotBlank() && password.isNotBlank()) {
+                prefsManager.saveCredentials(username.trim(), password.trim(), token)
+            }
+            onLoginSuccess(token)
         }
     }
 
@@ -94,7 +152,10 @@ fun LoginScreen(
 
                     OutlinedTextField(
                         value = username,
-                        onValueChange = { username = it },
+                        onValueChange = { 
+                            username = it
+                            localErrorMessage = null
+                        },
                         label = { Text("Username") },
                         placeholder = { Text("e.g. jubaer", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         singleLine = true,
@@ -118,7 +179,10 @@ fun LoginScreen(
 
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = { 
+                            password = it
+                            localErrorMessage = null
+                        },
                         label = { Text("Password") },
                         placeholder = { Text("••••••••", color = MaterialTheme.colorScheme.onSurfaceVariant) },
                         singleLine = true,
@@ -154,6 +218,14 @@ fun LoginScreen(
                             fontSize = 13.sp,
                             fontWeight = FontWeight.Medium
                         )
+                    } else if (localErrorMessage != null) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Text(
+                            text = localErrorMessage!!,
+                            color = Color(0xFFDC2626),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(20.dp))
@@ -161,19 +233,41 @@ fun LoginScreen(
                     if (authState is AuthState.Loading) {
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     } else {
-                        Button(
-                            onClick = {
-                                if (username.isNotBlank() && password.isNotBlank()) {
-                                    authViewModel.login(username.trim(), password.trim())
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(48.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            Button(
+                                onClick = {
+                                    if (username.isNotBlank() && password.isNotBlank()) {
+                                        authViewModel.login(username.trim(), password.trim())
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(48.dp)
+                            ) {
+                                Text("Sign In", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                            }
+
+                            FilledTonalIconButton(
+                                onClick = { triggerBiometricAuth() },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                ),
+                                modifier = Modifier.size(48.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Fingerprint,
+                                    contentDescription = "Sign In with Fingerprint / Biometric",
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
                         }
                     }
                 }

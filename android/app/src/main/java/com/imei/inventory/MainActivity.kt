@@ -1,7 +1,6 @@
 package com.imei.inventory
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.core.*
@@ -26,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.fragment.app.FragmentActivity
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.ShipmentDto
 import com.imei.inventory.ui.dialogs.AddDeviceDialog
@@ -38,7 +38,7 @@ import com.imei.inventory.ui.theme.AppTheme
 import com.imei.inventory.viewmodel.AuthViewModel
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     private val authViewModel: AuthViewModel by viewModels()
     private val mainViewModel: MainInventoryViewModel by viewModels()
 

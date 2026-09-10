@@ -130,11 +130,11 @@ fun DashboardTab(
                 }
                 Button(
                     onClick = onOpenAddShipment,
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488)),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("📦 New Shipment", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("📦 New Shipment", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

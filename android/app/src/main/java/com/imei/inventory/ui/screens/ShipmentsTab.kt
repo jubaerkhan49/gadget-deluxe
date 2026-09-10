@@ -18,6 +18,8 @@ import com.imei.inventory.data.model.ShipmentDto
 import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 
+import androidx.compose.ui.text.style.TextOverflow
+
 @Composable
 fun ShipmentsTab(
     token: String,
@@ -50,7 +52,7 @@ fun ShipmentsTab(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Column {
                 Text(
@@ -80,7 +82,10 @@ fun ShipmentsTab(
                     )
                 }
             } else {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 80.dp)
+                ) {
                     items(shipments) { shipment ->
                         ShipmentCard(
                             shipment = shipment,
@@ -105,6 +110,15 @@ fun ShipmentCard(
     val unitFee = shipment.unitShippingCost?.toDoubleOrNull() 
         ?: if (count > 0 && netCost > 0) (netCost / count) else 0.0
 
+    val totalFormatted = if (netCost % 1.0 == 0.0) "${netCost.toLong()}" else String.format(java.util.Locale.US, "%.2f", netCost)
+    val unitFormatted = if (unitFee % 1.0 == 0.0) "${unitFee.toLong()}" else String.format(java.util.Locale.US, "%.2f", unitFee)
+
+    val billText = if (count > 0 && unitFee > 0) {
+        "Shipment Bill: $totalFormatted ($unitFormatted x $count)"
+    } else {
+        "Shipment Bill: $totalFormatted"
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -124,7 +138,12 @@ fun ShipmentCard(
                     text = shipment.supplierName ?: "Supplier Order",
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
+                    fontSize = 15.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .padding(end = 8.dp)
                 )
                 Surface(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
@@ -135,7 +154,8 @@ fun ShipmentCard(
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        maxLines = 1,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
             }
@@ -181,32 +201,20 @@ fun ShipmentCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 4. Shipment Bill (Clean distinct row under Supplier matching Detail Dialog exactly)
+            // 4. Shipment Bill (Clean distinct row under Supplier matching requirement exactly)
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFFD97706).copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Shipment Bill:", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "BDT ${String.format("%.2f", netCost)}",
-                        color = Color(0xFFD97706),
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    if (count > 0 && unitFee > 0) {
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "(BDT ${String.format("%.2f", unitFee)} × $count)",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 11.sp
-                        )
-                    }
-                }
+                Text(
+                    text = billText,
+                    color = Color(0xFFD97706),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
