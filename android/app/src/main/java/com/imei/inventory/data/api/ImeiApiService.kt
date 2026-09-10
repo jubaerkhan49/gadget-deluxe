@@ -9,12 +9,19 @@ interface ImeiApiService {
     @POST("api/token/")
     suspend fun login(@Body request: LoginRequest): Response<AuthResponse>
 
+    // Dashboard Stats Endpoint
+    @GET("api/dashboard/stats/")
+    suspend fun getDashboardStats(
+        @Header("Authorization") token: String
+    ): Response<DashboardStatsDto>
+
     // Device Endpoints
     @GET("api/devices/")
     suspend fun getDevices(
         @Header("Authorization") token: String,
         @Query("search") search: String? = null,
-        @Query("current_status") status: String? = null
+        @Query("current_status") status: String? = null,
+        @Query("page_size") pageSize: Int? = 500
     ): Response<PaginatedResponse<DeviceDto>>
 
     @GET("api/devices/{id}/")
@@ -31,7 +38,8 @@ interface ImeiApiService {
 
     @GET("api/users/")
     suspend fun getUsers(
-        @Header("Authorization") token: String
+        @Header("Authorization") token: String,
+        @Query("page_size") pageSize: Int? = 500
     ): Response<PaginatedResponse<UserDto>>
 
     @POST("api/devices/")
@@ -56,7 +64,8 @@ interface ImeiApiService {
     // Shipments Endpoint
     @GET("api/shipments/")
     suspend fun getShipments(
-        @Header("Authorization") token: String
+        @Header("Authorization") token: String,
+        @Query("page_size") pageSize: Int? = 500
     ): Response<PaginatedResponse<ShipmentDto>>
 
     @POST("api/shipments/create-batch/")
@@ -75,18 +84,21 @@ interface ImeiApiService {
     // Sales Endpoint
     @GET("api/sales/")
     suspend fun getSales(
-        @Header("Authorization") token: String
+        @Header("Authorization") token: String,
+        @Query("page_size") pageSize: Int? = 500
     ): Response<PaginatedResponse<SaleDto>>
 
     // Repairs Endpoint
     @GET("api/repairs/")
     suspend fun getRepairs(
-        @Header("Authorization") token: String
+        @Header("Authorization") token: String,
+        @Query("page_size") pageSize: Int? = 500
     ): Response<PaginatedResponse<RepairDto>>
 
     // Sickw Reports Endpoint
     @GET("api/sickw-reports/")
     suspend fun getSickwReports(
-        @Header("Authorization") token: String
+        @Header("Authorization") token: String,
+        @Query("page_size") pageSize: Int? = 500
     ): Response<PaginatedResponse<SickwReportDto>>
 }

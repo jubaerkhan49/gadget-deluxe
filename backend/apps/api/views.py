@@ -442,3 +442,43 @@ class ExportDevicesCSVView(APIView):
             ])
 
         return response
+
+
+class DashboardStatsAPIView(APIView):
+    """API endpoint returning operational dashboard metrics in real-time."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        now = timezone.now()
+        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        total_devices = Device.objects.count()
+        in_stock_count = Device.objects.filter(current_status=DeviceStatus.IN_STOCK).count()
+        sold_count = Device.objects.filter(current_status=DeviceStatus.SOLD).count()
+        waiting_shipment_count = Device.objects.filter(current_status=DeviceStatus.WAITING_SHIPMENT).count()
+        repair_count = Device.objects.filter(current_status=DeviceStatus.UNDER_REPAIR).count()
+        returned_count = Device.objects.filter(current_status=DeviceStatus.RETURNED).count()
+
+        total_assets = Device.objects.exclude(current_status=DeviceStatus.SOLD).aggregate(total=models.Sum('buying_price'))['total'] or Decimal('0.00')
+
+        today_sales_qs = Sale.objects.filter(sale_date__gte=today_start)
+        today_sales = today_sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
+        today_profit = today_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
+
+        monthly_sales_qs = Sale.objects.filter(sale_date__gte=month_start)
+        monthly_profit = monthly_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
+
+        return Response({
+            'total_devices': total_devices,
+            'in_stock': in_stock_count,
+            'sold': sold_count,
+            'waiting_shipment': waiting_shipment_count,
+            'under_repair': repair_count,
+            'returned': returned_count,
+            'total_assets': float(total_assets),
+            'today_sales': float(today_sales),
+            'today_profit': float(today_profit),
+            'monthly_profit': float(monthly_profit),
+        })
+

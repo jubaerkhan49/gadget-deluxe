@@ -61,12 +61,36 @@ class MainInventoryViewModel : ViewModel() {
     private var realtimeJob: kotlinx.coroutines.Job? = null
 
     fun loadAllData(token: String) {
+        fetchDashboardStats(token)
         fetchUsers(token)
         fetchDevices(token)
         fetchShipments(token)
         fetchSales(token)
         fetchRepairs(token)
         startRealtimeSync(token)
+    }
+
+    fun fetchDashboardStats(token: String) {
+        viewModelScope.launch {
+            try {
+                val bearer = "Bearer $token"
+                val res = ApiClient.apiService.getDashboardStats(bearer)
+                if (res.isSuccessful && res.body() != null) {
+                    val s = res.body()!!
+                    _stats.value = DashboardStats(
+                        totalDevices = s.totalDevices,
+                        inStock = s.inStock,
+                        sold = s.sold,
+                        underRepair = s.underRepair,
+                        totalSalesAmount = s.todaySales,
+                        totalProfit = s.todayProfit,
+                        totalAssets = s.totalAssets
+                    )
+                }
+            } catch (e: Exception) {
+                // fallback to local computeStats
+            }
+        }
     }
 
     fun startRealtimeSync(token: String) {
