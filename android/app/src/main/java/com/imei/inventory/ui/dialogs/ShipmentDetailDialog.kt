@@ -67,7 +67,7 @@ fun ShipmentDetailDialog(
                         shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
-                            text = "📦 ${devicesInShipment.size} Devices",
+                            text = "${devicesInShipment.size} Devices",
                             color = MaterialTheme.colorScheme.primary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,

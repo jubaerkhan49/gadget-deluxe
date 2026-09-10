@@ -188,7 +188,7 @@ fun ShipmentCard(
                     shape = RoundedCornerShape(6.dp)
                 ) {
                     Text(
-                        text = "📦 $count Units →",
+                        text = "$count Units",
                         color = MaterialTheme.colorScheme.primary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
