@@ -100,10 +100,10 @@ fun DashboardTab(
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
-                        title = "TOTAL PROFIT",
-                        value = "BDT ${stats.totalProfit.toInt()}",
-                        icon = "📈",
-                        accentColor = Color(0xFF0284C7),
+                        title = "TOTAL ASSETS",
+                        value = "BDT ${stats.totalAssets.toInt()}",
+                        icon = "💰",
+                        accentColor = Color(0xFF2563EB),
                         modifier = Modifier.weight(1f)
                     )
                 }

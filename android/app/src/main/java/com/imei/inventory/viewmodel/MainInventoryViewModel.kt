@@ -14,7 +14,8 @@ data class DashboardStats(
     val sold: Int = 0,
     val underRepair: Int = 0,
     val totalSalesAmount: Double = 0.0,
-    val totalProfit: Double = 0.0
+    val totalProfit: Double = 0.0,
+    val totalAssets: Double = 0.0
 )
 
 class MainInventoryViewModel : ViewModel() {
@@ -278,6 +279,7 @@ class MainInventoryViewModel : ViewModel() {
         val repair = deviceList.count { it.currentStatus == "UNDER_REPAIR" }
         val totalSales = salesList.sumOf { it.finalPrice }
         val totalProfit = salesList.sumOf { it.profit ?: 0.0 }
+        val totalAssets = deviceList.filter { it.currentStatus != "SOLD" }.sumOf { it.buyingPrice ?: 0.0 }
 
         _stats.value = DashboardStats(
             totalDevices = total,
@@ -285,7 +287,8 @@ class MainInventoryViewModel : ViewModel() {
             sold = sold,
             underRepair = repair,
             totalSalesAmount = totalSales,
-            totalProfit = totalProfit
+            totalProfit = totalProfit,
+            totalAssets = totalAssets
         )
     }
 }

@@ -25,7 +25,8 @@ class DashboardIndexView(LoginRequiredMixin, View):
         repair_count = Device.objects.filter(current_status=DeviceStatus.UNDER_REPAIR).count()
         returned_count = Device.objects.filter(current_status=DeviceStatus.RETURNED).count()
 
-        # Financial Metrics
+        # Financial & Asset Metrics
+        total_assets = Device.objects.exclude(current_status=DeviceStatus.SOLD).aggregate(total=Sum('buying_price'))['total'] or Decimal('0.00')
         today_sales_qs = Sale.objects.filter(sale_date__gte=today_start)
         today_sales = today_sales_qs.aggregate(total=Sum('selling_price'))['total'] or Decimal('0.00')
         today_profit = today_sales_qs.aggregate(total=Sum('profit'))['total'] or Decimal('0.00')
@@ -56,6 +57,7 @@ class DashboardIndexView(LoginRequiredMixin, View):
             'returned_count': returned_count,
             'today_sales': today_sales,
             'today_profit': today_profit,
+            'total_assets': total_assets,
             'monthly_profit': monthly_profit,
             'top_seller': top_seller,
             'latest_shipment': latest_shipment,
