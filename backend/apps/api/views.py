@@ -89,10 +89,13 @@ class DeviceViewSet(viewsets.ModelViewSet):
         old_status = db_device.current_status
         user = self.request.user if (self.request and self.request.user and self.request.user.is_authenticated) else None
 
+        explicit_status_requested = 'current_status' in self.request.data
+        explicit_owner_requested = 'current_owner' in self.request.data
+
         device = serializer.save()
 
         # 1. Handle Owner Change & Assignment History Audit
-        if old_owner != device.current_owner:
+        if explicit_owner_requested or old_owner != device.current_owner:
             old_owner_name = old_owner.username if old_owner else "None"
 
             # Deactivate previous active assignments
@@ -126,9 +129,18 @@ class DeviceViewSet(viewsets.ModelViewSet):
                 )
 
         # 2. Handle Status Change & Activity Timeline Audit
-        if old_status != device.current_status:
+        if explicit_status_requested or old_status != device.current_status:
             old_status_display = dict(DeviceStatus.choices).get(old_status, old_status)
             new_status_display = device.get_current_status_display()
+
+            # Always record status update audit event first
+            DeviceHistory.objects.create(
+                device=device,
+                user=user,
+                action_type='STATUS_UPDATE',
+                old_state=old_status_display,
+                new_state=new_status_display
+            )
 
             # If moved away from UNDER_REPAIR, complete active repairs
             if old_status == DeviceStatus.UNDER_REPAIR and device.current_status != DeviceStatus.UNDER_REPAIR:
@@ -163,14 +175,6 @@ class DeviceViewSet(viewsets.ModelViewSet):
                             )
                 except Exception:
                     pass
-
-            DeviceHistory.objects.create(
-                device=device,
-                user=user,
-                action_type='STATUS_UPDATE',
-                old_state=old_status_display,
-                new_state=new_status_display
-            )
 
 class ShipmentViewSet(viewsets.ModelViewSet):
     queryset = Shipment.objects.select_related('supplier').all()
