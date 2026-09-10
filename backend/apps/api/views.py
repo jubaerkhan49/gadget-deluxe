@@ -132,27 +132,37 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
             # If moved away from UNDER_REPAIR, complete active repairs
             if old_status == DeviceStatus.UNDER_REPAIR and device.current_status != DeviceStatus.UNDER_REPAIR:
-                Repair.objects.filter(device=device, status=RepairStatus.IN_PROGRESS).update(
-                    status=RepairStatus.COMPLETED,
-                    returned_date=timezone.now().date()
-                )
+                try:
+                    Repair.objects.filter(device=device, status=RepairStatus.IN_PROGRESS).update(
+                        status=RepairStatus.COMPLETED,
+                        returned_date=timezone.now().date()
+                    )
+                except Exception:
+                    pass
 
             # If moved to SOLD, ensure sales record exists
             if device.current_status == DeviceStatus.SOLD:
-                seller = device.current_owner or user or User.objects.filter(is_superuser=True).first()
-                if seller:
-                    existing_sale = Sale.objects.filter(device=device).first()
-                    if not existing_sale:
-                        invoice_number = f"INV-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
-                        Sale.objects.create(
-                            device=device,
-                            customer=None,
-                            seller=seller,
-                            buying_price=device.buying_price,
-                            selling_price=device.selling_price or device.buying_price or Decimal('0.00'),
-                            invoice_number=invoice_number,
-                            payment_status='PAID'
-                        )
+                try:
+                    seller = device.current_owner or user or User.objects.filter(is_superuser=True).first()
+                    if seller:
+                        existing_sale = Sale.objects.filter(device=device).first()
+                        if not existing_sale:
+                            buying = device.buying_price if device.buying_price is not None else Decimal('0.00')
+                            selling = device.selling_price if device.selling_price is not None else buying
+                            invoice_number = f"INV-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+                            Sale.objects.create(
+                                device=device,
+                                customer=None,
+                                seller=seller,
+                                buying_price=buying,
+                                selling_price=selling,
+                                discount=Decimal('0.00'),
+                                commission_amount=Decimal('0.00'),
+                                invoice_number=invoice_number,
+                                payment_status='PAID'
+                            )
+                except Exception:
+                    pass
 
             DeviceHistory.objects.create(
                 device=device,

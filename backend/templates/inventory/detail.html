@@ -316,7 +316,7 @@
                                  style="left: -17px !important; top: 4px; width: 34px; height: 34px; z-index: 2;
                                  {% if h.action_type == 'UPDATE' %}background-color: #e0f2fe; color: #0284c7; border: 2px solid #38bdf8;
                                  {% elif h.action_type == 'SICKW_IMPORT' %}background-color: #fef3c7; color: #d97706; border: 2px solid #fbbf24;
-                                 {% elif h.action_type == 'STATUS_UPDATE' %}background-color: #f3e8ff; color: #9333ea; border: 2px solid #c084fc;
+                                 {% elif h.action_type == 'STATUS_UPDATE' or h.action_type == 'STATUS_CHANGE' %}background-color: #f3e8ff; color: #9333ea; border: 2px solid #c084fc;
                                  {% elif h.action_type == 'ASSIGNMENT' %}background-color: #e0e7ff; color: #4f46e5; border: 2px solid #818cf8;
                                  {% elif h.action_type == 'SALE' %}background-color: #dcfce7; color: #15803d; border: 2px solid #4ade80;
                                  {% elif h.action_type == 'REPAIR' %}background-color: #ffe4e6; color: #e11d48; border: 2px solid #fb7185;
@@ -324,7 +324,7 @@
                                 <i class="fa-solid 
                                     {% if h.action_type == 'UPDATE' %}fa-pen-to-square
                                     {% elif h.action_type == 'SICKW_IMPORT' %}fa-bolt
-                                    {% elif h.action_type == 'STATUS_UPDATE' %}fa-arrows-rotate
+                                    {% elif h.action_type == 'STATUS_UPDATE' or h.action_type == 'STATUS_CHANGE' %}fa-arrows-rotate
                                     {% elif h.action_type == 'ASSIGNMENT' %}fa-user-check
                                     {% elif h.action_type == 'SALE' %}fa-cart-shopping
                                     {% elif h.action_type == 'REPAIR' %}fa-screwdriver-wrench
@@ -338,14 +338,14 @@
                                         <span class="badge rounded-pill fw-bold 
                                             {% if h.action_type == 'UPDATE' %}bg-info-subtle text-info-emphasis border border-info-subtle
                                             {% elif h.action_type == 'SICKW_IMPORT' %}bg-warning-subtle text-warning-emphasis border border-warning-subtle
-                                            {% elif h.action_type == 'STATUS_UPDATE' %}bg-primary-subtle text-primary-emphasis border border-primary-subtle
+                                            {% elif h.action_type == 'STATUS_UPDATE' or h.action_type == 'STATUS_CHANGE' %}bg-primary-subtle text-primary-emphasis border border-primary-subtle
                                             {% elif h.action_type == 'ASSIGNMENT' %}bg-primary-subtle text-primary-emphasis border border-primary-subtle
                                             {% elif h.action_type == 'SALE' %}bg-success-subtle text-success-emphasis border border-success-subtle
                                             {% elif h.action_type == 'REPAIR' %}bg-danger-subtle text-danger-emphasis border border-danger-subtle
                                             {% else %}bg-secondary-subtle text-secondary-emphasis border border-secondary-subtle{% endif %} px-3 py-1">
                                             {% if h.action_type == 'UPDATE' %}Specs Updated
                                             {% elif h.action_type == 'SICKW_IMPORT' %}Sickw Report Imported
-                                            {% elif h.action_type == 'STATUS_UPDATE' %}Status Changed
+                                            {% elif h.action_type == 'STATUS_UPDATE' or h.action_type == 'STATUS_CHANGE' %}Status Changed
                                             {% elif h.action_type == 'ASSIGNMENT' %}Device Assigned
                                             {% elif h.action_type == 'SALE' %}Device Sold
                                             {% elif h.action_type == 'REPAIR' %}Repair Logged
