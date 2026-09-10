@@ -260,6 +260,11 @@ class DeviceStatusUpdateView(LoginRequiredMixin, View):
                             repair.returned_date = timezone.now().date()
                         repair.save()
 
+            # If status changed away from SOLD (e.g. returned/refunded to IN_STOCK), clean up sale record
+            if old_status == DeviceStatus.SOLD and new_status != DeviceStatus.SOLD:
+                from apps.sales.models import Sale
+                Sale.objects.filter(device=device).delete()
+
             # If status changed to UNDER_REPAIR, create repair log
             if new_status == DeviceStatus.UNDER_REPAIR:
                 issue_description = request.POST.get('issue_description', '').strip() or "Device sent to repair lab"

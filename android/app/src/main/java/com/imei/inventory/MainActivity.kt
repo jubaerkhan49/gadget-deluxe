@@ -389,7 +389,10 @@ class MainActivity : FragmentActivity() {
                                         deviceId = device.id,
                                         updates = mapOf("current_status" to newStatus)
                                     ) {
-                                        selectedDeviceForDetail = device.copy(currentStatus = newStatus)
+                                        selectedDeviceForDetail = device.copy(
+                                            currentStatus = newStatus,
+                                            sellingPrice = if (newStatus != "SOLD") null else device.sellingPrice
+                                        )
                                     }
                                 },
                                 onOwnerChange = { newOwnerId, newOwnerName ->

@@ -133,14 +133,30 @@ class DeviceViewSet(viewsets.ModelViewSet):
             old_status_display = dict(DeviceStatus.choices).get(old_status, old_status)
             new_status_display = device.get_current_status_display()
 
-            # Always record status update audit event first
-            DeviceHistory.objects.create(
-                device=device,
-                user=user,
-                action_type='STATUS_UPDATE',
-                old_state=old_status_display,
-                new_state=new_status_display
-            )
+            # If moved away from SOLD (e.g. Refund / Return back to In Stock)
+            if old_status == DeviceStatus.SOLD and device.current_status != DeviceStatus.SOLD:
+                try:
+                    deleted_invoices = list(Sale.objects.filter(device=device).values_list('invoice_number', flat=True))
+                    Sale.objects.filter(device=device).delete()
+                    invoices_str = f" (Invoice: {', '.join(deleted_invoices)})" if deleted_invoices else ""
+                    DeviceHistory.objects.create(
+                        device=device,
+                        user=user,
+                        action_type='STATUS_UPDATE',
+                        old_state=f"Sold{invoices_str}",
+                        new_state=f"Returned / Refunded to {new_status_display}"
+                    )
+                except Exception:
+                    pass
+            else:
+                # Always record status update audit event first
+                DeviceHistory.objects.create(
+                    device=device,
+                    user=user,
+                    action_type='STATUS_UPDATE',
+                    old_state=old_status_display,
+                    new_state=new_status_display
+                )
 
             # If moved away from UNDER_REPAIR, complete active repairs
             if old_status == DeviceStatus.UNDER_REPAIR and device.current_status != DeviceStatus.UNDER_REPAIR:
@@ -156,7 +172,7 @@ class DeviceViewSet(viewsets.ModelViewSet):
         has_selling_price_in_req = 'selling_price' in self.request.data
         selling_price_raw = self.request.data.get('selling_price')
 
-        if device.current_status == DeviceStatus.SOLD or has_selling_price_in_req:
+        if device.current_status == DeviceStatus.SOLD:
             try:
                 seller = device.current_owner or user or User.objects.filter(is_superuser=True).first()
                 if seller:

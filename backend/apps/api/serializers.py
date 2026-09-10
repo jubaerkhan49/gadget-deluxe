@@ -23,6 +23,8 @@ class DeviceSerializer(serializers.ModelSerializer):
 
     def get_selling_price(self, obj):
         try:
+            if obj.current_status != 'SOLD':
+                return None
             sale = obj.sales.order_by('-sale_date').first()
             if sale and sale.selling_price is not None:
                 return float(sale.selling_price)
