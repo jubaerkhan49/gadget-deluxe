@@ -137,10 +137,10 @@ fun ShipmentDetailDialog(
                         }
                     }
 
-                    shipment.receiveDate?.let { rDate ->
+                    if (!shipment.receiveDate.isNullOrBlank()) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Receive Date:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                            Text(rDate.take(10), color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Receive Date (CN):", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text(shipment.receiveDate.take(10), color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }
@@ -170,7 +170,7 @@ fun ShipmentDetailDialog(
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             Text(
-                                text = "Receive Date for All Units:",
+                                text = "Receive Date (BD) for All Units:",
                                 color = MaterialTheme.colorScheme.onSurface,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.SemiBold
@@ -328,6 +328,14 @@ fun ShipmentDeviceItem(
                 }
             }
 
+            if (!device.receivedDateBd.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(3.dp))
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("Receive Date (BD):", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                    Text(device.receivedDateBd.take(10), color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                }
+            }
+
             Spacer(modifier = Modifier.height(6.dp))
 
             Row(
@@ -391,7 +399,7 @@ fun ShipmentDeviceItem(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "Receive Date for In Stock:",
+                            text = "Receive Date (BD) for In Stock:",
                             color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold

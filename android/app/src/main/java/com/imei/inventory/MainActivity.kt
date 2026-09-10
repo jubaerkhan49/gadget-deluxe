@@ -357,40 +357,27 @@ class MainActivity : FragmentActivity() {
                                 devicesInShipment = devicesInShipment,
                                 onDismiss = { selectedShipmentForDetail = null },
                                 onUpdateDeviceStatus = { devId, newStatus, receiveDate ->
+                                    val updates = mutableMapOf<String, Any>("current_status" to newStatus)
+                                    if (newStatus == "IN_STOCK" && receiveDate != null) {
+                                        updates["received_date_bd"] = receiveDate
+                                    }
                                     mainViewModel.updateDevice(
                                         token = token,
                                         deviceId = devId,
-                                        updates = mapOf("current_status" to newStatus),
-                                        onSuccess = {
-                                            if (newStatus == "IN_STOCK" && receiveDate != null) {
-                                                mainViewModel.updateShipment(
-                                                    token = token,
-                                                    shipmentId = shipment.id,
-                                                    updates = mapOf("receive_date" to receiveDate),
-                                                    onSuccess = {
-                                                        selectedShipmentForDetail = shipment.copy(receiveDate = receiveDate)
-                                                    }
-                                                )
-                                            }
-                                        }
+                                        updates = updates,
+                                        onSuccess = {}
                                     )
                                 },
                                 onReceiveAllToInStock = { receiveDate ->
+                                    val updates = mutableMapOf<String, Any>("current_status" to "IN_STOCK")
                                     if (receiveDate != null) {
-                                        mainViewModel.updateShipment(
-                                            token = token,
-                                            shipmentId = shipment.id,
-                                            updates = mapOf("receive_date" to receiveDate),
-                                            onSuccess = {
-                                                selectedShipmentForDetail = shipment.copy(receiveDate = receiveDate)
-                                            }
-                                        )
+                                        updates["received_date_bd"] = receiveDate
                                     }
                                     devicesInShipment.forEach { dev ->
                                         mainViewModel.updateDevice(
                                             token = token,
                                             deviceId = dev.id,
-                                            updates = mapOf("current_status" to "IN_STOCK"),
+                                            updates = updates,
                                             onSuccess = {}
                                         )
                                     }
