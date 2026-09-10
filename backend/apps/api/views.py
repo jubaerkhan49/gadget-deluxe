@@ -83,10 +83,11 @@ class DeviceViewSet(viewsets.ModelViewSet):
         )
 
     def perform_update(self, serializer):
-        instance = self.get_object()
-        old_owner = instance.current_owner
-        old_status = instance.current_status
-        user = self.request.user if self.request.user.is_authenticated else None
+        # Obtain clean pre-update state from DB directly before serializer writes changes
+        db_device = Device.objects.only('current_owner', 'current_status').get(pk=serializer.instance.pk)
+        old_owner = db_device.current_owner
+        old_status = db_device.current_status
+        user = self.request.user if (self.request and self.request.user and self.request.user.is_authenticated) else None
 
         device = serializer.save()
 
@@ -138,24 +139,25 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
             # If moved to SOLD, ensure sales record exists
             if device.current_status == DeviceStatus.SOLD:
-                seller = device.current_owner or user
+                seller = device.current_owner or user or User.objects.filter(is_superuser=True).first()
                 if seller:
                     existing_sale = Sale.objects.filter(device=device).first()
                     if not existing_sale:
+                        invoice_number = f"INV-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
                         Sale.objects.create(
                             device=device,
                             customer=None,
                             seller=seller,
                             buying_price=device.buying_price,
-                            selling_price=device.selling_price or Decimal('0.00'),
-                            invoice_number=f"INV-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}",
+                            selling_price=device.selling_price or device.buying_price or Decimal('0.00'),
+                            invoice_number=invoice_number,
                             payment_status='PAID'
                         )
 
             DeviceHistory.objects.create(
                 device=device,
                 user=user,
-                action_type='STATUS_CHANGE',
+                action_type='STATUS_UPDATE',
                 old_state=old_status_display,
                 new_state=new_status_display
             )
