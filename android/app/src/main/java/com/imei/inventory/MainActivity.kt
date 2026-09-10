@@ -31,6 +31,7 @@ import com.imei.inventory.data.model.ShipmentDto
 import com.imei.inventory.ui.dialogs.AddDeviceDialog
 import com.imei.inventory.ui.dialogs.AddShipmentDialog
 import com.imei.inventory.ui.dialogs.DeviceDetailDialog
+import com.imei.inventory.ui.dialogs.EditShipmentDialog
 import com.imei.inventory.ui.dialogs.ShipmentDetailDialog
 import com.imei.inventory.ui.dialogs.SickwParserDialog
 import com.imei.inventory.ui.screens.*
@@ -55,6 +56,7 @@ class MainActivity : FragmentActivity() {
                     var selectedTab by remember { mutableStateOf(0) }
                     var selectedDeviceForDetail by remember { mutableStateOf<DeviceDto?>(null) }
                     var selectedShipmentForDetail by remember { mutableStateOf<ShipmentDto?>(null) }
+                    var selectedShipmentForEdit by remember { mutableStateOf<ShipmentDto?>(null) }
                     var showAddDeviceDialog by remember { mutableStateOf(false) }
                     var showAddShipmentDialog by remember { mutableStateOf(false) }
                     var showSickwDialog by remember { mutableStateOf(false) }
@@ -381,6 +383,30 @@ class MainActivity : FragmentActivity() {
                                             onSuccess = {}
                                         )
                                     }
+                                },
+                                onEditShipment = { s ->
+                                    selectedShipmentForDetail = null
+                                    selectedShipmentForEdit = s
+                                },
+                                onDeleteShipment = { s ->
+                                    selectedShipmentForDetail = null
+                                    mainViewModel.deleteShipment(token, s.id)
+                                }
+                            )
+                        }
+
+                        // Edit Shipment Modal
+                        selectedShipmentForEdit?.let { shipment ->
+                            EditShipmentDialog(
+                                shipment = shipment,
+                                onDismiss = { selectedShipmentForEdit = null },
+                                onSave = { updates ->
+                                    mainViewModel.updateShipment(
+                                        token = token,
+                                        shipmentId = shipment.id,
+                                        updates = updates,
+                                        onSuccess = { selectedShipmentForEdit = null }
+                                    )
                                 }
                             )
                         }

@@ -235,7 +235,22 @@ class MainInventoryViewModel : ViewModel() {
                 val response = ApiClient.apiService.updateShipment(bearer, shipmentId, updates)
                 if (response.isSuccessful) {
                     onSuccess()
-                    fetchShipments(token)
+                    loadAllData(token)
+                }
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+    }
+
+    fun deleteShipment(token: String, shipmentId: Int, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            try {
+                val bearer = "Bearer $token"
+                val response = ApiClient.apiService.deleteShipment(bearer, shipmentId)
+                if (response.isSuccessful) {
+                    onSuccess()
+                    loadAllData(token)
                 }
             } catch (e: Exception) {
                 // ignore

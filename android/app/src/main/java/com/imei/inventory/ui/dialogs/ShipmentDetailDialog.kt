@@ -22,6 +22,9 @@ import com.imei.inventory.ui.components.VariantBadge
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import java.util.Locale
 
 @Composable
@@ -30,10 +33,13 @@ fun ShipmentDetailDialog(
     devicesInShipment: List<DeviceDto>,
     onDismiss: () -> Unit,
     onUpdateDeviceStatus: (deviceId: Int, newStatus: String, receiveDate: String?) -> Unit,
-    onReceiveAllToInStock: (receiveDate: String?) -> Unit
+    onReceiveAllToInStock: (receiveDate: String?) -> Unit,
+    onEditShipment: ((ShipmentDto) -> Unit)? = null,
+    onDeleteShipment: ((ShipmentDto) -> Unit)? = null
 ) {
     val context = LocalContext.current
     var showReceiveAllDateSection by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
     var receiveAllDate by remember {
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
         mutableStateOf(shipment.receiveDate?.take(10) ?: sdf.format(Date()))
@@ -269,16 +275,92 @@ fun ShipmentDetailDialog(
             }
         },
         confirmButton = {
-            Button(
-                onClick = onDismiss,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Done", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                if (onDeleteShipment != null) {
+                    IconButton(
+                        onClick = { showDeleteConfirm = true },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Shipment",
+                            tint = Color(0xFFDC2626)
+                        )
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(1.dp))
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (onEditShipment != null) {
+                        OutlinedButton(
+                            onClick = {
+                                onDismiss()
+                                onEditShipment(shipment)
+                            },
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(15.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Edit",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+
+                    Button(
+                        onClick = onDismiss,
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
+                    ) {
+                        Text("Done", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+                }
             }
         }
     )
+
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text("Delete Shipment?", fontWeight = FontWeight.Bold) },
+            text = { Text("Are you sure you want to delete shipment #${shipment.trackingNumber}? Any linked devices will be detached from this shipment.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onDismiss()
+                        onDeleteShipment?.invoke(shipment)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                ) {
+                    Text("Delete", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirm = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable

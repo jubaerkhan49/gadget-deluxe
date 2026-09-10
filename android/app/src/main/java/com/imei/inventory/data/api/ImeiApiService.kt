@@ -81,6 +81,12 @@ interface ImeiApiService {
         @Body payload: Map<String, @JvmSuppressWildcards Any?>
     ): Response<ShipmentDto>
 
+    @DELETE("api/shipments/{id}/")
+    suspend fun deleteShipment(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): Response<Unit>
+
     // Sales Endpoint
     @GET("api/sales/")
     suspend fun getSales(

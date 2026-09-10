@@ -229,6 +229,21 @@ class ShipmentViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     search_fields = ['tracking_number', 'shipping_company']
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        supplier_name = request.data.get('supplier_name')
+        if supplier_name and str(supplier_name).strip():
+            supplier, _ = Supplier.objects.get_or_create(name=str(supplier_name).strip())
+            instance.supplier = supplier
+            instance.save()
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['post'], url_path='create-batch')
     def create_batch(self, request):
         tracking_number = request.data.get('tracking_number', '').strip()

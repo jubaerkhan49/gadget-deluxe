@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,11 +17,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
 import com.imei.inventory.data.model.ShipmentDto
 import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.dialogs.EditShipmentDialog
 import com.imei.inventory.viewmodel.MainInventoryViewModel
-
-import androidx.compose.ui.text.style.TextOverflow
 
 @Composable
 fun ShipmentsTab(
@@ -29,6 +32,9 @@ fun ShipmentsTab(
 ) {
     val shipments by viewModel.shipments.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+
+    var shipmentToEdit by remember { mutableStateOf<ShipmentDto?>(null) }
+    var shipmentToDelete by remember { mutableStateOf<ShipmentDto?>(null) }
 
     LaunchedEffect(Unit) {
         viewModel.fetchShipments(token)
@@ -89,19 +95,65 @@ fun ShipmentsTab(
                     items(shipments) { shipment ->
                         ShipmentCard(
                             shipment = shipment,
-                            onClick = { onSelectShipment(shipment) }
+                            onClick = { onSelectShipment(shipment) },
+                            onEdit = { shipmentToEdit = shipment },
+                            onDelete = { shipmentToDelete = shipment }
                         )
                     }
                 }
             }
         }
     }
+
+    // Edit Shipment Dialog
+    shipmentToEdit?.let { s ->
+        EditShipmentDialog(
+            shipment = s,
+            onDismiss = { shipmentToEdit = null },
+            onSave = { updates ->
+                viewModel.updateShipment(
+                    token = token,
+                    shipmentId = s.id,
+                    updates = updates,
+                    onSuccess = { shipmentToEdit = null }
+                )
+            }
+        )
+    }
+
+    // Delete Confirmation Dialog
+    shipmentToDelete?.let { s ->
+        AlertDialog(
+            onDismissRequest = { shipmentToDelete = null },
+            title = { Text("Delete Shipment?", fontWeight = FontWeight.Bold) },
+            text = { Text("Are you sure you want to delete shipment #${s.trackingNumber}? Any linked devices will be detached from this shipment.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val toDel = s
+                        shipmentToDelete = null
+                        viewModel.deleteShipment(token, toDel.id)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                ) {
+                    Text("Delete", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { shipmentToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @Composable
 fun ShipmentCard(
     shipment: ShipmentDto,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val count = shipment.devicesCount
     val totalGrossCost = shipment.shippingCost?.toDoubleOrNull() ?: 0.0
@@ -199,9 +251,27 @@ fun ShipmentCard(
                 )
             }
 
+            // 4. Receive Date (CN) if available
+            if (!shipment.receiveDate.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Receive Date (CN):", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text(
+                        text = shipment.receiveDate.take(10),
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 4. Shipment Bill (Clean distinct row under Supplier matching requirement exactly)
+            // 5. Shipment Bill
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -216,6 +286,60 @@ fun ShipmentCard(
                     fontWeight = FontWeight.Bold
                 )
             }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // 6. Actions Row: Delete (Leftmost) | Edit & Details (Right)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Delete button at leftmost side
+                IconButton(
+                    onClick = onDelete,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete Shipment",
+                        tint = Color(0xFFDC2626)
+                    )
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = onEdit,
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        modifier = Modifier.height(34.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Edit", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = onClick,
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
+                        modifier = Modifier.height(34.dp)
+                    ) {
+                        Text("Details", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
         }
     }
 }
+
