@@ -21,19 +21,24 @@
 .shipment-row:hover {
     background-color: rgba(13, 110, 253, 0.04) !important;
 }
-.copy-imei-text {
+.copy-click-btn {
     display: inline-flex;
     align-items: center;
     cursor: pointer;
     transition: all 0.15s ease;
     user-select: none;
+    border-radius: 4px;
+    padding: 1px 3px;
 }
-.copy-imei-text:hover code {
+.copy-click-btn:hover {
+    background-color: rgba(13, 110, 253, 0.08);
+}
+.copy-click-btn:hover code {
     text-decoration: underline;
 }
-.copy-imei-text:hover .copy-icon {
+.copy-click-btn:hover .copy-icon {
     color: var(--bs-primary) !important;
-    transform: scale(1.15);
+    transform: scale(1.18);
 }
 </style>
 
@@ -54,15 +59,20 @@
             </thead>
             <tbody>
                 {% for shipment in shipments %}
-                <tr class="shipment-row" data-bs-toggle="modal" data-bs-target="#editShipmentModal{{ shipment.id }}" title="Click row to edit shipment">
-                    <td><code class="text-primary fs-6 fw-bold">#{{ shipment.tracking_number }}</code></td>
+                <tr class="shipment-row" data-target-modal="#editShipmentModal{{ shipment.id }}" title="Click row to edit shipment">
+                    <td>
+                        <span class="copy-click-btn" data-copy="{{ shipment.tracking_number }}" title="Click to copy tracking #">
+                            <code class="text-primary fs-6 fw-bold">#{{ shipment.tracking_number }}</code>
+                            <i class="fa-regular fa-copy ms-1 text-muted copy-icon" style="font-size: 0.75rem;"></i>
+                        </span>
+                    </td>
                     <td class="fw-semibold">{{ shipment.supplier.name }}</td>
                     <td>
                         {% for dev in shipment.devices.all|slice:":3" %}
                         <div class="small py-1">
                             <strong>{{ dev.model }}</strong>
                             {% if dev.imei %}
-                            - <span class="copy-imei-text text-primary" data-imei="{{ dev.imei }}" title="Click to copy IMEI">
+                            - <span class="copy-click-btn text-primary" data-copy="{{ dev.imei }}" title="Click to copy IMEI">
                                 <code class="text-primary" style="font-size: 0.95rem; font-weight: 600;">{{ dev.imei }}</code>
                                 <i class="fa-regular fa-copy ms-1 text-muted copy-icon" style="font-size: 0.75rem;"></i>
                             </span>
@@ -234,7 +244,7 @@
                                                 <td class="fw-semibold">{{ dev.model }}</td>
                                                 <td>
                                                     {% if dev.imei %}
-                                                    <span class="copy-imei-text text-primary" data-imei="{{ dev.imei }}" title="Click to copy IMEI">
+                                                    <span class="copy-click-btn text-primary" data-copy="{{ dev.imei }}" title="Click to copy IMEI">
                                                         <code class="text-primary" style="font-size: 0.95rem; font-weight: 600;">{{ dev.imei }}</code>
                                                         <i class="fa-regular fa-copy ms-1 text-muted copy-icon" style="font-size: 0.75rem;"></i>
                                                     </span>
@@ -702,22 +712,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Global event listener for click-to-copy IMEI
+    // Row click handler to open edit modal (skips copy buttons and action buttons)
+    document.querySelectorAll('.shipment-row').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.closest('.copy-click-btn, .text-end, button, a, input, select, textarea')) {
+                return;
+            }
+            const modalId = this.getAttribute('data-target-modal');
+            if (modalId) {
+                const modalEl = document.querySelector(modalId);
+                if (modalEl) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                }
+            }
+        });
+    });
+
+    // Global event listener for click-to-copy buttons (Tracking & IMEI)
     document.addEventListener('click', function(e) {
-        const copyTarget = e.target.closest('.copy-imei-text');
+        const copyTarget = e.target.closest('.copy-click-btn');
         if (copyTarget) {
             e.stopPropagation();
             e.preventDefault();
-            const imei = copyTarget.getAttribute('data-imei');
-            if (imei) {
+            const textToCopy = copyTarget.getAttribute('data-copy');
+            if (textToCopy) {
                 const originalHtml = copyTarget.innerHTML;
-                copyTextToClipboard(imei).then(() => {
-                    copyTarget.innerHTML = '<span class="text-success fw-bold" style="font-size: 0.9rem;"><i class="fa-solid fa-check me-1"></i>Copied!</span>';
+                copyTextToClipboard(textToCopy).then(() => {
+                    copyTarget.innerHTML = '<span class="text-success fw-bold" style="font-size: 0.88rem;"><i class="fa-solid fa-check me-1"></i>Copied!</span>';
                     setTimeout(() => {
                         copyTarget.innerHTML = originalHtml;
                     }, 1400);
                 }).catch(err => {
-                    console.error('Failed to copy IMEI: ', err);
+                    console.error('Failed to copy: ', err);
                 });
             }
         }
