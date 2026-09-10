@@ -32,6 +32,7 @@ data class DeviceDto(
     @SerializedName("sim_lock_status") val simLockStatus: String? = null,
     @SerializedName("purchase_country") val purchaseCountry: String? = null,
     @SerializedName("current_shipment") val currentShipment: Int? = null,
+    @SerializedName("received_date_bd") val receivedDateBd: String? = null,
     @SerializedName("created_at") val createdAt: String? = null
 )
 

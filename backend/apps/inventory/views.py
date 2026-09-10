@@ -247,6 +247,13 @@ class DeviceStatusUpdateView(LoginRequiredMixin, View):
 
         if new_status in dict(DeviceStatus.choices):
             device.current_status = new_status
+            
+            received_date_bd = request.POST.get('received_date_bd', '').strip()
+            if received_date_bd:
+                device.received_date_bd = received_date_bd
+            elif new_status == DeviceStatus.IN_STOCK and not device.received_date_bd:
+                device.received_date_bd = timezone.now().date()
+                
             device.save()
 
             # If status changed away from UNDER_REPAIR (e.g. to IN_STOCK, ASSIGNED, SOLD), complete active repair records
@@ -426,6 +433,14 @@ class DeviceOwnershipUpdateView(LoginRequiredMixin, View):
                     changes.append(f"Owner assigned to {new_owner.username}")
             except User.DoesNotExist:
                 pass
+
+        if 'received_date_bd' in request.POST:
+            received_date_bd = request.POST.get('received_date_bd', '').strip()
+            old_bd = str(device.received_date_bd or 'None')
+            device.received_date_bd = received_date_bd if received_date_bd else None
+            new_bd = str(device.received_date_bd or 'None')
+            if old_bd != new_bd:
+                changes.append(f"Receive Date (BD): {old_bd} -> {new_bd}")
 
         device.save()
 

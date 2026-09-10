@@ -79,6 +79,11 @@ class Device(TimeStampedModel):
         blank=True,
         related_name='devices'
     )
+    received_date_bd = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Date device was physically received in Bangladesh"
+    )
 
     class Meta:
         ordering = ['-created_at']

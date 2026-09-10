@@ -151,6 +151,57 @@
                         </tr>
                     </table>
                 </div>
+
+                <!-- Shipment History Card -->
+                <div class="card border p-3 shadow-sm mt-4">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
+                        <h5 class="fw-bold mb-0">
+                            <i class="fa-solid fa-truck-ramp-box text-primary me-2"></i>Shipment History
+                        </h5>
+                        {% if device.current_shipment %}
+                        <a href="{% url 'shipments:list' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3" title="View in Shipments Logistics">
+                            <i class="fa-solid fa-arrow-up-right-from-square me-1"></i> View Shipment
+                        </a>
+                        {% endif %}
+                    </div>
+                    <table class="table table-borderless table-sm align-middle mb-0">
+                        <tr>
+                            <td class="text-muted w-40">Tracking Number:</td>
+                            <td>
+                                {% if device.current_shipment %}
+                                    <code class="text-primary fs-6 fw-bold">#{{ device.current_shipment.tracking_number }}</code>
+                                    {% if device.current_shipment.supplier %}
+                                        <span class="text-muted small ms-1">({{ device.current_shipment.supplier.name }})</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted fw-semibold">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Receive Date (China):</td>
+                            <td class="fw-semibold">
+                                {% if device.current_shipment and device.current_shipment.receive_date %}
+                                    <i class="fa-regular fa-calendar text-muted me-1"></i>{{ device.current_shipment.receive_date|date:"Y-m-d" }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Receive Date (BD):</td>
+                            <td class="fw-semibold">
+                                {% if device.received_date_bd %}
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fs-6">
+                                        <i class="fa-regular fa-calendar-check me-1"></i>{{ device.received_date_bd|date:"Y-m-d" }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -637,6 +688,14 @@
                         </div>
                     </div>
                     {% endif %}
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Receive Date (BD)</label>
+                        <input type="date" name="received_date_bd" class="form-control" value="{{ device.received_date_bd|date:'Y-m-d'|default:'' }}">
+                        <div class="form-text small text-muted">
+                            Physical arrival date of this individual unit in Bangladesh.
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-top bg-body-tertiary">
                     <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>

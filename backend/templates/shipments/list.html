@@ -47,7 +47,7 @@
                     <th>Products & Identifiers</th>
                     <th>Shipping Agent</th>
                     <th>Shipping Cost</th>
-                    <th>Receive Date</th>
+                    <th>Receive Date (China)</th>
                     <th>Device Count</th>
                     <th class="text-end">Actions</th>
                 </tr>
@@ -145,7 +145,7 @@
                             <input type="text" name="shipping_company" class="form-control" value="{{ shipment.shipping_company|default:'' }}" placeholder="e.g. SF Express, DHL, FedEx, Standard Freight">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-semibold">Receive Date</label>
+                            <label class="form-label fw-semibold">Receive Date (China)</label>
                             <input type="date" name="receive_date" class="form-control" value="{{ shipment.receive_date|date:'Y-m-d'|default:'' }}">
                         </div>
                         <div class="col-md-12 mt-3">
@@ -224,6 +224,7 @@
                                                 <th>IMEI / SN</th>
                                                 <th>Variant</th>
                                                 <th>Status</th>
+                                                <th>Receive Date (BD)</th>
                                                 <th>Buying Price (Cost)</th>
                                             </tr>
                                         </thead>
@@ -243,6 +244,9 @@
                                                 </td>
                                                 <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ dev.get_variant_display|default:'Standard' }}</span></td>
                                                 <td><span class="badge bg-primary-subtle text-primary">{{ dev.get_current_status_display }}</span></td>
+                                                <td>
+                                                    <input type="date" name="dev_receive_date_bd_{{ dev.id }}" class="form-control form-control-sm py-0 px-2" style="font-size: 0.82rem; min-width: 130px;" value="{{ dev.received_date_bd|date:'Y-m-d'|default:'' }}">
+                                                </td>
                                                 <td class="text-success fw-semibold">BDT {{ dev.buying_price }}</td>
                                             </tr>
                                             {% endfor %}

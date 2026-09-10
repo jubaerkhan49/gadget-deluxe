@@ -141,7 +141,8 @@ CREATE TABLE inventory_device (
     notes TEXT,
     current_status VARCHAR(30) NOT NULL DEFAULT 'WAITING_SHIPMENT',
     current_owner_id BIGINT REFERENCES accounts_user(id) ON DELETE SET NULL,
-    current_shipment_id BIGINT REFERENCES shipments_shipment(id) ON DELETE SET NULL
+    current_shipment_id BIGINT REFERENCES shipments_shipment(id) ON DELETE SET NULL,
+    received_date_bd DATE
 );
 CREATE INDEX idx_device_imei ON inventory_device(imei);
 CREATE INDEX idx_device_serial ON inventory_device(serial_number);
