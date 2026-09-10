@@ -10,6 +10,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 
+from apps.accounts.models import User
 from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
@@ -19,9 +20,16 @@ from apps.sickw.models import SickwReport
 from apps.sickw.parser import SickwParser
 
 from .serializers import (
-    DeviceSerializer, ShipmentSerializer, SupplierSerializer,
+    UserSerializer, DeviceSerializer, ShipmentSerializer, SupplierSerializer,
     CustomerSerializer, SaleSerializer, RepairSerializer, SickwReportSerializer
 )
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """API endpoint to list system users / employees for device assignment."""
+    queryset = User.objects.filter(is_active=True).order_by('username')
+    serializer_class = UserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    search_fields = ['username', 'first_name', 'last_name', 'email']
 
 class DeviceViewSet(viewsets.ModelViewSet):
     """

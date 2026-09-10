@@ -4,7 +4,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 from .views import (
-    DeviceViewSet, ShipmentViewSet, CustomerViewSet,
+    UserViewSet, DeviceViewSet, ShipmentViewSet, CustomerViewSet,
     SaleViewSet, RepairViewSet, SickwViewSet,
     SickwParseAPIView, ExportDevicesCSVView
 )
@@ -12,6 +12,7 @@ from .views import (
 app_name = 'api'
 
 router = DefaultRouter()
+router.register(r'users', UserViewSet, basename='user')
 router.register(r'devices', DeviceViewSet, basename='device')
 router.register(r'shipments', ShipmentViewSet, basename='shipment')
 router.register(r'customers', CustomerViewSet, basename='customer')

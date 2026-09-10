@@ -63,6 +63,7 @@ class MainActivity : FragmentActivity() {
                     val isLoading by mainViewModel.isLoading.collectAsState()
                     val devices by mainViewModel.devices.collectAsState()
                     val shipments by mainViewModel.shipments.collectAsState()
+                    val users by mainViewModel.users.collectAsState()
 
                     // Rotation animation for sync button
                     val infiniteTransition = rememberInfiniteTransition(label = "sync_spin")
@@ -380,6 +381,7 @@ class MainActivity : FragmentActivity() {
                         selectedDeviceForDetail?.let { device ->
                             DeviceDetailDialog(
                                 device = device,
+                                users = users,
                                 onDismiss = { selectedDeviceForDetail = null },
                                 onStatusChange = { newStatus ->
                                     mainViewModel.updateDevice(
@@ -388,6 +390,18 @@ class MainActivity : FragmentActivity() {
                                         updates = mapOf("current_status" to newStatus)
                                     ) {
                                         selectedDeviceForDetail = device.copy(currentStatus = newStatus)
+                                    }
+                                },
+                                onOwnerChange = { newOwnerId, newOwnerName ->
+                                    mainViewModel.updateDevice(
+                                        token = token,
+                                        deviceId = device.id,
+                                        updates = mapOf("current_owner" to newOwnerId)
+                                    ) {
+                                        selectedDeviceForDetail = device.copy(
+                                            currentOwner = newOwnerId,
+                                            currentOwnerName = newOwnerName
+                                        )
                                     }
                                 },
                                 onDelete = {

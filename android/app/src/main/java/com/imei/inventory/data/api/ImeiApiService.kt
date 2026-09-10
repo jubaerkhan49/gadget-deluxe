@@ -29,6 +29,11 @@ interface ImeiApiService {
         @Query("code") code: String
     ): Response<DeviceScanResult>
 
+    @GET("api/users/")
+    suspend fun getUsers(
+        @Header("Authorization") token: String
+    ): Response<PaginatedResponse<UserDto>>
+
     @POST("api/devices/")
     suspend fun createDevice(
         @Header("Authorization") token: String,
@@ -39,7 +44,7 @@ interface ImeiApiService {
     suspend fun updateDevice(
         @Header("Authorization") token: String,
         @Path("id") id: Int,
-        @Body payload: Map<String, Any>
+        @Body payload: Map<String, @JvmSuppressWildcards Any?>
     ): Response<DeviceDto>
 
     @DELETE("api/devices/{id}/")

@@ -45,6 +45,10 @@ class MainInventoryViewModel : ViewModel() {
     private val _repairs = MutableStateFlow<List<RepairDto>>(emptyList())
     val repairs: StateFlow<List<RepairDto>> = _repairs
 
+    // Users / Owners State
+    private val _users = MutableStateFlow<List<UserDto>>(emptyList())
+    val users: StateFlow<List<UserDto>> = _users
+
     // Selected filter
     private val _selectedStatusFilter = MutableStateFlow<String?>(null)
     val selectedStatusFilter: StateFlow<String?> = _selectedStatusFilter
@@ -56,6 +60,7 @@ class MainInventoryViewModel : ViewModel() {
     private var realtimeJob: kotlinx.coroutines.Job? = null
 
     fun loadAllData(token: String) {
+        fetchUsers(token)
         fetchDevices(token)
         fetchShipments(token)
         fetchSales(token)
@@ -142,7 +147,20 @@ class MainInventoryViewModel : ViewModel() {
         }
     }
 
-    fun updateDevice(token: String, deviceId: Int, updates: Map<String, Any>, onSuccess: () -> Unit = {}) {
+    fun fetchUsers(token: String) {
+        viewModelScope.launch {
+            try {
+                val response = ApiClient.apiService.getUsers("Bearer $token")
+                if (response.isSuccessful && response.body() != null) {
+                    _users.value = response.body()!!.results
+                }
+            } catch (e: Exception) {
+                // silent failure
+            }
+        }
+    }
+
+    fun updateDevice(token: String, deviceId: Int, updates: Map<String, Any?>, onSuccess: () -> Unit = {}) {
         viewModelScope.launch {
             try {
                 val bearer = "Bearer $token"
