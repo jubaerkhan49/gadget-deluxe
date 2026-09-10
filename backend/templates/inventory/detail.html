@@ -457,7 +457,7 @@
                         <select name="status" id="status-select" class="form-select" required>
                             {% for code, label in status_choices %}
                                 {% if code != 'ASSIGNED' %}
-                                    <option value="{{ code }}" {% if device.current_status == code %}selected{% endif %}>{{ label }}</option>
+                                    <option value="{{ code }}" {% if device.current_status == code or device.current_status == 'ASSIGNED' and code == 'IN_STOCK' %}selected{% endif %}>{{ label }}</option>
                                 {% endif %}
                             {% endfor %}
                         </select>

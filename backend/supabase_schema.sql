@@ -609,3 +609,7 @@ UPDATE accounts_user SET
     role = 'ADMIN',
     is_active = TRUE
 WHERE username = 'jubaer';
+
+-- 7. NORMALIZE ASSIGNED STATUS TO IN_STOCK (Ownership is separate from inventory status)
+UPDATE inventory_device SET current_status = 'IN_STOCK' WHERE current_status = 'ASSIGNED';
+

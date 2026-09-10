@@ -219,7 +219,10 @@ class DeviceAssignView(LoginRequiredMixin, View):
 
         old_owner = device.current_owner.username if device.current_owner else "None"
         device.current_owner = employee
-        device.current_status = DeviceStatus.ASSIGNED
+        # Preserve actual inventory status (e.g. IN_STOCK, UNDER_REPAIR).
+        # If the device previously had legacy ASSIGNED status, normalize to IN_STOCK.
+        if device.current_status == DeviceStatus.ASSIGNED:
+            device.current_status = DeviceStatus.IN_STOCK
         device.save()
 
         # Sync seller on sales record to match newly assigned employee
