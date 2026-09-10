@@ -10,12 +10,13 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 
+from django.utils import timezone
 from apps.accounts.models import User
-from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory
+from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory, DeviceAssignment
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
 from apps.sales.models import Sale
-from apps.repairs.models import Repair
+from apps.repairs.models import Repair, RepairStatus
 from apps.sickw.models import SickwReport
 from apps.sickw.parser import SickwParser
 
@@ -61,6 +62,103 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(device)
         return Response({"found": True, "device": serializer.data})
+
+    def perform_create(self, serializer):
+        device = serializer.save()
+        user = self.request.user if self.request.user.is_authenticated else None
+
+        if device.current_owner:
+            DeviceAssignment.objects.create(
+                device=device,
+                employee=device.current_owner,
+                is_active=True,
+                notes="Assigned via Mobile App"
+            )
+
+        DeviceHistory.objects.create(
+            device=device,
+            user=user,
+            action_type='CREATION',
+            new_state=f"Device registered via Mobile App ({device.model} - IMEI: {device.imei})"
+        )
+
+    def perform_update(self, serializer):
+        instance = self.get_object()
+        old_owner = instance.current_owner
+        old_status = instance.current_status
+        user = self.request.user if self.request.user.is_authenticated else None
+
+        device = serializer.save()
+
+        # 1. Handle Owner Change & Assignment History Audit
+        if old_owner != device.current_owner:
+            old_owner_name = old_owner.username if old_owner else "None"
+
+            # Deactivate previous active assignments
+            DeviceAssignment.objects.filter(device=device, is_active=True).update(is_active=False)
+
+            if device.current_owner:
+                # Create new active assignment
+                DeviceAssignment.objects.create(
+                    device=device,
+                    employee=device.current_owner,
+                    is_active=True,
+                    notes="Assigned via Mobile App"
+                )
+                # Sync seller on existing sales
+                Sale.objects.filter(device=device).update(seller=device.current_owner)
+
+                DeviceHistory.objects.create(
+                    device=device,
+                    user=user,
+                    action_type='ASSIGNMENT',
+                    old_state=f"Owner: {old_owner_name}",
+                    new_state=f"Assigned to {device.current_owner.username}"
+                )
+            else:
+                DeviceHistory.objects.create(
+                    device=device,
+                    user=user,
+                    action_type='ASSIGNMENT',
+                    old_state=f"Owner: {old_owner_name}",
+                    new_state="Unassigned"
+                )
+
+        # 2. Handle Status Change & Activity Timeline Audit
+        if old_status != device.current_status:
+            old_status_display = dict(DeviceStatus.choices).get(old_status, old_status)
+            new_status_display = device.get_current_status_display()
+
+            # If moved away from UNDER_REPAIR, complete active repairs
+            if old_status == DeviceStatus.UNDER_REPAIR and device.current_status != DeviceStatus.UNDER_REPAIR:
+                Repair.objects.filter(device=device, status=RepairStatus.IN_PROGRESS).update(
+                    status=RepairStatus.COMPLETED,
+                    returned_date=timezone.now().date()
+                )
+
+            # If moved to SOLD, ensure sales record exists
+            if device.current_status == DeviceStatus.SOLD:
+                seller = device.current_owner or user
+                if seller:
+                    existing_sale = Sale.objects.filter(device=device).first()
+                    if not existing_sale:
+                        Sale.objects.create(
+                            device=device,
+                            customer=None,
+                            seller=seller,
+                            buying_price=device.buying_price,
+                            selling_price=device.selling_price or Decimal('0.00'),
+                            invoice_number=f"INV-{timezone.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}",
+                            payment_status='PAID'
+                        )
+
+            DeviceHistory.objects.create(
+                device=device,
+                user=user,
+                action_type='STATUS_CHANGE',
+                old_state=old_status_display,
+                new_state=new_status_display
+            )
 
 class ShipmentViewSet(viewsets.ModelViewSet):
     queryset = Shipment.objects.select_related('supplier').all()
