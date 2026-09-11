@@ -199,7 +199,7 @@ export default function DeviceDetailDrawer({
         onClose={onClose}
         PaperProps={{
           sx: {
-            width: { xs: '100%', sm: 600, md: 720 },
+            width: { xs: '100%', sm: 680, md: 800, lg: 900 },
             p: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -259,67 +259,166 @@ export default function DeviceDetailDrawer({
         </Box>
 
         {/* Tab Navigation Header */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 2, bgcolor: 'background.paper' }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 1, sm: 2 }, bgcolor: 'background.paper' }}>
           <Tabs
             value={currentTab}
             onChange={(e, val) => setCurrentTab(val)}
             variant="scrollable"
-            scrollButtons="auto"
-            sx={{ minHeight: 44 }}
+            scrollButtons={false}
+            sx={{
+              minHeight: 46,
+              '& .MuiTabs-scrollButtons': { display: 'none' },
+              '& .MuiTabs-flexContainer': {
+                gap: { xs: 0.5, sm: 0.8 },
+                flexWrap: { xs: 'nowrap', sm: 'wrap' }
+              }
+            }}
           >
             <Tab
-              icon={<OverviewIcon sx={{ fontSize: 18 }} />}
+              icon={<OverviewIcon sx={{ fontSize: 17 }} />}
               iconPosition="start"
               label="Overview"
-              sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600, fontSize: '0.85rem' }}
+              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
             />
             <Tab
-              icon={<AssignmentIcon sx={{ fontSize: 18 }} />}
+              icon={<AssignmentIcon sx={{ fontSize: 17 }} />}
               iconPosition="start"
               label={
-                <Badge badgeContent={assignments.length} color="primary" sx={{ '& .MuiBadge-badge': { right: -8, top: 4 } }}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
                   Assignments
-                </Badge>
+                  {assignments.length > 0 && (
+                    <Box
+                      component="span"
+                      sx={{
+                        ml: 0.7,
+                        minWidth: 18,
+                        height: 18,
+                        px: 0.6,
+                        borderRadius: '9px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: currentTab === 1 ? 'primary.main' : 'rgba(59, 130, 246, 0.15)',
+                        color: currentTab === 1 ? '#ffffff' : 'primary.main',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        lineHeight: 1
+                      }}
+                    >
+                      {assignments.length}
+                    </Box>
+                  )}
+                </Box>
               }
-              sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', mr: 1 }}
+              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
             />
             <Tab
-              icon={<TimelineIcon sx={{ fontSize: 18 }} />}
+              icon={<TimelineIcon sx={{ fontSize: 17 }} />}
               iconPosition="start"
               label={
-                <Badge badgeContent={history.length} color="secondary" sx={{ '& .MuiBadge-badge': { right: -8, top: 4 } }}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
                   Timeline
-                </Badge>
+                  {history.length > 0 && (
+                    <Box
+                      component="span"
+                      sx={{
+                        ml: 0.7,
+                        minWidth: 18,
+                        height: 18,
+                        px: 0.6,
+                        borderRadius: '9px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: currentTab === 2 ? '#8B5CF6' : 'rgba(139, 92, 246, 0.15)',
+                        color: currentTab === 2 ? '#ffffff' : '#8B5CF6',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        lineHeight: 1
+                      }}
+                    >
+                      {history.length}
+                    </Box>
+                  )}
+                </Box>
               }
-              sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', mr: 1 }}
+              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
             />
             <Tab
-              icon={<RepairIcon sx={{ fontSize: 18 }} />}
+              icon={<RepairIcon sx={{ fontSize: 17 }} />}
               iconPosition="start"
               label={
-                <Badge badgeContent={repairs.length} color="warning" sx={{ '& .MuiBadge-badge': { right: -8, top: 4 } }}>
+                <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
                   Repairs
-                </Badge>
+                  {repairs.length > 0 && (
+                    <Box
+                      component="span"
+                      sx={{
+                        ml: 0.7,
+                        minWidth: 18,
+                        height: 18,
+                        px: 0.6,
+                        borderRadius: '9px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: currentTab === 3 ? '#F59E0B' : 'rgba(245, 158, 11, 0.15)',
+                        color: currentTab === 3 ? '#ffffff' : '#D97706',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        lineHeight: 1
+                      }}
+                    >
+                      {repairs.length}
+                    </Box>
+                  )}
+                </Box>
               }
-              sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600, fontSize: '0.85rem', mr: 1 }}
+              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
             />
             <Tab
-              icon={<SalesIcon sx={{ fontSize: 18 }} />}
+              icon={<SalesIcon sx={{ fontSize: 17 }} />}
               iconPosition="start"
-              label="Sales"
-              sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600, fontSize: '0.85rem' }}
+              label={
+                <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                  Sales
+                  {sales.length > 0 && (
+                    <Box
+                      component="span"
+                      sx={{
+                        ml: 0.7,
+                        minWidth: 18,
+                        height: 18,
+                        px: 0.6,
+                        borderRadius: '9px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: currentTab === 4 ? '#10B981' : 'rgba(16, 185, 129, 0.15)',
+                        color: currentTab === 4 ? '#ffffff' : '#10B981',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        lineHeight: 1
+                      }}
+                    >
+                      {sales.length}
+                    </Box>
+                  )}
+                </Box>
+              }
+              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
             />
             <Tab
-              icon={<SickwIcon sx={{ fontSize: 18 }} />}
+              icon={<SickwIcon sx={{ fontSize: 17 }} />}
               iconPosition="start"
               label="Sickw Report"
-              sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600, fontSize: '0.85rem' }}
+              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
             />
             <Tab
-              icon={<NoteIcon sx={{ fontSize: 18 }} />}
+              icon={<NoteIcon sx={{ fontSize: 17 }} />}
               iconPosition="start"
               label="Notes"
-              sx={{ minHeight: 44, textTransform: 'none', fontWeight: 600, fontSize: '0.85rem' }}
+              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
             />
           </Tabs>
         </Box>
@@ -577,7 +676,17 @@ export default function DeviceDetailDrawer({
                           </TableCell>
                           <TableCell>
                             {a.is_active ? (
-                              <Chip size="small" label="Active" color="success" variant="filled" sx={{ fontWeight: 700 }} />
+                              <Chip
+                                size="small"
+                                label="Active"
+                                variant="filled"
+                                sx={{
+                                  fontWeight: 700,
+                                  bgcolor: '#10B981',
+                                  color: '#ffffff !important',
+                                  '& .MuiChip-label': { color: '#ffffff !important' }
+                                }}
+                              />
                             ) : (
                               <Chip size="small" label="Returned" color="default" variant="outlined" />
                             )}
