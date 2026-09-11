@@ -28,12 +28,14 @@ import {
   TrendingUp as ProfitIcon,
   Receipt as InvoiceIcon,
   AttachMoney as RevenueIcon,
-  Clear as ClearIcon
+  Clear as ClearIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber, formatDate } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
 import { saleApi } from '../api/client';
 import CopyableText from '../components/common/CopyableText';
+import VariantBadge from '../components/common/VariantBadge';
 import RecordSaleDialog from '../dialogs/RecordSaleDialog';
 
 export default function Sales() {
@@ -72,10 +74,13 @@ export default function Sales() {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase().trim();
     return (
-      s.invoice_number?.toLowerCase().includes(q) ||
+      s.device_model?.toLowerCase().includes(q) ||
+      s.device_color?.toLowerCase().includes(q) ||
+      s.device_variant?.toLowerCase().includes(q) ||
       s.device_imei?.toLowerCase().includes(q) ||
-      s.customer_name?.toLowerCase().includes(q) ||
-      s.seller_name?.toLowerCase().includes(q)
+      s.invoice_number?.toLowerCase().includes(q) ||
+      s.seller_name?.toLowerCase().includes(q) ||
+      s.sold_by?.toLowerCase().includes(q)
     );
   });
 
@@ -217,7 +222,7 @@ export default function Sales() {
         <TextField
           fullWidth
           size="small"
-          placeholder="Search by Invoice #, IMEI, Customer, or Seller..."
+          placeholder="Search by Model, Color, Variant, IMEI, or Seller..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
@@ -243,10 +248,9 @@ export default function Sales() {
           <Table size="medium">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Invoice #</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Device</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Device IMEI</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Customer</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Sold By</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Buying Cost</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Selling Price</TableCell>
@@ -256,13 +260,13 @@ export default function Sales() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                     <CircularProgress size={32} />
                   </TableCell>
                 </TableRow>
               ) : filteredSales.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary' }}>
                     No sales records found.
                   </TableCell>
                 </TableRow>
@@ -271,19 +275,23 @@ export default function Sales() {
                   <TableRow key={sale.id} hover>
                     <TableCell>
                       <Typography variant="body2" fontWeight={700}>
-                        {sale.invoice_number}
+                        {sale.device_model || 'Device Unit'}
                       </Typography>
-                      <Chip
-                        size="small"
-                        label={sale.payment_method || 'CASH'}
-                        variant="outlined"
-                        sx={{ fontSize: '0.68rem', mt: 0.3 }}
-                      />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.4, flexWrap: 'wrap' }}>
+                        {sale.device_variant && (
+                          <VariantBadge variant={sale.device_variant} />
+                        )}
+                        {(sale.device_capacity || sale.device_color) && (
+                          <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                            {sale.device_capacity || ''} {sale.device_color ? `• ${sale.device_color}` : ''}
+                          </Typography>
+                        )}
+                      </Box>
                     </TableCell>
 
                     <TableCell>
-                      <Typography variant="body2">
-                        {sale.sale_date ? new Date(sale.sale_date).toLocaleDateString() : '—'}
+                      <Typography variant="body2" color="text.secondary">
+                        {formatDate(sale.sale_date || sale.created_at)}
                       </Typography>
                     </TableCell>
 
@@ -292,15 +300,18 @@ export default function Sales() {
                     </TableCell>
 
                     <TableCell>
-                      <Typography variant="body2" fontWeight={500}>
-                        {sale.customer_name || 'Walk-in'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {sale.seller_name || 'System'}
-                      </Typography>
+                      <Chip
+                        size="small"
+                        icon={<PersonIcon sx={{ fontSize: '13px !important', color: '#0284c7 !important' }} />}
+                        label={sale.sold_by || sale.seller_name || 'Store'}
+                        sx={{
+                          bgcolor: 'rgba(2, 132, 199, 0.1)',
+                          color: '#0284c7',
+                          fontWeight: 600,
+                          fontSize: '0.75rem',
+                          height: 24
+                        }}
+                      />
                     </TableCell>
 
                     <TableCell>
