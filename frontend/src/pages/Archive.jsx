@@ -33,6 +33,7 @@ import {
   PhoneAndroid as PhoneIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
+import { formatNumber } from '../utils/formatters';
 import { deviceApi, saleApi } from '../api/client';
 import CopyableText from '../components/common/CopyableText';
 import VariantBadge from '../components/common/VariantBadge';
@@ -229,7 +230,7 @@ export default function Archive() {
                   TOTAL REVENUE (BDT)
                 </Typography>
                 <Typography variant="h5" fontWeight={800} color="success.main">
-                  {Math.round(totalRevenue).toLocaleString()}
+                  {formatNumber(totalRevenue)}
                 </Typography>
               </div>
             </Box>
@@ -258,7 +259,7 @@ export default function Archive() {
                   REALIZED PROFIT (BDT)
                 </Typography>
                 <Typography variant="h5" fontWeight={800} color="info.main">
-                  {Math.round(totalProfit).toLocaleString()}
+                  {formatNumber(totalProfit)}
                 </Typography>
               </div>
             </Box>
@@ -373,11 +374,11 @@ export default function Archive() {
 
                       <TableCell>
                         <Typography variant="body2" fontWeight={700} color="success.main">
-                          {sellPrice ? `${Math.round(Number(sellPrice)).toLocaleString()} BDT` : '—'}
+                          {sellPrice ? `${formatNumber(sellPrice)} BDT` : '—'}
                         </Typography>
                         {dev.buying_price && (
                           <Typography variant="caption" color="text.secondary" display="block">
-                            Cost: {Math.round(Number(dev.buying_price)).toLocaleString()}
+                            Cost: {formatNumber(dev.buying_price)}
                           </Typography>
                         )}
                       </TableCell>

@@ -27,7 +27,8 @@ import {
   InfoOutlined as InfoIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import { shipmentApi } from '../api/client';
+import { shipmentApi, deviceApi } from '../api/client';
+import { formatNumber } from '../utils/formatters';
 
 const VARIANTS = ['Modified', 'USA eSim', 'Canada', 'Mexican', 'Korea', 'Singapore', 'Bypass'];
 
@@ -280,7 +281,7 @@ export default function EditShipmentDialog({ open, onClose, shipment, onShipment
                     <Grid item xs={4}>
                       <Typography variant="caption" color="text.secondary">Net Total Freight</Typography>
                       <Typography variant="subtitle1" fontWeight={700} color="primary">
-                        {Math.round(netShipping).toLocaleString()}
+                        {formatNumber(netShipping)}
                       </Typography>
                     </Grid>
                     <Grid item xs={4}>
@@ -292,7 +293,7 @@ export default function EditShipmentDialog({ open, onClose, shipment, onShipment
                     <Grid item xs={4}>
                       <Typography variant="caption" color="text.secondary">Effective Unit Freight</Typography>
                       <Typography variant="subtitle1" fontWeight={700} color="success.main">
-                        {Math.round(unitFreight).toLocaleString()}
+                        {formatNumber(unitFreight)}
                       </Typography>
                     </Grid>
                   </Grid>

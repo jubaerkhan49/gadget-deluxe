@@ -30,6 +30,7 @@ import {
   AttachMoney as RevenueIcon,
   Clear as ClearIcon
 } from '@mui/icons-material';
+import { formatNumber } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
 import { saleApi } from '../api/client';
 import CopyableText from '../components/common/CopyableText';
@@ -167,7 +168,7 @@ export default function Sales() {
                   TOTAL REVENUE
                 </Typography>
                 <Typography variant="h5" fontWeight={800} color="primary">
-                  {Math.round(totalRevenue).toLocaleString()}
+                  {formatNumber(totalRevenue)}
                 </Typography>
               </div>
             </Box>
@@ -196,7 +197,7 @@ export default function Sales() {
                   TOTAL REALIZED PROFIT
                 </Typography>
                 <Typography variant="h5" fontWeight={800} color="success.main">
-                  {Math.round(totalProfit).toLocaleString()}
+                  {formatNumber(totalProfit)}
                 </Typography>
               </div>
             </Box>
@@ -298,7 +299,7 @@ export default function Sales() {
                     <TableCell>
                       <Typography variant="body2">
                         {sale.buying_price !== null && sale.buying_price !== undefined
-                          ? Math.round(Number(sale.buying_price)).toLocaleString()
+                          ? formatNumber(sale.buying_price)
                           : '—'}
                       </Typography>
                     </TableCell>
@@ -306,7 +307,7 @@ export default function Sales() {
                     <TableCell>
                       <Typography variant="body2" fontWeight={700} color="primary">
                         {sale.selling_price !== null && sale.selling_price !== undefined
-                          ? Math.round(Number(sale.selling_price)).toLocaleString()
+                          ? formatNumber(sale.selling_price)
                           : '—'}
                       </Typography>
                     </TableCell>
@@ -318,7 +319,7 @@ export default function Sales() {
                         color={Number(sale.profit || 0) >= 0 ? "success.main" : "error.main"}
                       >
                         {sale.profit !== null && sale.profit !== undefined
-                          ? Math.round(Number(sale.profit)).toLocaleString()
+                          ? formatNumber(sale.profit)
                           : '—'}
                       </Typography>
                     </TableCell>

@@ -54,6 +54,7 @@ import {
   CheckCircle as ActiveCheckIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
+import { formatNumber } from '../utils/formatters';
 import { deviceApi, userApi } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
@@ -177,11 +178,11 @@ export default function DeviceDetailDrawer({
   };
 
   const buyingCostFormatted = device.buying_price !== null && device.buying_price !== undefined
-    ? Math.round(Number(device.buying_price)).toLocaleString()
+    ? formatNumber(device.buying_price)
     : '—';
 
   const sellingPriceFormatted = device.selling_price !== null && device.selling_price !== undefined
-    ? Math.round(Number(device.selling_price)).toLocaleString()
+    ? formatNumber(device.selling_price)
     : '—';
 
   const assignments = device.assignments || [];
@@ -811,7 +812,7 @@ export default function DeviceDetailDrawer({
                         <Grid item xs={4}>
                           <Typography variant="caption" color="text.secondary">Repair Cost</Typography>
                           <Typography variant="body2" fontWeight={700} color="error.main">
-                            {r.repair_cost ? `${Math.round(Number(r.repair_cost)).toLocaleString()} BDT` : '0 BDT'}
+                            {r.repair_cost ? `${formatNumber(r.repair_cost)} BDT` : '0 BDT'}
                           </Typography>
                         </Grid>
                       </Grid>
@@ -864,13 +865,13 @@ export default function DeviceDetailDrawer({
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">Selling Price</Typography>
                           <Typography variant="body2" fontWeight={700} color="success.main">
-                            {Math.round(Number(s.selling_price || 0)).toLocaleString()} BDT
+                            {formatNumber(s.selling_price)} BDT
                           </Typography>
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">Realized Profit</Typography>
                           <Typography variant="body2" fontWeight={700} color="info.main">
-                            {s.profit ? `${Math.round(Number(s.profit)).toLocaleString()} BDT` : '—'}
+                            {s.profit ? `${formatNumber(s.profit)} BDT` : '—'}
                           </Typography>
                         </Grid>
                       </Grid>

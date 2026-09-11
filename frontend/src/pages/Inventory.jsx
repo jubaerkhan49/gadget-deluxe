@@ -36,6 +36,7 @@ import {
   Clear as ClearIcon,
   MoreVert as MoreVertIcon
 } from '@mui/icons-material';
+import { formatNumber } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
 import { deviceApi, userApi } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
@@ -524,7 +525,7 @@ export default function Inventory() {
                     <TableCell>
                       <Typography variant="body2" fontWeight={700}>
                         {dev.buying_price !== null && dev.buying_price !== undefined
-                          ? Math.round(Number(dev.buying_price)).toLocaleString()
+                          ? formatNumber(dev.buying_price)
                           : '—'}
                       </Typography>
                     </TableCell>

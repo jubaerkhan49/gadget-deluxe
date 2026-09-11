@@ -46,6 +46,7 @@ import AddShipmentDialog from '../dialogs/AddShipmentDialog';
 import RecordSaleDialog from '../dialogs/RecordSaleDialog';
 import DeviceDetailDrawer from '../dialogs/DeviceDetailDrawer';
 import EditDeviceDialog from '../dialogs/EditDeviceDialog';
+import { formatNumber } from '../utils/formatters';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -125,7 +126,7 @@ export default function Dashboard() {
     },
     {
       title: 'TOTAL ASSETS',
-      value: stats ? Math.round(stats.total_assets).toLocaleString() : '0',
+      value: stats ? formatNumber(stats.total_assets) : '0',
       icon: <AssetsIcon sx={{ fontSize: 26 }} />,
       color: '#10B981',
       bgLight: 'rgba(16, 185, 129, 0.12)'
@@ -160,7 +161,7 @@ export default function Dashboard() {
     },
     {
       title: "TODAY'S SALES",
-      value: stats ? Math.round(stats.today_sales).toLocaleString() : '0',
+      value: stats ? formatNumber(stats.today_sales) : '0',
       icon: <TodaySalesIcon sx={{ fontSize: 26 }} />,
       color: '#14B8A6',
       bgLight: 'rgba(20, 184, 166, 0.12)'
@@ -466,7 +467,7 @@ export default function Dashboard() {
                         </TableCell>
                         <TableCell>
                           <Typography variant="body2" fontWeight={700} color="primary">
-                            {Math.round(Number(sale.selling_price || 0)).toLocaleString()}
+                            {formatNumber(sale.selling_price)}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -475,7 +476,7 @@ export default function Dashboard() {
                             fontWeight={700}
                             color={Number(sale.profit || 0) >= 0 ? "success.main" : "error.main"}
                           >
-                            {Math.round(Number(sale.profit || 0)).toLocaleString()}
+                            {formatNumber(sale.profit)}
                           </Typography>
                         </TableCell>
                       </TableRow>

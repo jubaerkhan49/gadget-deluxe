@@ -34,6 +34,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { repairApi, deviceApi } from '../api/client';
+import { formatNumber } from '../utils/formatters';
 import CopyableText from '../components/common/CopyableText';
 import AddRepairDialog from '../dialogs/AddRepairDialog';
 
@@ -355,7 +356,7 @@ export default function Repairs() {
 
                     <TableCell>
                       <Typography variant="body2" fontWeight={600}>
-                        {r.repair_cost ? Math.round(Number(r.repair_cost)).toLocaleString() : '0'}
+                        {r.repair_cost ? formatNumber(r.repair_cost) : '0'}
                       </Typography>
                     </TableCell>
 

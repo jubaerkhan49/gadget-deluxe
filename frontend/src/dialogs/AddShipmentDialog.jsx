@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { shipmentApi } from '../api/client';
+import { formatNumber } from '../utils/formatters';
 
 const VARIANTS = [
   'Modified',
@@ -320,19 +321,19 @@ export default function AddShipmentDialog({ open, onClose, onShipmentCreated }) 
                   <Grid item xs={6} sm={3}>
                     <Typography variant="caption" color="text.secondary">Net Unit Freight</Typography>
                     <Typography variant="subtitle1" fontWeight={700}>
-                      {Math.round(effectiveUnitShipping).toLocaleString()}
+                      {formatNumber(effectiveUnitShipping)}
                     </Typography>
                   </Grid>
                   <Grid item xs={6} sm={3}>
                     <Typography variant="caption" color="text.secondary">Total Cost / Unit</Typography>
                     <Typography variant="subtitle1" fontWeight={700} color="primary">
-                      {Math.round(totalCostPerUnit).toLocaleString()}
+                      {formatNumber(totalCostPerUnit)}
                     </Typography>
                   </Grid>
                   <Grid item xs={6} sm={3}>
                     <Typography variant="caption" color="text.secondary">Total Batch Cost</Typography>
                     <Typography variant="subtitle1" fontWeight={700} color="success.main">
-                      {Math.round(totalBatchCost).toLocaleString()}
+                      {formatNumber(totalBatchCost)}
                     </Typography>
                   </Grid>
                 </Grid>

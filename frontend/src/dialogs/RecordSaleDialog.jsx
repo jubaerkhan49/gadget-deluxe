@@ -22,6 +22,7 @@ import {
   CheckCircleOutline as CheckIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
+import { formatNumber } from '../utils/formatters';
 import { deviceApi, saleApi, customerApi, userApi } from '../api/client';
 
 export default function RecordSaleDialog({ open, onClose, onSaleRecorded, initialDevice = null }) {
@@ -304,13 +305,13 @@ export default function RecordSaleDialog({ open, onClose, onSaleRecorded, initia
                   <Grid item xs={4}>
                     <Typography variant="caption" color="text.secondary">Buying Cost</Typography>
                     <Typography variant="subtitle1" fontWeight={700}>
-                      {Math.round(buyingCost).toLocaleString()}
+                      {formatNumber(buyingCost)}
                     </Typography>
                   </Grid>
                   <Grid item xs={4}>
                     <Typography variant="caption" color="text.secondary">Net Sale</Typography>
                     <Typography variant="subtitle1" fontWeight={700} color="primary">
-                      {Math.round(netSellingPrice).toLocaleString()}
+                      {formatNumber(netSellingPrice)}
                     </Typography>
                   </Grid>
                   <Grid item xs={4}>
@@ -320,7 +321,7 @@ export default function RecordSaleDialog({ open, onClose, onSaleRecorded, initia
                       fontWeight={700}
                       color={estimatedProfit >= 0 ? "success.main" : "error.main"}
                     >
-                      {Math.round(estimatedProfit).toLocaleString()}
+                      {formatNumber(estimatedProfit)}
                     </Typography>
                   </Grid>
                 </Grid>

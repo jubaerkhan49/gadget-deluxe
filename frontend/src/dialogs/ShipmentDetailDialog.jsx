@@ -36,6 +36,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { deviceApi, shipmentApi } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
+import { formatNumber } from '../utils/formatters';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
 
@@ -310,7 +311,7 @@ export default function ShipmentDetailDialog({
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
                           {dev.buying_price !== null && dev.buying_price !== undefined
-                            ? Math.round(Number(dev.buying_price)).toLocaleString()
+                            ? formatNumber(dev.buying_price)
                             : '—'}
                         </Typography>
                       </TableCell>
