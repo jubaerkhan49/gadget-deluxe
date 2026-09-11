@@ -120,6 +120,15 @@ export default function Inventory() {
 
   const nonAdminUsers = users.filter((u) => u.username?.toLowerCase() !== 'admin');
 
+  const STATUS_PRIORITY = {
+    'IN_STOCK': 1,
+    'UNDER_REPAIR': 2,
+    'WAITING_SHIPMENT': 3,
+    'SOLD': 4,
+    'RETURNED': 5,
+    'LOST': 6
+  };
+
   // Filter devices in memory for instant responsiveness
   const filteredDevices = devices.filter((dev) => {
     // Search query
@@ -148,7 +157,19 @@ export default function Inventory() {
     return true;
   });
 
-  const paginatedDevices = filteredDevices.slice(
+  // Sort devices: IN_STOCK first, followed by UNDER_REPAIR, WAITING_SHIPMENT, and SOLD
+  const sortedDevices = [...filteredDevices].sort((a, b) => {
+    const pA = STATUS_PRIORITY[a.current_status] || 99;
+    const pB = STATUS_PRIORITY[b.current_status] || 99;
+    if (pA !== pB) {
+      return pA - pB;
+    }
+    const dateA = new Date(a.created_at || 0).getTime();
+    const dateB = new Date(b.created_at || 0).getTime();
+    return dateB - dateA;
+  });
+
+  const paginatedDevices = sortedDevices.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
