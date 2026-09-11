@@ -32,7 +32,7 @@ import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
-import PersonIcon from '@mui/icons-material/Person';
+import BuildIcon from '@mui/icons-material/Build';
 
 import { useAuth } from '../../context/AuthContext';
 import { ColorModeContext } from '../../App';
@@ -46,6 +46,7 @@ const NAV_ITEMS = [
   { text: 'Inventory', path: '/inventory', icon: <PhoneAndroidIcon /> },
   { text: 'Shipments', path: '/shipments', icon: <LocalShippingIcon /> },
   { text: 'Sales', path: '/sales', icon: <ReceiptLongIcon /> },
+  { text: 'Repairs', path: '/repairs', icon: <BuildIcon /> },
   { text: 'Sickw Parser', path: '/sickw', icon: <BoltIcon /> }
 ];
 

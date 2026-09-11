@@ -60,11 +60,8 @@ const STATUS_CHOICES = [
   { value: 'ALL', label: 'All Statuses' },
   { value: 'IN_STOCK', label: 'In Stock' },
   { value: 'WAITING_SHIPMENT', label: 'Waiting Shipment' },
-  { value: 'ASSIGNED', label: 'Assigned' },
   { value: 'UNDER_REPAIR', label: 'Under Repair' },
-  { value: 'SOLD', label: 'Sold' },
-  { value: 'RETURNED', label: 'Returned' },
-  { value: 'LOST', label: 'Lost' }
+  { value: 'SOLD', label: 'Sold' }
 ];
 
 export default function Inventory() {
@@ -76,7 +73,6 @@ export default function Inventory() {
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedVariant, setSelectedVariant] = useState('All');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedOwner, setSelectedOwner] = useState('ALL');
 
@@ -122,6 +118,8 @@ export default function Inventory() {
     window.open('/api/devices/export-csv/', '_blank');
   };
 
+  const nonAdminUsers = users.filter((u) => u.username?.toLowerCase() !== 'admin');
+
   // Filter devices in memory for instant responsiveness
   const filteredDevices = devices.filter((dev) => {
     // Search query
@@ -137,20 +135,13 @@ export default function Inventory() {
       }
     }
 
-    // Variant Filter
-    if (selectedVariant !== 'All' && dev.variant !== selectedVariant) {
-      return false;
-    }
-
     // Status Filter
     if (selectedStatus !== 'ALL' && dev.current_status !== selectedStatus) {
       return false;
     }
 
     // Owner Filter
-    if (selectedOwner === 'UNASSIGNED' && dev.current_owner) {
-      return false;
-    } else if (selectedOwner !== 'ALL' && selectedOwner !== 'UNASSIGNED' && String(dev.current_owner) !== String(selectedOwner)) {
+    if (selectedOwner !== 'ALL' && String(dev.current_owner) !== String(selectedOwner)) {
       return false;
     }
 
@@ -268,8 +259,7 @@ export default function Inventory() {
                 }}
               >
                 <MenuItem value="ALL">All Owners</MenuItem>
-                <MenuItem value="UNASSIGNED">Unassigned</MenuItem>
-                {users.map((u) => (
+                {nonAdminUsers.map((u) => (
                   <MenuItem key={u.id} value={u.id}>
                     {u.username}
                   </MenuItem>
@@ -280,32 +270,108 @@ export default function Inventory() {
 
           <Divider />
 
-          {/* 7 Variant Filter Chips */}
+          {/* Quick Filter Chips */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
             <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mr: 1, textTransform: 'uppercase' }}>
-              Variants:
+              Filters:
             </Typography>
-            {VARIANTS.map((variant) => {
-              const isSelected = selectedVariant === variant;
+
+            {/* All */}
+            <Chip
+              label="All"
+              size="small"
+              clickable
+              onClick={() => {
+                setSelectedStatus('ALL');
+                setSelectedOwner('ALL');
+                setPage(0);
+              }}
+              color={selectedStatus === 'ALL' && selectedOwner === 'ALL' ? 'primary' : 'default'}
+              variant={selectedStatus === 'ALL' && selectedOwner === 'ALL' ? 'filled' : 'outlined'}
+              sx={{
+                fontWeight: selectedStatus === 'ALL' && selectedOwner === 'ALL' ? 700 : 500,
+                borderRadius: '8px'
+              }}
+            />
+
+            {/* In Stock */}
+            <Chip
+              label="In Stock"
+              size="small"
+              clickable
+              onClick={() => {
+                setSelectedStatus('IN_STOCK');
+                setSelectedOwner('ALL');
+                setPage(0);
+              }}
+              color={selectedStatus === 'IN_STOCK' && selectedOwner === 'ALL' ? 'primary' : 'default'}
+              variant={selectedStatus === 'IN_STOCK' && selectedOwner === 'ALL' ? 'filled' : 'outlined'}
+              sx={{
+                fontWeight: selectedStatus === 'IN_STOCK' && selectedOwner === 'ALL' ? 700 : 500,
+                borderRadius: '8px'
+              }}
+            />
+
+            {/* Owner Names */}
+            {nonAdminUsers.map((u) => {
+              const isSelected = String(selectedOwner) === String(u.id);
               return (
                 <Chip
-                  key={variant}
-                  label={variant}
+                  key={u.id}
+                  label={u.username}
                   size="small"
                   clickable
                   onClick={() => {
-                    setSelectedVariant(variant);
+                    setSelectedOwner(u.id);
+                    setSelectedStatus('ALL');
                     setPage(0);
                   }}
-                  color={isSelected ? "primary" : "default"}
-                  variant={isSelected ? "filled" : "outlined"}
+                  color={isSelected ? 'primary' : 'default'}
+                  variant={isSelected ? 'filled' : 'outlined'}
                   sx={{
                     fontWeight: isSelected ? 700 : 500,
-                    borderRadius: '8px'
+                    borderRadius: '8px',
+                    textTransform: 'capitalize'
                   }}
                 />
               );
             })}
+
+            {/* Waiting Shipment */}
+            <Chip
+              label="Waiting Shipment"
+              size="small"
+              clickable
+              onClick={() => {
+                setSelectedStatus('WAITING_SHIPMENT');
+                setSelectedOwner('ALL');
+                setPage(0);
+              }}
+              color={selectedStatus === 'WAITING_SHIPMENT' && selectedOwner === 'ALL' ? 'primary' : 'default'}
+              variant={selectedStatus === 'WAITING_SHIPMENT' && selectedOwner === 'ALL' ? 'filled' : 'outlined'}
+              sx={{
+                fontWeight: selectedStatus === 'WAITING_SHIPMENT' && selectedOwner === 'ALL' ? 700 : 500,
+                borderRadius: '8px'
+              }}
+            />
+
+            {/* Under Repair */}
+            <Chip
+              label="Under Repair"
+              size="small"
+              clickable
+              onClick={() => {
+                setSelectedStatus('UNDER_REPAIR');
+                setSelectedOwner('ALL');
+                setPage(0);
+              }}
+              color={selectedStatus === 'UNDER_REPAIR' && selectedOwner === 'ALL' ? 'primary' : 'default'}
+              variant={selectedStatus === 'UNDER_REPAIR' && selectedOwner === 'ALL' ? 'filled' : 'outlined'}
+              sx={{
+                fontWeight: selectedStatus === 'UNDER_REPAIR' && selectedOwner === 'ALL' ? 700 : 500,
+                borderRadius: '8px'
+              }}
+            />
           </Box>
         </Stack>
       </Paper>

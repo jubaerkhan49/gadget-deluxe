@@ -83,6 +83,14 @@ export const sickwApi = {
   parseRaw: (raw_text) => api.post('/api/sickw/parse-raw/', { raw_text }),
 };
 
+export const repairApi = {
+  getAll: (params) => api.get('/api/repairs/', { params }),
+  getById: (id) => api.get(`/api/repairs/${id}/`),
+  create: (data) => api.post('/api/repairs/', data),
+  update: (id, data) => api.patch(`/api/repairs/${id}/`, data),
+  delete: (id) => api.delete(`/api/repairs/${id}/`),
+};
+
 export const userApi = {
   getAll: (params) => api.get('/api/users/', { params }),
 };
