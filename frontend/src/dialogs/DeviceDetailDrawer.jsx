@@ -303,11 +303,16 @@ export default function DeviceDetailDrawer({
                     <MenuItem value="">
                       <em>None (Unassigned)</em>
                     </MenuItem>
-                    {users.map((u) => (
-                      <MenuItem key={u.id} value={u.id}>
-                        {u.username} {u.first_name ? `(${u.first_name} ${u.last_name || ''})` : ''}
-                      </MenuItem>
-                    ))}
+                    {users
+                      .filter((u) => u.username?.toLowerCase() !== 'admin')
+                      .map((u) => {
+                        const roleDisplay = u.username?.toLowerCase() === 'jubaer' || u.role === 'ADMIN' ? 'Admin' : 'Employee';
+                        return (
+                          <MenuItem key={u.id} value={u.id}>
+                            {u.username} ({roleDisplay})
+                          </MenuItem>
+                        );
+                      })}
                   </Select>
                 </FormControl>
               </Grid>

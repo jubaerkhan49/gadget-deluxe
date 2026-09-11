@@ -93,6 +93,7 @@ export const repairApi = {
 
 export const userApi = {
   getAll: (params) => api.get('/api/users/', { params }),
+  create: (data) => api.post('/api/users/', data),
 };
 
 export const customerApi = {

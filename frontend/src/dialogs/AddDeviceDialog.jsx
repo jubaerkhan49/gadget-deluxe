@@ -235,12 +235,17 @@ const AddDeviceDialog = ({ open, onClose, onSuccess }) => {
                 value={formData.current_owner}
                 onChange={handleChange('current_owner')}
               >
-                <MenuItem value=""><em>None / Unassigned</em></MenuItem>
-                {users.map((u) => (
-                  <MenuItem key={u.id} value={u.id}>
-                    {u.first_name ? `${u.first_name} (${u.username})` : u.username}
-                  </MenuItem>
-                ))}
+                <MenuItem value=""><em>None (Unassigned)</em></MenuItem>
+                {users
+                  .filter((u) => u.username?.toLowerCase() !== 'admin')
+                  .map((u) => {
+                    const roleDisplay = u.username?.toLowerCase() === 'jubaer' || u.role === 'ADMIN' ? 'Admin' : 'Employee';
+                    return (
+                      <MenuItem key={u.id} value={u.id}>
+                        {u.username} ({roleDisplay})
+                      </MenuItem>
+                    );
+                  })}
               </TextField>
             </Grid>
             <Grid item xs={12}>

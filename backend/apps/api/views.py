@@ -25,8 +25,8 @@ from .serializers import (
     CustomerSerializer, SaleSerializer, RepairSerializer, SickwReportSerializer
 )
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    """API endpoint to list system users / employees for device assignment."""
+class UserViewSet(viewsets.ModelViewSet):
+    """API endpoint to list and create system users / employees for device assignment."""
     queryset = User.objects.filter(is_active=True).order_by('username')
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]

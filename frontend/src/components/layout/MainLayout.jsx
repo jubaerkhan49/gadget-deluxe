@@ -33,11 +33,13 @@ import Brightness7Icon from '@mui/icons-material/Brightness7';
 import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import BuildIcon from '@mui/icons-material/Build';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 
 import { useAuth } from '../../context/AuthContext';
 import { ColorModeContext } from '../../App';
 import AddDeviceDialog from '../../dialogs/AddDeviceDialog';
 import AddShipmentDialog from '../../dialogs/AddShipmentDialog';
+import AddOwnerDialog from '../../dialogs/AddOwnerDialog';
 
 const DRAWER_WIDTH = 250;
 
@@ -62,6 +64,7 @@ export default function MainLayout() {
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   const [showAddDevice, setShowAddDevice] = useState(false);
   const [showAddShipment, setShowAddShipment] = useState(false);
+  const [showAddOwner, setShowAddOwner] = useState(false);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -261,10 +264,29 @@ export default function MainLayout() {
               onClose={() => setUserMenuAnchor(null)}
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              PaperProps={{ sx: { minWidth: 190, borderRadius: 2, p: 0.5 } }}
             >
+              <Box sx={{ px: 2, py: 1 }}>
+                <Typography variant="subtitle2" fontWeight={700} noWrap>
+                  {user?.username || 'Admin'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+                  {user?.role ? `${user.role.charAt(0) + user.role.slice(1).toLowerCase()}` : 'Administrator'}
+                </Typography>
+              </Box>
+
+              <Divider sx={{ my: 0.5 }} />
+
+              <MenuItem onClick={() => { setUserMenuAnchor(null); setShowAddOwner(true); }}>
+                <ListItemIcon><PersonAddIcon fontSize="small" color="primary" /></ListItemIcon>
+                <Typography variant="body2" fontWeight={600}>Add Owner</Typography>
+              </MenuItem>
+
+              <Divider sx={{ my: 0.5 }} />
+
               <MenuItem onClick={() => { setUserMenuAnchor(null); logout(); }}>
                 <ListItemIcon><LogoutIcon fontSize="small" color="error" /></ListItemIcon>
-                <Typography color="error">Logout</Typography>
+                <Typography variant="body2" color="error" fontWeight={600}>Logout</Typography>
               </MenuItem>
             </Menu>
           </Box>
@@ -337,6 +359,17 @@ export default function MainLayout() {
           onClose={() => setShowAddShipment(false)}
           onShipmentCreated={() => {
             setShowAddShipment(false);
+            window.location.reload();
+          }}
+        />
+      )}
+
+      {showAddOwner && (
+        <AddOwnerDialog
+          open={showAddOwner}
+          onClose={() => setShowAddOwner(false)}
+          onOwnerAdded={() => {
+            setShowAddOwner(false);
             window.location.reload();
           }}
         />
