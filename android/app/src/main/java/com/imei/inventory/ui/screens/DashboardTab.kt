@@ -97,7 +97,7 @@ fun DashboardTab(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatCard(
                         title = "TODAY'S SALES",
-                        value = formatIndianNumber(stats.totalSalesAmount),
+                        value = formatIndianNumber(stats.todaySalesAmount),
                         imageVector = Icons.Default.AttachMoney,
                         accentColor = Color(0xFF059669),
                         modifier = Modifier.weight(1f)

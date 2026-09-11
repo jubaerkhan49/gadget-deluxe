@@ -13,7 +13,9 @@ data class DashboardStats(
     val inStock: Int = 0,
     val sold: Int = 0,
     val underRepair: Int = 0,
+    val todaySalesAmount: Double = 0.0,
     val totalSalesAmount: Double = 0.0,
+    val todayProfit: Double = 0.0,
     val totalProfit: Double = 0.0,
     val totalAssets: Double = 0.0
 )
@@ -77,18 +79,22 @@ class MainInventoryViewModel : ViewModel() {
                 val res = ApiClient.apiService.getDashboardStats(bearer)
                 if (res.isSuccessful && res.body() != null) {
                     val s = res.body()!!
+                    val localSalesSum = _sales.value.sumOf { it.displayPrice }
+                    val localProfitSum = _sales.value.sumOf { it.profit ?: 0.0 }
                     _stats.value = DashboardStats(
                         totalDevices = s.totalDevices,
                         inStock = s.inStock,
                         sold = s.sold,
                         underRepair = s.underRepair,
-                        totalSalesAmount = s.todaySales,
-                        totalProfit = s.todayProfit,
+                        todaySalesAmount = s.todaySales,
+                        totalSalesAmount = if (s.totalSales > 0) s.totalSales else localSalesSum,
+                        todayProfit = s.todayProfit,
+                        totalProfit = if (s.totalProfit > 0) s.totalProfit else localProfitSum,
                         totalAssets = s.totalAssets
                     )
                 }
             } catch (e: Exception) {
-                // fallback to local computeStats
+                // fallback
             }
         }
     }
@@ -105,13 +111,17 @@ class MainInventoryViewModel : ViewModel() {
                     val statsRes = ApiClient.apiService.getDashboardStats(bearer)
                     if (statsRes.isSuccessful && statsRes.body() != null) {
                         val s = statsRes.body()!!
+                        val localSalesSum = _sales.value.sumOf { it.displayPrice }
+                        val localProfitSum = _sales.value.sumOf { it.profit ?: 0.0 }
                         _stats.value = DashboardStats(
                             totalDevices = s.totalDevices,
                             inStock = s.inStock,
                             sold = s.sold,
                             underRepair = s.underRepair,
-                            totalSalesAmount = s.todaySales,
-                            totalProfit = s.todayProfit,
+                            todaySalesAmount = s.todaySales,
+                            totalSalesAmount = if (s.totalSales > 0) s.totalSales else localSalesSum,
+                            todayProfit = s.todayProfit,
+                            totalProfit = if (s.totalProfit > 0) s.totalProfit else localProfitSum,
                             totalAssets = s.totalAssets
                         )
                     }

@@ -476,6 +476,10 @@ class DashboardStatsAPIView(APIView):
 
         total_assets = Device.objects.exclude(current_status=DeviceStatus.SOLD).aggregate(total=models.Sum('buying_price'))['total'] or Decimal('0.00')
 
+        total_sales_qs = Sale.objects.all()
+        total_sales = total_sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
+        total_profit = total_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
+
         today_sales_qs = Sale.objects.filter(sale_date__date=local_today)
         today_sales = today_sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
         today_profit = today_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
@@ -501,7 +505,9 @@ class DashboardStatsAPIView(APIView):
             'returned': returned_count,
             'total_assets': float(total_assets),
             'today_sales': float(today_sales),
+            'total_sales': float(total_sales),
             'today_profit': float(today_profit),
+            'total_profit': float(total_profit),
             'monthly_profit': float(monthly_profit),
             'others_owned': others_owned_count,
         })

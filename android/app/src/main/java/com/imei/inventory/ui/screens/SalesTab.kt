@@ -27,7 +27,14 @@ fun SalesTab(
 ) {
     val sales by viewModel.sales.collectAsState()
     val stats by viewModel.stats.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val cumulativeSales = remember(sales, stats.totalSalesAmount) {
+        val listSum = sales.sumOf { it.displayPrice }
+        if (listSum > 0) listSum else stats.totalSalesAmount
+    }
+    val cumulativeProfit = remember(sales, stats.totalProfit) {
+        val listProfit = sales.sumOf { it.profit ?: 0.0 }
+        if (listProfit > 0) listProfit else stats.totalProfit
+    }
 
     LaunchedEffect(Unit) {
         viewModel.fetchSales(token)
@@ -61,12 +68,12 @@ fun SalesTab(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Total Sales", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                    Text("BDT ${formatIndianNumber(stats.totalSalesAmount)}", color = Color(0xFF16A34A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("BDT ${formatIndianNumber(cumulativeSales)}", color = Color(0xFF16A34A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
                 VerticalDivider(modifier = Modifier.height(36.dp), color = MaterialTheme.colorScheme.outline)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Total Profit", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                    Text("BDT ${formatIndianNumber(stats.totalProfit)}", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("BDT ${formatIndianNumber(cumulativeProfit)}", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -99,30 +106,23 @@ fun SaleCard(sale: SaleDto) {
         shape = RoundedCornerShape(14.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            // Header Row: Model & Variant on left, Sold Price on right
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Row 1: Model Title + Sold Price
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                Text(
+                    text = sale.deviceModel ?: "Device Unit",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
                     modifier = Modifier.weight(1f, fill = false)
-                ) {
-                    Text(
-                        text = sale.deviceModel ?: "Device Unit",
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
-                    )
-                    sale.deviceVariant?.let { variant ->
-                        if (variant.isNotBlank()) {
-                            VariantBadge(variant)
-                        }
-                    }
-                }
+                )
 
                 Text(
                     text = "BDT ${formatIndianNumber(sale.displayPrice)}",
@@ -132,31 +132,60 @@ fun SaleCard(sale: SaleDto) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // IMEI and Storage Row
+            // Row 2: Specs Badges (Variant, Capacity, Color)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                sale.deviceImei?.let {
-                    CopyableText(label = "IMEI", value = it)
+                sale.deviceVariant?.let { variant ->
+                    if (variant.isNotBlank()) {
+                        VariantBadge(variant)
+                    }
                 }
 
                 if (!sale.deviceCapacity.isNullOrBlank()) {
-                    Text(
-                        text = "${sale.deviceCapacity}${if (!sale.deviceColor.isNullOrBlank()) " • ${sale.deviceColor}" else ""}",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = sale.deviceCapacity,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+
+                if (!sale.deviceColor.isNullOrBlank()) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = sale.deviceColor,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            // Row 3: IMEI with copy icon
+            sale.deviceImei?.let {
+                CopyableText(label = "IMEI", value = it)
+            }
 
-            // Footer Row: Sold By owner and Profit
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                thickness = 0.5.dp
+            )
+
+            // Row 4: Sold By on left, Profit on right
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -181,12 +210,18 @@ fun SaleCard(sale: SaleDto) {
                 }
 
                 sale.profit?.let {
-                    Text(
-                        text = "+BDT ${formatIndianNumber(it)} profit",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Surface(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(6.dp)
+                    ) {
+                        Text(
+                            text = "+BDT ${formatIndianNumber(it)} profit",
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                        )
+                    }
                 }
             }
         }
