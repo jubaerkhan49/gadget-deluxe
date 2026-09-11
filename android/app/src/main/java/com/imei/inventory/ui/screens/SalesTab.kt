@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +16,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.SaleDto
 import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.VariantBadge
+import com.imei.inventory.ui.components.formatIndianNumber
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 
 @Composable
@@ -41,7 +45,7 @@ fun SalesTab(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Revenue summary card
+        // Sales summary card
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -56,13 +60,13 @@ fun SalesTab(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Total Revenue", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                    Text("BDT ${stats.totalSalesAmount.toInt()}", color = Color(0xFF16A34A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Total Sales", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    Text("BDT ${formatIndianNumber(stats.totalSalesAmount)}", color = Color(0xFF16A34A), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
                 VerticalDivider(modifier = Modifier.height(36.dp), color = MaterialTheme.colorScheme.outline)
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Total Profit", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                    Text("BDT ${stats.totalProfit.toInt()}", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("BDT ${formatIndianNumber(stats.totalProfit)}", color = MaterialTheme.colorScheme.primary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -96,19 +100,32 @@ fun SaleCard(sale: SaleDto) {
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(modifier = Modifier.padding(14.dp)) {
+            // Header Row: Model & Variant on left, Sold Price on right
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    Text(
+                        text = sale.deviceModel ?: "Device Unit",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 15.sp
+                    )
+                    sale.deviceVariant?.let { variant ->
+                        if (variant.isNotBlank()) {
+                            VariantBadge(variant)
+                        }
+                    }
+                }
+
                 Text(
-                    text = sale.invoiceNumber,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
-                Text(
-                    text = "BDT ${sale.finalPrice.toInt()}",
+                    text = "BDT ${formatIndianNumber(sale.displayPrice)}",
                     color = Color(0xFF16A34A),
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp
@@ -117,20 +134,59 @@ fun SaleCard(sale: SaleDto) {
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            sale.deviceImei?.let {
-                CopyableText(label = "Device IMEI", value = it)
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
+            // IMEI and Storage Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("Customer: ${sale.customerName ?: "Direct Sale"}", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp)
+                sale.deviceImei?.let {
+                    CopyableText(label = "IMEI", value = it)
+                }
+
+                if (!sale.deviceCapacity.isNullOrBlank()) {
+                    Text(
+                        text = "${sale.deviceCapacity}${if (!sale.deviceColor.isNullOrBlank()) " • ${sale.deviceColor}" else ""}",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Footer Row: Sold By owner and Profit
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        modifier = Modifier.size(13.dp),
+                        tint = Color(0xFF0284C7)
+                    )
+                    Text(
+                        text = "Sold By: ${sale.displaySoldBy}",
+                        color = Color(0xFF0284C7),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+
                 sale.profit?.let {
-                    Text("+BDT ${it.toInt()} profit", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "+BDT ${formatIndianNumber(it)} profit",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }

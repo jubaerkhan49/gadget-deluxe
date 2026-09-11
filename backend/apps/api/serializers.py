@@ -36,13 +36,33 @@ class CustomerSerializer(serializers.ModelSerializer):
 
 class SaleSerializer(serializers.ModelSerializer):
     device_imei = serializers.CharField(source='device.imei', read_only=True)
+    device_model = serializers.CharField(source='device.model', read_only=True)
+    device_variant = serializers.CharField(source='device.variant', read_only=True)
+    device_capacity = serializers.CharField(source='device.capacity', read_only=True)
+    device_color = serializers.CharField(source='device.color', read_only=True)
     customer_name = serializers.CharField(source='customer.name', read_only=True)
     seller_name = serializers.CharField(source='seller.username', read_only=True)
+    sold_by = serializers.SerializerMethodField()
+    final_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Sale
         fields = '__all__'
         read_only_fields = ['profit', 'invoice_number']
+
+    def get_sold_by(self, obj):
+        if obj.device:
+            if obj.device.current_owner:
+                return obj.device.current_owner.username
+            last_assign = obj.device.assignments.order_by('-assigned_date', '-created_at').first()
+            if last_assign and last_assign.employee:
+                return last_assign.employee.username
+        if obj.seller:
+            return obj.seller.username
+        return "Unassigned"
+
+    def get_final_price(self, obj):
+        return float(obj.selling_price or 0)
 
 class RepairSerializer(serializers.ModelSerializer):
     device_imei = serializers.CharField(source='device.imei', read_only=True)

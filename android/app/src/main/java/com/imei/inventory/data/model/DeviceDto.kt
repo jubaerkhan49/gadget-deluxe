@@ -66,12 +66,29 @@ data class SaleDto(
     val id: Int = 0,
     @SerializedName("invoice_number") val invoiceNumber: String = "",
     @SerializedName("device_imei") val deviceImei: String? = null,
+    @SerializedName("device_model") val deviceModel: String? = null,
+    @SerializedName("device_variant") val deviceVariant: String? = null,
+    @SerializedName("device_capacity") val deviceCapacity: String? = null,
+    @SerializedName("device_color") val deviceColor: String? = null,
     @SerializedName("customer_name") val customerName: String? = null,
+    @SerializedName("seller_name") val sellerName: String? = null,
+    @SerializedName("sold_by") val soldBy: String? = null,
     @SerializedName("final_price") val finalPrice: Double = 0.0,
+    @SerializedName("selling_price") val sellingPrice: Double = 0.0,
     val profit: Double? = null,
     @SerializedName("payment_method") val paymentMethod: String? = null,
     @SerializedName("created_at") val createdAt: String? = null
-)
+) {
+    val displayPrice: Double
+        get() = if (finalPrice > 0) finalPrice else sellingPrice
+
+    val displaySoldBy: String
+        get() = when {
+            !soldBy.isNullOrBlank() && !soldBy.equals("Unassigned", ignoreCase = true) -> soldBy
+            !sellerName.isNullOrBlank() -> sellerName
+            else -> "Store"
+        }
+}
 
 data class RepairDto(
     val id: Int = 0,
