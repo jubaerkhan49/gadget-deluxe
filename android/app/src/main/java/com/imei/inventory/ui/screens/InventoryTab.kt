@@ -1,5 +1,6 @@
 package com.imei.inventory.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -11,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,6 +31,9 @@ fun InventoryTab(
     onSelectDevice: (DeviceDto) -> Unit,
     onOpenAddDevice: () -> Unit
 ) {
+    // 0 = Active Inventory, 1 = Archive / Sold
+    var selectedTab by remember { mutableStateOf(0) }
+
     var searchQuery by remember { mutableStateOf("") }
     var selectedVariantFilter by remember { mutableStateOf<String?>(null) }
     var selectedOwnerFilter by remember { mutableStateOf<String?>(null) }
@@ -37,11 +42,18 @@ fun InventoryTab(
     val devices by viewModel.devices.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
-    val statusOptions = listOf(
+    val activeCount = remember(devices) {
+        devices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) }
+    }
+    val archiveCount = remember(devices) {
+        devices.count { it.currentStatus.equals("SOLD", ignoreCase = true) }
+    }
+
+    val activeStatusOptions = listOf(
         null to "All Status",
         "IN_STOCK" to "In Stock",
-        "UNDER_REPAIR" to "Under Repair",
-        "SOLD" to "Sold"
+        "WAITING_SHIPMENT" to "Waiting Shipment",
+        "UNDER_REPAIR" to "Under Repair"
     )
 
     val variantOptions = listOf(
@@ -55,17 +67,39 @@ fun InventoryTab(
         "Bypass" to "Bypass"
     )
 
-    // Distinct owners extracted dynamically (only active owner names)
+    // Distinct owners extracted dynamically
     val ownerOptions = remember(devices) {
         devices.mapNotNull { it.currentOwnerName?.trim() }
-            .filter { it.isNotBlank() }
+            .filter { it.isNotBlank() && !it.equals("admin", ignoreCase = true) }
             .distinct()
             .sorted()
     }
 
-    // Filter devices in-memory for instant responsive search + multi-filter matching
-    val filteredDevices = remember(devices, selectedVariantFilter, selectedOwnerFilter, selectedStatusFilter, searchQuery) {
-        devices.filter { dev ->
+    val statusPriority = mapOf(
+        "IN_STOCK" to 1,
+        "UNDER_REPAIR" to 2,
+        "WAITING_SHIPMENT" to 3,
+        "SOLD" to 4
+    )
+
+    // Filter and sort devices based on selected tab and filters
+    val filteredDevices = remember(
+        devices,
+        selectedTab,
+        selectedVariantFilter,
+        selectedOwnerFilter,
+        selectedStatusFilter,
+        searchQuery
+    ) {
+        val tabFiltered = if (selectedTab == 0) {
+            // Active Inventory: Exclude SOLD
+            devices.filter { !it.currentStatus.equals("SOLD", ignoreCase = true) }
+        } else {
+            // Archive: Only SOLD
+            devices.filter { it.currentStatus.equals("SOLD", ignoreCase = true) }
+        }
+
+        val filtered = tabFiltered.filter { dev ->
             val matchesStatus = selectedStatusFilter == null || dev.currentStatus.equals(selectedStatusFilter, ignoreCase = true)
             val matchesVariant = selectedVariantFilter == null || dev.variant?.equals(selectedVariantFilter, ignoreCase = true) == true
             val matchesOwner = selectedOwnerFilter == null || dev.currentOwnerName?.equals(selectedOwnerFilter, ignoreCase = true) == true
@@ -74,21 +108,30 @@ fun InventoryTab(
                     dev.imei.contains(searchQuery, ignoreCase = true) ||
                     (dev.serialNumber?.contains(searchQuery, ignoreCase = true) == true) ||
                     (dev.capacity?.contains(searchQuery, ignoreCase = true) == true) ||
+                    (dev.color?.contains(searchQuery, ignoreCase = true) == true) ||
                     (dev.currentOwnerName?.contains(searchQuery, ignoreCase = true) == true)
             matchesStatus && matchesVariant && matchesOwner && matchesQuery
         }
+
+        // Sort: IN_STOCK first in active tab
+        filtered.sortedWith(
+            compareBy<DeviceDto> { statusPriority[it.currentStatus] ?: 99 }
+                .thenByDescending { it.id }
+        )
     }
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onOpenAddDevice,
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier.size(52.dp)
-            ) {
-                Text("+", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            if (selectedTab == 0) {
+                FloatingActionButton(
+                    onClick = onOpenAddDevice,
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.size(52.dp)
+                ) {
+                    Text("+", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                }
             }
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -99,11 +142,79 @@ fun InventoryTab(
                 .fillMaxSize()
                 .padding(horizontal = 14.dp, vertical = 6.dp)
         ) {
+            // Top Segmented Pill Toggle: [ Active Inventory | Archive (Sold) ]
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                // Active Inventory Tab
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(
+                            if (selectedTab == 0) MaterialTheme.colorScheme.primary
+                            else Color.Transparent
+                        )
+                        .clickable {
+                            selectedTab = 0
+                            viewModel.setStatusFilter(null)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "📱 Active Inventory ($activeCount)",
+                        color = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
+                    )
+                }
+
+                // Archive / Sold Tab
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(
+                            if (selectedTab == 1) Color(0xFF8B5CF6)
+                            else Color.Transparent
+                        )
+                        .clickable {
+                            selectedTab = 1
+                            viewModel.setStatusFilter(null)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "📦 Archive / Sold ($archiveCount)",
+                        color = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp,
+                        fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
             // Search Input (Compact 44dp height)
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("Search IMEI, Model, Serial, Owner...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp) },
+                placeholder = {
+                    Text(
+                        if (selectedTab == 0) "Search Active IMEI, Model, Owner..."
+                        else "Search Sold Archive IMEI, Model...",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp
+                    )
+                },
                 singleLine = true,
                 shape = RoundedCornerShape(10.dp),
                 trailingIcon = {
@@ -128,38 +239,40 @@ fun InventoryTab(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Status Filter Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
-            ) {
-                statusOptions.forEach { (statusKey, label) ->
-                    val isSelected = selectedStatusFilter == statusKey
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { viewModel.setStatusFilter(statusKey) },
-                        label = {
-                            Text(
-                                text = label,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            // Status Filter Row (only on Active Tab)
+            if (selectedTab == 0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    activeStatusOptions.forEach { (statusKey, label) ->
+                        val isSelected = selectedStatusFilter == statusKey
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { viewModel.setStatusFilter(statusKey) },
+                            label = {
+                                Text(
+                                    text = label,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.height(28.dp),
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = Color.White,
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        },
-                        shape = RoundedCornerShape(6.dp),
-                        modifier = Modifier.height(28.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = Color.White,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    )
+                    }
                 }
-            }
 
-            Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+            }
 
             // Variant & Owner Filter Row
             Row(
@@ -226,7 +339,7 @@ fun InventoryTab(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${filteredDevices.size} Devices Listed",
+                    text = "${filteredDevices.size} ${if (selectedTab == 0) "Active" else "Archived"} Devices Listed",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold
@@ -249,7 +362,7 @@ fun InventoryTab(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Compact Devices List (High-density 4-6 items on screen)
+            // Compact Devices List
             if (isLoading && filteredDevices.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
@@ -257,7 +370,7 @@ fun InventoryTab(
             } else if (filteredDevices.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = "No matching devices found",
+                        text = if (selectedTab == 0) "No active devices match filters" else "No archived sold devices found",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
@@ -270,9 +383,13 @@ fun InventoryTab(
                     items(filteredDevices) { device ->
                         CompactDeviceCard(
                             device = device,
+                            isArchiveView = selectedTab == 1,
                             onClick = { onSelectDevice(device) },
                             onStatusChange = { newStatus ->
                                 viewModel.updateDevice(token, device.id, mapOf("current_status" to newStatus)) {}
+                            },
+                            onRestoreToStock = {
+                                viewModel.updateDevice(token, device.id, mapOf("current_status" to "IN_STOCK")) {}
                             }
                         )
                     }
@@ -285,8 +402,10 @@ fun InventoryTab(
 @Composable
 fun CompactDeviceCard(
     device: DeviceDto,
+    isArchiveView: Boolean = false,
     onClick: () -> Unit,
-    onStatusChange: (String) -> Unit
+    onStatusChange: (String) -> Unit,
+    onRestoreToStock: () -> Unit = {}
 ) {
     var expandedMenu by remember { mutableStateOf(false) }
 
@@ -348,65 +467,95 @@ fun CompactDeviceCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Row 3: Assigned Owner (instead of buying price) + Quick Status Action
+            // Row 3: Owner / Pricing + Quick Status or Restore Action
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                val ownerDisplay = if (!device.currentOwnerName.isNullOrBlank()) {
-                    "👤 ${device.currentOwnerName}"
-                } else {
-                    "👤 Unassigned"
-                }
+                if (isArchiveView) {
+                    val priceDisplay = if (device.sellingPrice != null) {
+                        "💰 Sold: ৳${Math.round(device.sellingPrice).toInt()}"
+                    } else {
+                        "💰 Sold Device"
+                    }
+                    Text(
+                        text = priceDisplay,
+                        color = Color(0xFF16A34A),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                Text(
-                    text = ownerDisplay,
-                    color = if (device.currentOwnerName.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-
-                Box {
+                    // Quick Un-Archive Button
                     Button(
-                        onClick = { expandedMenu = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                        onClick = onRestoreToStock,
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                         shape = RoundedCornerShape(6.dp),
                         modifier = Modifier.height(26.dp)
                     ) {
                         Text(
-                            text = "Status ▾",
+                            text = "↺ Restore to Stock",
                             fontSize = 10.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.SemiBold
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Bold
                         )
                     }
-                    DropdownMenu(
-                        expanded = expandedMenu,
-                        onDismissRequest = { expandedMenu = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text("In Stock", fontSize = 13.sp) },
-                            onClick = {
-                                expandedMenu = false
-                                onStatusChange("IN_STOCK")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Under Repair", fontSize = 13.sp) },
-                            onClick = {
-                                expandedMenu = false
-                                onStatusChange("UNDER_REPAIR")
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Sold", fontSize = 13.sp) },
-                            onClick = {
-                                expandedMenu = false
-                                onStatusChange("SOLD")
-                            }
-                        )
+                } else {
+                    val ownerDisplay = if (!device.currentOwnerName.isNullOrBlank()) {
+                        "👤 ${device.currentOwnerName}"
+                    } else {
+                        "👤 Unassigned"
+                    }
+
+                    Text(
+                        text = ownerDisplay,
+                        color = if (device.currentOwnerName.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7),
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Box {
+                        Button(
+                            onClick = { expandedMenu = true },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.height(26.dp)
+                        ) {
+                            Text(
+                                text = "Status ▾",
+                                fontSize = 10.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = expandedMenu,
+                            onDismissRequest = { expandedMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("In Stock", fontSize = 13.sp) },
+                                onClick = {
+                                    expandedMenu = false
+                                    onStatusChange("IN_STOCK")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Under Repair", fontSize = 13.sp) },
+                                onClick = {
+                                    expandedMenu = false
+                                    onStatusChange("UNDER_REPAIR")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Sold (Archive)", fontSize = 13.sp) },
+                                onClick = {
+                                    expandedMenu = false
+                                    onStatusChange("SOLD")
+                                }
+                            )
+                        }
                     }
                 }
             }
