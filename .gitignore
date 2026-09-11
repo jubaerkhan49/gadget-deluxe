@@ -37,3 +37,6 @@ backend/Scripts/
 
 # Note: db.sqlite3 is NOT ignored so your current database is included when deployed
 
+# SQL restore scripts / data dumps
+generate_restore_sql.py
+restore_data.sql
