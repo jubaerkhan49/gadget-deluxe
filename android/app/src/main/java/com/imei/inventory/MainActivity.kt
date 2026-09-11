@@ -12,6 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.LocalShipping
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.ReceiptLong
@@ -168,36 +170,76 @@ class MainActivity : FragmentActivity() {
                                                 onDismissRequest = { showTopMenu = false }
                                             ) {
                                                 DropdownMenuItem(
-                                                    text = { Text("⚡ Sickw IMEI Parser", fontWeight = FontWeight.Medium) },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Bolt,
+                                                            contentDescription = null,
+                                                            tint = Color(0xFFF59E0B),
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    },
+                                                    text = { Text("Sickw IMEI Parser", fontWeight = FontWeight.Medium) },
                                                     onClick = {
                                                         showTopMenu = false
                                                         showSickwDialog = true
                                                     }
                                                 )
                                                 DropdownMenuItem(
-                                                    text = { Text("📦 New Shipment Entry", fontWeight = FontWeight.Medium) },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            imageVector = Icons.Default.LocalShipping,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    },
+                                                    text = { Text("New Shipment Entry", fontWeight = FontWeight.Medium) },
                                                     onClick = {
                                                         showTopMenu = false
                                                         showAddShipmentDialog = true
                                                     }
                                                 )
                                                 DropdownMenuItem(
-                                                    text = { Text("📱 Add Single Device", fontWeight = FontWeight.Medium) },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            imageVector = Icons.Default.PhoneAndroid,
+                                                            contentDescription = null,
+                                                            tint = Color(0xFF06B6D4),
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    },
+                                                    text = { Text("Add Single Device", fontWeight = FontWeight.Medium) },
                                                     onClick = {
                                                         showTopMenu = false
                                                         showAddDeviceDialog = true
                                                     }
                                                 )
                                                 DropdownMenuItem(
-                                                    text = { Text("🔄 Sync Cloud Data", fontWeight = FontWeight.Medium) },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Sync,
+                                                            contentDescription = null,
+                                                            tint = Color(0xFF10B981),
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    },
+                                                    text = { Text("Sync Cloud Data", fontWeight = FontWeight.Medium) },
                                                     onClick = {
                                                         showTopMenu = false
                                                         mainViewModel.loadAllData(token)
                                                     }
                                                 )
-                                                HorizontalDivider()
+                                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                                                 DropdownMenuItem(
-                                                    text = { Text("🚪 Logout", color = Color(0xFFDC2626), fontWeight = FontWeight.Bold) },
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Logout,
+                                                            contentDescription = null,
+                                                            tint = Color(0xFFEF4444),
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    },
+                                                    text = { Text("Logout", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold) },
                                                     onClick = {
                                                         showTopMenu = false
                                                         authViewModel.logout()

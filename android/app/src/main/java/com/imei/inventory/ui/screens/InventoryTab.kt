@@ -8,6 +8,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -168,12 +172,24 @@ fun InventoryTab(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "📱 Active Inventory ($activeCount)",
-                        color = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PhoneAndroid,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "Active Inventory ($activeCount)",
+                            color = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
+                        )
+                    }
                 }
 
                 // Archive / Sold Tab
@@ -192,12 +208,24 @@ fun InventoryTab(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "📦 Archive / Sold ($archiveCount)",
-                        color = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 12.sp,
-                        fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Inventory2,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "Archive / Sold ($archiveCount)",
+                            color = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium
+                        )
+                    }
                 }
             }
 
@@ -286,10 +314,26 @@ fun InventoryTab(
                     val isSelected = selectedOwnerFilter == ownerName
                     FilterChip(
                         selected = isSelected,
-                        onClick = { selectedOwnerFilter = if (isSelected) null else ownerName },
+                        onClick = {
+                            if (isSelected) {
+                                selectedOwnerFilter = null
+                                viewModel.setStatusFilter(null)
+                            } else {
+                                selectedOwnerFilter = ownerName
+                                viewModel.setStatusFilter("IN_STOCK")
+                            }
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.size(13.dp),
+                                tint = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
                         label = {
                             Text(
-                                text = "👤 $ownerName",
+                                text = ownerName,
                                 fontSize = 11.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
@@ -502,18 +546,26 @@ fun CompactDeviceCard(
                         )
                     }
                 } else {
-                    val ownerDisplay = if (!device.currentOwnerName.isNullOrBlank()) {
-                        "👤 ${device.currentOwnerName}"
-                    } else {
-                        "👤 Unassigned"
-                    }
+                    val ownerName = if (!device.currentOwnerName.isNullOrBlank()) device.currentOwnerName else "Unassigned"
+                    val isUnassigned = device.currentOwnerName.isNullOrBlank()
 
-                    Text(
-                        text = ownerDisplay,
-                        color = if (device.currentOwnerName.isNullOrBlank()) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7),
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            modifier = Modifier.size(13.dp),
+                            tint = if (isUnassigned) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7)
+                        )
+                        Text(
+                            text = ownerName,
+                            color = if (isUnassigned) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
 
                     Box {
                         Button(
