@@ -16,6 +16,10 @@ class DeviceSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_current_status_display', read_only=True)
     current_owner_name = serializers.CharField(source='current_owner.username', read_only=True)
     selling_price = serializers.SerializerMethodField()
+    shipment_tracking = serializers.CharField(source='current_shipment.tracking_number', read_only=True, default=None)
+    shipment_supplier = serializers.CharField(source='current_shipment.supplier.name', read_only=True, default=None)
+    shipment_agent = serializers.CharField(source='current_shipment.shipping_company', read_only=True, default=None)
+    shipment_receive_date_cn = serializers.DateField(source='current_shipment.receive_date', read_only=True, default=None)
 
     class Meta:
         model = Device

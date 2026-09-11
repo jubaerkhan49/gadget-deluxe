@@ -362,7 +362,7 @@ export default function DeviceDetailDrawer({
             Device Specifications
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={6}>
+            <Grid item xs={12} sm={4}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                 <Typography variant="caption" color="text.secondary">Storage & Color</Typography>
                 <Typography variant="body1" fontWeight={600}>
@@ -370,7 +370,7 @@ export default function DeviceDetailDrawer({
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={6} sm={4}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                 <Typography variant="caption" color="text.secondary">Battery</Typography>
                 <Typography variant="body1" fontWeight={600}>
@@ -379,39 +379,11 @@ export default function DeviceDetailDrawer({
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary">Carrier Lock</Typography>
-                <Typography variant="body2" fontWeight={600}>
-                  {device.sim_lock_status || '—'}
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={6}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary">iCloud / FMI</Typography>
-                <Typography
-                  variant="body2"
-                  fontWeight={600}
-                  color={device.icloud_status?.toLowerCase().includes('clean') || device.icloud_status?.toLowerCase().includes('off') ? 'success.main' : 'warning.main'}
-                >
-                  {device.icloud_status || '—'}
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={6}>
+            <Grid item xs={6} sm={4}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                 <Typography variant="caption" color="text.secondary">Face ID / True Tone</Typography>
-                <Typography variant="body2" fontWeight={600}>
+                <Typography variant="body1" fontWeight={600}>
                   {device.face_id || 'Working'} / {device.true_tone || 'Working'}
-                </Typography>
-              </Paper>
-            </Grid>
-            <Grid item xs={6}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary">Purchase Country</Typography>
-                <Typography variant="body2" fontWeight={600}>
-                  {device.purchase_country || '—'}
                 </Typography>
               </Paper>
             </Grid>
@@ -436,7 +408,36 @@ export default function DeviceDetailDrawer({
                 </Typography>
               </Grid>
               <Grid item xs={12}>
-                <Divider sx={{ my: 1 }} />
+                <Divider sx={{ my: 0.5 }} />
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="caption" color="text.secondary">Supplier Name</Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  {device.shipment_supplier || 'Unknown'}
+                </Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="caption" color="text.secondary">Shipping Agent</Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  {device.shipment_agent || 'None'}
+                </Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="caption" color="text.secondary">Received Date (CN)</Typography>
+                <Typography variant="body2" fontWeight={700} color="primary">
+                  {device.shipment_receive_date_cn || 'Pending'}
+                </Typography>
+              </Grid>
+              <Grid item xs={6}>
+                <Typography variant="caption" color="text.secondary">Current Shipment ID</Typography>
+                <Typography variant="body2" fontWeight={600}>
+                  {device.current_shipment
+                    ? `#${device.current_shipment}${device.shipment_tracking ? ` (${device.shipment_tracking})` : ''}`
+                    : 'No Shipment'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <Divider sx={{ my: 0.5 }} />
               </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
@@ -448,12 +449,6 @@ export default function DeviceDetailDrawer({
                   onChange={(e) => handleReceivedDateBdUpdate(e.target.value)}
                   InputLabelProps={{ shrink: true }}
                 />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="caption" color="text.secondary">Current Shipment ID</Typography>
-                <Typography variant="body2" fontWeight={600}>
-                  {device.current_shipment ? `#${device.current_shipment}` : 'No Shipment'}
-                </Typography>
               </Grid>
             </Grid>
           </Paper>
