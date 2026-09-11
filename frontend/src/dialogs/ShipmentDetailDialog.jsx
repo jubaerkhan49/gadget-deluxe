@@ -251,9 +251,14 @@ export default function ShipmentDetailDialog({
                 variant="contained"
                 color="success"
                 size="small"
-                startIcon={receivingAll ? <CircularProgress size={16} color="inherit" /> : <StockIcon />}
+                startIcon={receivingAll ? <CircularProgress size={16} sx={{ color: '#ffffff' }} /> : <StockIcon sx={{ color: '#ffffff !important' }} />}
                 disabled={receivingAll}
                 onClick={handleReceiveAllToStock}
+                sx={{
+                  color: '#ffffff !important',
+                  fontWeight: 700,
+                  '& .MuiSvgIcon-root': { color: '#ffffff !important' }
+                }}
               >
                 Receive All to BD Stock ({waitingCount})
               </Button>

@@ -106,6 +106,7 @@ export default function Repairs() {
     const q = searchQuery.toLowerCase().trim();
     return (
       r.device_imei?.toLowerCase().includes(q) ||
+      r.device_model?.toLowerCase().includes(q) ||
       r.issue_description?.toLowerCase().includes(q) ||
       r.repair_center?.toLowerCase().includes(q)
     );
@@ -257,7 +258,7 @@ export default function Repairs() {
         <TextField
           fullWidth
           size="small"
-          placeholder="Search by Device IMEI, Hardware Issue, or Service Center..."
+          placeholder="Search by Device Model, IMEI, Hardware Issue, or Service Center..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
@@ -283,7 +284,8 @@ export default function Repairs() {
           <Table size="medium">
             <TableHead>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Device IMEI</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Device Model</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Issue Description</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Center / Country</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Sent Date</TableCell>
@@ -296,19 +298,30 @@ export default function Repairs() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
                     <CircularProgress size={32} />
                   </TableCell>
                 </TableRow>
               ) : filteredRepairs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  <TableCell colSpan={9} align="center" sx={{ py: 6, color: 'text.secondary' }}>
                     No repair logs found.
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedRepairs.map((r) => (
                   <TableRow key={r.id} hover>
+                    <TableCell>
+                      <Typography variant="body2" fontWeight={700}>
+                        {r.device_model || 'Unknown Device'}
+                      </Typography>
+                      {(r.device_capacity || r.device_color) && (
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          {r.device_capacity} {r.device_color ? `• ${r.device_color}` : ''}
+                        </Typography>
+                      )}
+                    </TableCell>
+
                     <TableCell>
                       <CopyableText text={r.device_imei} />
                     </TableCell>

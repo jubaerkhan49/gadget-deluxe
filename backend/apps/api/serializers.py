@@ -94,6 +94,10 @@ class SaleSerializer(serializers.ModelSerializer):
 
 class RepairSerializer(serializers.ModelSerializer):
     device_imei = serializers.CharField(source='device.imei', read_only=True)
+    device_model = serializers.CharField(source='device.model', read_only=True)
+    device_color = serializers.CharField(source='device.color', read_only=True)
+    device_capacity = serializers.CharField(source='device.capacity', read_only=True)
+    device_variant = serializers.CharField(source='device.variant', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
