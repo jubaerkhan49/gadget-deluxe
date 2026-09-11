@@ -108,8 +108,15 @@ export default function Sales() {
         <Button
           variant="contained"
           color="success"
-          startIcon={<AddIcon />}
+          startIcon={<AddIcon sx={{ color: '#ffffff !important' }} />}
           onClick={() => setRecordSaleOpen(true)}
+          sx={{
+            color: '#ffffff !important',
+            fontWeight: 600,
+            bgcolor: '#10B981',
+            '&:hover': { bgcolor: '#059669' },
+            '& .MuiButton-startIcon': { color: '#ffffff !important' }
+          }}
         >
           Record Sale
         </Button>

@@ -337,7 +337,16 @@ export default function RecordSaleDialog({ open, onClose, onSaleRecorded, initia
             type="submit"
             variant="contained"
             disabled={saving || !selectedDevice}
-            startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <CheckIcon />}
+            startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <CheckIcon sx={{ color: '#ffffff !important' }} />}
+            sx={{
+              color: '#ffffff !important',
+              fontWeight: 600,
+              '&.Mui-disabled': {
+                color: 'rgba(255, 255, 255, 0.7) !important',
+                bgcolor: 'primary.main',
+                opacity: 0.65
+              }
+            }}
           >
             Generate Invoice
           </Button>

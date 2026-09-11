@@ -178,7 +178,7 @@ export default function AddShipmentDialog({ open, onClose, onShipmentCreated }) 
               </Typography>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={3.5}>
               <TextField
                 fullWidth
                 size="small"
@@ -189,7 +189,7 @@ export default function AddShipmentDialog({ open, onClose, onShipmentCreated }) 
               />
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={2.5}>
               <TextField
                 select
                 fullWidth
@@ -206,7 +206,7 @@ export default function AddShipmentDialog({ open, onClose, onShipmentCreated }) 
               </TextField>
             </Grid>
 
-            <Grid item xs={12} sm={2}>
+            <Grid item xs={12} sm={2.5}>
               <TextField
                 fullWidth
                 size="small"
@@ -217,14 +217,14 @@ export default function AddShipmentDialog({ open, onClose, onShipmentCreated }) 
               />
             </Grid>
 
-            <Grid item xs={12} sm={2}>
+            <Grid item xs={12} sm={3.5}>
               <TextField
                 fullWidth
                 size="small"
                 label="Color"
                 value={formData.color}
                 onChange={handleChange('color')}
-                placeholder="Titanium"
+                placeholder="e.g. Natural Titanium"
               />
             </Grid>
 
