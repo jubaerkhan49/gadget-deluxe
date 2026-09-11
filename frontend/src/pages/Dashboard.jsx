@@ -18,7 +18,8 @@ import {
   IconButton,
   TextField,
   InputAdornment,
-  Tooltip
+  Tooltip,
+  Chip
 } from '@mui/material';
 import {
   Smartphone as PhoneIcon,
@@ -33,7 +34,8 @@ import {
   QrCodeScanner as ScanIcon,
   Search as SearchIcon,
   ArrowForward as ArrowForwardIcon,
-  PointOfSale as SaleIcon
+  PointOfSale as SaleIcon,
+  Person as PersonIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -46,7 +48,7 @@ import AddShipmentDialog from '../dialogs/AddShipmentDialog';
 import RecordSaleDialog from '../dialogs/RecordSaleDialog';
 import DeviceDetailDrawer from '../dialogs/DeviceDetailDrawer';
 import EditDeviceDialog from '../dialogs/EditDeviceDialog';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber, formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -335,7 +337,7 @@ export default function Dashboard() {
       {/* Tables Section: Recent Inventory & Recent Sales */}
       <Grid container spacing={3}>
         {/* Recent Inventory Devices */}
-        <Grid item xs={12} lg={7}>
+        <Grid item xs={12} lg={6}>
           <Paper
             variant="outlined"
             sx={{
@@ -413,8 +415,8 @@ export default function Dashboard() {
           </Paper>
         </Grid>
 
-        {/* Recent Invoices / Sales */}
-        <Grid item xs={12} lg={5}>
+        {/* Recent Sales */}
+        <Grid item xs={12} lg={6}>
           <Paper
             variant="outlined"
             sx={{
@@ -442,15 +444,16 @@ export default function Dashboard() {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{ fontWeight: 700 }}>Invoice</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Device</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Sold Date</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Selling Price</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Profit</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Sold By</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {recentSales.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                      <TableCell colSpan={4} align="center" sx={{ py: 3, color: 'text.secondary' }}>
                         No sales recorded yet.
                       </TableCell>
                     </TableRow>
@@ -459,25 +462,42 @@ export default function Dashboard() {
                       <TableRow key={sale.id} hover>
                         <TableCell>
                           <Typography variant="body2" fontWeight={600}>
-                            {sale.invoice_number}
+                            {sale.device_model || 'Device Unit'}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {sale.seller_name || 'System'}
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.3, flexWrap: 'wrap' }}>
+                            {sale.device_variant && (
+                              <VariantBadge variant={sale.device_variant} />
+                            )}
+                            {(sale.device_capacity || sale.device_color) && (
+                              <Typography variant="caption" color="text.secondary">
+                                {sale.device_capacity || ''} {sale.device_color ? `• ${sale.device_color}` : ''}
+                              </Typography>
+                            )}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {formatDate(sale.sale_date || sale.created_at)}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" fontWeight={700} color="primary">
-                            {formatNumber(sale.selling_price)}
+                          <Typography variant="body2" fontWeight={700} color="primary.main">
+                            {formatNumber(sale.selling_price || sale.final_price)}
                           </Typography>
                         </TableCell>
                         <TableCell>
-                          <Typography
-                            variant="body2"
-                            fontWeight={700}
-                            color={Number(sale.profit || 0) >= 0 ? "success.main" : "error.main"}
-                          >
-                            {formatNumber(sale.profit)}
-                          </Typography>
+                          <Chip
+                            size="small"
+                            icon={<PersonIcon sx={{ fontSize: '13px !important', color: '#0284c7 !important' }} />}
+                            label={sale.sold_by || sale.seller_name || 'Store'}
+                            sx={{
+                              bgcolor: 'rgba(2, 132, 199, 0.1)',
+                              color: '#0284c7',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24
+                            }}
+                          />
                         </TableCell>
                       </TableRow>
                     ))

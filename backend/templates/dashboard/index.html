@@ -37,27 +37,32 @@
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th>Invoice</th>
-                                <th>Device / IMEI</th>
-                                <th>Price</th>
-                                <th>Net Profit</th>
-                                <th>Seller</th>
+                                <th>Device</th>
+                                <th>Sold Date</th>
+                                <th>Selling Price</th>
+                                <th>Sold By</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for sale in recent_sales %}
                                 <tr>
-                                    <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ sale.invoice_number }}</span></td>
                                     <td>
                                         <div class="fw-semibold">{{ sale.device.model }}</div>
-                                        <div class="small text-muted">{{ sale.device.imei }}</div>
+                                        <div class="small text-muted d-flex align-items-center gap-1 flex-wrap">
+                                            {% if sale.device.variant %}
+                                                <span class="badge bg-warning-subtle text-warning-emphasis">{{ sale.device.variant }}</span>
+                                            {% endif %}
+                                            {% if sale.device.capacity or sale.device.color %}
+                                                <span>{{ sale.device.capacity|default:"" }} {% if sale.device.color %}• {{ sale.device.color }}{% endif %}</span>
+                                            {% endif %}
+                                        </div>
                                     </td>
+                                    <td class="text-muted">{{ sale.sale_date|date:"d M Y" }}</td>
                                     <td class="fw-bold text-success">{{ sale.selling_price|floatformat:0 }}</td>
-                                    <td class="fw-bold text-info">{{ sale.profit|floatformat:0 }}</td>
-                                    <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ sale.seller.username }}</span></td>
+                                    <td><span class="badge bg-primary-subtle text-primary">{{ sale.seller.username }}</span></td>
                                 </tr>
                             {% empty %}
-                                <tr><td colspan="5" class="text-center text-muted py-4">No sales recorded yet.</td></tr>
+                                <tr><td colspan="4" class="text-center text-muted py-4">No sales recorded yet.</td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
