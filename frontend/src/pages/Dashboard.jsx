@@ -28,7 +28,7 @@ import {
   LocalShipping as ShippingIcon,
   Build as RepairIcon,
   TrendingUp as TodaySalesIcon,
-  MonetizationOn as MonthProfitIcon,
+  Group as GroupIcon,
   Add as AddIcon,
   QrCodeScanner as ScanIcon,
   Search as SearchIcon,
@@ -166,9 +166,9 @@ export default function Dashboard() {
       bgLight: 'rgba(20, 184, 166, 0.12)'
     },
     {
-      title: 'MONTHLY PROFIT',
-      value: stats ? Math.round(stats.monthly_profit).toLocaleString() : '0',
-      icon: <MonthProfitIcon sx={{ fontSize: 26 }} />,
+      title: 'OTHER OWNERS',
+      value: stats ? (stats.others_owned ?? 0) : 0,
+      icon: <GroupIcon sx={{ fontSize: 26 }} />,
       color: '#6366F1',
       bgLight: 'rgba(99, 102, 241, 0.12)'
     }

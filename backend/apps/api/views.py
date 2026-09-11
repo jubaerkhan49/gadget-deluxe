@@ -484,6 +484,15 @@ class DashboardStatsAPIView(APIView):
         monthly_sales_qs = Sale.objects.filter(sale_date__gte=month_start)
         monthly_profit = monthly_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
 
+        # Devices currently held by other team owners (excluding store owner jubaer and admin)
+        others_owned_count = Device.objects.filter(
+            current_owner__isnull=False
+        ).exclude(
+            current_owner__username__in=['jubaer', 'admin']
+        ).exclude(
+            current_status=DeviceStatus.SOLD
+        ).count()
+
         return Response({
             'total_devices': total_devices,
             'in_stock': in_stock_count,
@@ -495,5 +504,6 @@ class DashboardStatsAPIView(APIView):
             'today_sales': float(today_sales),
             'today_profit': float(today_profit),
             'monthly_profit': float(monthly_profit),
+            'others_owned': others_owned_count,
         })
 
