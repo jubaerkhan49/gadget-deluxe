@@ -340,7 +340,7 @@ export default function Inventory() {
 
             {/* Owner Names */}
             {nonAdminUsers.map((u) => {
-              const isSelected = String(selectedOwner) === String(u.id);
+              const isSelected = String(selectedOwner) === String(u.id) && selectedStatus === 'IN_STOCK';
               return (
                 <Chip
                   key={u.id}
@@ -349,7 +349,7 @@ export default function Inventory() {
                   clickable
                   onClick={() => {
                     setSelectedOwner(u.id);
-                    setSelectedStatus('ALL');
+                    setSelectedStatus('IN_STOCK');
                     setPage(0);
                   }}
                   color={isSelected ? 'primary' : 'default'}
