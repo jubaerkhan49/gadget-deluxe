@@ -2,10 +2,19 @@
 # Exit immediately if a command exits with a non-zero status
 set -o errexit
 
-# Install dependencies
+# Build React Frontend SPA if npm is available
+if command -v npm &> /dev/null && [ -d "../frontend" ]; then
+    echo "Building React Frontend SPA..."
+    cd ../frontend
+    npm install
+    npm run build
+    cd ../backend
+fi
+
+# Install Python backend dependencies
 pip install -r requirements.txt
 
-# Collect static files into staticfiles directory
+# Collect static files into staticfiles directory (including React SPA assets)
 python manage.py collectstatic --no-input
 
 # Apply database migrations
@@ -34,4 +43,3 @@ u.role = 'ADMIN'
 u.save()
 print(f'Admin user configured successfully')
 " || true
-

@@ -27,4 +27,13 @@ android/local.properties
 android/build_log.txt
 android/.idea/
 
+# Frontend dependencies
+node_modules/
+frontend/node_modules/
+
+# Backend local virtualenv / scripts
+backend/Lib/
+backend/Scripts/
+
 # Note: db.sqlite3 is NOT ignored so your current database is included when deployed
+

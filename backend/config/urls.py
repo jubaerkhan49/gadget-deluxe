@@ -1,22 +1,18 @@
 """
 URL Configuration for config project.
+Serves Django Admin, DRF API endpoints, and routes all web routes to the React SPA frontend.
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.generic import TemplateView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('apps.dashboard.urls', namespace='dashboard')),
-    path('accounts/', include('apps.accounts.urls', namespace='accounts')),
-    path('inventory/', include('apps.inventory.urls', namespace='inventory')),
-    path('shipments/', include('apps.shipments.urls', namespace='shipments')),
-    path('customers/', include('apps.customers.urls', namespace='customers')),
-    path('sales/', include('apps.sales.urls', namespace='sales')),
-    path('repairs/', include('apps.repairs.urls', namespace='repairs')),
-    path('sickw/', include('apps.sickw.urls', namespace='sickw')),
     path('api/', include('apps.api.urls', namespace='api')),
+    # Route all web traffic to the React SPA index.html
+    re_path(r'^(?!api|admin|static|media).*$', TemplateView.as_view(template_name='index.html'), name='react-app'),
 ]
 
 if settings.DEBUG:
