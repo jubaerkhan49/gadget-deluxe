@@ -106,7 +106,7 @@ export default function Login() {
                 Gadget Deluxe
               </Typography>
               <Typography variant="body2" color="text.secondary" align="center">
-                Cloud-Based Phone Management
+                Cloud Phone Management
               </Typography>
             </Stack>
 

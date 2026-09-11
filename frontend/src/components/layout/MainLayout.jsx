@@ -91,7 +91,7 @@ export default function MainLayout() {
             Gadget Deluxe
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-            Cloud-Based Phone Management
+            Cloud Phone Management
           </Typography>
         </Box>
       </Box>
