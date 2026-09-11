@@ -188,36 +188,11 @@ export default function Shipments() {
                 }}
               >
                 <CardContent sx={{ p: 2.5, flex: 1 }}>
-                  {/* Top Row: Leftmost Delete Icon, Tracking & Edit Action */}
+                  {/* Top Row: Tracking & Edit Action */}
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      {/* Leftmost Delete Icon */}
-                      <Tooltip title="Delete Shipment">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShipmentToDelete(shipment);
-                            setDeleteConfirmOpen(true);
-                          }}
-                          sx={{
-                            backgroundColor: (theme) =>
-                              theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)',
-                            '&:hover': {
-                              backgroundColor: (theme) =>
-                                theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.15)'
-                            }
-                          }}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Typography variant="h6" fontWeight={800} noWrap>
-                        #{shipment.tracking_number}
-                      </Typography>
-                    </Stack>
+                    <Typography variant="h6" fontWeight={800} noWrap>
+                      #{shipment.tracking_number}
+                    </Typography>
 
                     {/* Edit Option */}
                     <Button
@@ -274,12 +249,20 @@ export default function Shipments() {
                     }}
                   >
                     <Chip
-                      icon={<PhoneIcon fontSize="small" />}
-                      label={`${shipment.devices_count || 0} Devices`}
+                      icon={<PhoneIcon sx={{ fontSize: '15px !important', color: 'primary.main' }} />}
+                      label={`${shipment.devices_count || 0} ${shipment.devices_count === 1 ? 'Device' : 'Devices'}`}
                       size="small"
-                      color="primary"
-                      variant="outlined"
-                      sx={{ fontWeight: 700 }}
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: '0.78rem',
+                        borderRadius: '10px',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+                        color: 'primary.main',
+                        border: '1px solid',
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.3)' : '#BFDBFE',
+                        px: 0.6,
+                        py: 0.2
+                      }}
                     />
 
                     <Button

@@ -31,6 +31,8 @@ import {
   CheckCircle as CheckCircleIcon,
   Close as CloseIcon,
   Storefront as StockIcon,
+  Store as SupplierIcon,
+  FlightTakeoff as AgentIcon,
   CalendarToday as DateIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
@@ -160,25 +162,87 @@ export default function ShipmentDetailDialog({
         <DialogTitle
           sx={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'space-between',
-            pb: 1.5,
+            p: 3,
+            pb: 2,
             borderBottom: 1,
-            borderColor: 'divider'
+            borderColor: 'divider',
+            gap: 2
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <ShippingIcon color="primary" />
-            <div>
-              <Typography variant="h6" fontWeight={700}>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+              <Box
+                sx={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: 2,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+                  color: 'primary.main',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.3)' : '#BFDBFE'
+                }}
+              >
+                <ShippingIcon fontSize="small" />
+              </Box>
+              <Typography variant="h6" fontWeight={800} noWrap>
                 Shipment #{shipment.tracking_number}
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Supplier: {shipment.supplier_name || 'Unknown'} • Agent: {shipment.shipping_company || 'None'}
-              </Typography>
-            </div>
+            </Box>
+
+            {/* Focused Supplier & Agent Tags */}
+            <Stack direction="row" spacing={1} sx={{ mt: 1.2, flexWrap: 'wrap', gap: 1 }}>
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.8,
+                  px: 1.2,
+                  py: 0.4,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF',
+                  border: '1px solid',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.3)' : '#C7D2FE'
+                }}
+              >
+                <SupplierIcon sx={{ fontSize: 16, color: '#6366F1' }} />
+                <Typography component="span" variant="caption" color="text.secondary" fontWeight={600}>
+                  Supplier:
+                </Typography>
+                <Typography component="span" variant="caption" fontWeight={800} sx={{ color: '#4F46E5', fontSize: '0.82rem' }}>
+                  {shipment.supplier_name || 'Unknown'}
+                </Typography>
+              </Box>
+
+              <Box
+                sx={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 0.8,
+                  px: 1.2,
+                  py: 0.4,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5',
+                  border: '1px solid',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0'
+                }}
+              >
+                <AgentIcon sx={{ fontSize: 16, color: '#10B981' }} />
+                <Typography component="span" variant="caption" color="text.secondary" fontWeight={600}>
+                  Agent:
+                </Typography>
+                <Typography component="span" variant="caption" fontWeight={800} sx={{ color: '#059669', fontSize: '0.82rem' }}>
+                  {shipment.shipping_company || 'None'}
+                </Typography>
+              </Box>
+            </Stack>
           </Box>
-          <Stack direction="row" spacing={1} alignItems="center">
+
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ pt: 0.5 }}>
             <Button
               variant="outlined"
               color="primary"
