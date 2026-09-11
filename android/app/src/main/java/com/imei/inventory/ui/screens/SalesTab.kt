@@ -27,6 +27,7 @@ fun SalesTab(
 ) {
     val sales by viewModel.sales.collectAsState()
     val stats by viewModel.stats.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
     val cumulativeSales = remember(sales, stats.totalSalesAmount) {
         val listSum = sales.sumOf { it.displayPrice }
         if (listSum > 0) listSum else stats.totalSalesAmount
