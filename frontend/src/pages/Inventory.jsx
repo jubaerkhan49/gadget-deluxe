@@ -174,6 +174,25 @@ export default function Inventory() {
     return dateB - dateA;
   });
 
+  const calculateDaysAssigned = (dev) => {
+    if (!dev.current_owner && !dev.current_owner_name) {
+      return '—';
+    }
+
+    const activeAssignment = (dev.assignments || []).find(
+      (a) => a.is_active && (String(a.employee) === String(dev.current_owner) || a.employee_username === dev.current_owner_name)
+    ) || (dev.assignments || []).find((a) => a.is_active);
+
+    const dateStr = activeAssignment?.assigned_date || dev.updated_at || dev.created_at;
+    if (!dateStr) return '0';
+
+    const assignDate = new Date(dateStr);
+    const now = new Date();
+    const diffTime = now.getTime() - assignDate.getTime();
+    const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
+    return diffDays;
+  };
+
   const paginatedDevices = sortedDevices.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -420,8 +439,8 @@ export default function Inventory() {
                 <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Battery</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Owner</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Buying Cost</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Assigned To</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Days Assigned</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -519,7 +538,7 @@ export default function Inventory() {
                           size="small"
                           label={dev.current_owner_name}
                           variant="outlined"
-                          sx={{ fontSize: '0.75rem' }}
+                          sx={{ fontSize: '0.75rem', textTransform: 'capitalize' }}
                         />
                       ) : (
                         <Typography variant="caption" color="text.secondary">
@@ -528,13 +547,17 @@ export default function Inventory() {
                       )}
                     </TableCell>
 
-                    {/* Buying Cost */}
+                    {/* Days Assigned */}
                     <TableCell>
-                      <Typography variant="body2" fontWeight={700}>
-                        {dev.buying_price !== null && dev.buying_price !== undefined
-                          ? formatNumber(dev.buying_price)
-                          : '—'}
-                      </Typography>
+                      {dev.current_owner_name ? (
+                        <Typography variant="body2" fontWeight={700}>
+                          {calculateDaysAssigned(dev)}
+                        </Typography>
+                      ) : (
+                        <Typography variant="caption" color="text.secondary">
+                          —
+                        </Typography>
+                      )}
                     </TableCell>
 
                     {/* Actions */}
@@ -551,7 +574,7 @@ export default function Inventory() {
                             <ViewIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Edit Device">
+                        <Tooltip title="Edit Device Specs">
                           <IconButton
                             size="small"
                             color="primary"
