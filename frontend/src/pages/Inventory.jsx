@@ -57,11 +57,10 @@ const VARIANTS = [
 ];
 
 const STATUS_CHOICES = [
-  { value: 'ALL', label: 'All Statuses' },
+  { value: 'ALL', label: 'All Active Statuses' },
   { value: 'IN_STOCK', label: 'In Stock' },
   { value: 'WAITING_SHIPMENT', label: 'Waiting Shipment' },
-  { value: 'UNDER_REPAIR', label: 'Under Repair' },
-  { value: 'SOLD', label: 'Sold' }
+  { value: 'UNDER_REPAIR', label: 'Under Repair' }
 ];
 
 export default function Inventory() {
@@ -144,6 +143,11 @@ export default function Inventory() {
       }
     }
 
+    // Exclude SOLD devices from active inventory (accessible in Archive page)
+    if (dev.current_status === 'SOLD') {
+      return false;
+    }
+
     // Status Filter
     if (selectedStatus !== 'ALL' && dev.current_status !== selectedStatus) {
       return false;
@@ -157,7 +161,7 @@ export default function Inventory() {
     return true;
   });
 
-  // Sort devices: IN_STOCK first, followed by UNDER_REPAIR, WAITING_SHIPMENT, and SOLD
+  // Sort devices: IN_STOCK first, followed by UNDER_REPAIR, and WAITING_SHIPMENT
   const sortedDevices = [...filteredDevices].sort((a, b) => {
     const pA = STATUS_PRIORITY[a.current_status] || 99;
     const pB = STATUS_PRIORITY[b.current_status] || 99;
@@ -192,7 +196,7 @@ export default function Inventory() {
             Device Inventory
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage, filter and audit all mobile phone assets ({filteredDevices.length} matching)
+            Manage, filter and audit active mobile phone assets ({filteredDevices.length} active)
           </Typography>
         </div>
         <Stack direction="row" spacing={1.5}>

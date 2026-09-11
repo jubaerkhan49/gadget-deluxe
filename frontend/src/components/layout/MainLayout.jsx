@@ -34,6 +34,7 @@ import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import BuildIcon from '@mui/icons-material/Build';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import ArchiveIcon from '@mui/icons-material/Inventory2';
 
 import { useAuth } from '../../context/AuthContext';
 import { ColorModeContext } from '../../App';
@@ -49,6 +50,7 @@ const NAV_ITEMS = [
   { text: 'Shipments', path: '/shipments', icon: <LocalShippingIcon /> },
   { text: 'Sales', path: '/sales', icon: <ReceiptLongIcon /> },
   { text: 'Repairs', path: '/repairs', icon: <BuildIcon /> },
+  { text: 'Archive', path: '/archive', icon: <ArchiveIcon /> },
   { text: 'Sickw Parser', path: '/sickw', icon: <BoltIcon /> }
 ];
 

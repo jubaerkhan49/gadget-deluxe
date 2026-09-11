@@ -11,6 +11,7 @@ import Inventory from './pages/Inventory';
 import Shipments from './pages/Shipments';
 import Sales from './pages/Sales';
 import Repairs from './pages/Repairs';
+import Archive from './pages/Archive';
 import SickwParser from './pages/SickwParser';
 
 export const ColorModeContext = createContext({ toggleColorMode: () => {}, mode: 'dark' });
@@ -77,6 +78,7 @@ export default function App() {
                 <Route path="shipments" element={<Shipments />} />
                 <Route path="sales" element={<Sales />} />
                 <Route path="repairs" element={<Repairs />} />
+                <Route path="archive" element={<Archive />} />
                 <Route path="sickw" element={<SickwParser />} />
               </Route>
 
