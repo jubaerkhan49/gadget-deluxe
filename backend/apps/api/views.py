@@ -464,9 +464,8 @@ class DashboardStatsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        now = timezone.now()
-        today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        local_today = timezone.localdate()
+        month_start = local_today.replace(day=1)
 
         total_devices = Device.objects.count()
         in_stock_count = Device.objects.filter(current_status=DeviceStatus.IN_STOCK).count()
@@ -477,11 +476,11 @@ class DashboardStatsAPIView(APIView):
 
         total_assets = Device.objects.exclude(current_status=DeviceStatus.SOLD).aggregate(total=models.Sum('buying_price'))['total'] or Decimal('0.00')
 
-        today_sales_qs = Sale.objects.filter(sale_date__gte=today_start)
+        today_sales_qs = Sale.objects.filter(sale_date__date=local_today)
         today_sales = today_sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
         today_profit = today_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
 
-        monthly_sales_qs = Sale.objects.filter(sale_date__gte=month_start)
+        monthly_sales_qs = Sale.objects.filter(sale_date__date__gte=month_start)
         monthly_profit = monthly_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
 
         # Devices currently held by other team owners (excluding store owner jubaer and admin)

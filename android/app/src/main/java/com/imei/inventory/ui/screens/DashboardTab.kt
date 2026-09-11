@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,6 +20,7 @@ import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.ui.components.StatCard
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
+import com.imei.inventory.ui.components.formatIndianNumber
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 
 @Composable
@@ -63,14 +66,14 @@ fun DashboardTab(
                     StatCard(
                         title = "TOTAL DEVICES",
                         value = "${stats.totalDevices}",
-                        icon = "📦",
+                        imageVector = Icons.Default.PhoneAndroid,
                         accentColor = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "IN STOCK",
                         value = "${stats.inStock}",
-                        icon = "🏢",
+                        imageVector = Icons.Default.CheckCircle,
                         accentColor = Color(0xFF16A34A),
                         modifier = Modifier.weight(1f)
                     )
@@ -79,30 +82,30 @@ fun DashboardTab(
                     StatCard(
                         title = "UNDER REPAIR",
                         value = "${stats.underRepair}",
-                        icon = "🛠️",
+                        imageVector = Icons.Default.Build,
                         accentColor = Color(0xFFD97706),
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "SOLD UNITS",
                         value = "${stats.sold}",
-                        icon = "🛍️",
+                        imageVector = Icons.Default.ShoppingBag,
                         accentColor = Color(0xFF2563EB),
                         modifier = Modifier.weight(1f)
                     )
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     StatCard(
-                        title = "TODAY'S REVENUE",
-                        value = "${stats.totalSalesAmount.toInt()}",
-                        icon = "💵",
+                        title = "TODAY'S SALES",
+                        value = formatIndianNumber(stats.totalSalesAmount),
+                        imageVector = Icons.Default.AttachMoney,
                         accentColor = Color(0xFF059669),
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "TOTAL ASSETS",
-                        value = "${stats.totalAssets.toInt()}",
-                        icon = "💰",
+                        value = formatIndianNumber(stats.totalAssets),
+                        imageVector = Icons.Default.AccountBalance,
                         accentColor = Color(0xFF2563EB),
                         modifier = Modifier.weight(1f)
                     )
@@ -126,7 +129,14 @@ fun DashboardTab(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("+ Add Device", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add Device", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = onOpenAddShipment,
@@ -134,7 +144,14 @@ fun DashboardTab(
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("📦 New Shipment", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Icon(
+                        imageVector = Icons.Default.LocalShipping,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("New Shipment", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }

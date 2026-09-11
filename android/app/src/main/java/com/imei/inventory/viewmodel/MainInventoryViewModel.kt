@@ -100,15 +100,38 @@ class MainInventoryViewModel : ViewModel() {
                 kotlinx.coroutines.delay(4000) // Poll sync every 4 seconds quietly in background
                 try {
                     val bearer = "Bearer $token"
-                    val devRes = ApiClient.apiService.getDevices(bearer, null, _selectedStatusFilter.value)
-                    if (devRes.isSuccessful && devRes.body() != null) {
-                        val list = devRes.body()!!.results
-                        _devices.value = list
-                        computeStats(list, _sales.value)
+                    
+                    // 1. Fetch real-time dashboard analytics
+                    val statsRes = ApiClient.apiService.getDashboardStats(bearer)
+                    if (statsRes.isSuccessful && statsRes.body() != null) {
+                        val s = statsRes.body()!!
+                        _stats.value = DashboardStats(
+                            totalDevices = s.totalDevices,
+                            inStock = s.inStock,
+                            sold = s.sold,
+                            underRepair = s.underRepair,
+                            totalSalesAmount = s.todaySales,
+                            totalProfit = s.todayProfit,
+                            totalAssets = s.totalAssets
+                        )
                     }
+
+                    // 2. Fetch full device inventory
+                    val devRes = ApiClient.apiService.getDevices(bearer, null, null, 500)
+                    if (devRes.isSuccessful && devRes.body() != null) {
+                        _devices.value = devRes.body()!!.results
+                    }
+
+                    // 3. Fetch shipments
                     val shipRes = ApiClient.apiService.getShipments(bearer)
                     if (shipRes.isSuccessful && shipRes.body() != null) {
                         _shipments.value = shipRes.body()!!.results
+                    }
+
+                    // 4. Fetch sales
+                    val salesRes = ApiClient.apiService.getSales(bearer)
+                    if (salesRes.isSuccessful && salesRes.body() != null) {
+                        _sales.value = salesRes.body()!!.results
                     }
                 } catch (e: Exception) {
                     // silent background sync
@@ -135,12 +158,12 @@ class MainInventoryViewModel : ViewModel() {
                 val response = ApiClient.apiService.getDevices(
                     token = bearer,
                     search = if (query.isNullOrBlank()) null else query.trim(),
-                    status = _selectedStatusFilter.value
+                    status = null,
+                    pageSize = 500
                 )
                 if (response.isSuccessful && response.body() != null) {
                     val list = response.body()!!.results
                     _devices.value = list
-                    computeStats(list, _sales.value)
                 } else {
                     _errorMessage.value = "Failed to load inventory (${response.code()})"
                 }
@@ -160,7 +183,7 @@ class MainInventoryViewModel : ViewModel() {
                 val response = ApiClient.apiService.createDevice(bearer, device)
                 if (response.isSuccessful && response.body() != null) {
                     onSuccess()
-                    fetchDevices(token)
+                    loadAllData(token)
                 } else {
                     onError("Failed to create device: ${response.code()}")
                 }
@@ -192,7 +215,7 @@ class MainInventoryViewModel : ViewModel() {
                 val response = ApiClient.apiService.updateDevice(bearer, deviceId, updates)
                 if (response.isSuccessful) {
                     onSuccess()
-                    fetchDevices(token)
+                    loadAllData(token)
                 }
             } catch (e: Exception) {
                 // error handling
@@ -207,7 +230,7 @@ class MainInventoryViewModel : ViewModel() {
                 val response = ApiClient.apiService.deleteDevice(bearer, deviceId)
                 if (response.isSuccessful) {
                     onSuccess()
-                    fetchDevices(token)
+                    loadAllData(token)
                 }
             } catch (e: Exception) {
                 // error handling
@@ -290,7 +313,6 @@ class MainInventoryViewModel : ViewModel() {
                 if (response.isSuccessful && response.body() != null) {
                     val salesList = response.body()!!.results
                     _sales.value = salesList
-                    computeStats(_devices.value, salesList)
                 }
             } catch (e: Exception) {
                 // ignore
