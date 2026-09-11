@@ -443,7 +443,7 @@ export default function DeviceDetailDrawer({
                   Quick Status & Assignment
                 </Typography>
                 <Grid container spacing={2} sx={{ mt: 0.5 }}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={status === 'SOLD' ? 4 : 8}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Status</InputLabel>
                       <Select
@@ -461,7 +461,7 @@ export default function DeviceDetailDrawer({
                   </Grid>
 
                   {status === 'SOLD' && (
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={12} sm={4}>
                       <TextField
                         fullWidth
                         size="small"
@@ -469,12 +469,12 @@ export default function DeviceDetailDrawer({
                         label="Selling Price (BDT)"
                         value={sellingPrice}
                         onChange={(e) => setSellingPrice(e.target.value)}
-                        placeholder="Enter selling price"
+                        placeholder="Enter price"
                       />
                     </Grid>
                   )}
 
-                  <Grid item xs={12} sm={status === 'SOLD' ? 12 : 6}>
+                  <Grid item xs={12} sm={4}>
                     <Button
                       fullWidth
                       variant="contained"
