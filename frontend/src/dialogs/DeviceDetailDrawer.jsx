@@ -480,7 +480,16 @@ export default function DeviceDetailDrawer({
                       variant="contained"
                       disabled={savingStatus || (status === device.current_status && (!sellingPrice || sellingPrice === String(device.selling_price || '')))}
                       onClick={handleStatusChange}
-                      startIcon={savingStatus ? <CircularProgress size={16} color="inherit" /> : <CheckIcon />}
+                      startIcon={savingStatus ? <CircularProgress size={16} color="inherit" /> : <CheckIcon sx={{ color: '#ffffff !important' }} />}
+                      sx={{
+                        color: '#ffffff !important',
+                        fontWeight: 600,
+                        '&.Mui-disabled': {
+                          color: 'rgba(255, 255, 255, 0.7) !important',
+                          bgcolor: 'primary.main',
+                          opacity: 0.65
+                        }
+                      }}
                     >
                       Update Status
                     </Button>
@@ -535,20 +544,12 @@ export default function DeviceDetailDrawer({
                 </Box>
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">IMEI 1</Typography>
+                    <Typography variant="caption" color="text.secondary">IMEI</Typography>
                     <CopyableText text={device.imei} />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">IMEI 2</Typography>
-                    <CopyableText text={device.imei2} />
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" color="text.secondary">Serial Number</Typography>
                     <CopyableText text={device.serial_number} />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">MEID</Typography>
-                    <CopyableText text={device.meid} />
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" color="text.secondary">Capacity</Typography>
@@ -611,11 +612,24 @@ export default function DeviceDetailDrawer({
                     <TextField
                       type="date"
                       size="small"
-                      fullWidth
                       value={receivedDateBd}
                       onChange={(e) => handleReceivedDateBdUpdate(e.target.value)}
                       InputLabelProps={{ shrink: true }}
-                      sx={{ mt: 0.5 }}
+                      sx={{
+                        mt: 0.5,
+                        width: '100%',
+                        maxWidth: 170,
+                        display: 'block',
+                        '& .MuiOutlinedInput-root': {
+                          height: 32,
+                          borderRadius: 1.5,
+                          fontSize: '0.8rem'
+                        },
+                        '& .MuiInputBase-input': {
+                          py: 0.5,
+                          px: 1
+                        }
+                      }}
                     />
                   </Grid>
                 </Grid>
