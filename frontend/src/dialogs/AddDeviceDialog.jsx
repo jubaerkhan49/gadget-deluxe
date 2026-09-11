@@ -36,6 +36,7 @@ const AddDeviceDialog = ({ open, onClose, onSuccess }) => {
     current_status: 'IN_STOCK',
     current_owner: '',
     battery_health: '100',
+    battery_cycle: '',
     buying_price: '',
     notes: '',
   });
@@ -79,6 +80,7 @@ const AddDeviceDialog = ({ open, onClose, onSuccess }) => {
         serial_number: formData.serial_number.trim() || null,
         model: formData.model.trim(),
         battery_health: formData.battery_health ? parseInt(formData.battery_health, 10) : null,
+        battery_cycle: formData.battery_cycle ? parseInt(formData.battery_cycle, 10) : null,
         buying_price: formData.buying_price ? parseFloat(formData.buying_price) : 0,
         current_owner: formData.current_owner ? parseInt(formData.current_owner, 10) : null,
       };
@@ -199,6 +201,18 @@ const AddDeviceDialog = ({ open, onClose, onSuccess }) => {
                 size="small"
                 value={formData.battery_health}
                 onChange={handleChange('battery_health')}
+                placeholder="e.g. 100"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Cycle Count (CC)"
+                type="number"
+                fullWidth
+                size="small"
+                value={formData.battery_cycle}
+                onChange={handleChange('battery_cycle')}
+                placeholder="e.g. 250"
               />
             </Grid>
             <Grid item xs={12} sm={6}>

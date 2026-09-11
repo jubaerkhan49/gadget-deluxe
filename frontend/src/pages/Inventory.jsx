@@ -380,11 +380,31 @@ export default function Inventory() {
                       <StatusBadge status={dev.current_status} />
                     </TableCell>
 
-                    {/* Battery Health */}
+                    {/* Battery Health & Cycle Count */}
                     <TableCell>
                       {dev.battery_health ? (
-                        <Typography variant="body2" fontWeight={600}>
-                          {dev.battery_health}%
+                        <Box>
+                          <Typography variant="body2" fontWeight={600}>
+                            {dev.battery_health}%
+                          </Typography>
+                          {dev.battery_cycle && (
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              sx={{ display: 'block', fontWeight: 600, fontSize: '0.72rem', letterSpacing: 0.2 }}
+                            >
+                              CC {dev.battery_cycle}
+                            </Typography>
+                          )}
+                        </Box>
+                      ) : dev.battery_cycle ? (
+                        <Typography
+                          variant="body2"
+                          fontWeight={600}
+                          color="text.secondary"
+                          sx={{ fontSize: '0.8rem' }}
+                        >
+                          CC {dev.battery_cycle}
                         </Typography>
                       ) : (
                         <Typography variant="caption" color="text.secondary">

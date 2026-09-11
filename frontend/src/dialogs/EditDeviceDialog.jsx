@@ -14,13 +14,14 @@ import api from '../api/client';
 
 const VARIANTS = ['Modified', 'USA eSim', 'Canada', 'Mexican', 'Korea', 'Singapore', 'Bypass'];
 
-const EditDeviceDialog = ({ open, device, onClose, onSuccess }) => {
+export default function EditDeviceDialog({ open, device, onClose, onDeviceUpdated, onSuccess }) {
   const [formData, setFormData] = useState({
     model: '',
     variant: '',
     capacity: '',
     color: '',
     battery_health: '',
+    battery_cycle: '',
     buying_price: '',
     current_owner: '',
     notes: '',
@@ -38,6 +39,7 @@ const EditDeviceDialog = ({ open, device, onClose, onSuccess }) => {
         capacity: device.capacity || '',
         color: device.color || '',
         battery_health: device.battery_health !== null && device.battery_health !== undefined ? `${device.battery_health}` : '',
+        battery_cycle: device.battery_cycle !== null && device.battery_cycle !== undefined ? `${device.battery_cycle}` : '',
         buying_price: device.buying_price !== null && device.buying_price !== undefined ? `${device.buying_price}` : '',
         current_owner: device.current_owner || '',
         notes: device.notes || '',
@@ -65,15 +67,18 @@ const EditDeviceDialog = ({ open, device, onClose, onSuccess }) => {
         capacity: formData.capacity.trim() || null,
         color: formData.color.trim() || null,
         battery_health: formData.battery_health ? parseInt(formData.battery_health, 10) : null,
+        battery_cycle: formData.battery_cycle ? parseInt(formData.battery_cycle, 10) : null,
         buying_price: formData.buying_price ? parseFloat(formData.buying_price) : 0,
         current_owner: formData.current_owner ? parseInt(formData.current_owner, 10) : null,
         notes: formData.notes.trim() || null,
       };
 
-      await api.patch(`/api/devices/${device.id}/`, payload);
-      onSuccess();
+      const res = await api.patch(`/api/devices/${device.id}/`, payload);
+      if (onDeviceUpdated) onDeviceUpdated(res.data);
+      if (onSuccess) onSuccess(res.data);
+      onClose();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to update device.');
+      setError(err.response?.data?.error || err.response?.data?.detail || 'Failed to update device.');
     } finally {
       setLoading(false);
     }
@@ -118,6 +123,7 @@ const EditDeviceDialog = ({ open, device, onClose, onSuccess }) => {
                 size="small"
                 value={formData.capacity}
                 onChange={handleChange('capacity')}
+                placeholder="256GB"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -127,6 +133,7 @@ const EditDeviceDialog = ({ open, device, onClose, onSuccess }) => {
                 size="small"
                 value={formData.color}
                 onChange={handleChange('color')}
+                placeholder="Natural Titanium"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -137,6 +144,18 @@ const EditDeviceDialog = ({ open, device, onClose, onSuccess }) => {
                 size="small"
                 value={formData.battery_health}
                 onChange={handleChange('battery_health')}
+                placeholder="e.g. 98"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Cycle Count (CC)"
+                type="number"
+                fullWidth
+                size="small"
+                value={formData.battery_cycle}
+                onChange={handleChange('battery_cycle')}
+                placeholder="e.g. 250"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -179,17 +198,13 @@ const EditDeviceDialog = ({ open, device, onClose, onSuccess }) => {
             </Grid>
           </Grid>
         </DialogContent>
-        <DialogActions sx={{ px: 3, py: 2 }}>
-          <Button onClick={onClose} color="inherit" disabled={loading}>
-            Cancel
-          </Button>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={onClose} disabled={loading}>Cancel</Button>
           <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Changes'}
+            Save Changes
           </Button>
         </DialogActions>
       </form>
     </Dialog>
   );
-};
-
-export default EditDeviceDialog;
+}
