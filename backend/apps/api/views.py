@@ -434,26 +434,44 @@ class SickwParseAPIView(APIView):
         return Response({"raw_text": raw_text, "parsed": parsed})
 
 class ExportDevicesCSVView(APIView):
-    """Exports entire device inventory dataset to CSV format."""
+    """Exports device inventory dataset to CSV format."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        status_filter = request.GET.get('status')
+        filename = "archived_sold_devices.csv" if status_filter == 'SOLD' else "inventory_devices.csv"
+
         response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="inventory_devices.csv"'
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
         writer = csv.writer(response)
         writer.writerow([
             'IMEI', 'IMEI2', 'MEID', 'Serial Number', 'Model', 'Model Description',
-            'Capacity', 'Color', 'Variant', 'Status', 'Battery Health', 'Created Date'
+            'Capacity', 'Color', 'Variant', 'Status', 'Battery Health', 'Assigned To',
+            'Buying Price', 'Selling Price', 'Created Date'
         ])
 
-        devices = Device.objects.all()
+        devices = Device.objects.select_related('current_owner', 'current_shipment').all()
+        if status_filter:
+            devices = devices.filter(current_status=status_filter)
+
         for d in devices:
             writer.writerow([
-                d.imei, d.imei2 or '', d.meid or '', d.serial_number or '',
-                d.model, d.model_description or '', d.capacity or '', d.color or '',
-                d.variant or '', d.get_current_status_display(), d.battery_health or '',
-                d.created_at.strftime('%Y-%m-%d %H:%M')
+                d.imei,
+                d.imei2 or '',
+                d.meid or '',
+                d.serial_number or '',
+                d.model or '',
+                d.model_description or '',
+                d.capacity or '',
+                d.color or '',
+                d.variant or '',
+                d.get_current_status_display() if hasattr(d, 'get_current_status_display') else d.current_status,
+                d.battery_health or '',
+                d.current_owner.username if d.current_owner else 'Unassigned',
+                str(d.buying_price or ''),
+                str(d.selling_price or ''),
+                d.created_at.strftime('%Y-%m-%d %H:%M') if d.created_at else ''
             ])
 
         return response

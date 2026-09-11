@@ -36,7 +36,7 @@ import {
   Clear as ClearIcon,
   MoreVert as MoreVertIcon
 } from '@mui/icons-material';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
 import { deviceApi, userApi } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
@@ -114,8 +114,25 @@ export default function Inventory() {
     }
   };
 
-  const handleExportCSV = () => {
-    window.open('/api/devices/export-csv/', '_blank');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    try {
+      setExporting(true);
+      const res = await deviceApi.exportCSV();
+      downloadCSVBlob(res.data, 'inventory_active_devices.csv');
+      enqueueSnackbar('Active devices CSV exported successfully', { variant: 'success' });
+    } catch (err) {
+      console.warn('Backend CSV export failed, using local export fallback:', err);
+      try {
+        exportDevicesToCSV(filteredDevices.length > 0 ? filteredDevices : devices, 'inventory_active_devices.csv');
+        enqueueSnackbar('Active devices CSV exported successfully', { variant: 'success' });
+      } catch (fallbackErr) {
+        enqueueSnackbar('Failed to export CSV', { variant: 'error' });
+      }
+    } finally {
+      setExporting(false);
+    }
   };
 
   const nonAdminUsers = users.filter((u) => u.username?.toLowerCase() !== 'admin');
@@ -222,10 +239,11 @@ export default function Inventory() {
         <Stack direction="row" spacing={1.5}>
           <Button
             variant="outlined"
-            startIcon={<ExportIcon />}
+            startIcon={exporting ? <CircularProgress size={16} color="inherit" /> : <ExportIcon />}
             onClick={handleExportCSV}
+            disabled={exporting}
           >
-            Export CSV
+            {exporting ? 'Exporting...' : 'Export CSV'}
           </Button>
           <Button
             variant="contained"

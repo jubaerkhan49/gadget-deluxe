@@ -59,6 +59,7 @@ export const deviceApi = {
   update: (id, data) => api.patch(`/api/devices/${id}/`, data),
   delete: (id) => api.delete(`/api/devices/${id}/`),
   scan: (code) => api.get(`/api/devices/scan/`, { params: { code } }),
+  exportCSV: (params) => api.get('/api/devices/export-csv/', { params, responseType: 'blob' }),
 };
 
 export const shipmentApi = {

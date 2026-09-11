@@ -33,7 +33,7 @@ import {
   PhoneAndroid as PhoneIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { deviceApi, saleApi } from '../api/client';
 import CopyableText from '../components/common/CopyableText';
 import VariantBadge from '../components/common/VariantBadge';
@@ -97,8 +97,25 @@ export default function Archive() {
     }
   };
 
-  const handleExportCSV = () => {
-    window.open('/api/devices/export-csv/', '_blank');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    try {
+      setExporting(true);
+      const res = await deviceApi.exportCSV({ status: 'SOLD' });
+      downloadCSVBlob(res.data, 'archived_sold_devices.csv');
+      enqueueSnackbar('Archived devices CSV exported successfully', { variant: 'success' });
+    } catch (err) {
+      console.warn('Backend CSV export failed, using local export fallback:', err);
+      try {
+        exportDevicesToCSV(filteredDevices.length > 0 ? filteredDevices : devices, 'archived_sold_devices.csv');
+        enqueueSnackbar('Archived devices CSV exported successfully', { variant: 'success' });
+      } catch (fallbackErr) {
+        enqueueSnackbar('Failed to export CSV', { variant: 'error' });
+      }
+    } finally {
+      setExporting(false);
+    }
   };
 
   // Map sale info to devices
@@ -170,10 +187,11 @@ export default function Archive() {
         </div>
         <Button
           variant="outlined"
-          startIcon={<ExportIcon />}
+          startIcon={exporting ? <CircularProgress size={16} color="inherit" /> : <ExportIcon />}
           onClick={handleExportCSV}
+          disabled={exporting}
         >
-          Export CSV
+          {exporting ? 'Exporting...' : 'Export CSV'}
         </Button>
       </Box>
 
