@@ -402,6 +402,13 @@ export default function Inventory() {
         </Stack>
       </Paper>
 
+      {/* Devices Count Indicator */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, px: 0.5 }}>
+        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+          {filteredDevices.length} {filteredDevices.length === 1 ? 'Device' : 'Devices'} Listed
+        </Typography>
+      </Box>
+
       {/* Inventory Table */}
       <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
         <TableContainer>
