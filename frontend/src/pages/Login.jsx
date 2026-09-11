@@ -103,10 +103,10 @@ export default function Login() {
                 <PhoneIcon sx={{ color: '#FFFFFF', fontSize: 30 }} />
               </Box>
               <Typography variant="h5" fontWeight={800} align="center" letterSpacing={-0.5}>
-                IMEI INVENTORY
+                Gadget Deluxe
               </Typography>
               <Typography variant="body2" color="text.secondary" align="center">
-                Sign in to your management dashboard
+                Cloud-Based Phone Management
               </Typography>
             </Stack>
 
