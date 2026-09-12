@@ -118,11 +118,20 @@ export default function Archive() {
     }
   };
 
-  // Map sale info to devices
+  // Map sale info to devices (latest sale takes priority)
   const salesMap = {};
   sales.forEach((s) => {
     if (s.device) {
-      salesMap[s.device] = s;
+      const existing = salesMap[s.device];
+      if (!existing) {
+        salesMap[s.device] = s;
+      } else {
+        const existingTime = new Date(existing.sale_date || existing.created_at || 0).getTime();
+        const currentTime = new Date(s.sale_date || s.created_at || 0).getTime();
+        if (currentTime > existingTime) {
+          salesMap[s.device] = s;
+        }
+      }
     }
   });
 
@@ -159,7 +168,30 @@ export default function Archive() {
     );
   });
 
-  const paginatedDevices = filteredDevices.slice(
+  // Sort archived devices by latest sold date first
+  const sortedDevices = [...filteredDevices].sort((a, b) => {
+    const saleA = salesMap[a.id];
+    const saleB = salesMap[b.id];
+
+    const timeA = saleA?.sale_date
+      ? new Date(saleA.sale_date).getTime()
+      : saleA?.created_at
+      ? new Date(saleA.created_at).getTime()
+      : new Date(a.updated_at || a.created_at || 0).getTime();
+
+    const timeB = saleB?.sale_date
+      ? new Date(saleB.sale_date).getTime()
+      : saleB?.created_at
+      ? new Date(saleB.created_at).getTime()
+      : new Date(b.updated_at || b.created_at || 0).getTime();
+
+    if (timeB !== timeA) {
+      return timeB - timeA;
+    }
+    return (b.id || 0) - (a.id || 0);
+  });
+
+  const paginatedDevices = sortedDevices.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );
