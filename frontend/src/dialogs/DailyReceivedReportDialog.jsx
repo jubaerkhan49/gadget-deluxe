@@ -161,12 +161,13 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth="lg"
       fullWidth
       PaperProps={{
         sx: {
           borderRadius: 3.5,
           overflow: 'hidden',
+          maxWidth: { lg: '1080px' },
           boxShadow: '0 24px 48px -12px rgba(15, 23, 42, 0.18)'
         }
       }}
@@ -227,9 +228,9 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
           variant="outlined"
           sx={{
             p: 2,
-            mb: 3,
+            mb: 2.5,
             borderRadius: 2.5,
-            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(248, 250, 252, 0.7)'
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(248, 250, 252, 0.75)'
           }}
         >
           <Grid container spacing={2} alignItems="center">
@@ -272,7 +273,7 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
                   size="small"
                   variant={selectedDate === getTodayStr() ? 'contained' : 'outlined'}
                   onClick={() => setSelectedDate(getTodayStr())}
-                  sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, flex: 1 }}
+                  sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, flex: 1, py: 0.8 }}
                 >
                   Today
                 </Button>
@@ -280,7 +281,7 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
                   size="small"
                   variant={selectedDate === getYesterdayStr() ? 'contained' : 'outlined'}
                   onClick={() => setSelectedDate(getYesterdayStr())}
-                  sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, flex: 1 }}
+                  sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, flex: 1, py: 0.8 }}
                 >
                   Yesterday
                 </Button>
@@ -304,7 +305,7 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
             </Typography>
           </Paper>
         ) : (
-          <Stack spacing={3}>
+          <Stack spacing={2.5}>
             {/* Top Summary Banner */}
             <Box
               sx={{
@@ -418,17 +419,17 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
               </Typography>
 
               <Paper variant="outlined" sx={{ borderRadius: 2.5, overflow: 'hidden' }}>
-                <TableContainer sx={{ maxHeight: 320 }}>
-                  <Table size="small" stickyHeader>
+                <TableContainer sx={{ maxHeight: 380 }}>
+                  <Table size="small" stickyHeader sx={{ tableLayout: 'auto' }}>
                     <TableHead>
-                      <TableRow>
-                        <TableCell sx={{ fontWeight: 700 }}>Device Model</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Supplier</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Agent</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Tracking #</TableCell>
-                        <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                      <TableRow sx={{ '& th': { bgcolor: (theme) => theme.palette.mode === 'dark' ? '#1E293B' : '#F8FAFC', fontWeight: 700, py: 1.5, px: 2 } }}>
+                        <TableCell sx={{ minWidth: 200 }}>Device Model</TableCell>
+                        <TableCell sx={{ minWidth: 110 }}>Variant</TableCell>
+                        <TableCell sx={{ minWidth: 170 }}>IMEI / Serial</TableCell>
+                        <TableCell sx={{ minWidth: 150 }}>Supplier</TableCell>
+                        <TableCell sx={{ minWidth: 130 }}>Agent</TableCell>
+                        <TableCell sx={{ minWidth: 140 }}>Tracking #</TableCell>
+                        <TableCell align="right" sx={{ minWidth: 100 }}>Status</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -439,12 +440,12 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
                         const trackingNum = dev.shipment_tracking || s?.tracking_number || '—';
 
                         return (
-                          <TableRow key={dev.id} hover>
+                          <TableRow key={dev.id} hover sx={{ '& td': { py: 1.25, px: 2, whiteSpace: 'nowrap' } }}>
                             <TableCell>
-                              <Typography variant="body2" fontWeight={700}>
+                              <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.2 }}>
                                 {dev.model}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary">
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
                                 {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
                               </Typography>
                             </TableCell>
@@ -455,6 +456,11 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
 
                             <TableCell>
                               <CopyableText text={dev.imei} />
+                              {dev.serial_number && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.2 }}>
+                                  SN: {dev.serial_number}
+                                </Typography>
+                              )}
                             </TableCell>
 
                             <TableCell>
@@ -470,12 +476,12 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
                             </TableCell>
 
                             <TableCell>
-                              <Typography variant="caption" fontWeight={600} color="text.secondary">
+                              <Typography variant="caption" fontWeight={600} color="text.secondary" sx={{ fontFamily: 'monospace' }}>
                                 #{trackingNum}
                               </Typography>
                             </TableCell>
 
-                            <TableCell>
+                            <TableCell align="right">
                               <StatusBadge status={dev.current_status} />
                             </TableCell>
                           </TableRow>
@@ -503,7 +509,7 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
         <Button
           onClick={onClose}
           variant="contained"
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700, px: 3 }}
         >
           Close
         </Button>

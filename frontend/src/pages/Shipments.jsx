@@ -141,35 +141,25 @@ export default function Shipments() {
           </Typography>
         </div>
 
-        <Stack direction="row" spacing={1.5} flexWrap="wrap" sx={{ gap: 1 }}>
-          {/* Daily Reception Report Button */}
-          <Button
-            variant="outlined"
-            color="inherit"
-            startIcon={<ReportIcon color="primary" />}
-            onClick={() => setReportDialogOpen(true)}
-            sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 700
-            }}
-          >
-            Daily Received Report
-          </Button>
-
-          {/* Archive Button placed beside New Shipment Batch */}
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
+          {/* 1. Archive Button (Left side) */}
           <Button
             variant={viewTab === 'ARCHIVED' ? 'contained' : 'outlined'}
             startIcon={viewTab === 'ARCHIVED' ? <ActiveIcon /> : <ArchiveIcon />}
             onClick={() => setViewTab(viewTab === 'ARCHIVED' ? 'ACTIVE' : 'ARCHIVED')}
             sx={{
-              borderRadius: 2,
+              borderRadius: '10px',
               textTransform: 'none',
               fontWeight: 700,
-              bgcolor: viewTab === 'ARCHIVED' ? 'grey.800' : undefined,
-              color: viewTab === 'ARCHIVED' ? '#fff' : undefined,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 0.85,
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
+              bgcolor: viewTab === 'ARCHIVED' ? 'primary.main' : undefined,
+              color: viewTab === 'ARCHIVED' ? '#fff' : 'text.primary',
               '&:hover': {
-                bgcolor: viewTab === 'ARCHIVED' ? 'grey.900' : undefined
+                bgcolor: viewTab === 'ARCHIVED' ? 'primary.dark' : 'action.hover',
+                borderColor: 'primary.main'
               }
             }}
           >
@@ -178,16 +168,44 @@ export default function Shipments() {
               : `Archived (${archivedShipments.length})`}
           </Button>
 
+          {/* 2. Daily Reception Report Button */}
+          <Button
+            variant="outlined"
+            startIcon={<ReportIcon sx={{ color: 'primary.main' }} />}
+            onClick={() => setReportDialogOpen(true)}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 0.85,
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
+              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(239, 246, 255, 0.75)',
+              color: 'primary.main',
+              '&:hover': {
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.16)' : '#DBEAFE',
+                borderColor: 'primary.main'
+              }
+            }}
+          >
+            Daily Received Report
+          </Button>
+
+          {/* 3. New Shipment Batch Button */}
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
             onClick={() => setAddDialogOpen(true)}
             sx={{
-              borderRadius: 2,
+              borderRadius: '10px',
               textTransform: 'none',
               fontWeight: 700,
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.25)'
+              fontSize: '0.875rem',
+              px: 2.25,
+              py: 0.85,
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.28)'
             }}
           >
             New Shipment Batch
