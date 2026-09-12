@@ -101,6 +101,7 @@ export default function ShipmentDetailDialog({
         prev.map((d) => (d.id === deviceId ? res.data : d))
       );
       enqueueSnackbar('Device moved to In Stock!', { variant: 'success' });
+      if (onShipmentUpdated) onShipmentUpdated();
     } catch (err) {
       enqueueSnackbar('Failed to update status', { variant: 'error' });
     }
@@ -128,6 +129,7 @@ export default function ShipmentDetailDialog({
 
       enqueueSnackbar(`Successfully moved ${waitingDevices.length} device(s) to In Stock!`, { variant: 'success' });
       fetchDevices();
+      if (onShipmentUpdated) onShipmentUpdated();
     } catch (err) {
       console.error(err);
       enqueueSnackbar('Failed to receive all devices', { variant: 'error' });

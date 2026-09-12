@@ -224,7 +224,7 @@ class DeviceViewSet(viewsets.ModelViewSet):
                 pass
 
 class ShipmentViewSet(viewsets.ModelViewSet):
-    queryset = Shipment.objects.select_related('supplier').all()
+    queryset = Shipment.objects.select_related('supplier').prefetch_related('devices').all()
     serializer_class = ShipmentSerializer
     permission_classes = [permissions.IsAuthenticated]
     search_fields = ['tracking_number', 'shipping_company']

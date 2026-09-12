@@ -144,6 +144,9 @@ class DeviceSerializer(serializers.ModelSerializer):
 class ShipmentSerializer(serializers.ModelSerializer):
     supplier_name = serializers.SerializerMethodField()
     devices_count = serializers.SerializerMethodField()
+    pending_devices_count = serializers.SerializerMethodField()
+    received_devices_count = serializers.SerializerMethodField()
+    is_archived = serializers.SerializerMethodField()
     unit_shipping_cost = serializers.SerializerMethodField()
     net_shipping_cost = serializers.SerializerMethodField()
 
@@ -162,6 +165,28 @@ class ShipmentSerializer(serializers.ModelSerializer):
             return obj.total_devices_count
         except Exception:
             return 0
+
+    def get_pending_devices_count(self, obj):
+        try:
+            return obj.devices.filter(current_status='WAITING_SHIPMENT').count()
+        except Exception:
+            return 0
+
+    def get_received_devices_count(self, obj):
+        try:
+            return obj.devices.exclude(current_status='WAITING_SHIPMENT').count()
+        except Exception:
+            return 0
+
+    def get_is_archived(self, obj):
+        try:
+            count = obj.total_devices_count
+            if count == 0:
+                return False
+            # When all devices are marked as In Stock or received (none are WAITING_SHIPMENT)
+            return obj.devices.filter(current_status='WAITING_SHIPMENT').count() == 0
+        except Exception:
+            return False
 
     def get_unit_shipping_cost(self, obj):
         try:
