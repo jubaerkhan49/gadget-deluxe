@@ -32,13 +32,15 @@ import {
   ArrowForward as ArrowForwardIcon,
   Archive as ArchiveIcon,
   CheckCircleOutline as CheckCircleIcon,
-  Inventory2 as ActiveIcon
+  Inventory2 as ActiveIcon,
+  Assessment as ReportIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { shipmentApi } from '../api/client';
 import AddShipmentDialog from '../dialogs/AddShipmentDialog';
 import EditShipmentDialog from '../dialogs/EditShipmentDialog';
 import ShipmentDetailDialog from '../dialogs/ShipmentDetailDialog';
+import DailyReceivedReportDialog from '../dialogs/DailyReceivedReportDialog';
 
 export default function Shipments() {
   const { enqueueSnackbar } = useSnackbar();
@@ -52,6 +54,7 @@ export default function Shipments() {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState(null);
 
   // Delete confirmation
@@ -138,7 +141,22 @@ export default function Shipments() {
           </Typography>
         </div>
 
-        <Stack direction="row" spacing={1.5}>
+        <Stack direction="row" spacing={1.5} flexWrap="wrap" sx={{ gap: 1 }}>
+          {/* Daily Reception Report Button */}
+          <Button
+            variant="outlined"
+            color="inherit"
+            startIcon={<ReportIcon color="primary" />}
+            onClick={() => setReportDialogOpen(true)}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 700
+            }}
+          >
+            Daily Received Report
+          </Button>
+
           {/* Archive Button placed beside New Shipment Batch */}
           <Button
             variant={viewTab === 'ARCHIVED' ? 'contained' : 'outlined'}
@@ -470,6 +488,12 @@ export default function Shipments() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Daily Reception Report Modal */}
+      <DailyReceivedReportDialog
+        open={reportDialogOpen}
+        onClose={() => setReportDialogOpen(false)}
+      />
     </Box>
   );
 }
