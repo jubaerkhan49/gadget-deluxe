@@ -36,7 +36,8 @@ fun DeviceCheckInDialog(
     val todayStr = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
     val isAlreadyInStock = device.currentStatus.equals("IN_STOCK", ignoreCase = true)
 
-    var currentStatus by remember { mutableStateOf("IN_STOCK") }
+    var isEditing by remember { mutableStateOf(!isAlreadyInStock) }
+    var currentStatus by remember { mutableStateOf(device.currentStatus) }
     var batteryHealth by remember { mutableStateOf(device.batteryHealth?.toString() ?: "") }
     var batteryCycle by remember { mutableStateOf(device.batteryCycle?.toString() ?: "") }
     var receivedDateBd by remember { mutableStateOf(device.receivedDateBd ?: todayStr) }
@@ -81,7 +82,7 @@ fun DeviceCheckInDialog(
                     }
                     Column {
                         Text(
-                            text = "Device Check-In",
+                            text = if (isAlreadyInStock) "Device Details" else "Device Check-In",
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
@@ -355,93 +356,183 @@ fun DeviceCheckInDialog(
                     }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+                // Read-only Device Condition / Notes section when not in editing mode
+                if (!isEditing) {
+                    val hasBattery = device.batteryHealth != null
+                    val hasCycle = device.batteryCycle != null
+                    val hasNotes = !device.notes.isNullOrBlank()
 
-                // Check-In Stock & Battery Updates
-                Text(
-                    text = "RECEIVE & UPDATE STATUS",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    letterSpacing = 0.5.sp
-                )
+                    if (hasBattery || hasCycle || hasNotes) {
+                        Text(
+                            text = "DEVICE CONDITION & HEALTH",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            letterSpacing = 0.5.sp
+                        )
 
-                // Status Dropdown
-                Box {
-                    OutlinedTextField(
-                        value = statusOptions.find { it.first == currentStatus }?.second ?: currentStatus,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Inventory Status *") },
-                        shape = RoundedCornerShape(10.dp),
-                        trailingIcon = {
-                            IconButton(onClick = { statusDropdownExpanded = true }) {
-                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                            }
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    DropdownMenu(
-                        expanded = statusDropdownExpanded,
-                        onDismissRequest = { statusDropdownExpanded = false }
-                    ) {
-                        statusOptions.forEach { (valKey, label) ->
-                            DropdownMenuItem(
-                                text = { Text(label, fontWeight = if (valKey == currentStatus) FontWeight.Bold else FontWeight.Normal) },
-                                onClick = {
-                                    currentStatus = valKey
-                                    statusDropdownExpanded = false
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                if (hasBattery) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Icon(Icons.Default.BatteryChargingFull, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF22C55E))
+                                            Text("Battery Health:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        Text(
+                                            text = "${device.batteryHealth}%",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF22C55E)
+                                        )
+                                    }
                                 }
-                            )
+
+                                if (hasCycle) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                            Icon(Icons.Default.Autorenew, contentDescription = null, modifier = Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("Cycle Count (CC):", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                        Text(
+                                            text = "${device.batteryCycle}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+
+                                if (hasNotes) {
+                                    if (hasBattery || hasCycle) {
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                                    }
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        Text("Remarks / Notes:", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium)
+                                        Text(
+                                            text = device.notes ?: "",
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }
 
-                // Battery Health & Cycle Count
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = batteryHealth,
-                        onValueChange = { batteryHealth = it },
-                        label = { Text("Battery %") },
-                        placeholder = { Text("e.g. 100") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                        )
+                // Check-In Stock & Battery Updates (Only in editing mode)
+                if (isEditing) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.4f))
+
+                    Text(
+                        text = "RECEIVE & UPDATE STATUS",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 0.5.sp
                     )
 
-                    OutlinedTextField(
-                        value = batteryCycle,
-                        onValueChange = { batteryCycle = it },
-                        label = { Text("Cycle Count (CC)") },
-                        placeholder = { Text("250") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    // Status Dropdown
+                    Box {
+                        OutlinedTextField(
+                            value = statusOptions.find { it.first == currentStatus }?.second ?: currentStatus,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Inventory Status *") },
+                            shape = RoundedCornerShape(10.dp),
+                            trailingIcon = {
+                                IconButton(onClick = { statusDropdownExpanded = true }) {
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    )
-                }
+                        DropdownMenu(
+                            expanded = statusDropdownExpanded,
+                            onDismissRequest = { statusDropdownExpanded = false }
+                        ) {
+                            statusOptions.forEach { (valKey, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label, fontWeight = if (valKey == currentStatus) FontWeight.Bold else FontWeight.Normal) },
+                                    onClick = {
+                                        currentStatus = valKey
+                                        statusDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
 
-                // Received Date BD (Only show editable input if device is not already in stock)
-                if (!isAlreadyInStock) {
+                    // Battery Health & Cycle Count
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = batteryHealth,
+                            onValueChange = { batteryHealth = it },
+                            label = { Text("Battery %") },
+                            placeholder = { Text("e.g. 100") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+
+                        OutlinedTextField(
+                            value = batteryCycle,
+                            onValueChange = { batteryCycle = it },
+                            label = { Text("Cycle Count (CC)") },
+                            placeholder = { Text("250") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            )
+                        )
+                    }
+
+                    // Received Date BD (Only show editable input if device is not already in stock)
+                    if (!isAlreadyInStock) {
+                        OutlinedTextField(
+                            value = receivedDateBd,
+                            onValueChange = { receivedDateBd = it },
+                            label = { Text("Received Date (BD)") },
+                            placeholder = { Text("YYYY-MM-DD") },
+                            singleLine = true,
+                            shape = RoundedCornerShape(10.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    // Notes
                     OutlinedTextField(
-                        value = receivedDateBd,
-                        onValueChange = { receivedDateBd = it },
-                        label = { Text("Received Date (BD)") },
-                        placeholder = { Text("YYYY-MM-DD") },
-                        singleLine = true,
+                        value = notes,
+                        onValueChange = { notes = it },
+                        label = { Text("Remarks / Condition Notes") },
+                        maxLines = 2,
                         shape = RoundedCornerShape(10.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -450,62 +541,79 @@ fun DeviceCheckInDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
-
-                // Notes
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text("Remarks / Condition Notes") },
-                    maxLines = 2,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    val updates = mutableMapOf<String, Any?>()
-                    updates["current_status"] = currentStatus
-                    updates["received_date_bd"] = receivedDateBd.ifBlank { null }
-                    if (batteryHealth.isNotBlank()) {
-                        updates["battery_health"] = batteryHealth.toIntOrNull()
-                    }
-                    if (batteryCycle.isNotBlank()) {
-                        updates["battery_cycle"] = batteryCycle.toIntOrNull()
-                    }
-                    if (notes.isNotBlank()) {
-                        updates["notes"] = notes.trim()
-                    }
+            if (isEditing) {
+                Button(
+                    onClick = {
+                        val updates = mutableMapOf<String, Any?>()
+                        updates["current_status"] = currentStatus
+                        updates["received_date_bd"] = receivedDateBd.ifBlank { null }
+                        if (batteryHealth.isNotBlank()) {
+                            updates["battery_health"] = batteryHealth.toIntOrNull()
+                        } else {
+                            updates["battery_health"] = null
+                        }
+                        if (batteryCycle.isNotBlank()) {
+                            updates["battery_cycle"] = batteryCycle.toIntOrNull()
+                        } else {
+                            updates["battery_cycle"] = null
+                        }
+                        updates["notes"] = notes.trim().ifBlank { null }
 
-                    // Default assignment to user "jubaer"
-                    val jubaerUser = users.find { it.username.equals("jubaer", ignoreCase = true) }
-                    if (jubaerUser != null) {
-                        updates["current_owner"] = jubaerUser.id
-                    } else if (device.currentOwner != null) {
-                        updates["current_owner"] = device.currentOwner
-                    } else {
-                        updates["current_owner"] = 1
-                    }
+                        // Default assignment to user "jubaer"
+                        val jubaerUser = users.find { it.username.equals("jubaer", ignoreCase = true) }
+                        if (jubaerUser != null) {
+                            updates["current_owner"] = jubaerUser.id
+                        } else if (device.currentOwner != null) {
+                            updates["current_owner"] = device.currentOwner
+                        } else {
+                            updates["current_owner"] = 1
+                        }
 
-                    onSaveCheckIn(updates)
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                shape = RoundedCornerShape(10.dp),
-                contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
-            ) {
-                Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Confirm & In Stock", color = Color.White, fontWeight = FontWeight.Bold)
+                        onSaveCheckIn(updates)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
+                ) {
+                    Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(if (isAlreadyInStock) "Save Changes" else "Confirm & In Stock", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            } else {
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                ) {
+                    Text("Done", color = Color.White, fontWeight = FontWeight.Bold)
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (isAlreadyInStock && !isEditing) {
+                OutlinedButton(
+                    onClick = { isEditing = true },
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit Info", modifier = Modifier.size(15.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Edit Info", fontSize = 13.sp)
+                }
+            } else {
+                TextButton(onClick = {
+                    if (isAlreadyInStock && isEditing) {
+                        isEditing = false
+                    } else {
+                        onDismiss()
+                    }
+                }) {
+                    Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
     )
