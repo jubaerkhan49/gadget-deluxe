@@ -44,6 +44,19 @@ fun DeviceCheckInDialog(
     var notes by remember { mutableStateOf(device.notes ?: "") }
     var statusDropdownExpanded by remember { mutableStateOf(false) }
 
+    val defaultOwnerUser = users.find { it.username.equals("jubaer", ignoreCase = true) }
+    var selectedOwnerId by remember {
+        mutableStateOf<Int?>(
+            device.currentOwner ?: defaultOwnerUser?.id ?: 1
+        )
+    }
+    var selectedOwnerName by remember {
+        mutableStateOf(
+            device.currentOwnerName ?: defaultOwnerUser?.username ?: "jubaer"
+        )
+    }
+    var ownerDropdownExpanded by remember { mutableStateOf(false) }
+
     val statusOptions = listOf(
         "IN_STOCK" to "In Stock",
         "UNDER_REPAIR" to "Under Repair",
@@ -286,7 +299,7 @@ fun DeviceCheckInDialog(
                             }
                         }
 
-                        // Only display Assigned Owner if already assigned and NOT in waiting shipment
+                        // Only display Assigned to if already assigned and NOT in waiting shipment
                         if (!device.currentOwnerName.isNullOrBlank() && !device.currentStatus.equals("WAITING_SHIPMENT", ignoreCase = true)) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
@@ -295,7 +308,7 @@ fun DeviceCheckInDialog(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Assigned Owner:",
+                                    text = "Assigned to:",
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -476,6 +489,91 @@ fun DeviceCheckInDialog(
                         }
                     }
 
+                    // Assigned to Dropdown
+                    Box {
+                        OutlinedTextField(
+                            value = if (selectedOwnerId == null) "-- Unassigned --" else selectedOwnerName,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Assigned to") },
+                            shape = RoundedCornerShape(10.dp),
+                            trailingIcon = {
+                                IconButton(onClick = { ownerDropdownExpanded = true }) {
+                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                                }
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                                unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        DropdownMenu(
+                            expanded = ownerDropdownExpanded,
+                            onDismissRequest = { ownerDropdownExpanded = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = "-- Unassigned (None) --",
+                                        color = Color(0xFFDC2626),
+                                        fontWeight = if (selectedOwnerId == null) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                },
+                                onClick = {
+                                    selectedOwnerId = null
+                                    selectedOwnerName = "Unassigned"
+                                    ownerDropdownExpanded = false
+                                }
+                            )
+
+                            HorizontalDivider()
+
+                            val availableUsers = if (users.isNotEmpty()) {
+                                users
+                            } else {
+                                listOf(
+                                    UserDto(id = 1, username = "jubaer", role = "ADMIN"),
+                                    UserDto(id = 2, username = "ochi", role = "EMPLOYEE"),
+                                    UserDto(id = 3, username = "ashraf", role = "EMPLOYEE"),
+                                    UserDto(id = 4, username = "emon", role = "EMPLOYEE")
+                                )
+                            }
+
+                            availableUsers.forEach { user ->
+                                DropdownMenuItem(
+                                    text = {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = user.username,
+                                                color = if (user.id == selectedOwnerId) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                                fontWeight = if (user.id == selectedOwnerId) FontWeight.Bold else FontWeight.Medium
+                                            )
+                                            user.role?.let { role ->
+                                                Text(
+                                                    text = role.lowercase().replaceFirstChar { it.uppercase() },
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    fontSize = 11.sp,
+                                                    modifier = Modifier.padding(start = 8.dp)
+                                                )
+                                            }
+                                        }
+                                    },
+                                    onClick = {
+                                        selectedOwnerId = user.id
+                                        selectedOwnerName = user.username
+                                        ownerDropdownExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
                     // Battery Health & Cycle Count
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedTextField(
@@ -560,16 +658,7 @@ fun DeviceCheckInDialog(
                             updates["battery_cycle"] = null
                         }
                         updates["notes"] = notes.trim().ifBlank { null }
-
-                        // Default assignment to user "jubaer"
-                        val jubaerUser = users.find { it.username.equals("jubaer", ignoreCase = true) }
-                        if (jubaerUser != null) {
-                            updates["current_owner"] = jubaerUser.id
-                        } else if (device.currentOwner != null) {
-                            updates["current_owner"] = device.currentOwner
-                        } else {
-                            updates["current_owner"] = 1
-                        }
+                        updates["current_owner"] = selectedOwnerId
 
                         onSaveCheckIn(updates)
                     },

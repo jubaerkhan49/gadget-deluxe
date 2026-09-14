@@ -121,13 +121,13 @@ fun DeviceDetailDialog(
                     }
                 }
 
-                // Interactive Assigned Owner Row with Dropdown Picker
+                // Interactive Assigned to Row with Dropdown Picker
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Assigned Owner:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    Text("Assigned to:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     
                     Box {
                         Surface(
