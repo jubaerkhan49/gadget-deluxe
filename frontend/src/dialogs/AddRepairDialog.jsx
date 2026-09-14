@@ -112,24 +112,57 @@ export default function AddRepairDialog({ open, onClose, onRepairCreated, initia
         <DialogContent dividers sx={{ p: 3 }}>
           <Grid container spacing={2}>
             <Grid item xs={12}>
-              <Autocomplete
-                options={devices}
-                getOptionLabel={(option) =>
-                  `${option.model} (${option.variant || 'Standard'}) - IMEI: ${option.imei} [${option.status_display || option.current_status}]`
-                }
-                value={selectedDevice}
-                onChange={(event, newValue) => setSelectedDevice(newValue)}
-                loading={loadingDevices}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    required
-                    label="Select Device"
-                    placeholder="Search by model or IMEI..."
+              {initialDevice ? (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.08)' : '#FFFBEB',
+                    borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.3)' : '#FDE68A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: 1
+                  }}
+                >
+                  <Box>
+                    <Typography variant="subtitle2" fontWeight={800} color="text.primary">
+                      {initialDevice.model} {initialDevice.capacity ? `• ${initialDevice.capacity}` : ''} {initialDevice.color ? `• ${initialDevice.color}` : ''}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                      IMEI: <strong>{initialDevice.imei}</strong> {initialDevice.variant ? `(${initialDevice.variant})` : ''}
+                    </Typography>
+                  </Box>
+                  <Chip
+                    icon={<RepairIcon sx={{ fontSize: '14px !important' }} />}
+                    label="Moving to Under Repair"
                     size="small"
+                    color="warning"
+                    sx={{ fontWeight: 700, borderRadius: '8px' }}
                   />
-                )}
-              />
+                </Paper>
+              ) : (
+                <Autocomplete
+                  options={devices}
+                  getOptionLabel={(option) =>
+                    `${option.model} (${option.variant || 'Standard'}) - IMEI: ${option.imei} [${option.status_display || option.current_status}]`
+                  }
+                  value={selectedDevice}
+                  onChange={(event, newValue) => setSelectedDevice(newValue)}
+                  loading={loadingDevices}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      required
+                      label="Select Device"
+                      placeholder="Search by model or IMEI..."
+                      size="small"
+                    />
+                  )}
+                />
+              )}
             </Grid>
 
             <Grid item xs={12}>
@@ -142,7 +175,7 @@ export default function AddRepairDialog({ open, onClose, onRepairCreated, initia
                 label="Hardware Issue / Fault Description"
                 value={formData.issue_description}
                 onChange={handleChange('issue_description')}
-                placeholder="e.g. Display lines, Face ID not working, No power..."
+                placeholder="e.g. Display lines, Face ID not working, No power, Battery issue..."
               />
             </Grid>
 

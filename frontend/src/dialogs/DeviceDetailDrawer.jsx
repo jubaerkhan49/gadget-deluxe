@@ -59,6 +59,7 @@ import { deviceApi, userApi } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
+import AddRepairDialog from './AddRepairDialog';
 
 const STATUS_CHOICES = [
   { value: 'WAITING_SHIPMENT', label: 'Waiting Shipment' },
@@ -91,6 +92,7 @@ export default function DeviceDetailDrawer({
   const [savingOwner, setSavingOwner] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [repairDialogOpen, setRepairDialogOpen] = useState(false);
 
   useEffect(() => {
     if (open && device) {
@@ -120,6 +122,10 @@ export default function DeviceDetailDrawer({
     if (status === device.current_status && (!sellingPrice || sellingPrice === String(device.selling_price || ''))) {
       return;
     }
+    if (status === 'UNDER_REPAIR') {
+      setRepairDialogOpen(true);
+      return;
+    }
     try {
       setSavingStatus(true);
       const payload = { current_status: status };
@@ -133,6 +139,18 @@ export default function DeviceDetailDrawer({
       enqueueSnackbar(err.response?.data?.detail || 'Failed to update status', { variant: 'error' });
     } finally {
       setSavingStatus(false);
+    }
+  };
+
+  const handleRepairCreated = async () => {
+    try {
+      const res = await deviceApi.getById(device.id);
+      setStatus('UNDER_REPAIR');
+      onDeviceUpdated(res.data);
+    } catch (err) {
+      // Fallback
+      setStatus('UNDER_REPAIR');
+      onDeviceUpdated({ ...device, current_status: 'UNDER_REPAIR' });
     }
   };
 
@@ -450,7 +468,13 @@ export default function DeviceDetailDrawer({
                       <Select
                         value={status}
                         label="Status"
-                        onChange={(e) => setStatus(e.target.value)}
+                        onChange={(e) => {
+                          const newStatus = e.target.value;
+                          setStatus(newStatus);
+                          if (newStatus === 'UNDER_REPAIR') {
+                            setRepairDialogOpen(true);
+                          }
+                        }}
                       >
                         {STATUS_CHOICES.map((c) => (
                           <MenuItem key={c.value} value={c.value}>
@@ -1013,6 +1037,18 @@ export default function DeviceDetailDrawer({
           </Button>
         </DialogActions>
       </Dialog>
+      {/* Add Repair Dialog Popup */}
+      <AddRepairDialog
+        open={repairDialogOpen}
+        onClose={() => {
+          setRepairDialogOpen(false);
+          if (device.current_status !== 'UNDER_REPAIR') {
+            setStatus(device.current_status || 'IN_STOCK');
+          }
+        }}
+        onRepairCreated={handleRepairCreated}
+        initialDevice={device}
+      />
     </>
   );
 }
