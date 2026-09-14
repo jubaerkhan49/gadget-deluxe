@@ -34,6 +34,8 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.util.concurrent.Executors
 
 data class ScannedBarcodeResult(
@@ -47,9 +49,9 @@ fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
     val trimmed = raw.trim()
 
     // 1. Regex pattern for structured text (strictly matching Primary IMEI, never IMEI2)
-    val imeiRegex = Regex("""(?:\bIMEI\b|\bIMEI1\b|Primary\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", RegexOption.IGNORE_CASE)
-    val imei2Regex = Regex("""(?:\bIMEI2\b|Secondary\s*IMEI|eSIM\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", RegexOption.IGNORE_CASE)
-    val eidRegex = Regex("""(?:\bEID\b)\s*[:\-]?\s*(\d{20,32})""", RegexOption.IGNORE_CASE)
+    val imeiRegex = Regex("""(?:\bIMEI\b|\bIMEI1\b|Primary\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    val imei2Regex = Regex("""(?:\bIMEI2\b|Secondary\s*IMEI|eSIM\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    val eidRegex = Regex("""(?:\bEID\b)\s*[:\-]?\s*(\d{20,32})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
 
     val imeiMatch = imeiRegex.find(trimmed)?.groupValues?.get(1)
     val imei2Match = imei2Regex.find(trimmed)?.groupValues?.get(1)
@@ -340,23 +342,56 @@ fun CameraPreviewView(
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
 
-                val scanner = BarcodeScanning.getClient()
+                val textRecognizer = TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+                val barcodeScanner = BarcodeScanning.getClient()
                 val executor = Executors.newSingleThreadExecutor()
 
                 imageAnalysis.setAnalyzer(executor) { imageProxy ->
                     val mediaImage = imageProxy.image
                     if (mediaImage != null && !hasDetected) {
                         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                        scanner.process(inputImage)
-                            .addOnSuccessListener { barcodes ->
-                                val sortedBarcodes = barcodes.sortedBy { it.boundingBox?.top ?: 0 }
-                                for (barcode in sortedBarcodes) {
-                                    val raw = barcode.rawValue
-                                    if (!hasDetected && !raw.isNullOrBlank()) {
+                        
+                        // 1. First run OCR Text Recognition to read structured labels (IMEI vs IMEI2)
+                        textRecognizer.process(inputImage)
+                            .addOnSuccessListener { visionText ->
+                                if (!hasDetected && visionText.text.isNotBlank()) {
+                                    val parsed = parseScannedBarcodeText(visionText.text)
+                                    // If OCR found a clear Primary IMEI (14-16 digits matching IMEI label)
+                                    if (parsed.primaryImei.length in 14..16 && parsed.primaryImei != visionText.text.trim()) {
                                         hasDetected = true
-                                        onBarcodeDetected(raw)
-                                        break
+                                        onBarcodeDetected(visionText.text)
+                                        return@addOnSuccessListener
                                     }
+                                }
+
+                                // 2. If OCR hasn't triggered, process Barcode lines
+                                if (!hasDetected) {
+                                    barcodeScanner.process(inputImage)
+                                        .addOnSuccessListener { barcodes ->
+                                            // Filter 14-16 digit barcodes (exclude EID > 20 digits)
+                                            val imeiBarcodes = barcodes.filter {
+                                                val digits = it.rawValue?.filter { c -> c.isDigit() } ?: ""
+                                                digits.length in 14..16
+                                            }.sortedBy { it.boundingBox?.top ?: 0 }
+
+                                            if (imeiBarcodes.isNotEmpty() && !hasDetected) {
+                                                // If multiple barcodes are in frame, top one is always Primary IMEI
+                                                val primary = imeiBarcodes[0].rawValue
+                                                if (!primary.isNullOrBlank()) {
+                                                    hasDetected = true
+                                                    onBarcodeDetected(primary)
+                                                }
+                                            } else if (barcodes.isNotEmpty() && !hasDetected) {
+                                                for (barcode in barcodes) {
+                                                    val raw = barcode.rawValue
+                                                    if (!hasDetected && !raw.isNullOrBlank()) {
+                                                        hasDetected = true
+                                                        onBarcodeDetected(raw)
+                                                        break
+                                                    }
+                                                }
+                                            }
+                                        }
                                 }
                             }
                             .addOnCompleteListener {
