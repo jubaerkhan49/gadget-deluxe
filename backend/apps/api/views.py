@@ -171,10 +171,37 @@ class DeviceViewSet(viewsets.ModelViewSet):
             # If moved away from UNDER_REPAIR, complete active repairs
             if old_status == DeviceStatus.UNDER_REPAIR and device.current_status != DeviceStatus.UNDER_REPAIR:
                 try:
-                    Repair.objects.filter(device=device, status=RepairStatus.IN_PROGRESS).update(
+                    Repair.objects.filter(
+                        device=device,
+                        status__in=[RepairStatus.IN_PROGRESS, RepairStatus.SENT_TO_CHINA]
+                    ).update(
                         status=RepairStatus.COMPLETED,
-                        returned_date=timezone.now().date()
+                        returned_date=timezone.localdate()
                     )
+                except Exception:
+                    pass
+
+            # If moved TO UNDER_REPAIR, automatically ensure active Repair record exists
+            if device.current_status == DeviceStatus.UNDER_REPAIR:
+                try:
+                    active_repair = Repair.objects.filter(
+                        device=device,
+                        status__in=[RepairStatus.IN_PROGRESS, RepairStatus.SENT_TO_CHINA]
+                    ).first()
+                    if not active_repair:
+                        Repair.objects.create(
+                            device=device,
+                            issue_description=device.notes or "Hardware fault / servicing requested from Inventory",
+                            sent_date=timezone.localdate(),
+                            repair_center="In-House / China Service",
+                            status=RepairStatus.IN_PROGRESS,
+                            repair_cost=Decimal('0.00'),
+                            timeline_log=[{
+                                'timestamp': timezone.now().isoformat(),
+                                'text': f'Device marked Under Repair by {user.username if user else "System"}',
+                                'author': user.username if user else 'System'
+                            }]
+                        )
                 except Exception:
                     pass
 
@@ -421,10 +448,53 @@ class SaleViewSet(viewsets.ModelViewSet):
     search_fields = ['invoice_number', 'device__imei', 'customer__name']
 
 class RepairViewSet(viewsets.ModelViewSet):
-    queryset = Repair.objects.select_related('device').all()
     serializer_class = RepairSerializer
     permission_classes = [permissions.IsAuthenticated]
     search_fields = ['device__imei', 'issue_description', 'repair_center']
+
+    def get_queryset(self):
+        # Auto-sync: Ensure any device currently marked as UNDER_REPAIR has an active repair record
+        try:
+            under_repair_devices = Device.objects.filter(current_status=DeviceStatus.UNDER_REPAIR)
+            for dev in under_repair_devices:
+                has_active = Repair.objects.filter(
+                    device=dev,
+                    status__in=[RepairStatus.IN_PROGRESS, RepairStatus.SENT_TO_CHINA]
+                ).exists()
+                if not has_active:
+                    Repair.objects.create(
+                        device=dev,
+                        issue_description=dev.notes or "Hardware fault / servicing requested from Inventory",
+                        sent_date=timezone.localdate(),
+                        repair_center="In-House / China Service",
+                        status=RepairStatus.IN_PROGRESS,
+                        repair_cost=Decimal('0.00'),
+                        timeline_log=[{
+                            'timestamp': timezone.now().isoformat(),
+                            'text': 'Auto-synced active repair from Inventory status',
+                            'author': 'System'
+                        }]
+                    )
+        except Exception:
+            pass
+
+        return Repair.objects.select_related('device').all()
+
+    def perform_create(self, serializer):
+        repair = serializer.save()
+        if repair.device and repair.status in [RepairStatus.IN_PROGRESS, RepairStatus.SENT_TO_CHINA]:
+            repair.device.current_status = DeviceStatus.UNDER_REPAIR
+            repair.device.save()
+
+    def perform_update(self, serializer):
+        repair = serializer.save()
+        if repair.device:
+            if repair.status == RepairStatus.COMPLETED and repair.device.current_status == DeviceStatus.UNDER_REPAIR:
+                repair.device.current_status = DeviceStatus.IN_STOCK
+                repair.device.save()
+            elif repair.status in [RepairStatus.IN_PROGRESS, RepairStatus.SENT_TO_CHINA]:
+                repair.device.current_status = DeviceStatus.UNDER_REPAIR
+                repair.device.save()
 
 class SickwViewSet(viewsets.ModelViewSet):
     queryset = SickwReport.objects.all()
