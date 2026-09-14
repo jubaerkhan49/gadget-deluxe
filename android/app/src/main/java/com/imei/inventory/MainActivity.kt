@@ -413,11 +413,11 @@ class MainActivity : FragmentActivity() {
                                     // Search in local devices first
                                     val matchedDevice = devices.find { dev ->
                                         dev.imei.equals(cleanImei, ignoreCase = true) ||
-                                        dev.imei2?.equals(cleanImei, ignoreCase = true) ||
-                                        dev.serialNumber?.equals(cleanImei, ignoreCase = true) ||
+                                        dev.imei2?.equals(cleanImei, ignoreCase = true) == true ||
+                                        dev.serialNumber?.equals(cleanImei, ignoreCase = true) == true ||
                                         (result.secondaryImei != null && (
                                             dev.imei.equals(result.secondaryImei, ignoreCase = true) ||
-                                            dev.imei2?.equals(result.secondaryImei, ignoreCase = true)
+                                            dev.imei2?.equals(result.secondaryImei, ignoreCase = true) == true
                                         ))
                                     }
 
