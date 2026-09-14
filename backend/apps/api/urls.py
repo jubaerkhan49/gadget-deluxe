@@ -6,7 +6,8 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, Sp
 from .views import (
     UserViewSet, DeviceViewSet, ShipmentViewSet, CustomerViewSet,
     SaleViewSet, RepairViewSet, SickwViewSet,
-    SickwParseAPIView, ExportDevicesCSVView, DashboardStatsAPIView
+    SickwParseAPIView, ExportDevicesCSVView, DashboardStatsAPIView,
+    AnalyticsStatsAPIView
 )
 
 app_name = 'api'
@@ -32,6 +33,7 @@ urlpatterns = [
 
     # Specialized Utility Endpoints
     path('dashboard/stats/', DashboardStatsAPIView.as_view(), name='dashboard_stats'),
+    path('analytics/', AnalyticsStatsAPIView.as_view(), name='analytics_stats'),
     path('sickw/parse-raw/', SickwParseAPIView.as_view(), name='sickw_parse_raw'),
     path('export/devices/csv/', ExportDevicesCSVView.as_view(), name='export_devices_csv'),
 

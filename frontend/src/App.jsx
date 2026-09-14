@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import MainLayout from './components/layout/MainLayout';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Analytics from './pages/Analytics';
 import Inventory from './pages/Inventory';
 import Shipments from './pages/Shipments';
 import Sales from './pages/Sales';
@@ -74,6 +75,7 @@ export default function App() {
                 }
               >
                 <Route index element={<Dashboard />} />
+                <Route path="analytics" element={<Analytics />} />
                 <Route path="inventory" element={<Inventory />} />
                 <Route path="shipments" element={<Shipments />} />
                 <Route path="sales" element={<Sales />} />

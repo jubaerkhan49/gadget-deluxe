@@ -80,6 +80,10 @@ export const dashboardApi = {
   getStats: () => api.get('/api/dashboard/stats/'),
 };
 
+export const analyticsApi = {
+  getStats: (params) => api.get('/api/analytics/', { params }),
+};
+
 export const sickwApi = {
   parseRaw: (raw_text) => api.post('/api/sickw/parse-raw/', { raw_text }),
 };

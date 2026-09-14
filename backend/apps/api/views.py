@@ -1,4 +1,6 @@
 import csv
+import datetime
+import calendar
 from decimal import Decimal
 import re
 import uuid
@@ -537,4 +539,223 @@ class DashboardStatsAPIView(APIView):
             'monthly_profit': float(monthly_profit),
             'others_owned': others_owned_count,
         })
+
+
+class AnalyticsStatsAPIView(APIView):
+    """
+    API endpoint returning comprehensive monthly business analytics,
+    best seller performance (consistency, speed to sell, profit),
+    monthly investment (devices * buying price), repair costs, and shipping logistics expenses.
+    Supports optional ?year=YYYY&month=M query parameters.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        local_today = timezone.localdate()
+
+        try:
+            year = int(request.query_params.get('year', local_today.year))
+            month = int(request.query_params.get('month', local_today.month))
+            if not (1 <= month <= 12):
+                month = local_today.month
+        except (ValueError, TypeError):
+            year = local_today.year
+            month = local_today.month
+
+        # Month boundaries
+        last_day = calendar.monthrange(year, month)[1]
+        start_date = datetime.date(year, month, 1)
+        end_date = datetime.date(year, month, last_day)
+
+        start_dt = timezone.make_aware(datetime.datetime.combine(start_date, datetime.time.min))
+        end_dt = timezone.make_aware(datetime.datetime.combine(end_date, datetime.time.max))
+
+        # 1. Monthly Sales & Profit
+        sales_qs = Sale.objects.filter(sale_date__gte=start_dt, sale_date__lte=end_dt).select_related('device', 'seller')
+        total_sales_count = sales_qs.count()
+        total_revenue = sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
+        total_profit = sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
+
+        # 2. Total Investment this month: total devices added/registered this month * buying price
+        devices_invested_qs = Device.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
+        total_devices_invested = devices_invested_qs.count()
+        total_investment = devices_invested_qs.aggregate(total=models.Sum('buying_price'))['total'] or Decimal('0.00')
+        avg_investment_per_device = (
+            (total_investment / Decimal(str(total_devices_invested))).quantize(Decimal('0.01'))
+            if total_devices_invested > 0 else Decimal('0.00')
+        )
+
+        # 3. Monthly Repair Costs
+        repairs_qs = Repair.objects.filter(
+            models.Q(sent_date__gte=start_date, sent_date__lte=end_date) |
+            models.Q(created_at__gte=start_dt, created_at__lte=end_dt)
+        )
+        total_repair_cost = repairs_qs.aggregate(total=models.Sum('repair_cost'))['total'] or Decimal('0.00')
+        repair_devices_count = repairs_qs.values('device_id').distinct().count()
+        repairs_in_progress = repairs_qs.filter(status=RepairStatus.IN_PROGRESS).count()
+        repairs_completed = repairs_qs.filter(status=RepairStatus.COMPLETED).count()
+
+        # 4. Monthly Shipping Costs
+        shipments_qs = Shipment.objects.filter(
+            models.Q(receive_date__gte=start_date, receive_date__lte=end_date) |
+            (models.Q(receive_date__isnull=True) & models.Q(created_at__gte=start_dt, created_at__lte=end_dt))
+        ).prefetch_related('devices')
+        total_shipping_cost = sum([s.net_shipping_cost for s in shipments_qs]) if shipments_qs else Decimal('0.00')
+        shipment_batches_count = shipments_qs.count()
+        shipment_devices_count = sum([s.total_devices_count for s in shipments_qs]) if shipments_qs else 0
+
+        # 5. Net Profit (Real Business ROI)
+        net_profit = total_profit - total_repair_cost - total_shipping_cost
+        roi_percentage = (
+            round((float(net_profit) / float(total_investment) * 100), 1)
+            if total_investment > Decimal('0.00') else 0.0
+        )
+        profit_margin = (
+            round((float(total_profit) / float(total_revenue) * 100), 1)
+            if total_revenue > Decimal('0.00') else 0.0
+        )
+
+        # 6. Best Seller Ranking & Team Analytics
+        # Who is consistent, takes less time after assigning, generates most profit
+        seller_map = {}
+        for sale in sales_qs:
+            seller = sale.seller
+            if not seller:
+                continue
+
+            sid = seller.id
+            if sid not in seller_map:
+                full_name = f"{seller.first_name} {seller.last_name}".strip()
+                seller_map[sid] = {
+                    'seller_id': sid,
+                    'username': seller.username,
+                    'display_name': full_name if full_name else seller.username,
+                    'units_sold': 0,
+                    'total_revenue': Decimal('0.00'),
+                    'total_profit': Decimal('0.00'),
+                    'sale_days': set(),
+                    'turnaround_days_list': []
+                }
+
+            seller_map[sid]['units_sold'] += 1
+            seller_map[sid]['total_revenue'] += (sale.selling_price or Decimal('0.00'))
+            seller_map[sid]['total_profit'] += (sale.profit or Decimal('0.00'))
+            if sale.sale_date:
+                seller_map[sid]['sale_days'].add(sale.sale_date.date())
+
+            # Calculate turnaround time: days from assignment (or device creation) to sale
+            if sale.device:
+                # Look for assignment to this seller prior to sale
+                assign = sale.device.assignments.filter(
+                    employee=seller,
+                    assigned_date__lte=sale.sale_date
+                ).order_by('-assigned_date').first()
+
+                ref_date = assign.assigned_date if assign else sale.device.created_at
+                if ref_date and sale.sale_date:
+                    delta_days = (sale.sale_date - ref_date).total_seconds() / 86400.0
+                    seller_map[sid]['turnaround_days_list'].append(max(0.0, delta_days))
+
+        sellers_list = []
+        for sid, sdata in seller_map.items():
+            turnarounds = sdata['turnaround_days_list']
+            avg_turnaround = round(sum(turnarounds) / len(turnarounds), 1) if turnarounds else 0.0
+            active_days_count = len(sdata['sale_days'])
+
+            # Consistency score: based on spread of active sales days
+            consistency_score = min(100, int((active_days_count / max(1, last_day)) * 100 * 2.5) + (sdata['units_sold'] * 4))
+
+            sellers_list.append({
+                'seller_id': sid,
+                'username': sdata['username'],
+                'display_name': sdata['display_name'],
+                'units_sold': sdata['units_sold'],
+                'total_revenue': float(sdata['total_revenue']),
+                'total_profit': float(sdata['total_profit']),
+                'avg_turnaround_days': avg_turnaround,
+                'active_sale_days': active_days_count,
+                'consistency_score': consistency_score
+            })
+
+        # Rank by total_profit descending
+        sellers_list.sort(key=lambda x: x['total_profit'], reverse=True)
+        for idx, seller in enumerate(sellers_list):
+            seller['profit_rank'] = idx + 1
+
+        best_seller = sellers_list[0] if sellers_list else None
+
+        # 7. Top Selling Device Models this month
+        model_map = {}
+        for sale in sales_qs:
+            model_name = (sale.device.model if sale.device and sale.device.model else "Unknown Model").strip()
+            if model_name not in model_map:
+                model_map[model_name] = {
+                    'model': model_name,
+                    'units_sold': 0,
+                    'total_revenue': Decimal('0.00'),
+                    'total_profit': Decimal('0.00')
+                }
+            model_map[model_name]['units_sold'] += 1
+            model_map[model_name]['total_revenue'] += (sale.selling_price or Decimal('0.00'))
+            model_map[model_name]['total_profit'] += (sale.profit or Decimal('0.00'))
+
+        top_models = sorted(
+            [
+                {
+                    'model': m['model'],
+                    'units_sold': m['units_sold'],
+                    'total_revenue': float(m['total_revenue']),
+                    'total_profit': float(m['total_profit'])
+                }
+                for m in model_map.values()
+            ],
+            key=lambda x: x['units_sold'],
+            reverse=True
+        )[:6]
+
+        # 8. Daily Sales & Profit Timeline for Chart
+        daily_trends = []
+        for d in range(1, last_day + 1):
+            cur_d = datetime.date(year, month, d)
+            if cur_d > local_today and year == local_today.year and month == local_today.month:
+                break
+            day_sales = [s for s in sales_qs if s.sale_date and s.sale_date.date() == cur_d]
+            day_rev = sum([s.selling_price or Decimal('0.00') for s in day_sales])
+            day_prof = sum([s.profit or Decimal('0.00') for s in day_sales])
+            daily_trends.append({
+                'date': cur_d.strftime('%b %d'),
+                'day': d,
+                'sales_count': len(day_sales),
+                'revenue': float(day_rev),
+                'profit': float(day_prof)
+            })
+
+        return Response({
+            'selected_year': year,
+            'selected_month': month,
+            'month_label': datetime.date(year, month, 1).strftime('%B %Y'),
+            'summary': {
+                'total_profit': float(total_profit),
+                'net_profit': float(net_profit),
+                'total_revenue': float(total_revenue),
+                'total_sales_count': total_sales_count,
+                'profit_margin': profit_margin,
+                'roi_percentage': roi_percentage,
+                'total_investment': float(total_investment),
+                'total_devices_invested': total_devices_invested,
+                'avg_investment_per_device': float(avg_investment_per_device),
+                'total_repair_cost': float(total_repair_cost),
+                'repair_devices_count': repair_devices_count,
+                'repairs_in_progress': repairs_in_progress,
+                'repairs_completed': repairs_completed,
+                'total_shipping_cost': float(total_shipping_cost),
+                'shipment_batches_count': shipment_batches_count,
+                'shipment_devices_count': shipment_devices_count
+            },
+            'best_seller': best_seller,
+            'sellers_ranking': sellers_list,
+            'top_models': top_models,
+            'daily_trends': daily_trends
+        })
+
 
