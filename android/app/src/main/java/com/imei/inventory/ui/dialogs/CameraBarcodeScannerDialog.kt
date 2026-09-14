@@ -349,7 +349,8 @@ fun CameraPreviewView(
                         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
                         scanner.process(inputImage)
                             .addOnSuccessListener { barcodes ->
-                                for (barcode in barcodes) {
+                                val sortedBarcodes = barcodes.sortedBy { it.boundingBox?.top ?: 0 }
+                                for (barcode in sortedBarcodes) {
                                     val raw = barcode.rawValue
                                     if (!hasDetected && !raw.isNullOrBlank()) {
                                         hasDetected = true

@@ -61,33 +61,34 @@ fun DeviceCheckInDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
+                    modifier = Modifier.weight(1f),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Surface(
-                        color = if (isAlreadyInStock) Color(0xFF16A34A).copy(alpha = 0.15f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        color = if (isAlreadyInStock) Color(0xFF16A34A).copy(alpha = 0.15f) else Color(0xFF3B82F6).copy(alpha = 0.15f),
                         shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.size(34.dp)
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = if (isAlreadyInStock) Icons.Default.CheckCircle else Icons.Default.Inventory2,
                                 contentDescription = null,
-                                tint = if (isAlreadyInStock) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary,
+                                tint = if (isAlreadyInStock) Color(0xFF16A34A) else Color(0xFF3B82F6),
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                     Column {
                         Text(
-                            text = if (isAlreadyInStock) "Device Check-In (In Stock)" else "Device Check-In",
+                            text = "Device Check-In",
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
                         Text(
-                            text = if (isAlreadyInStock) "Found in database • Already In Stock" else "Found in database • Current: ${device.statusDisplay ?: device.currentStatus.replace('_', ' ')}",
-                            color = if (isAlreadyInStock) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary,
+                            text = "Found in database",
+                            color = Color(0xFF94A3B8),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -115,7 +116,7 @@ fun DeviceCheckInDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
@@ -126,10 +127,36 @@ fun DeviceCheckInDialog(
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "Device is already In Stock. You can update battery stats or owner.",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
+                                text = "Current Status: Already In Stock",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
                                 color = Color(0xFF16A34A)
+                            )
+                        }
+                    }
+                } else if (device.currentStatus.equals("WAITING_SHIPMENT", ignoreCase = true)) {
+                    Surface(
+                        color = Color(0xFFF59E0B).copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.35f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocalShipping,
+                                contentDescription = null,
+                                tint = Color(0xFFF59E0B),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Current Status: Waiting Shipment",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFF59E0B)
                             )
                         }
                     }
@@ -215,25 +242,26 @@ fun DeviceCheckInDialog(
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(4.dp))
-
-                        // Assigned Owner Row
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Assigned Owner:",
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = device.currentOwnerName ?: "jubaer (default)",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                        // Only display Assigned Owner if already assigned and NOT in waiting shipment
+                        if (!device.currentOwnerName.isNullOrBlank() && !device.currentStatus.equals("WAITING_SHIPMENT", ignoreCase = true)) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Assigned Owner:",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = device.currentOwnerName ?: "Unassigned",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     }
                 }
