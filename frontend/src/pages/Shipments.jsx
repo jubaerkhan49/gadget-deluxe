@@ -23,6 +23,7 @@ import {
 import {
   Add as AddIcon,
   Search as SearchIcon,
+  Clear as ClearIcon,
   LocalShipping as ShippingIcon,
   Edit as EditIcon,
   DeleteOutline as DeleteIcon,
@@ -64,18 +65,27 @@ export default function Shipments() {
 
   useEffect(() => {
     fetchShipments();
+
+    // Auto-sync polling every 6 seconds
+    const interval = setInterval(() => {
+      fetchShipments(true);
+    }, 6000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchShipments = async () => {
+  const fetchShipments = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await shipmentApi.getAll();
       setShipments(res.data.results || res.data || []);
     } catch (err) {
       console.error(err);
-      enqueueSnackbar('Failed to load shipments', { variant: 'error' });
+      if (!silent) {
+        enqueueSnackbar('Failed to load shipments', { variant: 'error' });
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -116,6 +126,39 @@ export default function Shipments() {
       s.shipping_company?.toLowerCase().includes(q)
     );
   });
+
+  const calculateSearchStats = () => {
+    if (!searchQuery.trim()) return null;
+    const q = searchQuery.toLowerCase().trim();
+    // Search across ALL shipments (both active and archived) for complete agent/supplier overview
+    const allMatching = shipments.filter(
+      (s) =>
+        s.tracking_number?.toLowerCase().includes(q) ||
+        s.supplier_name?.toLowerCase().includes(q) ||
+        s.shipping_company?.toLowerCase().includes(q)
+    );
+
+    const totalBatches = allMatching.length;
+    const totalDevices = allMatching.reduce((acc, s) => acc + (s.devices_count || 0), 0);
+    const deliveredDevices = allMatching.reduce((acc, s) => {
+      const delivered = s.received_devices_count !== undefined
+        ? s.received_devices_count
+        : ((s.devices_count || 0) - (s.pending_devices_count || 0));
+      return acc + (delivered || 0);
+    }, 0);
+    const pendingDevices = allMatching.reduce((acc, s) => acc + (s.pending_devices_count || 0), 0);
+    const deliveryRate = totalDevices > 0 ? Math.round((deliveredDevices / totalDevices) * 100) : 0;
+
+    return {
+      totalBatches,
+      totalDevices,
+      deliveredDevices,
+      pendingDevices,
+      deliveryRate
+    };
+  };
+
+  const searchStats = calculateSearchStats();
 
   return (
     <Box sx={{ pb: 4 }}>
@@ -218,7 +261,7 @@ export default function Shipments() {
         <TextField
           fullWidth
           size="small"
-          placeholder={`Search ${viewTab === 'ACTIVE' ? 'Active' : 'Archived'} Shipments by Tracking Number, Supplier, or Agent...`}
+          placeholder={`Search ${viewTab === 'ACTIVE' ? 'Active' : 'Archived'} Shipments by Tracking Number, Supplier, or Agent (e.g. "AB Group")...`}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           InputProps={{
@@ -226,10 +269,210 @@ export default function Shipments() {
               <InputAdornment position="start">
                 <SearchIcon fontSize="small" color="action" />
               </InputAdornment>
-            )
+            ),
+            endAdornment: searchQuery ? (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setSearchQuery('')}>
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </InputAdornment>
+            ) : null
           }}
         />
       </Paper>
+
+      {/* Dynamic Agent / Supplier Analytics Summary Banner */}
+      {searchStats && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2.5,
+            mb: 3,
+            borderRadius: 3,
+            background: (theme) =>
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%)'
+                : 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
+            borderColor: (theme) =>
+              theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.35)' : '#BFDBFE',
+            boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.06)'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 2.5,
+                  bgcolor: 'primary.main',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                }}
+              >
+                <ShippingIcon fontSize="small" />
+              </Box>
+              <div>
+                <Typography variant="subtitle1" fontWeight={800} letterSpacing={-0.3}>
+                  Summary for "{searchQuery}"
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Found across {searchStats.totalBatches} {searchStats.totalBatches === 1 ? 'batch' : 'batches'} (Active & Historical Archive)
+                </Typography>
+              </div>
+            </Box>
+
+            {/* Delivery Rate Badge */}
+            <Chip
+              label={`${searchStats.deliveryRate}% Delivered`}
+              size="small"
+              sx={{
+                fontWeight: 800,
+                fontSize: '0.8rem',
+                bgcolor: searchStats.deliveryRate === 100 ? '#DCFCE7' : '#DBEAFE',
+                color: searchStats.deliveryRate === 100 ? '#16A34A' : '#2563EB',
+                border: '1px solid',
+                borderColor: searchStats.deliveryRate === 100 ? '#86EFAC' : '#93C5FD',
+                borderRadius: '8px',
+                px: 1,
+                py: 0.5
+              }}
+            />
+          </Box>
+
+          {/* 3 Metric Stat Cards */}
+          <Grid container spacing={2}>
+            {/* Total Inbound Devices */}
+            <Grid item xs={12} sm={4}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.04)' : '#FFFFFF',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 2,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <PhoneIcon fontSize="medium" />
+                </Box>
+                <div>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                    Total Inbound Devices
+                  </Typography>
+                  <Typography variant="h5" fontWeight={800} color="text.primary">
+                    {searchStats.totalDevices}
+                  </Typography>
+                </div>
+              </Paper>
+            </Grid>
+
+            {/* Delivered / In Stock */}
+            <Grid item xs={12} sm={4}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.12)' : '#F0FDF4',
+                  border: '1px solid',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.35)' : '#BBF7D0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 2,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.25)' : '#DCFCE7',
+                    color: '#16A34A',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <CheckCircleIcon fontSize="medium" />
+                </Box>
+                <div>
+                  <Typography variant="caption" color="#16A34A" fontWeight={700}>
+                    Delivered to You (In Stock)
+                  </Typography>
+                  <Typography variant="h5" fontWeight={800} color="#16A34A">
+                    {searchStats.deliveredDevices}{' '}
+                    <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">
+                      ({searchStats.deliveryRate}%)
+                    </Typography>
+                  </Typography>
+                </div>
+              </Paper>
+            </Grid>
+
+            {/* Pending Delivery */}
+            <Grid item xs={12} sm={4}>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2,
+                  borderRadius: 2.5,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.12)' : '#FFF7ED',
+                  border: '1px solid',
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.35)' : '#FED7AA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 2,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.25)' : '#FFEDD5',
+                    color: '#EA580C',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <ShippingIcon fontSize="medium" />
+                </Box>
+                <div>
+                  <Typography variant="caption" color="#EA580C" fontWeight={700}>
+                    Pending Delivery (In Transit)
+                  </Typography>
+                  <Typography variant="h5" fontWeight={800} color="#EA580C">
+                    {searchStats.pendingDevices}{' '}
+                    <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">
+                      ({100 - searchStats.deliveryRate}%)
+                    </Typography>
+                  </Typography>
+                </div>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
 
       {/* Shipments Grid */}
       {loading ? (
@@ -374,50 +617,51 @@ export default function Shipments() {
                         gap: 1
                       }}
                     >
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" sx={{ gap: 0.5 }}>
                         <Chip
-                          icon={<PhoneIcon sx={{ fontSize: '15px !important', color: isArchived ? 'success.main' : 'primary.main' }} />}
-                          label={`${shipment.devices_count || 0} ${shipment.devices_count === 1 ? 'Device' : 'Devices'}`}
+                          icon={<PhoneIcon sx={{ fontSize: '14px !important' }} />}
+                          label={`${shipment.devices_count || 0} Total`}
                           size="small"
                           sx={{
                             fontWeight: 700,
-                            fontSize: '0.78rem',
-                            borderRadius: '10px',
-                            bgcolor: (theme) =>
-                              isArchived
-                                ? theme.palette.mode === 'dark'
-                                  ? 'rgba(16, 185, 129, 0.15)'
-                                  : '#ECFDF5'
-                                : theme.palette.mode === 'dark'
-                                ? 'rgba(59, 130, 246, 0.15)'
-                                : '#EFF6FF',
-                            color: isArchived ? 'success.main' : 'primary.main',
-                            border: '1px solid',
-                            borderColor: (theme) =>
-                              isArchived
-                                ? theme.palette.mode === 'dark'
-                                  ? 'rgba(16, 185, 129, 0.3)'
-                                  : '#A7F3D0'
-                                : theme.palette.mode === 'dark'
-                                ? 'rgba(59, 130, 246, 0.3)'
-                                : '#BFDBFE',
-                            px: 0.6,
-                            py: 0.2
+                            fontSize: '0.75rem',
+                            borderRadius: '8px',
+                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
+                            color: 'text.secondary'
                           }}
                         />
 
-                        {isArchived && (
+                        {/* Delivered Badge */}
+                        {(shipment.received_devices_count > 0 || isArchived) && (
                           <Chip
-                            icon={<CheckCircleIcon sx={{ fontSize: '14px !important', color: 'success.main' }} />}
-                            label="In Stock"
+                            icon={<CheckCircleIcon sx={{ fontSize: '13px !important', color: '#16A34A !important' }} />}
+                            label={`${isArchived ? (shipment.devices_count || 0) : (shipment.received_devices_count || 0)} Delivered`}
                             size="small"
-                            color="success"
-                            variant="outlined"
                             sx={{
                               fontWeight: 700,
                               fontSize: '0.72rem',
                               borderRadius: '8px',
-                              height: 24
+                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.15)' : '#DCFCE7',
+                              color: '#16A34A',
+                              border: '1px solid',
+                              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.3)' : '#BBF7D0'
+                            }}
+                          />
+                        )}
+
+                        {/* Pending Badge */}
+                        {!isArchived && (shipment.pending_devices_count > 0) && (
+                          <Chip
+                            label={`${shipment.pending_devices_count} Pending`}
+                            size="small"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: '0.72rem',
+                              borderRadius: '8px',
+                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.15)' : '#FFEDD5',
+                              color: '#EA580C',
+                              border: '1px solid',
+                              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.3)' : '#FED7AA'
                             }}
                           />
                         )}
