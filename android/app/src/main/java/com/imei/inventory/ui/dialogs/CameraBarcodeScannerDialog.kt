@@ -55,7 +55,6 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
     data class LineItem(
         val text: String,
         val top: Int,
-        val left: Int,
         val centerY: Int,
         val height: Int,
         val digits: String
@@ -66,7 +65,6 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
         for (line in block.lines) {
             val box = line.boundingBox
             val top = box?.top ?: 0
-            val left = box?.left ?: 0
             val height = (box?.height() ?: 20).coerceAtLeast(10)
             val centerY = box?.centerY() ?: (top + height / 2)
             val digits = line.text.filter { it.isDigit() }
@@ -74,7 +72,6 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
                 LineItem(
                     text = line.text.trim(),
                     top = top,
-                    left = left,
                     centerY = centerY,
                     height = height,
                     digits = digits
@@ -83,190 +80,154 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
         }
     }
 
-    // Sort by vertical position (top-to-bottom on screen)
     allLines.sortBy { it.top }
 
-    val detectedImei2Set = mutableSetOf<String>()
-    var detectedPrimaryImei: String? = null
-    var detectedEid: String? = null
+    // 1. EID detection (20-32 digits)
+    val eid = allLines.firstOrNull { it.digits.length >= 20 }?.digits
 
-    // 1. Identify EID (20-32 digits)
-    val eidLine = allLines.firstOrNull { it.digits.length >= 20 }
-    if (eidLine != null) {
-        detectedEid = eidLine.digits
+    // 2. Extract all numbers of length 14..16 sorted top-to-bottom on screen
+    val numberLines = allLines.filter { it.digits.length in 14..16 }
+
+    // 3. Find primary IMEI label line and secondary IMEI label line
+    val primaryLabel = allLines.firstOrNull { item ->
+        val line = item.text
+        (line.contains("IMEI", ignoreCase = true) || line.contains("MEID", ignoreCase = true)) &&
+                !line.contains("2") &&
+                !line.contains("Secondary", ignoreCase = true) &&
+                !line.contains("eSIM", ignoreCase = true)
     }
 
-    // 2. Identify all IMEI2 / Secondary / eSIM lines first to blacklist them
-    for (item in allLines) {
+    val secondaryLabel = allLines.firstOrNull { item ->
         val line = item.text
-        val isImei2Label = line.contains("IMEI2", ignoreCase = true) ||
+        line.contains("IMEI2", ignoreCase = true) ||
                 line.contains("IMEI 2", ignoreCase = true) ||
                 line.contains("IMEI(2)", ignoreCase = true) ||
                 line.contains("2. IMEI", ignoreCase = true) ||
                 line.contains("Secondary", ignoreCase = true) ||
                 line.contains("eSIM", ignoreCase = true)
+    }
 
-        if (isImei2Label) {
-            if (item.digits.length in 14..16) {
-                detectedImei2Set.add(item.digits)
-            } else {
-                // Find horizontally aligned number on the right (same row)
-                val aligned = allLines.firstOrNull { other ->
-                    other != item && other.digits.length in 14..16 && abs(other.centerY - item.centerY) <= (item.height * 2.5).toInt().coerceAtLeast(40)
-                }
-                if (aligned != null) {
-                    detectedImei2Set.add(aligned.digits)
-                }
-            }
+    var primaryImei: String? = null
+    var secondaryImei: String? = null
+
+    // Match secondary IMEI (closest number line vertically)
+    if (secondaryLabel != null) {
+        if (secondaryLabel.digits.length in 14..16) {
+            secondaryImei = secondaryLabel.digits
+        } else if (numberLines.isNotEmpty()) {
+            secondaryImei = numberLines.minByOrNull { abs(it.centerY - secondaryLabel.centerY) }?.digits
         }
     }
 
-    // 3. Identify Primary IMEI via explicit label
-    for (item in allLines) {
-        val line = item.text
-        val isPrimaryImeiLabel = (line.contains("IMEI", ignoreCase = true) || line.contains("MEID", ignoreCase = true)) &&
-                !line.contains("2") &&
-                !line.contains("Secondary", ignoreCase = true) &&
-                !line.contains("eSIM", ignoreCase = true)
-
-        if (isPrimaryImeiLabel) {
-            if (item.digits.length in 14..16 && !detectedImei2Set.contains(item.digits)) {
-                detectedPrimaryImei = item.digits
-                break
+    // Match primary IMEI (closest number line vertically to Primary IMEI label)
+    if (primaryLabel != null) {
+        if (primaryLabel.digits.length in 14..16) {
+            primaryImei = primaryLabel.digits
+        } else if (numberLines.isNotEmpty()) {
+            val candidates = if (secondaryImei != null && numberLines.size > 1) {
+                numberLines.filter { it.digits != secondaryImei }
             } else {
-                // Find horizontally aligned number on the right (same row)
-                val aligned = allLines.firstOrNull { other ->
-                    other != item && other.digits.length in 14..16 && !detectedImei2Set.contains(other.digits) && abs(other.centerY - item.centerY) <= (item.height * 2.5).toInt().coerceAtLeast(40)
-                }
-                if (aligned != null) {
-                    detectedPrimaryImei = aligned.digits
-                    break
-                }
+                numberLines
             }
+            primaryImei = candidates.minByOrNull { abs(it.centerY - primaryLabel.centerY) }?.digits
         }
     }
 
-    if (detectedPrimaryImei != null) {
+    // Positional fallback: Topmost 14-16 digit number on screen is ALWAYS Primary IMEI
+    if (primaryImei == null && numberLines.isNotEmpty()) {
+        primaryImei = numberLines[0].digits
+        if (numberLines.size > 1 && secondaryImei == null) {
+            secondaryImei = numberLines[1].digits
+        }
+    }
+
+    if (primaryImei != null) {
         return ScannedBarcodeResult(
-            primaryImei = detectedPrimaryImei,
-            secondaryImei = detectedImei2Set.firstOrNull(),
-            eid = detectedEid,
+            primaryImei = primaryImei,
+            secondaryImei = secondaryImei,
+            eid = eid,
             rawText = visionText.text
         )
     }
 
-    // 4. Positional Fallback: Collect all 14-16 digit numbers ordered top-to-bottom on the screen, EXCLUDING known IMEI2
-    val candidateNumbers = allLines
-        .filter { it.digits.length in 14..16 && !detectedImei2Set.contains(it.digits) }
-        .map { it.digits }
-        .distinct()
-
-    if (candidateNumbers.isNotEmpty()) {
-        // Topmost number is ALWAYS Primary IMEI
-        val primary = candidateNumbers[0]
-        val secondary = if (candidateNumbers.size > 1) candidateNumbers[1] else detectedImei2Set.firstOrNull()
-        return ScannedBarcodeResult(
-            primaryImei = primary,
-            secondaryImei = secondary,
-            eid = detectedEid,
-            rawText = visionText.text
-        )
-    }
-
-    // 5. String fallback
     return parseScannedBarcodeText(visionText.text)
 }
 
 fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
     val trimmed = raw.trim()
     val lines = trimmed.lines().map { it.trim() }.filter { it.isNotBlank() }
-    val detectedImei2Set = mutableSetOf<String>()
-    var detectedPrimaryImei: String? = null
-    var detectedEid: String? = null
+    
+    // 1. Identify EID (20+ digits)
+    var eid: String? = null
+    val eidLine = lines.firstOrNull { it.contains("EID", ignoreCase = true) || it.filter { c -> c.isDigit() }.length >= 20 }
+    if (eidLine != null) {
+        val d = eidLine.filter { it.isDigit() }
+        if (d.length >= 20) eid = d
+    }
 
-    // 1. Identify EID and IMEI2 labels
+    // 2. Collect all 14-16 digit numbers in document order
+    val numberCandidates = lines
+        .map { it.filter { c -> c.isDigit() } }
+        .filter { it.length in 14..16 }
+        .distinct()
+
+    var primaryImei: String? = null
+    var secondaryImei: String? = null
+
     for (i in lines.indices) {
         val line = lines[i]
         val digits = line.filter { it.isDigit() }
-
-        if (line.contains("EID", ignoreCase = true) || digits.length >= 20) {
-            if (digits.length >= 20) {
-                detectedEid = digits
-            } else if (i + 1 < lines.size) {
-                val nextDigits = lines[i + 1].filter { it.isDigit() }
-                if (nextDigits.length >= 20) detectedEid = nextDigits
-            }
-            continue
-        }
 
         if (line.contains("IMEI2", ignoreCase = true) || 
             line.contains("IMEI 2", ignoreCase = true) || 
-            line.contains("IMEI(2)", ignoreCase = true) ||
-            line.contains("2. IMEI", ignoreCase = true) ||
+            line.contains("IMEI(2)", ignoreCase = true) || 
+            line.contains("2. IMEI", ignoreCase = true) || 
             line.contains("eSIM", ignoreCase = true) || 
             line.contains("Secondary", ignoreCase = true)) {
             if (digits.length in 14..16) {
-                detectedImei2Set.add(digits)
+                secondaryImei = digits
             } else if (i + 1 < lines.size) {
                 val nextDigits = lines[i + 1].filter { it.isDigit() }
-                if (nextDigits.length in 14..16) detectedImei2Set.add(nextDigits)
+                if (nextDigits.length in 14..16) secondaryImei = nextDigits
             }
         }
-    }
-
-    // 2. Identify Primary IMEI
-    for (i in lines.indices) {
-        val line = lines[i]
-        val digits = line.filter { it.isDigit() }
 
         if ((line.contains("IMEI", ignoreCase = true) || line.contains("MEID", ignoreCase = true)) && 
             !line.contains("2") && 
             !line.contains("eSIM", ignoreCase = true) && 
             !line.contains("Secondary", ignoreCase = true)) {
-            if (digits.length in 14..16 && !detectedImei2Set.contains(digits)) {
-                detectedPrimaryImei = digits
-                break
+            if (digits.length in 14..16) {
+                primaryImei = digits
             } else if (i + 1 < lines.size) {
                 val nextDigits = lines[i + 1].filter { it.isDigit() }
-                if (nextDigits.length in 14..16 && !detectedImei2Set.contains(nextDigits)) {
-                    detectedPrimaryImei = nextDigits
-                    break
+                if (nextDigits.length in 14..16 && nextDigits != secondaryImei) {
+                    primaryImei = nextDigits
                 }
             }
         }
     }
 
-    if (detectedPrimaryImei != null) {
+    if (primaryImei != null) {
         return ScannedBarcodeResult(
-            primaryImei = detectedPrimaryImei,
-            secondaryImei = detectedImei2Set.firstOrNull(),
-            eid = detectedEid,
+            primaryImei = primaryImei,
+            secondaryImei = secondaryImei ?: numberCandidates.getOrNull(1),
+            eid = eid,
             rawText = trimmed
         )
     }
 
-    // 3. Extract all 14-16 digit numbers in order of appearance (ignoring IMEI2 & EID)
-    val all15DigitNumbers = mutableListOf<String>()
-    for (line in lines) {
-        val digits = line.filter { it.isDigit() }
-        if (digits.length in 14..16 && !detectedImei2Set.contains(digits) && !all15DigitNumbers.contains(digits)) {
-            all15DigitNumbers.add(digits)
-        }
-    }
-
-    if (all15DigitNumbers.isNotEmpty()) {
-        val primary = all15DigitNumbers[0]
-        val secondary = if (all15DigitNumbers.size > 1) all15DigitNumbers[1] else detectedImei2Set.firstOrNull()
+    if (numberCandidates.isNotEmpty()) {
         return ScannedBarcodeResult(
-            primaryImei = primary,
-            secondaryImei = secondary,
-            eid = detectedEid,
+            primaryImei = numberCandidates[0],
+            secondaryImei = numberCandidates.getOrNull(1),
+            eid = eid,
             rawText = trimmed
         )
     }
 
+    val fallbackDigits = trimmed.filter { it.isDigit() }
     return ScannedBarcodeResult(
-        primaryImei = trimmed.filter { it.isDigit() }.takeIf { it.length in 14..16 } ?: trimmed,
+        primaryImei = if (fallbackDigits.length in 14..16) fallbackDigits else trimmed,
         rawText = trimmed
     )
 }
@@ -589,12 +550,12 @@ fun CameraPreviewView(
                 val barcodeScanner = BarcodeScanning.getClient()
                 val executor = Executors.newSingleThreadExecutor()
 
-                // Stabilization & Verification tracking (1.3 seconds stable verification)
+                // Stabilization & Verification tracking (0.6 seconds stable verification)
                 var currentCandidate: String? = null
                 var candidateFirstSeenMs: Long = 0L
                 var lastSeenCandidateMs: Long = 0L
-                val REQUIRED_CONFIRMATION_MS = 1300L // 1.3 seconds stable verification window
-                val GRACE_PERIOD_MS = 450L
+                val REQUIRED_CONFIRMATION_MS = 600L // 0.6 seconds responsive verification window
+                val GRACE_PERIOD_MS = 400L
 
                 imageAnalysis.setAnalyzer(executor) { imageProxy ->
                     val mediaImage = imageProxy.image
