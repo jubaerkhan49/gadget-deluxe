@@ -102,6 +102,13 @@ export default function Repairs() {
   const chinaCount = repairs.filter((r) => r.status === 'SENT_TO_CHINA').length;
   const completedCount = repairs.filter((r) => r.status === 'COMPLETED').length;
 
+  const REPAIR_STATUS_PRIORITY = {
+    'IN_PROGRESS': 1,
+    'SENT_TO_CHINA': 2,
+    'UNREPAIRABLE': 3,
+    'COMPLETED': 4
+  };
+
   const filteredRepairs = repairs.filter((r) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase().trim();
@@ -113,7 +120,19 @@ export default function Repairs() {
     );
   });
 
-  const paginatedRepairs = filteredRepairs.slice(
+  // Sort repairs: IN_PROGRESS first, then SENT_TO_CHINA, UNREPAIRABLE, and COMPLETED placed last
+  const sortedRepairs = [...filteredRepairs].sort((a, b) => {
+    const pA = REPAIR_STATUS_PRIORITY[a.status] || 99;
+    const pB = REPAIR_STATUS_PRIORITY[b.status] || 99;
+    if (pA !== pB) {
+      return pA - pB;
+    }
+    const dateA = new Date(a.sent_date || a.created_at || 0).getTime();
+    const dateB = new Date(b.sent_date || b.created_at || 0).getTime();
+    return dateB - dateA;
+  });
+
+  const paginatedRepairs = sortedRepairs.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
   );

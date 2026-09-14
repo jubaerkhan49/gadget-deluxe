@@ -478,7 +478,16 @@ class RepairViewSet(viewsets.ModelViewSet):
         except Exception:
             pass
 
-        return Repair.objects.select_related('device').all()
+        return Repair.objects.select_related('device').annotate(
+            status_order=models.Case(
+                models.When(status=RepairStatus.IN_PROGRESS, then=models.Value(1)),
+                models.When(status=RepairStatus.SENT_TO_CHINA, then=models.Value(2)),
+                models.When(status=RepairStatus.UNREPAIRABLE, then=models.Value(3)),
+                models.When(status=RepairStatus.COMPLETED, then=models.Value(4)),
+                default=models.Value(5),
+                output_field=models.IntegerField()
+            )
+        ).order_by('status_order', '-sent_date', '-created_at')
 
     def perform_create(self, serializer):
         repair = serializer.save()
