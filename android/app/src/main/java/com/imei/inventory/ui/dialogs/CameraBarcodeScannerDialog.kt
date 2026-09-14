@@ -83,11 +83,11 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
         }
     }
 
-    // Sort by vertical position (top-to-bottom)
+    // Sort by vertical position (top-to-bottom on screen)
     allLines.sortBy { it.top }
 
+    val detectedImei2Set = mutableSetOf<String>()
     var detectedPrimaryImei: String? = null
-    var detectedImei2: String? = null
     var detectedEid: String? = null
 
     // 1. Identify EID (20-32 digits)
@@ -96,11 +96,9 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
         detectedEid = eidLine.digits
     }
 
-    // 2. Identify Primary IMEI & IMEI2 via labels (same line or horizontally aligned in column)
+    // 2. Identify all IMEI2 / Secondary / eSIM lines first to blacklist them
     for (item in allLines) {
         val line = item.text
-
-        // Check for IMEI2 / Secondary / eSIM label
         val isImei2Label = line.contains("IMEI2", ignoreCase = true) ||
                 line.contains("IMEI 2", ignoreCase = true) ||
                 line.contains("IMEI(2)", ignoreCase = true) ||
@@ -110,35 +108,39 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
 
         if (isImei2Label) {
             if (item.digits.length in 14..16) {
-                detectedImei2 = item.digits
+                detectedImei2Set.add(item.digits)
             } else {
                 // Find horizontally aligned number on the right (same row)
                 val aligned = allLines.firstOrNull { other ->
-                    other != item && other.digits.length in 14..16 && abs(other.centerY - item.centerY) <= item.height * 1.5
+                    other != item && other.digits.length in 14..16 && abs(other.centerY - item.centerY) <= (item.height * 2.5).coerceAtLeast(40)
                 }
                 if (aligned != null) {
-                    detectedImei2 = aligned.digits
+                    detectedImei2Set.add(aligned.digits)
                 }
             }
-            continue
         }
+    }
 
-        // Check for Primary IMEI label (strictly NOT containing 2, Secondary, or eSIM)
+    // 3. Identify Primary IMEI via explicit label
+    for (item in allLines) {
+        val line = item.text
         val isPrimaryImeiLabel = (line.contains("IMEI", ignoreCase = true) || line.contains("MEID", ignoreCase = true)) &&
                 !line.contains("2") &&
                 !line.contains("Secondary", ignoreCase = true) &&
                 !line.contains("eSIM", ignoreCase = true)
 
         if (isPrimaryImeiLabel) {
-            if (item.digits.length in 14..16) {
+            if (item.digits.length in 14..16 && !detectedImei2Set.contains(item.digits)) {
                 detectedPrimaryImei = item.digits
+                break
             } else {
                 // Find horizontally aligned number on the right (same row)
                 val aligned = allLines.firstOrNull { other ->
-                    other != item && other.digits.length in 14..16 && abs(other.centerY - item.centerY) <= item.height * 1.5
+                    other != item && other.digits.length in 14..16 && !detectedImei2Set.contains(other.digits) && abs(other.centerY - item.centerY) <= (item.height * 2.5).coerceAtLeast(40)
                 }
                 if (aligned != null) {
                     detectedPrimaryImei = aligned.digits
+                    break
                 }
             }
         }
@@ -147,22 +149,22 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
     if (detectedPrimaryImei != null) {
         return ScannedBarcodeResult(
             primaryImei = detectedPrimaryImei,
-            secondaryImei = detectedImei2,
+            secondaryImei = detectedImei2Set.firstOrNull(),
             eid = detectedEid,
             rawText = visionText.text
         )
     }
 
-    // 3. Positional Fallback: Collect all 14-16 digit numbers ordered top-to-bottom on the screen
-    val numberCandidates = allLines
-        .filter { it.digits.length in 14..16 }
+    // 4. Positional Fallback: Collect all 14-16 digit numbers ordered top-to-bottom on the screen, EXCLUDING known IMEI2
+    val candidateNumbers = allLines
+        .filter { it.digits.length in 14..16 && !detectedImei2Set.contains(it.digits) }
         .map { it.digits }
         .distinct()
 
-    if (numberCandidates.isNotEmpty()) {
+    if (candidateNumbers.isNotEmpty()) {
         // Topmost number is ALWAYS Primary IMEI
-        val primary = numberCandidates[0]
-        val secondary = if (numberCandidates.size > 1) numberCandidates[1] else detectedImei2
+        val primary = candidateNumbers[0]
+        val secondary = if (candidateNumbers.size > 1) candidateNumbers[1] else detectedImei2Set.firstOrNull()
         return ScannedBarcodeResult(
             primaryImei = primary,
             secondaryImei = secondary,
@@ -171,34 +173,23 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
         )
     }
 
-    // 4. String fallback
+    // 5. String fallback
     return parseScannedBarcodeText(visionText.text)
 }
 
 fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
     val trimmed = raw.trim()
     val lines = trimmed.lines().map { it.trim() }.filter { it.isNotBlank() }
+    val detectedImei2Set = mutableSetOf<String>()
     var detectedPrimaryImei: String? = null
-    var detectedImei2: String? = null
     var detectedEid: String? = null
 
-    // 1. Extract all 14-16 digit numbers in order of appearance
-    val all15DigitNumbers = mutableListOf<String>()
-    for (line in lines) {
-        val digits = line.filter { it.isDigit() }
-        if (digits.length >= 20) {
-            detectedEid = digits
-        } else if (digits.length in 14..16 && !all15DigitNumbers.contains(digits)) {
-            all15DigitNumbers.add(digits)
-        }
-    }
-
-    // 2. Line-by-line inspection for labeled IMEI
+    // 1. Identify EID and IMEI2 labels
     for (i in lines.indices) {
         val line = lines[i]
         val digits = line.filter { it.isDigit() }
 
-        if (line.contains("EID", ignoreCase = true)) {
+        if (line.contains("EID", ignoreCase = true) || digits.length >= 20) {
             if (digits.length >= 20) {
                 detectedEid = digits
             } else if (i + 1 < lines.size) {
@@ -215,17 +206,32 @@ fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
             line.contains("eSIM", ignoreCase = true) || 
             line.contains("Secondary", ignoreCase = true)) {
             if (digits.length in 14..16) {
-                detectedImei2 = digits
+                detectedImei2Set.add(digits)
+            } else if (i + 1 < lines.size) {
+                val nextDigits = lines[i + 1].filter { it.isDigit() }
+                if (nextDigits.length in 14..16) detectedImei2Set.add(nextDigits)
             }
-            continue
         }
+    }
+
+    // 2. Identify Primary IMEI
+    for (i in lines.indices) {
+        val line = lines[i]
+        val digits = line.filter { it.isDigit() }
 
         if ((line.contains("IMEI", ignoreCase = true) || line.contains("MEID", ignoreCase = true)) && 
             !line.contains("2") && 
             !line.contains("eSIM", ignoreCase = true) && 
             !line.contains("Secondary", ignoreCase = true)) {
-            if (digits.length in 14..16) {
+            if (digits.length in 14..16 && !detectedImei2Set.contains(digits)) {
                 detectedPrimaryImei = digits
+                break
+            } else if (i + 1 < lines.size) {
+                val nextDigits = lines[i + 1].filter { it.isDigit() }
+                if (nextDigits.length in 14..16 && !detectedImei2Set.contains(nextDigits)) {
+                    detectedPrimaryImei = nextDigits
+                    break
+                }
             }
         }
     }
@@ -233,16 +239,24 @@ fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
     if (detectedPrimaryImei != null) {
         return ScannedBarcodeResult(
             primaryImei = detectedPrimaryImei,
-            secondaryImei = detectedImei2,
+            secondaryImei = detectedImei2Set.firstOrNull(),
             eid = detectedEid,
             rawText = trimmed
         )
     }
 
-    // 3. Topmost 14-16 digit candidate is Primary IMEI
+    // 3. Extract all 14-16 digit numbers in order of appearance (ignoring IMEI2 & EID)
+    val all15DigitNumbers = mutableListOf<String>()
+    for (line in lines) {
+        val digits = line.filter { it.isDigit() }
+        if (digits.length in 14..16 && !detectedImei2Set.contains(digits) && !all15DigitNumbers.contains(digits)) {
+            all15DigitNumbers.add(digits)
+        }
+    }
+
     if (all15DigitNumbers.isNotEmpty()) {
         val primary = all15DigitNumbers[0]
-        val secondary = if (all15DigitNumbers.size > 1) all15DigitNumbers[1] else detectedImei2
+        val secondary = if (all15DigitNumbers.size > 1) all15DigitNumbers[1] else detectedImei2Set.firstOrNull()
         return ScannedBarcodeResult(
             primaryImei = primary,
             secondaryImei = secondary,
@@ -580,7 +594,7 @@ fun CameraPreviewView(
                 var candidateFirstSeenMs: Long = 0L
                 var lastSeenCandidateMs: Long = 0L
                 val REQUIRED_CONFIRMATION_MS = 1300L // 1.3 seconds stable verification window
-                val GRACE_PERIOD_MS = 350L
+                val GRACE_PERIOD_MS = 450L
 
                 imageAnalysis.setAnalyzer(executor) { imageProxy ->
                     val mediaImage = imageProxy.image
@@ -596,8 +610,15 @@ fun CameraPreviewView(
 
                                     if (candidate != null) {
                                         val now = System.currentTimeMillis()
-                                        lastSeenCandidateMs = now
-                                        if (candidate == currentCandidate) {
+                                        if (currentCandidate == null) {
+                                            currentCandidate = candidate
+                                            candidateFirstSeenMs = now
+                                            lastSeenCandidateMs = now
+                                            ContextCompat.getMainExecutor(ctx).execute {
+                                                onLockProgress(candidate, 0.05f)
+                                            }
+                                        } else if (candidate == currentCandidate) {
+                                            lastSeenCandidateMs = now
                                             val elapsed = now - candidateFirstSeenMs
                                             val progress = (elapsed.toFloat() / REQUIRED_CONFIRMATION_MS).coerceIn(0f, 1f)
                                             ContextCompat.getMainExecutor(ctx).execute {
@@ -612,10 +633,15 @@ fun CameraPreviewView(
                                                 return@addOnSuccessListener
                                             }
                                         } else {
-                                            currentCandidate = candidate
-                                            candidateFirstSeenMs = now
-                                            ContextCompat.getMainExecutor(ctx).execute {
-                                                onLockProgress(candidate, 0.1f)
+                                            // Candidate is different from currentCandidate.
+                                            // Only switch if currentCandidate has not been seen for longer than GRACE_PERIOD_MS
+                                            if (now - lastSeenCandidateMs > GRACE_PERIOD_MS) {
+                                                currentCandidate = candidate
+                                                candidateFirstSeenMs = now
+                                                lastSeenCandidateMs = now
+                                                ContextCompat.getMainExecutor(ctx).execute {
+                                                    onLockProgress(candidate, 0.05f)
+                                                }
                                             }
                                         }
                                         return@addOnSuccessListener
@@ -635,8 +661,15 @@ fun CameraPreviewView(
                                                 val candidate = imeiBarcodes[0].rawValue?.filter { it.isDigit() }
                                                 if (!candidate.isNullOrBlank() && candidate.length in 14..16) {
                                                     val now = System.currentTimeMillis()
-                                                    lastSeenCandidateMs = now
-                                                    if (candidate == currentCandidate) {
+                                                    if (currentCandidate == null) {
+                                                        currentCandidate = candidate
+                                                        candidateFirstSeenMs = now
+                                                        lastSeenCandidateMs = now
+                                                        ContextCompat.getMainExecutor(ctx).execute {
+                                                            onLockProgress(candidate, 0.05f)
+                                                        }
+                                                    } else if (candidate == currentCandidate) {
+                                                        lastSeenCandidateMs = now
                                                         val elapsed = now - candidateFirstSeenMs
                                                         val progress = (elapsed.toFloat() / REQUIRED_CONFIRMATION_MS).coerceIn(0f, 1f)
                                                         ContextCompat.getMainExecutor(ctx).execute {
@@ -650,10 +683,13 @@ fun CameraPreviewView(
                                                             }
                                                         }
                                                     } else {
-                                                        currentCandidate = candidate
-                                                        candidateFirstSeenMs = now
-                                                        ContextCompat.getMainExecutor(ctx).execute {
-                                                            onLockProgress(candidate, 0.1f)
+                                                        if (now - lastSeenCandidateMs > GRACE_PERIOD_MS) {
+                                                            currentCandidate = candidate
+                                                            candidateFirstSeenMs = now
+                                                            lastSeenCandidateMs = now
+                                                            ContextCompat.getMainExecutor(ctx).execute {
+                                                                onLockProgress(candidate, 0.05f)
+                                                            }
                                                         }
                                                     }
                                                 }

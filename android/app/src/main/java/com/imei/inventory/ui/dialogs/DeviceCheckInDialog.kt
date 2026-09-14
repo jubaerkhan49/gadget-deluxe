@@ -37,7 +37,7 @@ fun DeviceCheckInDialog(
     val isAlreadyInStock = device.currentStatus.equals("IN_STOCK", ignoreCase = true)
 
     var currentStatus by remember { mutableStateOf("IN_STOCK") }
-    var batteryHealth by remember { mutableStateOf(device.batteryHealth?.toString() ?: "100") }
+    var batteryHealth by remember { mutableStateOf(device.batteryHealth?.toString() ?: "") }
     var batteryCycle by remember { mutableStateOf(device.batteryCycle?.toString() ?: "") }
     var receivedDateBd by remember { mutableStateOf(device.receivedDateBd ?: todayStr) }
     var notes by remember { mutableStateOf(device.notes ?: "") }
@@ -325,6 +325,22 @@ fun DeviceCheckInDialog(
                             )
                         }
 
+                        // If already in stock, show Received Date (BD) here
+                        if (isAlreadyInStock && !device.receivedDateBd.isNullOrBlank()) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Icon(Icons.Default.EventAvailable, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF16A34A))
+                                    Text("Received Date (BD):", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Text(
+                                    text = device.receivedDateBd,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF16A34A)
+                                )
+                            }
+                        }
+
                         if (!device.shipmentTracking.isNullOrBlank()) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Text("Tracking Batch:", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -391,7 +407,7 @@ fun DeviceCheckInDialog(
                         value = batteryHealth,
                         onValueChange = { batteryHealth = it },
                         label = { Text("Battery %") },
-                        placeholder = { Text("100") },
+                        placeholder = { Text("e.g. 100") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(10.dp),
@@ -418,20 +434,22 @@ fun DeviceCheckInDialog(
                     )
                 }
 
-                // Received Date BD
-                OutlinedTextField(
-                    value = receivedDateBd,
-                    onValueChange = { receivedDateBd = it },
-                    label = { Text("Received Date (BD)") },
-                    placeholder = { Text("YYYY-MM-DD") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // Received Date BD (Only show editable input if device is not already in stock)
+                if (!isAlreadyInStock) {
+                    OutlinedTextField(
+                        value = receivedDateBd,
+                        onValueChange = { receivedDateBd = it },
+                        label = { Text("Received Date (BD)") },
+                        placeholder = { Text("YYYY-MM-DD") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
 
                 // Notes
                 OutlinedTextField(
