@@ -188,9 +188,8 @@ fun DeviceCheckInDialog(
 
                         Spacer(modifier = Modifier.height(4.dp))
 
-                        // Storage • Color • Battery % • Cycle Count Row
+                        // Capacity • Color
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -200,35 +199,45 @@ fun DeviceCheckInDialog(
                             device.color?.let {
                                 Text("•  $it", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
-                            device.batteryHealth?.let { bh ->
-                                Surface(
-                                    color = Color(0xFF22C55E).copy(alpha = 0.12f),
-                                    shape = RoundedCornerShape(6.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.3f))
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                        }
+
+                        // Battery Health & Cycle Count Badges
+                        if (device.batteryHealth != null || device.batteryCycle != null) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                device.batteryHealth?.let { bh ->
+                                    Surface(
+                                        color = Color(0xFF22C55E).copy(alpha = 0.12f),
+                                        shape = RoundedCornerShape(6.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.3f))
                                     ) {
-                                        Icon(Icons.Default.BatteryChargingFull, contentDescription = null, modifier = Modifier.size(11.dp), tint = Color(0xFF22C55E))
-                                        Text("$bh%", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(Icons.Default.BatteryChargingFull, contentDescription = null, modifier = Modifier.size(12.dp), tint = Color(0xFF22C55E))
+                                            Text("Battery: $bh%", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                        }
                                     }
                                 }
-                            }
-                            device.batteryCycle?.let { cc ->
-                                Surface(
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                    shape = RoundedCornerShape(6.dp),
-                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(3.dp)
+                                device.batteryCycle?.let { cc ->
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                        shape = RoundedCornerShape(6.dp),
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f))
                                     ) {
-                                        Icon(Icons.Default.Autorenew, contentDescription = null, modifier = Modifier.size(10.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                                        Text("${cc} CC", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(Icons.Default.Autorenew, contentDescription = null, modifier = Modifier.size(11.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                            Text("Cycles: $cc", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
                                     }
                                 }
                             }
