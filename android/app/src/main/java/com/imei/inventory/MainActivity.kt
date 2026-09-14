@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.LocalShipping
@@ -141,16 +142,19 @@ class MainActivity : FragmentActivity() {
                                     },
                                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
                                     actions = {
-                                        // QR / Barcode Scanner Button (Beside Refresh Sync Icon)
+                                        // + Add Device Button (Beside Refresh Sync Icon)
                                         IconButton(
-                                            onClick = { showScannerDialog = true },
+                                            onClick = {
+                                                scannedImeiForAdd = null
+                                                showAddDeviceDialog = true
+                                            },
                                             modifier = Modifier
                                                 .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
                                                 .size(36.dp)
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.QrCodeScanner,
-                                                contentDescription = "Scan Barcode / QR",
+                                                imageVector = Icons.Default.Add,
+                                                contentDescription = "+ Add Device",
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
                                             )
@@ -370,10 +374,7 @@ class MainActivity : FragmentActivity() {
                                         viewModel = mainViewModel,
                                         onNavigateToTab = { tabIndex -> selectedTab = tabIndex },
                                         onSelectDevice = { dev -> selectedDeviceForDetail = dev },
-                                        onOpenAddDevice = {
-                                            scannedImeiForAdd = null
-                                            showAddDeviceDialog = true
-                                        },
+                                        onOpenScanner = { showScannerDialog = true },
                                         onOpenAddShipment = { showAddShipmentDialog = true }
                                     )
                                     1 -> InventoryTab(

@@ -29,7 +29,7 @@ fun DashboardTab(
     viewModel: MainInventoryViewModel,
     onNavigateToTab: (Int) -> Unit,
     onSelectDevice: (DeviceDto) -> Unit,
-    onOpenAddDevice: () -> Unit,
+    onOpenScanner: () -> Unit,
     onOpenAddShipment: () -> Unit
 ) {
     val stats by viewModel.stats.collectAsState()
@@ -124,19 +124,19 @@ fun DashboardTab(
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
-                    onClick = onOpenAddDevice,
+                    onClick = onOpenScanner,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Add,
+                        imageVector = Icons.Default.QrCodeScanner,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Add Device", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Text("Scan IMEI", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                 }
                 Button(
                     onClick = onOpenAddShipment,
