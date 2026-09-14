@@ -10,7 +10,10 @@ import {
   MenuItem,
   Typography,
   CircularProgress,
-  Autocomplete
+  Autocomplete,
+  Paper,
+  Box,
+  Chip
 } from '@mui/material';
 import { Build as RepairIcon, CheckCircleOutline as CheckIcon } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
