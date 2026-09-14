@@ -68,9 +68,11 @@ fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
             }
         }
 
-        // Check for IMEI2 (Secondary)
+        // Check for IMEI2 (Secondary / eSIM)
         if (line.contains("IMEI2", ignoreCase = true) || 
             line.contains("IMEI 2", ignoreCase = true) || 
+            line.contains("IMEI(2)", ignoreCase = true) ||
+            line.contains("2. IMEI", ignoreCase = true) ||
             line.contains("eSIM", ignoreCase = true) || 
             line.contains("Secondary", ignoreCase = true)) {
             val digits = line.filter { it.isDigit() }
@@ -83,8 +85,11 @@ fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
             continue
         }
 
-        // Check for Primary IMEI (must NOT contain 2 or Secondary)
-        if (line.contains("IMEI", ignoreCase = true) && !line.contains("2")) {
+        // Check for Primary IMEI (must NOT contain 2 or Secondary or eSIM)
+        if ((line.contains("IMEI", ignoreCase = true) || line.contains("MEID", ignoreCase = true)) && 
+            !line.contains("2") && 
+            !line.contains("eSIM", ignoreCase = true) && 
+            !line.contains("Secondary", ignoreCase = true)) {
             val digits = line.filter { it.isDigit() }
             if (digits.length in 14..16) {
                 detectedPrimaryImei = digits
@@ -105,8 +110,8 @@ fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
     }
 
     // 2. Regex pattern for structured text
-    val imeiRegex = Regex("""(?:\bIMEI\b|\bIMEI1\b|Primary\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
-    val imei2Regex = Regex("""(?:\bIMEI2\b|Secondary\s*IMEI|eSIM\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    val imeiRegex = Regex("""(?:\bIMEI\b|\bIMEI1\b|\bIMEI\s*1\b|Primary\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
+    val imei2Regex = Regex("""(?:\bIMEI2\b|\bIMEI\s*2\b|Secondary\s*IMEI|eSIM\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
     val eidRegex = Regex("""(?:\bEID\b)\s*[:\-]?\s*(\d{20,32})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
 
     val imeiMatch = imeiRegex.find(trimmed)?.groupValues?.get(1)
@@ -180,6 +185,8 @@ fun CameraBarcodeScannerDialog(
     var manualInput by remember { mutableStateOf("") }
     var flashEnabled by remember { mutableStateOf(false) }
     var cameraControl by remember { mutableStateOf<CameraControl?>(null) }
+    var lockingCandidate by remember { mutableStateOf<String?>(null) }
+    var lockingProgress by remember { mutableFloatStateOf(0f) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -195,6 +202,10 @@ fun CameraBarcodeScannerDialog(
                     onBarcodeDetected = { rawValue ->
                         val parsed = parseScannedBarcodeText(rawValue)
                         onBarcodeScanned(parsed)
+                    },
+                    onLockProgress = { candidate, progress ->
+                        lockingCandidate = candidate
+                        lockingProgress = progress
                     },
                     onCameraReady = { control ->
                         cameraControl = control
@@ -217,24 +228,81 @@ fun CameraBarcodeScannerDialog(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 36.dp, vertical = 120.dp),
+                        .padding(horizontal = 32.dp, vertical = 110.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp)
-                            .border(2.dp, Color(0xFF3B82F6), RoundedCornerShape(16.dp))
-                            .background(Color.Transparent)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        // Animated Scanning Line
+                        // Viewfinder Box
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(2.dp)
-                                .offset(y = (240 * laserPosition).dp)
-                                .background(Color(0xFF60A5FA))
-                        )
+                                .height(230.dp)
+                                .border(
+                                    width = if (lockingCandidate != null) 3.dp else 2.dp,
+                                    color = if (lockingCandidate != null) Color(0xFF22C55E) else Color(0xFF3B82F6),
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .background(if (lockingCandidate != null) Color(0xFF22C55E).copy(alpha = 0.05f) else Color.Transparent)
+                        ) {
+                            // Animated Scanning Line (only when searching)
+                            if (lockingCandidate == null) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(2.dp)
+                                        .offset(y = (230 * laserPosition).dp)
+                                        .background(Color(0xFF60A5FA))
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Live Target Status Pill
+                        Surface(
+                            color = if (lockingCandidate != null) Color(0xEE16A34A) else Color(0xAA0F172A),
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                if (lockingCandidate != null) {
+                                    Text(
+                                        text = "Verifying Primary IMEI...",
+                                        color = Color.White,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = lockingCandidate ?: "",
+                                        color = Color.White,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    LinearProgressIndicator(
+                                        progress = { lockingProgress },
+                                        color = Color.White,
+                                        trackColor = Color.White.copy(alpha = 0.3f),
+                                        modifier = Modifier
+                                            .width(160.dp)
+                                            .height(4.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        text = "Align Primary IMEI in frame (1-2s)",
+                                        color = Color(0xFF94A3B8),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             } else {
@@ -294,7 +362,7 @@ fun CameraBarcodeScannerDialog(
                 }
 
                 Text(
-                    text = "Scan IMEI / QR Code",
+                    text = "Scan IMEI",
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 17.sp
@@ -328,7 +396,7 @@ fun CameraBarcodeScannerDialog(
                     .padding(16.dp)
             ) {
                 Text(
-                    text = "Point camera at IMEI barcode, QR code or enter manually:",
+                    text = "Point camera at IMEI or enter manually:",
                     color = Color(0xFF94A3B8),
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
@@ -377,6 +445,7 @@ fun CameraBarcodeScannerDialog(
 @Composable
 fun CameraPreviewView(
     onBarcodeDetected: (String) -> Unit,
+    onLockProgress: (candidate: String?, progress: Float) -> Unit = { _, _ -> },
     onCameraReady: (CameraControl) -> Unit
 ) {
     val context = LocalContext.current
@@ -403,52 +472,100 @@ fun CameraPreviewView(
                 val barcodeScanner = BarcodeScanning.getClient()
                 val executor = Executors.newSingleThreadExecutor()
 
+                // Stabilization & Verification tracking (1.3 seconds stable verification)
+                var currentCandidate: String? = null
+                var candidateFirstSeenMs: Long = 0L
+                var lastSeenCandidateMs: Long = 0L
+                val REQUIRED_CONFIRMATION_MS = 1300L // 1.3 seconds stable verification window
+                val GRACE_PERIOD_MS = 350L
+
                 imageAnalysis.setAnalyzer(executor) { imageProxy ->
                     val mediaImage = imageProxy.image
                     if (mediaImage != null && !hasDetected) {
                         val inputImage = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                        
-                        // 1. First run OCR Text Recognition to read structured labels (IMEI vs IMEI2)
+
+                        // 1. Primary Analyzer: OCR Text Recognition
                         textRecognizer.process(inputImage)
                             .addOnSuccessListener { visionText ->
                                 if (!hasDetected && visionText.text.isNotBlank()) {
                                     val parsed = parseScannedBarcodeText(visionText.text)
-                                    // If OCR found a clear Primary IMEI (14-16 digits matching IMEI label)
-                                    if (parsed.primaryImei.length in 14..16) {
-                                        hasDetected = true
-                                        onBarcodeDetected(parsed.primaryImei)
+                                    val candidate = if (parsed.primaryImei.length in 14..16) parsed.primaryImei else null
+
+                                    if (candidate != null) {
+                                        val now = System.currentTimeMillis()
+                                        lastSeenCandidateMs = now
+                                        if (candidate == currentCandidate) {
+                                            val elapsed = now - candidateFirstSeenMs
+                                            val progress = (elapsed.toFloat() / REQUIRED_CONFIRMATION_MS).coerceIn(0f, 1f)
+                                            ContextCompat.getMainExecutor(ctx).execute {
+                                                onLockProgress(candidate, progress)
+                                            }
+
+                                            if (elapsed >= REQUIRED_CONFIRMATION_MS && !hasDetected) {
+                                                hasDetected = true
+                                                ContextCompat.getMainExecutor(ctx).execute {
+                                                    onBarcodeDetected(candidate)
+                                                }
+                                                return@addOnSuccessListener
+                                            }
+                                        } else {
+                                            currentCandidate = candidate
+                                            candidateFirstSeenMs = now
+                                            ContextCompat.getMainExecutor(ctx).execute {
+                                                onLockProgress(candidate, 0.1f)
+                                            }
+                                        }
                                         return@addOnSuccessListener
                                     }
                                 }
 
-                                // 2. If OCR hasn't triggered, process Barcode lines
-                                if (!hasDetected) {
+                                // 2. Fallback: Barcode lines (only if no text is recognized on screen)
+                                if (!hasDetected && visionText.text.isBlank()) {
                                     barcodeScanner.process(inputImage)
                                         .addOnSuccessListener { barcodes ->
-                                            // Filter 14-16 digit barcodes (exclude EID > 20 digits)
                                             val imeiBarcodes = barcodes.filter {
                                                 val digits = it.rawValue?.filter { c -> c.isDigit() } ?: ""
                                                 digits.length in 14..16
                                             }.sortedBy { it.boundingBox?.top ?: 0 }
 
                                             if (imeiBarcodes.isNotEmpty() && !hasDetected) {
-                                                // If multiple barcodes are in frame, top one is always Primary IMEI
-                                                val primary = imeiBarcodes[0].rawValue?.filter { it.isDigit() }
-                                                if (!primary.isNullOrBlank() && primary.length in 14..16) {
-                                                    hasDetected = true
-                                                    onBarcodeDetected(primary)
-                                                }
-                                            } else if (barcodes.isNotEmpty() && !hasDetected) {
-                                                for (barcode in barcodes) {
-                                                    val raw = barcode.rawValue
-                                                    if (!hasDetected && !raw.isNullOrBlank()) {
-                                                        hasDetected = true
-                                                        onBarcodeDetected(raw)
-                                                        break
+                                                val candidate = imeiBarcodes[0].rawValue?.filter { it.isDigit() }
+                                                if (!candidate.isNullOrBlank() && candidate.length in 14..16) {
+                                                    val now = System.currentTimeMillis()
+                                                    lastSeenCandidateMs = now
+                                                    if (candidate == currentCandidate) {
+                                                        val elapsed = now - candidateFirstSeenMs
+                                                        val progress = (elapsed.toFloat() / REQUIRED_CONFIRMATION_MS).coerceIn(0f, 1f)
+                                                        ContextCompat.getMainExecutor(ctx).execute {
+                                                            onLockProgress(candidate, progress)
+                                                        }
+
+                                                        if (elapsed >= REQUIRED_CONFIRMATION_MS && !hasDetected) {
+                                                            hasDetected = true
+                                                            ContextCompat.getMainExecutor(ctx).execute {
+                                                                onBarcodeDetected(candidate)
+                                                            }
+                                                        }
+                                                    } else {
+                                                        currentCandidate = candidate
+                                                        candidateFirstSeenMs = now
+                                                        ContextCompat.getMainExecutor(ctx).execute {
+                                                            onLockProgress(candidate, 0.1f)
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
+                                }
+
+                                // Reset candidate if disappeared for longer than grace period
+                                val now = System.currentTimeMillis()
+                                if (currentCandidate != null && (now - lastSeenCandidateMs > GRACE_PERIOD_MS) && !hasDetected) {
+                                    currentCandidate = null
+                                    candidateFirstSeenMs = 0L
+                                    ContextCompat.getMainExecutor(ctx).execute {
+                                        onLockProgress(null, 0f)
+                                    }
                                 }
                             }
                             .addOnCompleteListener {
