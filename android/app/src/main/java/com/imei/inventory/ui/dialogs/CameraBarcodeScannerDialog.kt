@@ -46,10 +46,10 @@ data class ScannedBarcodeResult(
 fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
     val trimmed = raw.trim()
 
-    // 1. Regex pattern for structured text (e.g. "IMEI 351503409294558" or "IMEI2 351503407924685")
-    val imeiRegex = Regex("""(?:IMEI1?|Primary\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", RegexOption.IGNORE_CASE)
-    val imei2Regex = Regex("""(?:IMEI2|Secondary\s*IMEI|eSIM\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", RegexOption.IGNORE_CASE)
-    val eidRegex = Regex("""(?:EID)\s*[:\-]?\s*(\d{20,32})""", RegexOption.IGNORE_CASE)
+    // 1. Regex pattern for structured text (strictly matching Primary IMEI, never IMEI2)
+    val imeiRegex = Regex("""(?:\bIMEI\b|\bIMEI1\b|Primary\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", RegexOption.IGNORE_CASE)
+    val imei2Regex = Regex("""(?:\bIMEI2\b|Secondary\s*IMEI|eSIM\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", RegexOption.IGNORE_CASE)
+    val eidRegex = Regex("""(?:\bEID\b)\s*[:\-]?\s*(\d{20,32})""", RegexOption.IGNORE_CASE)
 
     val imeiMatch = imeiRegex.find(trimmed)?.groupValues?.get(1)
     val imei2Match = imei2Regex.find(trimmed)?.groupValues?.get(1)

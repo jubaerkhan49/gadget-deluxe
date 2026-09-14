@@ -410,15 +410,10 @@ class MainActivity : FragmentActivity() {
                                     showScannerDialog = false
                                     val cleanImei = result.primaryImei.trim()
 
-                                    // Search in local devices first
+                                    // Search in local devices strictly by primary IMEI or serial
                                     val matchedDevice = devices.find { dev ->
                                         dev.imei.equals(cleanImei, ignoreCase = true) ||
-                                        dev.imei2?.equals(cleanImei, ignoreCase = true) == true ||
-                                        dev.serialNumber?.equals(cleanImei, ignoreCase = true) == true ||
-                                        (result.secondaryImei != null && (
-                                            dev.imei.equals(result.secondaryImei, ignoreCase = true) ||
-                                            dev.imei2?.equals(result.secondaryImei, ignoreCase = true) == true
-                                        ))
+                                        dev.serialNumber?.equals(cleanImei, ignoreCase = true) == true
                                     }
 
                                     if (matchedDevice != null) {
@@ -452,6 +447,7 @@ class MainActivity : FragmentActivity() {
                         scannedDeviceForCheckIn?.let { dev ->
                             DeviceCheckInDialog(
                                 device = dev,
+                                users = users,
                                 onDismiss = { scannedDeviceForCheckIn = null },
                                 onSaveCheckIn = { updates ->
                                     mainViewModel.updateDevice(

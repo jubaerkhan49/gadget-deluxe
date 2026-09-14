@@ -18,6 +18,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
+import com.imei.inventory.data.model.UserDto
 import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
@@ -28,10 +29,12 @@ import java.util.*
 @Composable
 fun DeviceCheckInDialog(
     device: DeviceDto,
+    users: List<UserDto> = emptyList(),
     onDismiss: () -> Unit,
     onSaveCheckIn: (updates: Map<String, Any?>) -> Unit
 ) {
     val todayStr = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
+    val isAlreadyInStock = device.currentStatus.equals("IN_STOCK", ignoreCase = true)
 
     var currentStatus by remember { mutableStateOf("IN_STOCK") }
     var batteryHealth by remember { mutableStateOf(device.batteryHealth?.toString() ?: "100") }
@@ -62,29 +65,29 @@ fun DeviceCheckInDialog(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Surface(
-                        color = Color(0xFF16A34A).copy(alpha = 0.15f),
+                        color = if (isAlreadyInStock) Color(0xFF16A34A).copy(alpha = 0.15f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                         shape = RoundedCornerShape(8.dp),
                         modifier = Modifier.size(34.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
-                                imageVector = Icons.Default.CheckCircle,
+                                imageVector = if (isAlreadyInStock) Icons.Default.CheckCircle else Icons.Default.Inventory2,
                                 contentDescription = null,
-                                tint = Color(0xFF16A34A),
+                                tint = if (isAlreadyInStock) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
                     }
                     Column {
                         Text(
-                            text = "Device Check-In",
+                            text = if (isAlreadyInStock) "Device Check-In (In Stock)" else "Device Check-In",
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
                         Text(
-                            text = "Found in database • Update stock info",
-                            color = Color(0xFF16A34A),
+                            text = if (isAlreadyInStock) "Found in database • Already In Stock" else "Found in database • Current: ${device.statusDisplay ?: device.currentStatus.replace('_', ' ')}",
+                            color = if (isAlreadyInStock) Color(0xFF16A34A) else MaterialTheme.colorScheme.primary,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -103,6 +106,35 @@ fun DeviceCheckInDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                // Notice banner if already in stock or waiting shipment
+                if (isAlreadyInStock) {
+                    Surface(
+                        color = Color(0xFF16A34A).copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF16A34A).copy(alpha = 0.35f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = Color(0xFF16A34A),
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = "Device is already In Stock. You can update battery stats or owner.",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF16A34A)
+                            )
+                        }
+                    }
+                }
+
                 // Device Header Card
                 Card(
                     colors = CardDefaults.cardColors(
@@ -144,6 +176,64 @@ fun DeviceCheckInDialog(
                         CopyableText(label = "Primary IMEI", value = device.imei)
                         if (!device.imei2.isNullOrBlank()) {
                             CopyableText(label = "IMEI 2", value = device.imei2)
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Current Status Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Current Status:",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                StatusBadge(device.currentStatus)
+                                if (isAlreadyInStock) {
+                                    Surface(
+                                        color = Color(0xFF16A34A).copy(alpha = 0.15f),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            text = "✓ In Stock",
+                                            color = Color(0xFF16A34A),
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Assigned Owner Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Assigned Owner:",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = device.currentOwnerName ?: "jubaer (default)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
@@ -345,6 +435,17 @@ fun DeviceCheckInDialog(
                     if (notes.isNotBlank()) {
                         updates["notes"] = notes.trim()
                     }
+
+                    // Default assignment to user "jubaer"
+                    val jubaerUser = users.find { it.username.equals("jubaer", ignoreCase = true) }
+                    if (jubaerUser != null) {
+                        updates["current_owner"] = jubaerUser.id
+                    } else if (device.currentOwner != null) {
+                        updates["current_owner"] = device.currentOwner
+                    } else {
+                        updates["current_owner"] = 1
+                    }
+
                     onSaveCheckIn(updates)
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
