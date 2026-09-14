@@ -26,7 +26,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import LocalShippingIcon from '@mui/icons-material/LocalShipping';
 import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
-import BoltIcon from '@mui/icons-material/Bolt';
 import MenuIcon from '@mui/icons-material/Menu';
 import Brightness4Icon from '@mui/icons-material/Brightness4';
 import Brightness7Icon from '@mui/icons-material/Brightness7';
@@ -52,8 +51,7 @@ const NAV_ITEMS = [
   { text: 'Shipments', path: '/shipments', icon: <LocalShippingIcon /> },
   { text: 'Sales', path: '/sales', icon: <ReceiptLongIcon /> },
   { text: 'Repairs', path: '/repairs', icon: <BuildIcon /> },
-  { text: 'Archive', path: '/archive', icon: <ArchiveIcon /> },
-  { text: 'Sickw Parser', path: '/sickw', icon: <BoltIcon /> }
+  { text: 'Archive', path: '/archive', icon: <ArchiveIcon /> }
 ];
 
 export default function MainLayout() {
