@@ -12,12 +12,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,10 +29,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.fragment.app.FragmentActivity
+import com.imei.inventory.data.api.ApiClient
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.ShipmentDto
 import com.imei.inventory.ui.dialogs.AddDeviceDialog
 import com.imei.inventory.ui.dialogs.AddShipmentDialog
+import com.imei.inventory.ui.dialogs.CameraBarcodeScannerDialog
+import com.imei.inventory.ui.dialogs.DeviceCheckInDialog
 import com.imei.inventory.ui.dialogs.DeviceDetailDialog
 import com.imei.inventory.ui.dialogs.EditShipmentDialog
 import com.imei.inventory.ui.dialogs.ShipmentDetailDialog
@@ -40,6 +44,7 @@ import com.imei.inventory.ui.screens.*
 import com.imei.inventory.ui.theme.AppTheme
 import com.imei.inventory.viewmodel.AuthViewModel
 import com.imei.inventory.viewmodel.MainInventoryViewModel
+import kotlinx.coroutines.launch
 
 class MainActivity : FragmentActivity() {
     private val authViewModel: AuthViewModel by viewModels()
@@ -64,6 +69,13 @@ class MainActivity : FragmentActivity() {
                     var showSickwDialog by remember { mutableStateOf(false) }
                     var showTopMenu by remember { mutableStateOf(false) }
 
+                    // Barcode / QR Scanner states
+                    var showScannerDialog by remember { mutableStateOf(false) }
+                    var scannedDeviceForCheckIn by remember { mutableStateOf<DeviceDto?>(null) }
+                    var scannedImeiForAdd by remember { mutableStateOf<String?>(null) }
+                    var scannedImei2ForAdd by remember { mutableStateOf<String?>(null) }
+
+                    val coroutineScope = rememberCoroutineScope()
                     val isLoading by mainViewModel.isLoading.collectAsState()
                     val devices by mainViewModel.devices.collectAsState()
                     val shipments by mainViewModel.shipments.collectAsState()
@@ -130,6 +142,23 @@ class MainActivity : FragmentActivity() {
                                     },
                                     colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
                                     actions = {
+                                        // QR / Barcode Scanner Button (Beside Refresh Sync Icon)
+                                        IconButton(
+                                            onClick = { showScannerDialog = true },
+                                            modifier = Modifier
+                                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                                                .size(36.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.QrCodeScanner,
+                                                contentDescription = "Scan Barcode / QR",
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+
+                                        Spacer(modifier = Modifier.width(6.dp))
+
                                         // Sleek Material Sync Button
                                         IconButton(
                                             onClick = { mainViewModel.loadAllData(token) },
@@ -169,6 +198,21 @@ class MainActivity : FragmentActivity() {
                                                 expanded = showTopMenu,
                                                 onDismissRequest = { showTopMenu = false }
                                             ) {
+                                                DropdownMenuItem(
+                                                    leadingIcon = {
+                                                        Icon(
+                                                            imageVector = Icons.Default.QrCodeScanner,
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    },
+                                                    text = { Text("Scan QR / Barcode", fontWeight = FontWeight.Medium) },
+                                                    onClick = {
+                                                        showTopMenu = false
+                                                        showScannerDialog = true
+                                                    }
+                                                )
                                                 DropdownMenuItem(
                                                     leadingIcon = {
                                                         Icon(
@@ -327,14 +371,22 @@ class MainActivity : FragmentActivity() {
                                         viewModel = mainViewModel,
                                         onNavigateToTab = { tabIndex -> selectedTab = tabIndex },
                                         onSelectDevice = { dev -> selectedDeviceForDetail = dev },
-                                        onOpenAddDevice = { showAddDeviceDialog = true },
+                                        onOpenAddDevice = {
+                                            scannedImeiForAdd = null
+                                            scannedImei2ForAdd = null
+                                            showAddDeviceDialog = true
+                                        },
                                         onOpenAddShipment = { showAddShipmentDialog = true }
                                     )
                                     1 -> InventoryTab(
                                         token = token,
                                         viewModel = mainViewModel,
                                         onSelectDevice = { dev -> selectedDeviceForDetail = dev },
-                                        onOpenAddDevice = { showAddDeviceDialog = true }
+                                        onOpenAddDevice = {
+                                            scannedImeiForAdd = null
+                                            scannedImei2ForAdd = null
+                                            showAddDeviceDialog = true
+                                        }
                                     )
                                     2 -> ShipmentsTab(
                                         token = token,
@@ -348,6 +400,71 @@ class MainActivity : FragmentActivity() {
                                     )
                                 }
                             }
+                        }
+
+                        // Camera Barcode / QR Scanner Modal
+                        if (showScannerDialog) {
+                            CameraBarcodeScannerDialog(
+                                onDismiss = { showScannerDialog = false },
+                                onBarcodeScanned = { result ->
+                                    showScannerDialog = false
+                                    val cleanImei = result.primaryImei.trim()
+
+                                    // Search in local devices first
+                                    val matchedDevice = devices.find { dev ->
+                                        dev.imei.equals(cleanImei, ignoreCase = true) ||
+                                        dev.imei2?.equals(cleanImei, ignoreCase = true) ||
+                                        dev.serialNumber?.equals(cleanImei, ignoreCase = true) ||
+                                        (result.secondaryImei != null && (
+                                            dev.imei.equals(result.secondaryImei, ignoreCase = true) ||
+                                            dev.imei2?.equals(result.secondaryImei, ignoreCase = true)
+                                        ))
+                                    }
+
+                                    if (matchedDevice != null) {
+                                        // FOUND -> Open Check-In Dialog
+                                        scannedDeviceForCheckIn = matchedDevice
+                                    } else {
+                                        // Query backend scan API in case it was created recently
+                                        coroutineScope.launch {
+                                            try {
+                                                val res = ApiClient.apiService.scanCode("Bearer $token", cleanImei)
+                                                if (res.isSuccessful && res.body()?.found == true && res.body()?.device != null) {
+                                                    scannedDeviceForCheckIn = res.body()?.device
+                                                } else {
+                                                    // NOT FOUND -> Open Add Device with pre-populated IMEI
+                                                    scannedImeiForAdd = cleanImei
+                                                    scannedImei2ForAdd = result.secondaryImei
+                                                    showAddDeviceDialog = true
+                                                }
+                                            } catch (e: Exception) {
+                                                scannedImeiForAdd = cleanImei
+                                                scannedImei2ForAdd = result.secondaryImei
+                                                showAddDeviceDialog = true
+                                            }
+                                        }
+                                    }
+                                }
+                            )
+                        }
+
+                        // Scanned Device Check-In & In-Stock Update Dialog
+                        scannedDeviceForCheckIn?.let { dev ->
+                            DeviceCheckInDialog(
+                                device = dev,
+                                onDismiss = { scannedDeviceForCheckIn = null },
+                                onSaveCheckIn = { updates ->
+                                    mainViewModel.updateDevice(
+                                        token = token,
+                                        deviceId = dev.id,
+                                        updates = updates,
+                                        onSuccess = {
+                                            scannedDeviceForCheckIn = null
+                                            mainViewModel.loadAllData(token)
+                                        }
+                                    )
+                                }
+                            )
                         }
 
                         // Add Shipment Modal (Full Batch Entry like Web App)
@@ -378,15 +495,26 @@ class MainActivity : FragmentActivity() {
                             )
                         }
 
-                        // Add Device Modal
+                        // Add Device Modal (Supports prefilled IMEI from scanner)
                         if (showAddDeviceDialog) {
                             AddDeviceDialog(
-                                onDismiss = { showAddDeviceDialog = false },
+                                initialImei = scannedImeiForAdd ?: "",
+                                initialImei2 = scannedImei2ForAdd ?: "",
+                                onDismiss = {
+                                    showAddDeviceDialog = false
+                                    scannedImeiForAdd = null
+                                    scannedImei2ForAdd = null
+                                },
                                 onSave = { newDevice ->
                                     mainViewModel.createDevice(
                                         token = token,
                                         device = newDevice,
-                                        onSuccess = { showAddDeviceDialog = false },
+                                        onSuccess = {
+                                            showAddDeviceDialog = false
+                                            scannedImeiForAdd = null
+                                            scannedImei2ForAdd = null
+                                            mainViewModel.loadAllData(token)
+                                        },
                                         onError = { /* show error */ }
                                     )
                                 }
