@@ -95,7 +95,7 @@ fun CameraBarcodeScannerDialog(
     onDismiss: () -> Unit,
     onBarcodeScanned: (ScannedBarcodeResult) -> Unit
 ) {
-    val context = LocalContext webcamContext@ LocalContext.current
+    val context = LocalContext.current
     var hasCameraPermission by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
