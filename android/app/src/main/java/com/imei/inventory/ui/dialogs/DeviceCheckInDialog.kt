@@ -56,6 +56,7 @@ fun DeviceCheckInDialog(
         )
     }
     var ownerDropdownExpanded by remember { mutableStateOf(false) }
+    var showDirectOwnerDropdown by remember { mutableStateOf(false) }
 
     val statusOptions = listOf(
         "IN_STOCK" to "In Stock",
@@ -299,8 +300,8 @@ fun DeviceCheckInDialog(
                             }
                         }
 
-                        // Only display Assigned to if already assigned and NOT in waiting shipment
-                        if (!device.currentOwnerName.isNullOrBlank() && !device.currentStatus.equals("WAITING_SHIPMENT", ignoreCase = true)) {
+                        // Interactive Assigned to Row with Direct Dropdown Picker
+                        if (!device.currentStatus.equals("WAITING_SHIPMENT", ignoreCase = true)) {
                             Spacer(modifier = Modifier.height(4.dp))
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -312,12 +313,100 @@ fun DeviceCheckInDialog(
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                                Text(
-                                    text = device.currentOwnerName ?: "Unassigned",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
+                                
+                                Box {
+                                    Surface(
+                                        onClick = { showDirectOwnerDropdown = true },
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                        shape = RoundedCornerShape(8.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text(
+                                                text = selectedOwnerName.ifBlank { "Unassigned" },
+                                                color = if (selectedOwnerId != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                fontWeight = FontWeight.SemiBold,
+                                                fontSize = 12.sp
+                                            )
+                                            Text(
+                                                text = "▾",
+                                                color = MaterialTheme.colorScheme.primary,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+
+                                    DropdownMenu(
+                                        expanded = showDirectOwnerDropdown,
+                                        onDismissRequest = { showDirectOwnerDropdown = false },
+                                        modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    text = "-- Unassigned (None) --",
+                                                    color = Color(0xFFDC2626),
+                                                    fontWeight = if (selectedOwnerId == null) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            },
+                                            onClick = {
+                                                showDirectOwnerDropdown = false
+                                                selectedOwnerId = null
+                                                selectedOwnerName = "Unassigned"
+                                                onSaveCheckIn(mapOf("current_owner" to null))
+                                            }
+                                        )
+
+                                        HorizontalDivider()
+
+                                        val availableUsers = if (users.isNotEmpty()) {
+                                            users
+                                        } else {
+                                            listOf(
+                                                UserDto(id = 1, username = "jubaer", role = "ADMIN"),
+                                                UserDto(id = 2, username = "ochi", role = "EMPLOYEE"),
+                                                UserDto(id = 3, username = "ashraf", role = "EMPLOYEE"),
+                                                UserDto(id = 4, username = "emon", role = "EMPLOYEE")
+                                            )
+                                        }
+
+                                        availableUsers.forEach { user ->
+                                            DropdownMenuItem(
+                                                text = {
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
+                                                        Text(
+                                                            text = user.username,
+                                                            color = if (user.id == selectedOwnerId) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                                            fontWeight = if (user.id == selectedOwnerId) FontWeight.Bold else FontWeight.Medium
+                                                        )
+                                                        user.role?.let { role ->
+                                                            Text(
+                                                                text = role.lowercase().replaceFirstChar { it.uppercase() },
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                fontSize = 11.sp,
+                                                                modifier = Modifier.padding(start = 8.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                },
+                                                onClick = {
+                                                    showDirectOwnerDropdown = false
+                                                    selectedOwnerId = user.id
+                                                    selectedOwnerName = user.username
+                                                    onSaveCheckIn(mapOf("current_owner" to user.id))
+                                                }
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -455,7 +544,7 @@ fun DeviceCheckInDialog(
                     )
 
                     // Status Dropdown
-                    Box {
+                    Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
                             value = statusOptions.find { it.first == currentStatus }?.second ?: currentStatus,
                             onValueChange = {},
@@ -463,9 +552,7 @@ fun DeviceCheckInDialog(
                             label = { Text("Inventory Status *") },
                             shape = RoundedCornerShape(10.dp),
                             trailingIcon = {
-                                IconButton(onClick = { statusDropdownExpanded = true }) {
-                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                                }
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -473,9 +560,15 @@ fun DeviceCheckInDialog(
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { statusDropdownExpanded = true }
+                        )
                         DropdownMenu(
                             expanded = statusDropdownExpanded,
-                            onDismissRequest = { statusDropdownExpanded = false }
+                            onDismissRequest = { statusDropdownExpanded = false },
+                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                         ) {
                             statusOptions.forEach { (valKey, label) ->
                                 DropdownMenuItem(
@@ -490,7 +583,7 @@ fun DeviceCheckInDialog(
                     }
 
                     // Assigned to Dropdown
-                    Box {
+                    Box(modifier = Modifier.fillMaxWidth()) {
                         OutlinedTextField(
                             value = if (selectedOwnerId == null) "-- Unassigned --" else selectedOwnerName,
                             onValueChange = {},
@@ -498,15 +591,18 @@ fun DeviceCheckInDialog(
                             label = { Text("Assigned to") },
                             shape = RoundedCornerShape(10.dp),
                             trailingIcon = {
-                                IconButton(onClick = { ownerDropdownExpanded = true }) {
-                                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                                }
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             },
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = MaterialTheme.colorScheme.onSurface,
                                 unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                             ),
                             modifier = Modifier.fillMaxWidth()
+                        )
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable { ownerDropdownExpanded = true }
                         )
                         DropdownMenu(
                             expanded = ownerDropdownExpanded,
