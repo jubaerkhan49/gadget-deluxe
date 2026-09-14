@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dashboard
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.MoreVert
@@ -39,6 +40,7 @@ import com.imei.inventory.ui.dialogs.CameraBarcodeScannerDialog
 import com.imei.inventory.ui.dialogs.DeviceCheckInDialog
 import com.imei.inventory.ui.dialogs.DeviceDetailDialog
 import com.imei.inventory.ui.dialogs.EditShipmentDialog
+import com.imei.inventory.ui.dialogs.SalesDialog
 import com.imei.inventory.ui.dialogs.ShipmentDetailDialog
 import com.imei.inventory.ui.dialogs.SickwParserDialog
 import com.imei.inventory.ui.screens.*
@@ -68,6 +70,7 @@ class MainActivity : FragmentActivity() {
                     var showAddDeviceDialog by remember { mutableStateOf(false) }
                     var showAddShipmentDialog by remember { mutableStateOf(false) }
                     var showSickwDialog by remember { mutableStateOf(false) }
+                    var showSalesDialog by remember { mutableStateOf(false) }
                     var showTopMenu by remember { mutableStateOf(false) }
 
                     // Barcode / QR Scanner states
@@ -219,6 +222,21 @@ class MainActivity : FragmentActivity() {
                                                 DropdownMenuItem(
                                                     leadingIcon = {
                                                         Icon(
+                                                            imageVector = Icons.Default.ReceiptLong,
+                                                            contentDescription = null,
+                                                            tint = Color(0xFF10B981),
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    },
+                                                    text = { Text("Commercial Sales", fontWeight = FontWeight.Medium) },
+                                                    onClick = {
+                                                        showTopMenu = false
+                                                        showSalesDialog = true
+                                                    }
+                                                )
+                                                DropdownMenuItem(
+                                                    leadingIcon = {
+                                                        Icon(
                                                             imageVector = Icons.Default.Bolt,
                                                             contentDescription = null,
                                                             tint = Color(0xFFF59E0B),
@@ -346,8 +364,8 @@ class MainActivity : FragmentActivity() {
                                         )
                                     )
                                     NavigationBarItem(
-                                        icon = { Icon(Icons.Default.ReceiptLong, contentDescription = "Sales", modifier = Modifier.size(22.dp)) },
-                                        label = { Text("Sales", fontSize = 10.sp, fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
+                                        icon = { Icon(Icons.Default.Insights, contentDescription = "Analytics", modifier = Modifier.size(22.dp)) },
+                                        label = { Text("Analytics", fontSize = 10.sp, fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
                                         selected = selectedTab == 3,
                                         onClick = { selectedTab = 3 },
                                         colors = NavigationBarItemDefaults.colors(
@@ -392,7 +410,7 @@ class MainActivity : FragmentActivity() {
                                         onSelectShipment = { shipment -> selectedShipmentForDetail = shipment },
                                         onOpenAddShipment = { showAddShipmentDialog = true }
                                     )
-                                    3 -> SalesTab(
+                                    3 -> AnalyticsTab(
                                         token = token,
                                         viewModel = mainViewModel
                                     )
@@ -490,6 +508,15 @@ class MainActivity : FragmentActivity() {
                                 onDeviceCreated = {
                                     selectedTab = 1
                                 }
+                            )
+                        }
+
+                        // Commercial Sales Dialog (Opened from 3-dot overflow menu)
+                        if (showSalesDialog) {
+                            SalesDialog(
+                                token = token,
+                                viewModel = mainViewModel,
+                                onDismiss = { showSalesDialog = false }
                             )
                         }
 

@@ -107,4 +107,12 @@ interface ImeiApiService {
         @Header("Authorization") token: String,
         @Query("page_size") pageSize: Int? = 500
     ): Response<PaginatedResponse<SickwReportDto>>
+
+    // Analytics Endpoint
+    @GET("api/analytics/")
+    suspend fun getAnalytics(
+        @Header("Authorization") token: String,
+        @Query("year") year: Int? = null,
+        @Query("month") month: Int? = null
+    ): Response<AnalyticsResponseDto>
 }

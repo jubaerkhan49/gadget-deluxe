@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imei.inventory.data.api.ApiClient
 import com.imei.inventory.data.model.*
+import java.util.Calendar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -35,6 +36,19 @@ class MainInventoryViewModel : ViewModel() {
     // Stats State
     private val _stats = MutableStateFlow(DashboardStats())
     val stats: StateFlow<DashboardStats> = _stats
+
+    // Analytics State
+    private val _analyticsData = MutableStateFlow<AnalyticsResponseDto?>(null)
+    val analyticsData: StateFlow<AnalyticsResponseDto?> = _analyticsData
+
+    private val _isAnalyticsLoading = MutableStateFlow(false)
+    val isAnalyticsLoading: StateFlow<Boolean> = _isAnalyticsLoading
+
+    private val _analyticsYear = MutableStateFlow(Calendar.getInstance().get(Calendar.YEAR))
+    val analyticsYear: StateFlow<Int> = _analyticsYear
+
+    private val _analyticsMonth = MutableStateFlow(Calendar.getInstance().get(Calendar.MONTH) + 1)
+    val analyticsMonth: StateFlow<Int> = _analyticsMonth
 
     // Shipments State
     private val _shipments = MutableStateFlow<List<ShipmentDto>>(emptyList())
@@ -69,6 +83,7 @@ class MainInventoryViewModel : ViewModel() {
         fetchShipments(token)
         fetchSales(token)
         fetchRepairs(token)
+        fetchAnalytics(token)
         startRealtimeSync(token)
     }
 
@@ -341,6 +356,53 @@ class MainInventoryViewModel : ViewModel() {
                 // ignore
             }
         }
+    }
+
+    fun fetchAnalytics(token: String, year: Int? = null, month: Int? = null) {
+        val y = year ?: _analyticsYear.value
+        val m = month ?: _analyticsMonth.value
+        _analyticsYear.value = y
+        _analyticsMonth.value = m
+
+        viewModelScope.launch {
+            _isAnalyticsLoading.value = true
+            try {
+                val res = ApiClient.apiService.getAnalytics("Bearer $token", y, m)
+                if (res.isSuccessful && res.body() != null) {
+                    _analyticsData.value = res.body()!!
+                }
+            } catch (e: Exception) {
+                // ignore
+            } finally {
+                _isAnalyticsLoading.value = false
+            }
+        }
+    }
+
+    fun prevMonth(token: String) {
+        var y = _analyticsYear.value
+        var m = _analyticsMonth.value - 1
+        if (m < 1) {
+            m = 12
+            y -= 1
+        }
+        fetchAnalytics(token, y, m)
+    }
+
+    fun nextMonth(token: String) {
+        var y = _analyticsYear.value
+        var m = _analyticsMonth.value + 1
+        if (m > 12) {
+            m = 1
+            y += 1
+        }
+        fetchAnalytics(token, y, m)
+    }
+
+    fun resetToCurrentMonth(token: String) {
+        val curYear = Calendar.getInstance().get(Calendar.YEAR)
+        val curMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
+        fetchAnalytics(token, curYear, curMonth)
     }
 
     private fun computeStats(deviceList: List<DeviceDto>, salesList: List<SaleDto>) {
