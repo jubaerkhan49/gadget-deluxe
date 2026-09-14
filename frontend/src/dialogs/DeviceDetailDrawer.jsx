@@ -498,10 +498,10 @@ export default function DeviceDetailDrawer({
 
                   <Grid item xs={12} sm={8}>
                     <FormControl fullWidth size="small" disabled={loadingUsers}>
-                      <InputLabel>Assigned Owner</InputLabel>
+                      <InputLabel>Assigned To</InputLabel>
                       <Select
                         value={owner}
-                        label="Assigned Owner"
+                        label="Assigned To"
                         onChange={(e) => setOwner(e.target.value)}
                       >
                         <MenuItem value="">

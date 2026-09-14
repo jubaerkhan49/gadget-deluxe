@@ -310,7 +310,7 @@ export default function EditDeviceDialog({ open, device, onClose, onDeviceUpdate
             <Grid item xs={12} sm={6}>
               <TextField
                 select
-                label="Assigned Owner"
+                label="Assigned To"
                 fullWidth
                 size="small"
                 value={formData.current_owner}

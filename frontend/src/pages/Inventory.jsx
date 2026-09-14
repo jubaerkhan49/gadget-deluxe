@@ -219,14 +219,29 @@ export default function Inventory() {
       return '—';
     }
 
-    const activeAssignment = (dev.assignments || []).find(
-      (a) => a.is_active && (String(a.employee) === String(dev.current_owner) || a.employee_username === dev.current_owner_name)
-    ) || (dev.assignments || []).find((a) => a.is_active);
+    // Look for all assignments matching current owner
+    const matchingAssignments = (dev.assignments || []).filter(
+      (a) => String(a.employee) === String(dev.current_owner) || a.employee_username === dev.current_owner_name
+    );
 
-    const dateStr = activeAssignment?.assigned_date || dev.updated_at || dev.created_at;
-    if (!dateStr) return '0';
+    let assignDateStr = null;
 
-    const assignDate = new Date(dateStr);
+    if (matchingAssignments.length > 0) {
+      // Find the earliest assigned date for this continuous owner
+      const earliest = matchingAssignments.reduce((prev, curr) => {
+        const timeP = new Date(prev.assigned_date || prev.created_at).getTime();
+        const timeC = new Date(curr.assigned_date || curr.created_at).getTime();
+        return timeC < timeP ? curr : prev;
+      }, matchingAssignments[0]);
+      assignDateStr = earliest.assigned_date || earliest.created_at;
+    } else {
+      const anyActive = (dev.assignments || []).find((a) => a.is_active);
+      assignDateStr = anyActive?.assigned_date || anyActive?.created_at || dev.created_at;
+    }
+
+    if (!assignDateStr) return '0';
+
+    const assignDate = new Date(assignDateStr);
     const now = new Date();
     const diffTime = now.getTime() - assignDate.getTime();
     const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));

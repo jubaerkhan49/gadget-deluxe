@@ -95,31 +95,39 @@ class DeviceViewSet(viewsets.ModelViewSet):
         device = serializer.save()
 
         # 1. Handle Owner Change & Assignment History Audit
-        if explicit_owner_requested or old_owner != device.current_owner:
+        owner_changed = (old_owner != device.current_owner)
+        has_active_assignment = (
+            device.current_owner and DeviceAssignment.objects.filter(device=device, employee=device.current_owner, is_active=True).exists()
+        )
+
+        if owner_changed or (device.current_owner and not has_active_assignment):
             old_owner_name = old_owner.username if old_owner else "None"
 
-            # Deactivate previous active assignments
-            DeviceAssignment.objects.filter(device=device, is_active=True).update(is_active=False)
-
+            # Deactivate previous active assignments for other owners
             if device.current_owner:
-                # Create new active assignment
-                DeviceAssignment.objects.create(
-                    device=device,
-                    employee=device.current_owner,
-                    is_active=True,
-                    notes="Assigned via Mobile App"
-                )
+                DeviceAssignment.objects.filter(device=device, is_active=True).exclude(employee=device.current_owner).update(is_active=False)
+                if not has_active_assignment:
+                    # Create new active assignment ONLY if not already assigned
+                    DeviceAssignment.objects.create(
+                        device=device,
+                        employee=device.current_owner,
+                        is_active=True,
+                        notes="Assigned via Web/Mobile App"
+                    )
                 # Sync seller on existing sales
                 Sale.objects.filter(device=device).update(seller=device.current_owner)
 
-                DeviceHistory.objects.create(
-                    device=device,
-                    user=user,
-                    action_type='ASSIGNMENT',
-                    old_state=f"Owner: {old_owner_name}",
-                    new_state=f"Assigned to {device.current_owner.username}"
-                )
+                if owner_changed:
+                    DeviceHistory.objects.create(
+                        device=device,
+                        user=user,
+                        action_type='ASSIGNMENT',
+                        old_state=f"Owner: {old_owner_name}",
+                        new_state=f"Assigned to {device.current_owner.username}"
+                    )
             else:
+                # Unassign all
+                DeviceAssignment.objects.filter(device=device, is_active=True).update(is_active=False)
                 DeviceHistory.objects.create(
                     device=device,
                     user=user,
