@@ -18,7 +18,10 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
+  ToggleButtonGroup,
+  ToggleButton,
+  Divider
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -34,14 +37,25 @@ import {
   Archive as ArchiveIcon,
   CheckCircleOutline as CheckCircleIcon,
   Inventory2 as ActiveIcon,
-  Assessment as ReportIcon
+  Assessment as ReportIcon,
+  QrCodeScanner as QrCodeIcon,
+  Tag as TagIcon,
+  BatteryChargingFull as BatteryIcon,
+  Person as PersonIcon,
+  InfoOutlined as InfoIcon,
+  OpenInNew as OpenInNewIcon,
+  ReceiptLong as ReceiptIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import { shipmentApi } from '../api/client';
+import { shipmentApi, deviceApi } from '../api/client';
+import StatusBadge from '../components/common/StatusBadge';
+import VariantBadge from '../components/common/VariantBadge';
+import CopyableText from '../components/common/CopyableText';
 import AddShipmentDialog from '../dialogs/AddShipmentDialog';
 import EditShipmentDialog from '../dialogs/EditShipmentDialog';
 import ShipmentDetailDialog from '../dialogs/ShipmentDetailDialog';
 import DailyReceivedReportDialog from '../dialogs/DailyReceivedReportDialog';
+import DeviceDetailDrawer from '../dialogs/DeviceDetailDrawer';
 
 export default function Shipments() {
   const { enqueueSnackbar } = useSnackbar();
@@ -49,7 +63,13 @@ export default function Shipments() {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchMode, setSearchMode] = useState('NAME'); // 'NAME' | 'IMEI' | 'TRACKING'
   const [viewTab, setViewTab] = useState('ACTIVE'); // 'ACTIVE' | 'ARCHIVED'
+
+  // IMEI Search State
+  const [imeiDevice, setImeiDevice] = useState(null);
+  const [searchingImei, setSearchingImei] = useState(false);
+  const [imeiSearched, setImeiSearched] = useState(false);
 
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -57,6 +77,8 @@ export default function Shipments() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [selectedShipment, setSelectedShipment] = useState(null);
+  const [selectedDeviceForDrawer, setSelectedDeviceForDrawer] = useState(null);
+  const [deviceDrawerOpen, setDeviceDrawerOpen] = useState(false);
 
   // Delete confirmation
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -73,6 +95,64 @@ export default function Shipments() {
 
     return () => clearInterval(interval);
   }, []);
+
+  // Handle IMEI live search when searchMode is 'IMEI'
+  useEffect(() => {
+    if (searchMode !== 'IMEI') {
+      setImeiDevice(null);
+      setSearchingImei(false);
+      setImeiSearched(false);
+      return;
+    }
+
+    const trimmed = searchQuery.trim();
+    if (!trimmed || trimmed.length < 3) {
+      setImeiDevice(null);
+      setSearchingImei(false);
+      setImeiSearched(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      try {
+        setSearchingImei(true);
+        setImeiSearched(true);
+        // Try scan endpoint first
+        try {
+          const scanRes = await deviceApi.scan(trimmed);
+          if (scanRes.data?.found && scanRes.data?.device) {
+            setImeiDevice(scanRes.data.device);
+            setSearchingImei(false);
+            return;
+          }
+        } catch (e) {
+          // Fallback to getAll search
+        }
+
+        const res = await deviceApi.getAll({ search: trimmed });
+        const results = res.data?.results || res.data || [];
+        if (results.length > 0) {
+          // Exact or best match
+          const exact = results.find(
+            (d) =>
+              d.imei === trimmed ||
+              d.imei2 === trimmed ||
+              d.serial_number?.toLowerCase() === trimmed.toLowerCase()
+          );
+          setImeiDevice(exact || results[0]);
+        } else {
+          setImeiDevice(null);
+        }
+      } catch (err) {
+        console.error('Error searching device by IMEI:', err);
+        setImeiDevice(null);
+      } finally {
+        setSearchingImei(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchMode]);
 
   const fetchShipments = async (silent = false) => {
     try {
@@ -117,23 +197,41 @@ export default function Shipments() {
 
   const currentList = viewTab === 'ACTIVE' ? activeShipments : archivedShipments;
 
+  // Filter shipments based on active search mode
   const filteredShipments = currentList.filter((s) => {
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase().trim();
-    return (
-      s.tracking_number?.toLowerCase().includes(q) ||
-      s.supplier_name?.toLowerCase().includes(q) ||
-      s.shipping_company?.toLowerCase().includes(q)
-    );
+
+    if (searchMode === 'NAME') {
+      return (
+        s.supplier_name?.toLowerCase().includes(q) ||
+        s.shipping_company?.toLowerCase().includes(q)
+      );
+    }
+
+    if (searchMode === 'TRACKING') {
+      return s.tracking_number?.toLowerCase().includes(q);
+    }
+
+    if (searchMode === 'IMEI') {
+      if (!imeiDevice) return false;
+      // Match shipment linked to found device
+      return (
+        s.id === imeiDevice.current_shipment ||
+        s.tracking_number?.toLowerCase() === imeiDevice.shipment_tracking?.toLowerCase()
+      );
+    }
+
+    return true;
   });
 
-  const calculateSearchStats = () => {
-    if (!searchQuery.trim()) return null;
+  // Calculate stats for NAME search across all active & archived shipments
+  const calculateNameSearchStats = () => {
+    if (searchMode !== 'NAME' || !searchQuery.trim()) return null;
     const q = searchQuery.toLowerCase().trim();
-    // Search across ALL shipments (both active and archived) for complete agent/supplier overview
+
     const allMatching = shipments.filter(
       (s) =>
-        s.tracking_number?.toLowerCase().includes(q) ||
         s.supplier_name?.toLowerCase().includes(q) ||
         s.shipping_company?.toLowerCase().includes(q)
     );
@@ -158,7 +256,15 @@ export default function Shipments() {
     };
   };
 
-  const searchStats = calculateSearchStats();
+  // Find shipment matching TRACKING search
+  const getTrackingShipment = () => {
+    if (searchMode !== 'TRACKING' || !searchQuery.trim()) return null;
+    const q = searchQuery.toLowerCase().trim();
+    return shipments.find((s) => s.tracking_number?.toLowerCase().includes(q));
+  };
+
+  const nameSearchStats = calculateNameSearchStats();
+  const trackingShipment = getTrackingShipment();
 
   return (
     <Box sx={{ pb: 4 }}>
@@ -185,7 +291,7 @@ export default function Shipments() {
         </div>
 
         <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
-          {/* 1. Archive Button (Left side) */}
+          {/* 1. Archive Toggle Button */}
           <Button
             variant={viewTab === 'ARCHIVED' ? 'contained' : 'outlined'}
             startIcon={viewTab === 'ARCHIVED' ? <ActiveIcon /> : <ArchiveIcon />}
@@ -256,33 +362,113 @@ export default function Shipments() {
         </Stack>
       </Box>
 
-      {/* Search Bar */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3 }}>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder={`Search ${viewTab === 'ACTIVE' ? 'Active' : 'Archived'} Shipments by Tracking Number, Supplier, or Agent (e.g. "AB Group")...`}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" color="action" />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery ? (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearchQuery('')}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ) : null
-          }}
-        />
+      {/* Modern Search Card with Search By Selector */}
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 2,
+          mb: 3,
+          borderRadius: 3,
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#FFFFFF'
+        }}
+      >
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={1.5}
+          alignItems={{ xs: 'stretch', md: 'center' }}
+        >
+          {/* Search By Segmented Controls */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Typography variant="body2" fontWeight={700} color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+              Search By:
+            </Typography>
+            <ToggleButtonGroup
+              value={searchMode}
+              exclusive
+              onChange={(e, newMode) => {
+                if (newMode !== null) setSearchMode(newMode);
+              }}
+              size="small"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  px: 1.5,
+                  py: 0.6,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  borderRadius: '8px !important',
+                  mx: 0.25,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  '&.Mui-selected': {
+                    bgcolor: 'primary.main',
+                    color: '#fff',
+                    borderColor: 'primary.main',
+                    '&:hover': {
+                      bgcolor: 'primary.dark'
+                    }
+                  }
+                }
+              }}
+            >
+              <ToggleButton value="NAME">
+                <Stack direction="row" spacing={0.6} alignItems="center">
+                  <SupplierIcon sx={{ fontSize: 16 }} />
+                  <span>Name (Agent/Supplier)</span>
+                </Stack>
+              </ToggleButton>
+              <ToggleButton value="IMEI">
+                <Stack direction="row" spacing={0.6} alignItems="center">
+                  <QrCodeIcon sx={{ fontSize: 16 }} />
+                  <span>IMEI</span>
+                </Stack>
+              </ToggleButton>
+              <ToggleButton value="TRACKING">
+                <Stack direction="row" spacing={0.6} alignItems="center">
+                  <ShippingIcon sx={{ fontSize: 16 }} />
+                  <span>Tracking #</span>
+                </Stack>
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
+
+          {/* Search Input */}
+          <TextField
+            fullWidth
+            size="small"
+            placeholder={
+              searchMode === 'NAME'
+                ? 'Search by Agent or Supplier (e.g. "AB Group", "Hongxin Technology")...'
+                : searchMode === 'IMEI'
+                ? 'Enter or scan Device IMEI, IMEI 2, or Serial Number...'
+                : 'Search by Tracking Number (e.g. "SF1225516188466")...'
+            }
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  {searchMode === 'IMEI' && searchingImei ? (
+                    <CircularProgress size={18} color="primary" />
+                  ) : (
+                    <SearchIcon fontSize="small" color="action" />
+                  )}
+                </InputAdornment>
+              ),
+              endAdornment: searchQuery ? (
+                <InputAdornment position="end">
+                  <IconButton size="small" onClick={() => setSearchQuery('')}>
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </InputAdornment>
+              ) : null
+            }}
+          />
+        </Stack>
       </Paper>
 
-      {/* Dynamic Agent / Supplier Analytics Summary Banner */}
-      {searchStats && (
+      {/* 1. AGENT / SUPPLIER (NAME) SEARCH ANALYTICS BANNER */}
+      {searchMode === 'NAME' && nameSearchStats && (
         <Paper
           variant="outlined"
           sx={{
@@ -320,22 +506,22 @@ export default function Shipments() {
                   Summary for "{searchQuery}"
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Found across {searchStats.totalBatches} {searchStats.totalBatches === 1 ? 'batch' : 'batches'} (Active & Historical Archive)
+                  Found across {nameSearchStats.totalBatches} {nameSearchStats.totalBatches === 1 ? 'batch' : 'batches'} (Active & Historical Archive)
                 </Typography>
               </div>
             </Box>
 
             {/* Delivery Rate Badge */}
             <Chip
-              label={`${searchStats.deliveryRate}% Delivered`}
+              label={`${nameSearchStats.deliveryRate}% Delivered`}
               size="small"
               sx={{
                 fontWeight: 800,
                 fontSize: '0.8rem',
-                bgcolor: searchStats.deliveryRate === 100 ? '#DCFCE7' : '#DBEAFE',
-                color: searchStats.deliveryRate === 100 ? '#16A34A' : '#2563EB',
+                bgcolor: nameSearchStats.deliveryRate === 100 ? '#DCFCE7' : '#DBEAFE',
+                color: nameSearchStats.deliveryRate === 100 ? '#16A34A' : '#2563EB',
                 border: '1px solid',
-                borderColor: searchStats.deliveryRate === 100 ? '#86EFAC' : '#93C5FD',
+                borderColor: nameSearchStats.deliveryRate === 100 ? '#86EFAC' : '#93C5FD',
                 borderRadius: '8px',
                 px: 1,
                 py: 0.5
@@ -379,7 +565,7 @@ export default function Shipments() {
                     Total Inbound Devices
                   </Typography>
                   <Typography variant="h5" fontWeight={800} color="text.primary">
-                    {searchStats.totalDevices}
+                    {nameSearchStats.totalDevices}
                   </Typography>
                 </div>
               </Paper>
@@ -419,9 +605,9 @@ export default function Shipments() {
                     Delivered to You (In Stock)
                   </Typography>
                   <Typography variant="h5" fontWeight={800} color="#16A34A">
-                    {searchStats.deliveredDevices}{' '}
+                    {nameSearchStats.deliveredDevices}{' '}
                     <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">
-                      ({searchStats.deliveryRate}%)
+                      ({nameSearchStats.deliveryRate}%)
                     </Typography>
                   </Typography>
                 </div>
@@ -462,9 +648,9 @@ export default function Shipments() {
                     Pending Delivery (In Transit)
                   </Typography>
                   <Typography variant="h5" fontWeight={800} color="#EA580C">
-                    {searchStats.pendingDevices}{' '}
+                    {nameSearchStats.pendingDevices}{' '}
                     <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">
-                      ({100 - searchStats.deliveryRate}%)
+                      ({100 - nameSearchStats.deliveryRate}%)
                     </Typography>
                   </Typography>
                 </div>
@@ -472,6 +658,324 @@ export default function Shipments() {
             </Grid>
           </Grid>
         </Paper>
+      )}
+
+      {/* 2. TRACKING NUMBER SEARCH SUMMARY BANNER */}
+      {searchMode === 'TRACKING' && trackingShipment && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2.5,
+            mb: 3,
+            borderRadius: 3,
+            background: (theme) =>
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(15, 23, 42, 0.95) 100%)'
+                : 'linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%)',
+            borderColor: (theme) =>
+              theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
+            boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.06)'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1.5, mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 2.5,
+                  bgcolor: 'primary.main',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                }}
+              >
+                <ShippingIcon fontSize="medium" />
+              </Box>
+              <div>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography variant="subtitle1" fontWeight={800} letterSpacing={-0.3}>
+                    Batch #{trackingShipment.tracking_number}
+                  </Typography>
+                  <CopyableText text={trackingShipment.tracking_number} />
+                </Stack>
+                <Typography variant="caption" color="text.secondary">
+                  Supplier: <strong>{trackingShipment.supplier_name || 'Unknown'}</strong> • Agent: <strong>{trackingShipment.shipping_company || 'None'}</strong> • Received CN: <strong>{trackingShipment.receive_date || 'Pending'}</strong>
+                </Typography>
+              </div>
+            </Box>
+
+            <Button
+              variant="contained"
+              size="small"
+              endIcon={<ArrowForwardIcon />}
+              onClick={() => {
+                setSelectedShipment(trackingShipment);
+                setDetailDialogOpen(true);
+              }}
+              sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+            >
+              Open Batch Details
+            </Button>
+          </Box>
+
+          {/* Metrics for this specific tracking batch */}
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <Paper elevation={0} sx={{ p: 1.75, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : '#fff', border: 1, borderColor: 'divider' }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>Total Batch Devices</Typography>
+                <Typography variant="h6" fontWeight={800}>{trackingShipment.devices_count || 0} Units</Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Paper elevation={0} sx={{ p: 1.75, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.12)' : '#F0FDF4', border: 1, borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.35)' : '#BBF7D0' }}>
+                <Typography variant="caption" color="#16A34A" fontWeight={700}>Delivered (In Stock)</Typography>
+                <Typography variant="h6" fontWeight={800} color="#16A34A">
+                  {trackingShipment.received_devices_count || 0} Units
+                </Typography>
+              </Paper>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Paper elevation={0} sx={{ p: 1.75, borderRadius: 2, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.12)' : '#FFF7ED', border: 1, borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.35)' : '#FED7AA' }}>
+                <Typography variant="caption" color="#EA580C" fontWeight={700}>Pending (In Transit)</Typography>
+                <Typography variant="h6" fontWeight={800} color="#EA580C">
+                  {trackingShipment.pending_devices_count || 0} Units
+                </Typography>
+              </Paper>
+            </Grid>
+          </Grid>
+        </Paper>
+      )}
+
+      {/* 3. IMEI SEARCH: CORRESPONDING DEVICE INFO CARD */}
+      {searchMode === 'IMEI' && searchQuery.trim() && (
+        <Box sx={{ mb: 3 }}>
+          {searchingImei ? (
+            <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
+              <CircularProgress size={28} sx={{ mb: 1 }} />
+              <Typography variant="body2" color="text.secondary">Searching device database for IMEI / Serial...</Typography>
+            </Paper>
+          ) : imeiDevice ? (
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2.5,
+                borderRadius: 3,
+                background: (theme) =>
+                  theme.palette.mode === 'dark'
+                    ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%)'
+                    : 'linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)',
+                borderColor: (theme) =>
+                  theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#93C5FD',
+                boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.08)'
+              }}
+            >
+              {/* Device Header */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 2.5,
+                      bgcolor: 'primary.main',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
+                    }}
+                  >
+                    <PhoneIcon fontSize="medium" />
+                  </Box>
+                  <div>
+                    <Typography variant="h6" fontWeight={800} letterSpacing={-0.3}>
+                      {imeiDevice.model || 'Unknown Device'}
+                    </Typography>
+                    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 0.25 }}>
+                      {imeiDevice.capacity && (
+                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                          {imeiDevice.capacity}
+                        </Typography>
+                      )}
+                      {imeiDevice.color && (
+                        <Typography variant="body2" fontWeight={600} color="text.secondary">
+                          • {imeiDevice.color}
+                        </Typography>
+                      )}
+                      {imeiDevice.variant && <VariantBadge variant={imeiDevice.variant} size="small" />}
+                      <StatusBadge status={imeiDevice.current_status} displayLabel={imeiDevice.status_display} size="small" />
+                    </Stack>
+                  </div>
+                </Box>
+
+                {/* Actions */}
+                <Stack direction="row" spacing={1}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<OpenInNewIcon />}
+                    onClick={() => {
+                      setSelectedDeviceForDrawer(imeiDevice);
+                      setDeviceDrawerOpen(true);
+                    }}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                  >
+                    View Device Details
+                  </Button>
+                  {imeiDevice.shipment_tracking && (
+                    <Button
+                      variant="contained"
+                      size="small"
+                      startIcon={<ShippingIcon />}
+                      onClick={() => {
+                        const parent = shipments.find((s) => s.tracking_number === imeiDevice.shipment_tracking);
+                        if (parent) {
+                          setSelectedShipment(parent);
+                          setDetailDialogOpen(true);
+                        } else {
+                          enqueueSnackbar(`Shipment #${imeiDevice.shipment_tracking} details`, { variant: 'info' });
+                        }
+                      }}
+                      sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+                    >
+                      View Shipment Batch
+                    </Button>
+                  )}
+                </Stack>
+              </Box>
+
+              <Divider sx={{ my: 2 }} />
+
+              {/* Hardware & Logistic Grid */}
+              <Grid container spacing={2}>
+                {/* IMEI 1 */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                    IMEI 1
+                  </Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    <CopyableText text={imeiDevice.imei} />
+                  </Box>
+                </Grid>
+
+                {/* IMEI 2 */}
+                {imeiDevice.imei2 && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                      IMEI 2
+                    </Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      <CopyableText text={imeiDevice.imei2} />
+                    </Box>
+                  </Grid>
+                )}
+
+                {/* Serial Number */}
+                {imeiDevice.serial_number && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                      Serial Number
+                    </Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      <CopyableText text={imeiDevice.serial_number} />
+                    </Box>
+                  </Grid>
+                )}
+
+                {/* Battery Diagnostics */}
+                {(imeiDevice.battery_health !== undefined || imeiDevice.battery_cycles !== undefined) && (
+                  <Grid item xs={12} sm={6} md={3}>
+                    <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                      Battery Health & Cycles
+                    </Typography>
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 0.5 }}>
+                      <BatteryIcon sx={{ fontSize: 18, color: '#16A34A' }} />
+                      <Typography variant="body2" fontWeight={700}>
+                        {imeiDevice.battery_health ? `${imeiDevice.battery_health}%` : 'N/A'} • {imeiDevice.battery_cycles ? `${imeiDevice.battery_cycles} Cycles` : 'N/A'}
+                      </Typography>
+                    </Stack>
+                  </Grid>
+                )}
+
+                {/* Shipment Tracking Link */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                    Shipment Tracking
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ mt: 0.5 }}>
+                    {imeiDevice.shipment_tracking ? `#${imeiDevice.shipment_tracking}` : 'Not Linked'}
+                  </Typography>
+                </Grid>
+
+                {/* Agent & Supplier */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                    Agent / Supplier
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700} sx={{ mt: 0.5 }} noWrap>
+                    {imeiDevice.shipment_agent || imeiDevice.shipment_supplier || 'N/A'}
+                  </Typography>
+                </Grid>
+
+                {/* Received Date (CN) */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                    Received Date (CN)
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700} color="primary" sx={{ mt: 0.5 }}>
+                    {imeiDevice.shipment_receive_date_cn || 'Pending'}
+                  </Typography>
+                </Grid>
+
+                {/* Assigned To */}
+                <Grid item xs={12} sm={6} md={3}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                    Assigned To
+                  </Typography>
+                  <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
+                    <PersonIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                    <Typography variant="body2" fontWeight={700}>
+                      {imeiDevice.current_owner_name || 'Unassigned'}
+                    </Typography>
+                  </Stack>
+                </Grid>
+              </Grid>
+
+              {/* Notes if available */}
+              {imeiDevice.notes && (
+                <Box
+                  sx={{
+                    mt: 2,
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
+                    border: '1px dashed',
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                    Notes:
+                  </Typography>
+                  <Typography variant="body2" sx={{ mt: 0.25 }}>
+                    {imeiDevice.notes}
+                  </Typography>
+                </Box>
+              )}
+            </Paper>
+          ) : imeiSearched ? (
+            <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', borderRadius: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.05)' : '#FEF2F2', borderColor: '#FECACA' }}>
+              <Typography variant="body2" fontWeight={700} color="error.main">
+                No device found matching IMEI / Serial "{searchQuery}"
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Please verify the IMEI number or barcode scan.
+              </Typography>
+            </Paper>
+          ) : null}
+        </Box>
       )}
 
       {/* Shipments Grid */}
@@ -485,10 +989,12 @@ export default function Shipments() {
             <>
               <ShippingIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
               <Typography variant="h6" fontWeight={700}>
-                No Active Shipments
+                {searchQuery ? 'No Matching Active Shipments' : 'No Active Shipments'}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
-                All shipments have been received and moved to the archive, or no shipments match your search.
+                {searchQuery
+                  ? `No active batches found matching ${searchMode.toLowerCase()} "${searchQuery}".`
+                  : 'All shipments have been received and moved to the archive.'}
               </Typography>
               <Stack direction="row" spacing={1.5} justifyContent="center">
                 {archivedShipments.length > 0 && (
@@ -513,10 +1019,12 @@ export default function Shipments() {
             <>
               <ArchiveIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
               <Typography variant="h6" fontWeight={700}>
-                No Archived Shipments
+                {searchQuery ? 'No Matching Archived Shipments' : 'No Archived Shipments'}
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, mb: 2 }}>
-                When all devices in an active shipment are received into In Stock, the shipment batch will automatically move here.
+                {searchQuery
+                  ? `No archived batches found matching ${searchMode.toLowerCase()} "${searchQuery}".`
+                  : 'When all devices in an active shipment are received into In Stock, the shipment batch will automatically move here.'}
               </Typography>
               <Button
                 variant="outlined"
@@ -721,6 +1229,23 @@ export default function Shipments() {
         onShipmentUpdated={() => fetchShipments()}
       />
 
+      {/* Device Detail Drawer for IMEI search preview */}
+      <DeviceDetailDrawer
+        open={deviceDrawerOpen}
+        onClose={() => {
+          setDeviceDrawerOpen(false);
+          setSelectedDeviceForDrawer(null);
+        }}
+        device={selectedDeviceForDrawer}
+        onDeviceUpdated={() => {
+          fetchShipments();
+        }}
+        onDeviceDeleted={() => {
+          fetchShipments();
+          setImeiDevice(null);
+        }}
+      />
+
       {/* Delete Confirmation Modal */}
       <Dialog
         open={deleteConfirmOpen}
@@ -759,3 +1284,4 @@ export default function Shipments() {
     </Box>
   );
 }
+
