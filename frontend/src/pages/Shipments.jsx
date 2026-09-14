@@ -362,110 +362,130 @@ export default function Shipments() {
         </Stack>
       </Box>
 
-      {/* Modern Search Card with Search By Selector */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2,
-          mb: 3,
-          borderRadius: 3,
-          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#FFFFFF'
-        }}
-      >
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={1.5}
-          alignItems={{ xs: 'stretch', md: 'center' }}
-        >
-          {/* Search By Segmented Controls */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography variant="body2" fontWeight={700} color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+      {/* Search Mode Chips & Clean Search Input */}
+      <Box sx={{ mb: 3 }}>
+        {/* Search Mode Selector Chips */}
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
+            <Typography variant="body2" fontWeight={700} color="text.secondary" sx={{ mr: 0.5 }}>
               Search By:
             </Typography>
-            <ToggleButtonGroup
-              value={searchMode}
-              exclusive
-              onChange={(e, newMode) => {
-                if (newMode !== null) setSearchMode(newMode);
-              }}
-              size="small"
-              sx={{
-                '& .MuiToggleButton-root': {
-                  px: 1.5,
-                  py: 0.6,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.8rem',
-                  borderRadius: '8px !important',
-                  mx: 0.25,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  '&.Mui-selected': {
-                    bgcolor: 'primary.main',
-                    color: '#fff',
-                    borderColor: 'primary.main',
+            {[
+              { id: 'NAME', label: 'Agent / Supplier Name', icon: <SupplierIcon sx={{ fontSize: 16 }} /> },
+              { id: 'IMEI', label: 'Device IMEI / Serial', icon: <QrCodeIcon sx={{ fontSize: 16 }} /> },
+              { id: 'TRACKING', label: 'Tracking Number', icon: <ShippingIcon sx={{ fontSize: 16 }} /> },
+            ].map((tab) => {
+              const active = searchMode === tab.id;
+              return (
+                <Chip
+                  key={tab.id}
+                  icon={tab.icon}
+                  label={tab.label}
+                  clickable
+                  onClick={() => setSearchMode(tab.id)}
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    px: 1,
+                    py: 2.2,
+                    borderRadius: '10px',
+                    bgcolor: active
+                      ? 'primary.main'
+                      : (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#F1F5F9',
+                    color: active ? '#FFFFFF' : 'text.primary',
+                    border: '1px solid',
+                    borderColor: active
+                      ? 'primary.main'
+                      : (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0',
+                    boxShadow: active ? '0 4px 12px rgba(37, 99, 235, 0.28)' : 'none',
+                    transition: 'all 0.2s ease',
+                    '& .MuiChip-icon': {
+                      color: active ? '#FFFFFF !important' : 'inherit',
+                    },
                     '&:hover': {
-                      bgcolor: 'primary.dark'
+                      bgcolor: active
+                        ? 'primary.dark'
+                        : (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.1)' : '#E2E8F0',
                     }
-                  }
-                }
-              }}
-            >
-              <ToggleButton value="NAME">
-                <Stack direction="row" spacing={0.6} alignItems="center">
-                  <SupplierIcon sx={{ fontSize: 16 }} />
-                  <span>Name (Agent/Supplier)</span>
-                </Stack>
-              </ToggleButton>
-              <ToggleButton value="IMEI">
-                <Stack direction="row" spacing={0.6} alignItems="center">
-                  <QrCodeIcon sx={{ fontSize: 16 }} />
-                  <span>IMEI</span>
-                </Stack>
-              </ToggleButton>
-              <ToggleButton value="TRACKING">
-                <Stack direction="row" spacing={0.6} alignItems="center">
-                  <ShippingIcon sx={{ fontSize: 16 }} />
-                  <span>Tracking #</span>
-                </Stack>
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
+                  }}
+                />
+              );
+            })}
+          </Stack>
 
-          {/* Search Input */}
+          {searchQuery && (
+            <Button
+              size="small"
+              variant="text"
+              color="inherit"
+              startIcon={<ClearIcon fontSize="small" />}
+              onClick={() => setSearchQuery('')}
+              sx={{ textTransform: 'none', fontWeight: 600, color: 'text.secondary' }}
+            >
+              Clear Search
+            </Button>
+          )}
+        </Box>
+
+        {/* Unified Search Input Bar */}
+        <Paper
+          variant="outlined"
+          sx={{
+            p: '4px 10px 4px 16px',
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            border: '1.5px solid',
+            borderColor: (theme) =>
+              searchQuery
+                ? (theme.palette.mode === 'dark' ? '#60A5FA' : '#2563EB')
+                : (theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#3B82F6'),
+            boxShadow: (theme) =>
+              searchQuery
+                ? '0 0 0 3px rgba(37, 99, 235, 0.15)'
+                : '0 0 0 3px rgba(59, 130, 246, 0.08)',
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? '#0F172A' : '#FFFFFF',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          {searchMode === 'IMEI' && searchingImei ? (
+            <CircularProgress size={20} color="primary" sx={{ mr: 1.5 }} />
+          ) : (
+            <SearchIcon sx={{ color: 'primary.main', mr: 1.5, fontSize: 22 }} />
+          )}
+
           <TextField
             fullWidth
-            size="small"
+            variant="standard"
+            InputProps={{ disableUnderline: true }}
             placeholder={
               searchMode === 'NAME'
-                ? 'Search by Agent or Supplier (e.g. "AB Group", "Hongxin Technology")...'
+                ? 'Type Agent or Supplier name (e.g. "AB Group", "Hongxin Technology")...'
                 : searchMode === 'IMEI'
-                ? 'Enter or scan Device IMEI, IMEI 2, or Serial Number...'
-                : 'Search by Tracking Number (e.g. "SF1225516188466")...'
+                ? 'Scan barcode or type Device IMEI, IMEI 2, or Serial Number...'
+                : 'Enter Shipment Tracking Number (e.g. "SF1225516188466")...'
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  {searchMode === 'IMEI' && searchingImei ? (
-                    <CircularProgress size={18} color="primary" />
-                  ) : (
-                    <SearchIcon fontSize="small" color="action" />
-                  )}
-                </InputAdornment>
-              ),
-              endAdornment: searchQuery ? (
-                <InputAdornment position="end">
-                  <IconButton size="small" onClick={() => setSearchQuery('')}>
-                    <ClearIcon fontSize="small" />
-                  </IconButton>
-                </InputAdornment>
-              ) : null
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setSearchQuery('');
+            }}
+            sx={{
+              '& input': {
+                py: 1.25,
+                fontSize: '0.95rem',
+                fontWeight: 500
+              }
             }}
           />
-        </Stack>
-      </Paper>
+
+          {searchQuery && (
+            <IconButton size="small" onClick={() => setSearchQuery('')} sx={{ p: 0.8 }}>
+              <ClearIcon fontSize="small" />
+            </IconButton>
+          )}
+        </Paper>
+      </Box>
 
       {/* 1. AGENT / SUPPLIER (NAME) SEARCH ANALYTICS BANNER */}
       {searchMode === 'NAME' && nameSearchStats && (
