@@ -33,6 +33,11 @@ data class DeviceDto(
     @SerializedName("purchase_country") val purchaseCountry: String? = null,
     @SerializedName("current_shipment") val currentShipment: Int? = null,
     @SerializedName("received_date_bd") val receivedDateBd: String? = null,
+    val notes: String? = null,
+    @SerializedName("shipment_tracking") val shipmentTracking: String? = null,
+    @SerializedName("shipment_supplier") val shipmentSupplier: String? = null,
+    @SerializedName("shipment_agent") val shipmentAgent: String? = null,
+    @SerializedName("shipment_receive_date_cn") val shipmentReceiveDateCn: String? = null,
     @SerializedName("created_at") val createdAt: String? = null
 )
 
