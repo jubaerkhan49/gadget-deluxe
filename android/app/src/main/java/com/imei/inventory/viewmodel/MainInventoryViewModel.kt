@@ -210,7 +210,7 @@ class MainInventoryViewModel : ViewModel() {
             try {
                 val response = ApiClient.apiService.getUsers("Bearer $token")
                 if (response.isSuccessful && response.body() != null) {
-                    _users.value = response.body()!!.results
+                    _users.value = response.body()!!.results.filter { !it.username.equals("admin", ignoreCase = true) }
                 }
             } catch (e: Exception) {
                 // silent failure

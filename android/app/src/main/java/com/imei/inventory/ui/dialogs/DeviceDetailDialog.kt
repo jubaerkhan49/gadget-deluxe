@@ -174,9 +174,10 @@ fun DeviceDetailDialog(
                                 }
                             )
 
-                            if (users.isNotEmpty()) {
+                            val filteredUsers = users.filter { !it.username.equals("admin", ignoreCase = true) }
+                            if (filteredUsers.isNotEmpty()) {
                                 HorizontalDivider()
-                                users.forEach { user ->
+                                filteredUsers.forEach { user ->
                                     DropdownMenuItem(
                                         text = {
                                             Row(

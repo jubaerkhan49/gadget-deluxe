@@ -364,7 +364,7 @@ fun DeviceCheckInDialog(
 
                                         HorizontalDivider()
 
-                                        val availableUsers = if (users.isNotEmpty()) {
+                                        val availableUsers = (if (users.isNotEmpty()) {
                                             users
                                         } else {
                                             listOf(
@@ -373,7 +373,7 @@ fun DeviceCheckInDialog(
                                                 UserDto(id = 3, username = "ashraf", role = "EMPLOYEE"),
                                                 UserDto(id = 4, username = "emon", role = "EMPLOYEE")
                                             )
-                                        }
+                                        }).filter { !it.username.equals("admin", ignoreCase = true) }
 
                                         availableUsers.forEach { user ->
                                             DropdownMenuItem(
@@ -627,7 +627,7 @@ fun DeviceCheckInDialog(
 
                             HorizontalDivider()
 
-                            val availableUsers = if (users.isNotEmpty()) {
+                            val availableUsers = (if (users.isNotEmpty()) {
                                 users
                             } else {
                                 listOf(
@@ -636,7 +636,7 @@ fun DeviceCheckInDialog(
                                     UserDto(id = 3, username = "ashraf", role = "EMPLOYEE"),
                                     UserDto(id = 4, username = "emon", role = "EMPLOYEE")
                                 )
-                            }
+                            }).filter { !it.username.equals("admin", ignoreCase = true) }
 
                             availableUsers.forEach { user ->
                                 DropdownMenuItem(

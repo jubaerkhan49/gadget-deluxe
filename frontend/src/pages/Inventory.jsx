@@ -34,7 +34,8 @@ import {
   DeleteOutline as DeleteIcon,
   Visibility as ViewIcon,
   Clear as ClearIcon,
-  MoreVert as MoreVertIcon
+  MoreVert as MoreVertIcon,
+  Refresh as RefreshIcon
 } from '@mui/icons-material';
 import { formatNumber, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
@@ -86,22 +87,44 @@ export default function Inventory() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchInventory();
     fetchUsers();
+
+    // Auto-sync every 5 seconds to seamlessly reflect mobile updates live
+    const interval = setInterval(() => {
+      fetchInventory(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
-  const fetchInventory = async () => {
+  const fetchInventory = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await deviceApi.getAll();
       setDevices(res.data.results || res.data || []);
     } catch (err) {
       console.error(err);
-      enqueueSnackbar('Failed to load inventory', { variant: 'error' });
+      if (!silent) {
+        enqueueSnackbar('Failed to load inventory', { variant: 'error' });
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
+    }
+  };
+
+  const handleManualRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await Promise.all([fetchInventory(true), fetchUsers()]);
+      enqueueSnackbar('Inventory synced live', { variant: 'success', autoHideDuration: 1500 });
+    } catch (err) {
+      enqueueSnackbar('Failed to sync data', { variant: 'error' });
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -236,12 +259,36 @@ export default function Inventory() {
             Manage, filter and audit active mobile phone assets ({filteredDevices.length} active)
           </Typography>
         </div>
-        <Stack direction="row" spacing={1.5}>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <Tooltip title="Live Sync / Refresh">
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleManualRefresh}
+              disabled={refreshing}
+              startIcon={
+                <RefreshIcon
+                  fontSize="small"
+                  sx={{
+                    animation: refreshing ? 'spin 0.8s linear infinite' : 'none',
+                    '@keyframes spin': {
+                      '0%': { transform: 'rotate(0deg)' },
+                      '100%': { transform: 'rotate(360deg)' }
+                    }
+                  }}
+                />
+              }
+              sx={{ fontWeight: 600, borderRadius: 2 }}
+            >
+              {refreshing ? 'Syncing...' : 'Sync'}
+            </Button>
+          </Tooltip>
           <Button
             variant="outlined"
             startIcon={exporting ? <CircularProgress size={16} color="inherit" /> : <ExportIcon />}
             onClick={handleExportCSV}
             disabled={exporting}
+            sx={{ borderRadius: 2 }}
           >
             {exporting ? 'Exporting...' : 'Export CSV'}
           </Button>
@@ -250,6 +297,7 @@ export default function Inventory() {
             color="primary"
             startIcon={<AddIcon />}
             onClick={() => setAddDeviceOpen(true)}
+            sx={{ borderRadius: 2 }}
           >
             Add Device
           </Button>
@@ -312,16 +360,16 @@ export default function Inventory() {
             </FormControl>
 
             <FormControl size="small" sx={{ minWidth: 170, width: { xs: '100%', md: 'auto' } }}>
-              <InputLabel>Assigned Owner</InputLabel>
+              <InputLabel>Assigned To</InputLabel>
               <Select
                 value={selectedOwner}
-                label="Assigned Owner"
+                label="Assigned To"
                 onChange={(e) => {
                   setSelectedOwner(e.target.value);
                   setPage(0);
                 }}
               >
-                <MenuItem value="ALL">All Owners</MenuItem>
+                <MenuItem value="ALL">All Assignees</MenuItem>
                 {nonAdminUsers.map((u) => (
                   <MenuItem key={u.id} value={u.id}>
                     {u.username}
