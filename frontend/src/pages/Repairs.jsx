@@ -30,6 +30,7 @@ import {
   Schedule as InProgressIcon,
   DeleteOutline as DeleteIcon,
   Check as CheckIcon,
+  CheckCircle as CheckCircleIcon,
   Clear as ClearIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
@@ -312,7 +313,7 @@ export default function Repairs() {
                 <TableCell sx={{ fontWeight: 700 }}>Returned Date</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Cost (BDT)</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 700, pr: 2.5, minWidth: 160 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -383,25 +384,73 @@ export default function Repairs() {
                       {getStatusChip(r.status)}
                     </TableCell>
 
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                        {r.status !== 'COMPLETED' && (
-                          <Tooltip title="Mark Completed & Move to In Stock">
+                    <TableCell align="right" sx={{ pr: 2.5, whiteSpace: 'nowrap' }}>
+                      <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+                        {r.status !== 'COMPLETED' ? (
+                          <Tooltip title="Mark Completed & Move to In Stock" arrow>
                             <Button
                               size="small"
-                              variant="outlined"
-                              color="success"
-                              startIcon={<CheckIcon />}
+                              variant="contained"
+                              startIcon={<CheckIcon sx={{ fontSize: '1.1rem !important' }} />}
                               onClick={() => handleMarkCompleted(r)}
-                              sx={{ textTransform: 'none', py: 0.3 }}
+                              sx={{
+                                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                                color: '#FFFFFF',
+                                fontWeight: 600,
+                                fontSize: '0.78rem',
+                                textTransform: 'none',
+                                px: 1.6,
+                                py: 0.5,
+                                borderRadius: '8px',
+                                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.25)',
+                                '&:hover': {
+                                  background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                                  boxShadow: '0 4px 10px rgba(16, 185, 129, 0.35)',
+                                }
+                              }}
                             >
                               Complete
                             </Button>
                           </Tooltip>
+                        ) : (
+                          <Tooltip title="Device repaired and returned to stock" arrow>
+                            <Chip
+                              size="small"
+                              icon={<CheckCircleIcon sx={{ fontSize: '0.95rem !important', color: '#16A34A !important' }} />}
+                              label="Returned"
+                              sx={{
+                                bgcolor: 'rgba(22, 163, 74, 0.08)',
+                                color: '#15803D',
+                                fontWeight: 600,
+                                fontSize: '0.73rem',
+                                borderRadius: '6px',
+                                border: '1px solid rgba(22, 163, 74, 0.2)',
+                                height: 28,
+                                px: 0.5
+                              }}
+                            />
+                          </Tooltip>
                         )}
-                        <Tooltip title="Delete Log">
-                          <IconButton size="small" color="error" onClick={() => handleDeleteRepair(r.id)}>
-                            <DeleteIcon fontSize="small" />
+                        <Tooltip title="Delete Repair Log" arrow>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteRepair(r.id)}
+                            sx={{
+                              color: '#DC2626',
+                              bgcolor: 'rgba(239, 68, 68, 0.06)',
+                              border: '1px solid rgba(239, 68, 68, 0.15)',
+                              borderRadius: '8px',
+                              p: 0.6,
+                              transition: 'all 0.15s ease-in-out',
+                              '&:hover': {
+                                bgcolor: '#DC2626',
+                                color: '#FFFFFF',
+                                borderColor: '#DC2626',
+                                boxShadow: '0 2px 6px rgba(220, 38, 38, 0.3)'
+                              }
+                            }}
+                          >
+                            <DeleteIcon sx={{ fontSize: '1.1rem' }} />
                           </IconButton>
                         </Tooltip>
                       </Stack>
