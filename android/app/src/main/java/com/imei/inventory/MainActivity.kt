@@ -73,7 +73,6 @@ class MainActivity : FragmentActivity() {
                     var showScannerDialog by remember { mutableStateOf(false) }
                     var scannedDeviceForCheckIn by remember { mutableStateOf<DeviceDto?>(null) }
                     var scannedImeiForAdd by remember { mutableStateOf<String?>(null) }
-                    var scannedImei2ForAdd by remember { mutableStateOf<String?>(null) }
 
                     val coroutineScope = rememberCoroutineScope()
                     val isLoading by mainViewModel.isLoading.collectAsState()
@@ -373,7 +372,6 @@ class MainActivity : FragmentActivity() {
                                         onSelectDevice = { dev -> selectedDeviceForDetail = dev },
                                         onOpenAddDevice = {
                                             scannedImeiForAdd = null
-                                            scannedImei2ForAdd = null
                                             showAddDeviceDialog = true
                                         },
                                         onOpenAddShipment = { showAddShipmentDialog = true }
@@ -384,7 +382,6 @@ class MainActivity : FragmentActivity() {
                                         onSelectDevice = { dev -> selectedDeviceForDetail = dev },
                                         onOpenAddDevice = {
                                             scannedImeiForAdd = null
-                                            scannedImei2ForAdd = null
                                             showAddDeviceDialog = true
                                         }
                                     )
@@ -435,12 +432,10 @@ class MainActivity : FragmentActivity() {
                                                 } else {
                                                     // NOT FOUND -> Open Add Device with pre-populated IMEI
                                                     scannedImeiForAdd = cleanImei
-                                                    scannedImei2ForAdd = result.secondaryImei
                                                     showAddDeviceDialog = true
                                                 }
                                             } catch (e: Exception) {
                                                 scannedImeiForAdd = cleanImei
-                                                scannedImei2ForAdd = result.secondaryImei
                                                 showAddDeviceDialog = true
                                             }
                                         }
@@ -501,11 +496,9 @@ class MainActivity : FragmentActivity() {
                         if (showAddDeviceDialog) {
                             AddDeviceDialog(
                                 initialImei = scannedImeiForAdd ?: "",
-                                initialImei2 = scannedImei2ForAdd ?: "",
                                 onDismiss = {
                                     showAddDeviceDialog = false
                                     scannedImeiForAdd = null
-                                    scannedImei2ForAdd = null
                                 },
                                 onSave = { newDevice ->
                                     mainViewModel.createDevice(
@@ -514,7 +507,6 @@ class MainActivity : FragmentActivity() {
                                         onSuccess = {
                                             showAddDeviceDialog = false
                                             scannedImeiForAdd = null
-                                            scannedImei2ForAdd = null
                                             mainViewModel.loadAllData(token)
                                         },
                                         onError = { /* show error */ }

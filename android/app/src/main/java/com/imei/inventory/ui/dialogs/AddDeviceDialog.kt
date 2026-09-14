@@ -17,12 +17,10 @@ import com.imei.inventory.data.model.DeviceDto
 @Composable
 fun AddDeviceDialog(
     initialImei: String = "",
-    initialImei2: String = "",
     onDismiss: () -> Unit,
     onSave: (DeviceDto) -> Unit
 ) {
     var imei by remember(initialImei) { mutableStateOf(initialImei) }
-    var imei2 by remember(initialImei2) { mutableStateOf(initialImei2) }
     var model by remember { mutableStateOf("") }
     var capacity by remember { mutableStateOf("128GB") }
     var color by remember { mutableStateOf("") }
@@ -64,19 +62,6 @@ fun AddDeviceDialog(
                     value = imei,
                     onValueChange = { imei = it },
                     label = { Text("Primary IMEI (Required)") },
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                OutlinedTextField(
-                    value = imei2,
-                    onValueChange = { imei2 = it },
-                    label = { Text("Secondary IMEI2 (Optional)") },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -191,7 +176,6 @@ fun AddDeviceDialog(
                     if (imei.isNotBlank() && model.isNotBlank()) {
                         val dev = DeviceDto(
                             imei = imei.trim(),
-                            imei2 = imei2.trim().ifBlank { null },
                             model = model.trim(),
                             capacity = capacity.ifBlank { null },
                             color = color.ifBlank { null },

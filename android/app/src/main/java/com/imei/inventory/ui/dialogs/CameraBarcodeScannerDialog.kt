@@ -48,7 +48,63 @@ data class ScannedBarcodeResult(
 fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
     val trimmed = raw.trim()
 
-    // 1. Regex pattern for structured text (strictly matching Primary IMEI, never IMEI2)
+    // 1. Line-by-line inspection for labeled IMEI (strictly avoiding IMEI2 / Secondary / eSIM)
+    val lines = trimmed.lines().map { it.trim() }.filter { it.isNotBlank() }
+    var detectedPrimaryImei: String? = null
+    var detectedImei2: String? = null
+    var detectedEid: String? = null
+
+    for (i in lines.indices) {
+        val line = lines[i]
+
+        // Check for EID
+        if (line.contains("EID", ignoreCase = true)) {
+            val digits = line.filter { it.isDigit() }
+            if (digits.length >= 20) {
+                detectedEid = digits
+            } else if (i + 1 < lines.size) {
+                val nextDigits = lines[i + 1].filter { it.isDigit() }
+                if (nextDigits.length >= 20) detectedEid = nextDigits
+            }
+        }
+
+        // Check for IMEI2 (Secondary)
+        if (line.contains("IMEI2", ignoreCase = true) || 
+            line.contains("IMEI 2", ignoreCase = true) || 
+            line.contains("eSIM", ignoreCase = true) || 
+            line.contains("Secondary", ignoreCase = true)) {
+            val digits = line.filter { it.isDigit() }
+            if (digits.length in 14..16) {
+                detectedImei2 = digits
+            } else if (i + 1 < lines.size) {
+                val nextDigits = lines[i + 1].filter { it.isDigit() }
+                if (nextDigits.length in 14..16) detectedImei2 = nextDigits
+            }
+            continue
+        }
+
+        // Check for Primary IMEI (must NOT contain 2 or Secondary)
+        if (line.contains("IMEI", ignoreCase = true) && !line.contains("2")) {
+            val digits = line.filter { it.isDigit() }
+            if (digits.length in 14..16) {
+                detectedPrimaryImei = digits
+            } else if (i + 1 < lines.size) {
+                val nextDigits = lines[i + 1].filter { it.isDigit() }
+                if (nextDigits.length in 14..16) detectedPrimaryImei = nextDigits
+            }
+        }
+    }
+
+    if (detectedPrimaryImei != null) {
+        return ScannedBarcodeResult(
+            primaryImei = detectedPrimaryImei,
+            secondaryImei = detectedImei2,
+            eid = detectedEid,
+            rawText = trimmed
+        )
+    }
+
+    // 2. Regex pattern for structured text
     val imeiRegex = Regex("""(?:\bIMEI\b|\bIMEI1\b|Primary\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
     val imei2Regex = Regex("""(?:\bIMEI2\b|Secondary\s*IMEI|eSIM\s*IMEI)\s*[:\-]?\s*(\d{14,16})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
     val eidRegex = Regex("""(?:\bEID\b)\s*[:\-]?\s*(\d{20,32})""", setOf(RegexOption.IGNORE_CASE, RegexOption.MULTILINE))
@@ -66,20 +122,21 @@ fun parseScannedBarcodeText(raw: String): ScannedBarcodeResult {
         )
     }
 
-    // 2. Find any 14-16 digit numbers in the text
+    // 3. Find any 14-16 digit numbers in the text (ignoring IMEI2 if known)
     val allNumbers = Regex("""\b\d{14,16}\b""").findAll(trimmed).map { it.value }.toList()
-    if (allNumbers.isNotEmpty()) {
+    val nonImei2Numbers = if (detectedImei2 != null) allNumbers.filter { it != detectedImei2 } else allNumbers
+    if (nonImei2Numbers.isNotEmpty()) {
         return ScannedBarcodeResult(
-            primaryImei = allNumbers[0],
-            secondaryImei = if (allNumbers.size > 1) allNumbers[1] else null,
+            primaryImei = nonImei2Numbers[0],
+            secondaryImei = detectedImei2,
             eid = eidMatch,
             rawText = trimmed
         )
     }
 
-    // 3. Clean any digits from raw barcode
+    // 4. Clean any digits from raw barcode
     val onlyDigits = trimmed.filter { it.isDigit() }
-    if (onlyDigits.length in 14..16) {
+    if (onlyDigits.length in 14..16 && onlyDigits != detectedImei2) {
         return ScannedBarcodeResult(
             primaryImei = onlyDigits,
             rawText = trimmed
@@ -357,9 +414,9 @@ fun CameraPreviewView(
                                 if (!hasDetected && visionText.text.isNotBlank()) {
                                     val parsed = parseScannedBarcodeText(visionText.text)
                                     // If OCR found a clear Primary IMEI (14-16 digits matching IMEI label)
-                                    if (parsed.primaryImei.length in 14..16 && parsed.primaryImei != visionText.text.trim()) {
+                                    if (parsed.primaryImei.length in 14..16) {
                                         hasDetected = true
-                                        onBarcodeDetected(visionText.text)
+                                        onBarcodeDetected(parsed.primaryImei)
                                         return@addOnSuccessListener
                                     }
                                 }
@@ -376,8 +433,8 @@ fun CameraPreviewView(
 
                                             if (imeiBarcodes.isNotEmpty() && !hasDetected) {
                                                 // If multiple barcodes are in frame, top one is always Primary IMEI
-                                                val primary = imeiBarcodes[0].rawValue
-                                                if (!primary.isNullOrBlank()) {
+                                                val primary = imeiBarcodes[0].rawValue?.filter { it.isDigit() }
+                                                if (!primary.isNullOrBlank() && primary.length in 14..16) {
                                                     hasDetected = true
                                                     onBarcodeDetected(primary)
                                                 }
