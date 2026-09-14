@@ -112,7 +112,7 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
             } else {
                 // Find horizontally aligned number on the right (same row)
                 val aligned = allLines.firstOrNull { other ->
-                    other != item && other.digits.length in 14..16 && abs(other.centerY - item.centerY) <= (item.height * 2.5).coerceAtLeast(40)
+                    other != item && other.digits.length in 14..16 && abs(other.centerY - item.centerY) <= (item.height * 2.5).toInt().coerceAtLeast(40)
                 }
                 if (aligned != null) {
                     detectedImei2Set.add(aligned.digits)
@@ -136,7 +136,7 @@ fun parseVisionText(visionText: Text): ScannedBarcodeResult {
             } else {
                 // Find horizontally aligned number on the right (same row)
                 val aligned = allLines.firstOrNull { other ->
-                    other != item && other.digits.length in 14..16 && !detectedImei2Set.contains(other.digits) && abs(other.centerY - item.centerY) <= (item.height * 2.5).coerceAtLeast(40)
+                    other != item && other.digits.length in 14..16 && !detectedImei2Set.contains(other.digits) && abs(other.centerY - item.centerY) <= (item.height * 2.5).toInt().coerceAtLeast(40)
                 }
                 if (aligned != null) {
                     detectedPrimaryImei = aligned.digits
