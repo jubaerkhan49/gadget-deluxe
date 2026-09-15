@@ -43,7 +43,7 @@ class DeviceViewSet(viewsets.ModelViewSet):
     serializer_class = DeviceSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['current_status', 'demo_unit', 'refurbished', 'purchase_country', 'icloud_status']
+    filterset_fields = ['current_status', 'current_shipment', 'demo_unit', 'refurbished', 'purchase_country', 'icloud_status']
     search_fields = ['imei', 'imei2', 'serial_number', 'meid', 'model', 'model_description']
     ordering_fields = ['created_at', 'updated_at', 'model', 'battery_health']
 
