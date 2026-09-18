@@ -337,6 +337,44 @@ fun DeviceDetailDialog(
                         }
                     }
                 }
+
+                // Notes Section (below Update Device Status)
+                if (!device.notes.isNullOrBlank() || (device.isB2B && !device.b2bIssueNotes.isNullOrBlank())) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                RoundedCornerShape(10.dp)
+                            )
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = "Notes / Remarks:",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        if (!device.notes.isNullOrBlank()) {
+                            Text(
+                                text = device.notes,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                lineHeight = 18.sp
+                            )
+                        }
+                        if (device.isB2B && !device.b2bIssueNotes.isNullOrBlank()) {
+                            Text(
+                                text = "B2B Issue: ${device.b2bIssueNotes}",
+                                color = Color(0xFFDC2626),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
+                }
             }
         },
         confirmButton = {
@@ -460,6 +498,7 @@ fun EditDeviceSpecsDialog(
             } ?: ""
         )
     }
+    var notes by remember { mutableStateOf(device.notes ?: "") }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -552,6 +591,17 @@ fun EditDeviceSpecsDialog(
                         shape = RoundedCornerShape(10.dp)
                     )
                 }
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes / Remarks") },
+                    placeholder = { Text("e.g. Camera lens replaced, minor scratch...") },
+                    minLines = 2,
+                    maxLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                )
             }
         },
         confirmButton = {
@@ -566,6 +616,7 @@ fun EditDeviceSpecsDialog(
                     if (device.currentStatus == "SOLD") {
                         updates["selling_price"] = sellingPrice.toDoubleOrNull()
                     }
+                    updates["notes"] = notes.trim().ifEmpty { null }
 
                     onSave(updates)
                     onDismiss()
