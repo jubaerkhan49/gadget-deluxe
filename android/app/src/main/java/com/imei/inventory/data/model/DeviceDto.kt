@@ -73,6 +73,9 @@ data class ShipmentDto(
     val country: String? = null,
     val notes: String? = null,
     @SerializedName("devices_count") val devicesCount: Int = 0,
+    @SerializedName("pending_devices_count") val pendingDevicesCount: Int = 0,
+    @SerializedName("received_devices_count") val receivedDevicesCount: Int = 0,
+    @SerializedName("is_archived") val isArchived: Boolean = false,
     @SerializedName("created_at") val createdAt: String? = null
 )
 
