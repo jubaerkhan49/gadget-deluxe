@@ -219,8 +219,14 @@ export default function ShipmentDetailDialog({
 
   if (!shipment) return null;
 
+  const totalDeviceCount = devices.length || shipment.devices_count || 0;
   const inStockCount = devices.filter((d) => d.current_status === 'IN_STOCK').length;
   const waitingCount = devices.filter((d) => d.current_status === 'WAITING_SHIPMENT').length;
+
+  const totalBuyingValue = devices.reduce((sum, d) => sum + (Number(d.buying_price) || 0), 0);
+  const avgUnitCost = totalDeviceCount > 0 ? (totalBuyingValue / totalDeviceCount) : 0;
+  const shippingCost = Number(shipment.net_shipping_cost ?? shipment.shipping_cost) || 0;
+  const unitShippingCost = Number(shipment.unit_shipping_cost) || (totalDeviceCount > 0 ? (shippingCost / totalDeviceCount) : 0);
 
   return (
     <>
@@ -345,7 +351,7 @@ export default function ShipmentDetailDialog({
                   TOTAL DEVICES
                 </Typography>
                 <Typography variant="h5" fontWeight={800}>
-                  {shipment.device_count || devices.length}
+                  {totalDeviceCount}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {inStockCount} In Stock • {waitingCount} Waiting
@@ -359,10 +365,10 @@ export default function ShipmentDetailDialog({
                   TOTAL VALUE (BDT)
                 </Typography>
                 <Typography variant="h5" fontWeight={800} color="primary.main">
-                  {formatNumber(shipment.total_cost)}
+                  {formatNumber(totalBuyingValue)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Avg: {formatNumber(shipment.average_unit_cost)} / unit
+                  Avg: {formatNumber(avgUnitCost)} / unit
                 </Typography>
               </Paper>
             </Grid>
@@ -373,10 +379,10 @@ export default function ShipmentDetailDialog({
                   SHIPPING COST (BDT)
                 </Typography>
                 <Typography variant="h5" fontWeight={800}>
-                  {formatNumber(shipment.shipping_cost_bdt)}
+                  {formatNumber(shippingCost)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Weight: {shipment.weight_kg ? `${shipment.weight_kg} kg` : 'N/A'}
+                  Unit Shipping: {formatNumber(unitShippingCost)}
                 </Typography>
               </Paper>
             </Grid>
@@ -387,10 +393,18 @@ export default function ShipmentDetailDialog({
                   STATUS
                 </Typography>
                 <Box sx={{ mt: 0.5 }}>
-                  <StatusBadge status={shipment.status} />
+                  {waitingCount === 0 && totalDeviceCount > 0 ? (
+                    <Chip size="small" label="In Stock in BD" color="success" sx={{ fontWeight: 700 }} />
+                  ) : inStockCount === 0 && totalDeviceCount > 0 ? (
+                    <Chip size="small" label="Waiting Shipment" color="warning" sx={{ fontWeight: 700 }} />
+                  ) : inStockCount > 0 && waitingCount > 0 ? (
+                    <Chip size="small" label={`Partial (${inStockCount}/${totalDeviceCount} in BD)`} color="info" sx={{ fontWeight: 700 }} />
+                  ) : (
+                    <StatusBadge status={shipment.status || 'WAITING_SHIPMENT'} />
+                  )}
                 </Box>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                  Ship Date: {shipment.ship_date || 'N/A'}
+                  Receive (CN): {shipment.receive_date || 'N/A'}
                 </Typography>
               </Paper>
             </Grid>
