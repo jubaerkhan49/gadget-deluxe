@@ -14,6 +14,7 @@ import Sales from './pages/Sales';
 import Repairs from './pages/Repairs';
 import Archive from './pages/Archive';
 import SickwParser from './pages/SickwParser';
+import B2B from './pages/B2B';
 
 export const ColorModeContext = createContext({ toggleColorMode: () => {}, mode: 'dark' });
 
@@ -77,6 +78,7 @@ export default function App() {
                 <Route index element={<Dashboard />} />
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="inventory" element={<Inventory />} />
+                <Route path="b2b" element={<B2B />} />
                 <Route path="shipments" element={<Shipments />} />
                 <Route path="sales" element={<Sales />} />
                 <Route path="repairs" element={<Repairs />} />

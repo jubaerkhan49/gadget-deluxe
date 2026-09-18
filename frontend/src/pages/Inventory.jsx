@@ -104,8 +104,9 @@ export default function Inventory() {
   const fetchInventory = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const res = await deviceApi.getAll();
-      setDevices(res.data.results || res.data || []);
+      const res = await deviceApi.getAll({ is_b2b: false });
+      const allDevs = res.data.results || res.data || [];
+      setDevices(allDevs.filter((d) => !d.is_b2b));
     } catch (err) {
       console.error(err);
       if (!silent) {

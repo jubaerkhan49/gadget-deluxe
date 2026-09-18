@@ -70,6 +70,8 @@ class RepairSerializer(serializers.ModelSerializer):
     device_color = serializers.CharField(source='device.color', read_only=True)
     device_capacity = serializers.CharField(source='device.capacity', read_only=True)
     device_variant = serializers.CharField(source='device.variant', read_only=True)
+    device_is_b2b = serializers.BooleanField(source='device.is_b2b', read_only=True)
+    device_b2b_shop_name = serializers.CharField(source='device.b2b_shop_name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
     class Meta:
@@ -118,6 +120,10 @@ class DeviceSerializer(serializers.ModelSerializer):
     shipment_agent = serializers.CharField(source='current_shipment.shipping_company', read_only=True, default=None)
     shipment_receive_date_cn = serializers.DateField(source='current_shipment.receive_date', read_only=True, default=None)
 
+    # B2B calculated fields
+    b2b_repair_cost = serializers.SerializerMethodField()
+    b2b_profit = serializers.SerializerMethodField()
+
     # Nested audit & history relations
     assignments = DeviceAssignmentSerializer(many=True, read_only=True)
     history = DeviceHistorySerializer(many=True, read_only=True)
@@ -132,12 +138,32 @@ class DeviceSerializer(serializers.ModelSerializer):
 
     def get_selling_price(self, obj):
         try:
+            if obj.is_b2b and obj.b2b_selling_price is not None:
+                return float(obj.b2b_selling_price)
             if obj.current_status != 'SOLD':
                 return None
             sale = obj.sales.order_by('-sale_date').first()
             if sale and sale.selling_price is not None:
                 return float(sale.selling_price)
             return None
+        except Exception:
+            return None
+
+    def get_b2b_repair_cost(self, obj):
+        try:
+            costs = obj.repairs.aggregate(total=models.Sum('repair_cost'))['total']
+            return float(costs or 0.0)
+        except Exception:
+            return 0.0
+
+    def get_b2b_profit(self, obj):
+        try:
+            if not obj.is_b2b or obj.b2b_selling_price is None:
+                return None
+            selling = float(obj.b2b_selling_price or 0)
+            buying = float(obj.buying_price or 0)
+            repairs = self.get_b2b_repair_cost(obj)
+            return round(selling - buying - repairs, 2)
         except Exception:
             return None
 

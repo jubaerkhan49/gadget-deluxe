@@ -76,11 +76,20 @@ export default function Repairs() {
         returned_date: today
       });
       if (repair.device) {
-        await deviceApi.update(repair.device, {
+        const updateData = {
           current_status: 'IN_STOCK'
-        });
+        };
+        if (repair.device_is_b2b) {
+          updateData.b2b_status = 'IN_INVENTORY';
+        }
+        await deviceApi.update(repair.device, updateData);
       }
-      enqueueSnackbar('Repair marked as Completed and device returned to In Stock!', { variant: 'success' });
+      enqueueSnackbar(
+        repair.device_is_b2b
+          ? 'Repair completed! Device returned to B2B stock.'
+          : 'Repair marked as Completed and device returned to In Stock!',
+        { variant: 'success' }
+      );
       fetchRepairs();
     } catch (err) {
       enqueueSnackbar('Failed to update repair status', { variant: 'error' });
@@ -333,9 +342,24 @@ export default function Repairs() {
                 paginatedRepairs.map((r) => (
                   <TableRow key={r.id} hover>
                     <TableCell>
-                      <Typography variant="body2" fontWeight={700}>
-                        {r.device_model || 'Unknown Device'}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" fontWeight={700}>
+                          {r.device_model || 'Unknown Device'}
+                        </Typography>
+                        {r.device_is_b2b && (
+                          <Chip
+                            size="small"
+                            label={`B2B: ${r.device_b2b_shop_name || 'Client'}`}
+                            sx={{
+                              bgcolor: 'rgba(147, 51, 234, 0.12)',
+                              color: '#9333EA',
+                              fontWeight: 700,
+                              fontSize: '0.7rem',
+                              height: 20
+                            }}
+                          />
+                        )}
+                      </Box>
                       {(r.device_capacity || r.device_color) && (
                         <Typography variant="caption" color="text.secondary" display="block">
                           {r.device_capacity} {r.device_color ? `• ${r.device_color}` : ''}

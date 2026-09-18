@@ -88,9 +88,13 @@ export default function AddRepairDialog({ open, onClose, onRepairCreated, initia
       const res = await repairApi.create(payload);
 
       // Automatically move device status to UNDER_REPAIR
-      await deviceApi.update(selectedDevice.id, {
+      const deviceUpdate = {
         current_status: 'UNDER_REPAIR'
-      });
+      };
+      if (selectedDevice.is_b2b) {
+        deviceUpdate.b2b_status = 'SENT_FOR_REPAIR';
+      }
+      await deviceApi.update(selectedDevice.id, deviceUpdate);
 
       enqueueSnackbar('Repair record created successfully!', { variant: 'success' });
       if (onRepairCreated) onRepairCreated(res.data);

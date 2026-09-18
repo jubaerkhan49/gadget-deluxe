@@ -85,11 +85,68 @@ class Device(TimeStampedModel):
         help_text="Date device was physically received in Bangladesh"
     )
 
+    # B2B (Business to Business) Client Device Tracking
+    is_b2b = models.BooleanField(
+        default=False,
+        db_index=True,
+        help_text="True if this device is an order for an external business/shop (excluded from personal investment)"
+    )
+    b2b_shop_name = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True,
+        db_index=True,
+        help_text="Name of the client shop/company"
+    )
+    b2b_delivery_date = models.DateField(
+        blank=True,
+        null=True,
+        help_text="Date delivered to client business holder"
+    )
+    b2b_has_issues = models.BooleanField(
+        default=False,
+        help_text="True if client or diagnostic reported issues"
+    )
+    b2b_issue_notes = models.TextField(
+        blank=True,
+        null=True,
+        help_text="Description of reported hardware/cosmetic issues"
+    )
+    b2b_selling_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        blank=True,
+        null=True,
+        help_text="Agreed selling/invoice price to client shop in BDT"
+    )
+    b2b_status = models.CharField(
+        max_length=30,
+        default='PENDING_DELIVERY',
+        blank=True,
+        null=True,
+        help_text="B2B lifecycle status: PENDING_DELIVERY, DELIVERED, UNDER_REPAIR, RETURNED"
+    )
+
     class Meta:
         ordering = ['-created_at']
 
+    @property
+    def b2b_repair_cost(self):
+        """Total repair expense incurred on this device."""
+        from apps.repairs.models import Repair
+        costs = self.repairs.aggregate(total=models.Sum('repair_cost'))['total']
+        return costs or Decimal('0.00')
+
+    @property
+    def b2b_profit(self):
+        """Profit = Selling Price - Buying Price - Total Repair Costs."""
+        if not self.is_b2b or self.b2b_selling_price is None:
+            return None
+        return (self.b2b_selling_price or Decimal('0.00')) - (self.buying_price or Decimal('0.00')) - self.b2b_repair_cost
+
     def __str__(self) -> str:
-        return f"{self.model} - IMEI: {self.imei} ({self.get_current_status_display()})"
+        b2b_tag = f" [B2B: {self.b2b_shop_name}]" if self.is_b2b else ""
+        return f"{self.model} - IMEI: {self.imei}{b2b_tag} ({self.get_current_status_display()})"
 
 class CarrierInformation(TimeStampedModel):
     """Detailed carrier lock & policy information for a device."""

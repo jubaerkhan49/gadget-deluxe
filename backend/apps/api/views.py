@@ -43,8 +43,8 @@ class DeviceViewSet(viewsets.ModelViewSet):
     serializer_class = DeviceSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['current_status', 'current_shipment', 'demo_unit', 'refurbished', 'purchase_country', 'icloud_status']
-    search_fields = ['imei', 'imei2', 'serial_number', 'meid', 'model', 'model_description']
+    filterset_fields = ['current_status', 'current_shipment', 'is_b2b', 'b2b_shop_name', 'b2b_status', 'b2b_has_issues', 'demo_unit', 'refurbished', 'purchase_country', 'icloud_status']
+    search_fields = ['imei', 'imei2', 'serial_number', 'meid', 'model', 'model_description', 'b2b_shop_name']
     ordering_fields = ['created_at', 'updated_at', 'model', 'battery_health']
 
     @action(detail=False, methods=['get'])
@@ -655,14 +655,22 @@ class AnalyticsStatsAPIView(APIView):
         total_revenue = sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
         total_profit = sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
 
-        # 2. Total Investment this month: total devices added/registered this month * buying price
-        devices_invested_qs = Device.objects.filter(created_at__gte=start_dt, created_at__lte=end_dt)
+        # 2. Total Investment this month: total self-invested devices added/registered this month * buying price (excluding B2B)
+        devices_invested_qs = Device.objects.filter(is_b2b=False, created_at__gte=start_dt, created_at__lte=end_dt)
         total_devices_invested = devices_invested_qs.count()
         total_investment = devices_invested_qs.aggregate(total=models.Sum('buying_price'))['total'] or Decimal('0.00')
         avg_investment_per_device = (
             (total_investment / Decimal(str(total_devices_invested))).quantize(Decimal('0.01'))
             if total_devices_invested > 0 else Decimal('0.00')
         )
+
+        # B2B Client Analytics this month
+        b2b_qs = Device.objects.filter(is_b2b=True, created_at__gte=start_dt, created_at__lte=end_dt)
+        b2b_total_count = b2b_qs.count()
+        b2b_delivered_count = b2b_qs.filter(b2b_status='DELIVERED').count()
+        b2b_pending_count = b2b_qs.filter(b2b_status='PENDING_DELIVERY').count()
+        b2b_repair_count = b2b_qs.filter(b2b_status='UNDER_REPAIR').count()
+        b2b_total_profit = sum([float(d.b2b_profit) for d in b2b_qs if d.b2b_profit is not None])
 
         # 3. Monthly Repair Costs
         repairs_qs = Repair.objects.filter(
@@ -829,7 +837,12 @@ class AnalyticsStatsAPIView(APIView):
                 'repairs_completed': repairs_completed,
                 'total_shipping_cost': float(total_shipping_cost),
                 'shipment_batches_count': shipment_batches_count,
-                'shipment_devices_count': shipment_devices_count
+                'shipment_devices_count': shipment_devices_count,
+                'b2b_total_count': b2b_total_count,
+                'b2b_delivered_count': b2b_delivered_count,
+                'b2b_pending_count': b2b_pending_count,
+                'b2b_repair_count': b2b_repair_count,
+                'b2b_total_profit': float(b2b_total_profit)
             },
             'best_seller': best_seller,
             'sellers_ranking': sellers_list,

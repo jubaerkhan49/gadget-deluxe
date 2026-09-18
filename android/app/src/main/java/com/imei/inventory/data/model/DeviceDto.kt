@@ -38,6 +38,15 @@ data class DeviceDto(
     @SerializedName("shipment_supplier") val shipmentSupplier: String? = null,
     @SerializedName("shipment_agent") val shipmentAgent: String? = null,
     @SerializedName("shipment_receive_date_cn") val shipmentReceiveDateCn: String? = null,
+    @SerializedName("is_b2b") val isB2B: Boolean = false,
+    @SerializedName("b2b_shop_name") val b2bShopName: String? = null,
+    @SerializedName("b2b_delivery_date") val b2bDeliveryDate: String? = null,
+    @SerializedName("b2b_has_issues") val b2bHasIssues: Boolean = false,
+    @SerializedName("b2b_issue_notes") val b2bIssueNotes: String? = null,
+    @SerializedName("b2b_selling_price") val b2bSellingPrice: Double? = null,
+    @SerializedName("b2b_status") val b2bStatus: String? = null,
+    @SerializedName("b2b_repair_cost") val b2bRepairCost: Double? = null,
+    @SerializedName("b2b_profit") val b2bProfit: Double? = null,
     @SerializedName("created_at") val createdAt: String? = null
 )
 

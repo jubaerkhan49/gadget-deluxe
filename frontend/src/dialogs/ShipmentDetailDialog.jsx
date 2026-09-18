@@ -22,7 +22,10 @@ import {
   CircularProgress,
   DialogContentText,
   TextField,
-  Tooltip
+  Tooltip,
+  FormControlLabel,
+  Switch,
+  InputAdornment
 } from '@mui/material';
 import {
   LocalShipping as ShippingIcon,
@@ -33,7 +36,8 @@ import {
   Storefront as StockIcon,
   Store as SupplierIcon,
   FlightTakeoff as AgentIcon,
-  CalendarToday as DateIcon
+  CalendarToday as DateIcon,
+  Storefront as B2bIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { deviceApi, shipmentApi } from '../api/client';
@@ -56,6 +60,18 @@ export default function ShipmentDetailDialog({
   const [receivingAll, setReceivingAll] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  // B2B Move Modal state
+  const [b2bDialogOpen, setB2bDialogOpen] = useState(false);
+  const [selectedB2bDevice, setSelectedB2bDevice] = useState(null);
+  const [movingToB2b, setMovingToB2b] = useState(false);
+  const [b2bForm, setB2bForm] = useState({
+    b2b_shop_name: '',
+    b2b_delivery_date: '',
+    b2b_selling_price: '',
+    b2b_has_issues: false,
+    b2b_issue_notes: ''
+  });
 
   useEffect(() => {
     if (open && shipment) {
@@ -135,6 +151,54 @@ export default function ShipmentDetailDialog({
       enqueueSnackbar('Failed to receive all devices', { variant: 'error' });
     } finally {
       setReceivingAll(false);
+    }
+  };
+
+  const handleOpenMoveToB2b = (device) => {
+    setSelectedB2bDevice(device);
+    setB2bForm({
+      b2b_shop_name: device.b2b_shop_name || '',
+      b2b_delivery_date: device.b2b_delivery_date || new Date().toISOString().split('T')[0],
+      b2b_selling_price: device.b2b_selling_price !== null && device.b2b_selling_price !== undefined ? device.b2b_selling_price : '',
+      b2b_has_issues: Boolean(device.b2b_has_issues),
+      b2b_issue_notes: device.b2b_issue_notes || ''
+    });
+    setB2bDialogOpen(true);
+  };
+
+  const handleSubmitMoveToB2b = async (e) => {
+    e.preventDefault();
+    if (!selectedB2bDevice) return;
+
+    if (!b2bForm.b2b_shop_name.trim()) {
+      enqueueSnackbar('Please enter the Shop / Business Name', { variant: 'warning' });
+      return;
+    }
+
+    try {
+      setMovingToB2b(true);
+      const payload = {
+        is_b2b: true,
+        b2b_shop_name: b2bForm.b2b_shop_name.trim(),
+        b2b_delivery_date: b2bForm.b2b_delivery_date || null,
+        b2b_selling_price: b2bForm.b2b_selling_price !== '' ? Number(b2bForm.b2b_selling_price) : null,
+        b2b_has_issues: b2bForm.b2b_has_issues,
+        b2b_issue_notes: b2bForm.b2b_has_issues ? b2bForm.b2b_issue_notes.trim() : '',
+        b2b_status: 'IN_INVENTORY',
+        current_status: 'IN_STOCK',
+        received_date_bd: selectedB2bDevice.received_date_bd || new Date().toISOString().split('T')[0]
+      };
+
+      await deviceApi.update(selectedB2bDevice.id, payload);
+      enqueueSnackbar(`Device assigned to ${b2bForm.b2b_shop_name} and moved to B2B!`, { variant: 'success' });
+      setB2bDialogOpen(false);
+      fetchDevices();
+      if (onShipmentUpdated) onShipmentUpdated();
+    } catch (err) {
+      console.error(err);
+      enqueueSnackbar(err.response?.data?.detail || 'Failed to move device to B2B', { variant: 'error' });
+    } finally {
+      setMovingToB2b(false);
     }
   };
 
@@ -251,10 +315,11 @@ export default function ShipmentDetailDialog({
               size="small"
               startIcon={<EditIcon />}
               onClick={() => {
-                if (onEditShipment) onEditShipment(shipment);
+                onClose();
+                onEditShipment(shipment);
               }}
             >
-              Edit
+              Edit Shipment
             </Button>
             <Button
               variant="outlined"
@@ -265,66 +330,94 @@ export default function ShipmentDetailDialog({
             >
               Delete
             </Button>
-            <IconButton onClick={onClose} edge="end">
+            <IconButton onClick={onClose} size="small" sx={{ ml: 1 }}>
               <CloseIcon />
             </IconButton>
           </Stack>
         </DialogTitle>
 
         <DialogContent sx={{ p: 3 }}>
-          {/* Top Metrics Cards */}
+          {/* Shipment Key Metrics */}
           <Grid container spacing={2} sx={{ mb: 3 }}>
-            <Grid item xs={6} sm={3}>
+            <Grid item xs={12} sm={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary">Total Devices</Typography>
-                <Typography variant="h6" fontWeight={700}>
-                  {devices.length || shipment.devices_count || 0}
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  TOTAL DEVICES
+                </Typography>
+                <Typography variant="h5" fontWeight={800}>
+                  {shipment.device_count || devices.length}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {inStockCount} In Stock • {waitingCount} Waiting
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6} sm={3}>
+
+            <Grid item xs={12} sm={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary">Received Date (CN)</Typography>
-                <Typography variant="h6" fontWeight={700}>
-                  {shipment.receive_date || '—'}
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  TOTAL VALUE (BDT)
+                </Typography>
+                <Typography variant="h5" fontWeight={800} color="primary.main">
+                  {formatNumber(shipment.total_cost)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Avg: {formatNumber(shipment.average_unit_cost)} / unit
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6} sm={3}>
+
+            <Grid item xs={12} sm={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary">In Stock in BD</Typography>
-                <Typography variant="h6" fontWeight={700} color="success.main">
-                  {inStockCount}
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  SHIPPING COST (BDT)
+                </Typography>
+                <Typography variant="h5" fontWeight={800}>
+                  {formatNumber(shipment.shipping_cost_bdt)}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Weight: {shipment.weight_kg ? `${shipment.weight_kg} kg` : 'N/A'}
                 </Typography>
               </Paper>
             </Grid>
-            <Grid item xs={6} sm={3}>
+
+            <Grid item xs={12} sm={3}>
               <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary">Waiting Shipment</Typography>
-                <Typography variant="h6" fontWeight={700} color="warning.main">
-                  {waitingCount}
+                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                  STATUS
+                </Typography>
+                <Box sx={{ mt: 0.5 }}>
+                  <StatusBadge status={shipment.status} />
+                </Box>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                  Ship Date: {shipment.ship_date || 'N/A'}
                 </Typography>
               </Paper>
             </Grid>
           </Grid>
 
-          {/* Action Bar */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="subtitle1" fontWeight={700}>
-              Batch Devices ({devices.length})
-            </Typography>
+          {/* Batch Devices Header */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={800}>
+                Batch Devices ({devices.length})
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Track status and assign incoming devices directly to regular stock or client B2B orders.
+              </Typography>
+            </Box>
+
             {waitingCount > 0 && (
               <Button
                 variant="contained"
                 color="success"
                 size="small"
-                startIcon={receivingAll ? <CircularProgress size={16} sx={{ color: '#ffffff' }} /> : <StockIcon sx={{ color: '#ffffff !important' }} />}
-                disabled={receivingAll}
+                startIcon={receivingAll ? <CircularProgress size={16} color="inherit" /> : <StockIcon />}
                 onClick={handleReceiveAllToStock}
+                disabled={receivingAll}
                 sx={{
-                  color: '#ffffff !important',
-                  fontWeight: 700,
-                  '& .MuiSvgIcon-root': { color: '#ffffff !important' }
+                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  fontWeight: 700
                 }}
               >
                 Receive All to BD Stock ({waitingCount})
@@ -354,7 +447,7 @@ export default function ShipmentDetailDialog({
                     <TableCell sx={{ fontWeight: 700 }}>Buying Cost</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Receive Date (BD)</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, minWidth: 200 }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -395,19 +488,64 @@ export default function ShipmentDetailDialog({
                         />
                       </TableCell>
                       <TableCell align="right">
-                        {dev.current_status === 'WAITING_SHIPMENT' ? (
-                          <Tooltip title="Mark Received in BD (In Stock)">
+                        {dev.is_b2b ? (
+                          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                            <Chip
+                              size="small"
+                              label={`B2B: ${dev.b2b_shop_name || 'Client'}`}
+                              sx={{
+                                bgcolor: 'rgba(147, 51, 234, 0.12)',
+                                color: '#9333EA',
+                                fontWeight: 700,
+                                fontSize: '0.75rem'
+                              }}
+                            />
                             <Button
                               size="small"
-                              variant="outlined"
-                              color="success"
-                              onClick={() => handleMoveToInStock(dev.id)}
+                              variant="text"
+                              onClick={() => handleOpenMoveToB2b(dev)}
+                              sx={{ color: '#9333EA', fontWeight: 600, textTransform: 'none', px: 1, minWidth: 0 }}
                             >
-                              Receive BD
+                              Edit B2B
                             </Button>
-                          </Tooltip>
+                          </Box>
                         ) : (
-                          <Chip size="small" label="In BD" color="success" variant="outlined" />
+                          <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
+                            {dev.current_status === 'WAITING_SHIPMENT' ? (
+                              <Tooltip title="Mark Received in BD (Regular Stock)">
+                                <Button
+                                  size="small"
+                                  variant="outlined"
+                                  color="success"
+                                  onClick={() => handleMoveToInStock(dev.id)}
+                                >
+                                  Receive BD
+                                </Button>
+                              </Tooltip>
+                            ) : (
+                              <Chip size="small" label="In BD" color="success" variant="outlined" />
+                            )}
+                            <Tooltip title="Assign to B2B Client Order">
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<B2bIcon sx={{ fontSize: '1rem !important' }} />}
+                                onClick={() => handleOpenMoveToB2b(dev)}
+                                sx={{
+                                  color: '#9333EA',
+                                  borderColor: 'rgba(147, 51, 234, 0.5)',
+                                  fontWeight: 600,
+                                  textTransform: 'none',
+                                  '&:hover': {
+                                    borderColor: '#9333EA',
+                                    bgcolor: 'rgba(147, 51, 234, 0.08)'
+                                  }
+                                }}
+                              >
+                                Move to B2B
+                              </Button>
+                            </Tooltip>
+                          </Stack>
                         )}
                       </TableCell>
                     </TableRow>
@@ -420,6 +558,151 @@ export default function ShipmentDetailDialog({
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={onClose}>Close</Button>
         </DialogActions>
+      </Dialog>
+
+      {/* Move to B2B Confirmation / Setup Dialog */}
+      <Dialog
+        open={b2bDialogOpen}
+        onClose={() => setB2bDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <form onSubmit={handleSubmitMoveToB2b}>
+          <DialogTitle sx={{ pb: 1, borderBottom: 1, borderColor: 'divider' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 2,
+                  bgcolor: 'rgba(147, 51, 234, 0.12)',
+                  color: '#9333EA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <B2bIcon />
+              </Box>
+              <div>
+                <Typography variant="h6" fontWeight={800}>
+                  Move Device to B2B
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {selectedB2bDevice?.model} • IMEI: {selectedB2bDevice?.imei}
+                </Typography>
+              </div>
+            </Box>
+          </DialogTitle>
+
+          <DialogContent sx={{ pt: 2.5 }}>
+            <DialogContentText sx={{ mb: 2.5, fontSize: '0.85rem' }}>
+              Assigning this device to B2B ensures its cost is isolated from your personal capital investment while profits are tracked specifically for this client order.
+            </DialogContentText>
+
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Shop / Business Name"
+                  placeholder="e.g. Gadget Galaxy, Apple Arena"
+                  value={b2bForm.b2b_shop_name}
+                  onChange={(e) => setB2bForm((p) => ({ ...p, b2b_shop_name: e.target.value }))}
+                  required
+                  autoFocus
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="date"
+                  label="Target Delivery Date"
+                  value={b2bForm.b2b_delivery_date}
+                  onChange={(e) => setB2bForm((p) => ({ ...p, b2b_delivery_date: e.target.value }))}
+                  InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Selling Price (to Shop)"
+                  placeholder="0.00"
+                  value={b2bForm.b2b_selling_price}
+                  onChange={(e) => setB2bForm((p) => ({ ...p, b2b_selling_price: e.target.value }))}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start">৳</InputAdornment>
+                  }}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: b2bForm.b2b_has_issues ? 'error.main' : 'divider',
+                    bgcolor: (theme) => b2bForm.b2b_has_issues
+                      ? (theme.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.1)' : '#FEF2F2')
+                      : 'transparent'
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={b2bForm.b2b_has_issues}
+                        onChange={(e) => setB2bForm((p) => ({ ...p, b2b_has_issues: e.target.checked }))}
+                        color="error"
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" fontWeight={600}>
+                        {b2bForm.b2b_has_issues ? 'Device has Hardware Issues / Defects' : 'No Issues Reported'}
+                      </Typography>
+                    }
+                  />
+
+                  {b2bForm.b2b_has_issues && (
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={2}
+                      label="Issue Details / Defect Note"
+                      placeholder="e.g. Battery service required, broken glass..."
+                      value={b2bForm.b2b_issue_notes}
+                      onChange={(e) => setB2bForm((p) => ({ ...p, b2b_issue_notes: e.target.value }))}
+                      sx={{ mt: 1.5 }}
+                      required={b2bForm.b2b_has_issues}
+                    />
+                  )}
+                </Box>
+              </Grid>
+            </Grid>
+          </DialogContent>
+
+          <DialogActions sx={{ p: 2.5, borderTop: 1, borderColor: 'divider' }}>
+            <Button onClick={() => setB2bDialogOpen(false)} disabled={movingToB2b}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              disabled={movingToB2b}
+              startIcon={movingToB2b && <CircularProgress size={16} color="inherit" />}
+              sx={{
+                background: 'linear-gradient(135deg, #9333EA 0%, #7928CA 100%)',
+                '&:hover': {
+                  background: 'linear-gradient(135deg, #7E22CE 0%, #6B21A8 100%)'
+                }
+              }}
+            >
+              Move to B2B
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
 
       {/* Delete Shipment Confirmation Dialog */}
