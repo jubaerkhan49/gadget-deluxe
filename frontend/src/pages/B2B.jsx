@@ -38,15 +38,10 @@ import {
   Edit as EditIcon,
   Build as RepairIcon,
   CheckCircle as DeliveredIcon,
-  Warning as IssueIcon,
-  CheckCircleOutline as CleanIcon,
   DeleteOutline as DeleteIcon,
   BatteryChargingFull as BatteryIcon,
-  AttachMoney as MoneyIcon,
   CalendarToday as DateIcon,
-  Clear as ClearIcon,
-  LocalShipping as ShippingIcon,
-  Inventory2 as InventoryIcon
+  Clear as ClearIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { deviceApi } from '../api/client';
@@ -67,7 +62,6 @@ export default function B2B() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedShop, setSelectedShop] = useState('ALL');
-  const [selectedIssueFilter, setSelectedIssueFilter] = useState('ALL');
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -95,6 +89,7 @@ export default function B2B() {
     buying_price: '',
     b2b_selling_price: '',
     b2b_shop_name: '',
+    received_date_bd: new Date().toISOString().split('T')[0],
     b2b_delivery_date: new Date().toISOString().split('T')[0],
     battery_health: '',
     b2b_has_issues: false,
@@ -115,7 +110,6 @@ export default function B2B() {
       if (!silent) setLoading(true);
       const res = await deviceApi.getAll({ is_b2b: true });
       const allDevs = res.data.results || res.data || [];
-      // Additional safety filter for client-side
       setDevices(allDevs.filter((d) => d.is_b2b));
     } catch (err) {
       console.error(err);
@@ -141,18 +135,11 @@ export default function B2B() {
     return Array.from(shops).sort();
   }, [devices]);
 
-  // Key KPI metrics
+  // Key KPI metrics (Client-Safe)
   const totalB2B = devices.length;
-  const deliveredCount = devices.filter((d) => d.b2b_status === 'DELIVERED').length;
-  const underRepairCount = devices.filter((d) => d.b2b_status === 'SENT_FOR_REPAIR' || d.current_status === 'UNDER_REPAIR').length;
   const inInventoryCount = devices.filter((d) => d.b2b_status === 'IN_INVENTORY' && d.current_status !== 'UNDER_REPAIR').length;
-
-  const totalCalculatedProfit = useMemo(() => {
-    return devices.reduce((sum, d) => {
-      const profit = Number(d.b2b_profit) || 0;
-      return sum + profit;
-    }, 0);
-  }, [devices]);
+  const underRepairCount = devices.filter((d) => d.b2b_status === 'SENT_FOR_REPAIR' || d.current_status === 'UNDER_REPAIR').length;
+  const deliveredCount = devices.filter((d) => d.b2b_status === 'DELIVERED').length;
 
   // Filtering
   const filteredDevices = useMemo(() => {
@@ -169,27 +156,23 @@ export default function B2B() {
         if ((d.b2b_shop_name || '').trim().toLowerCase() !== selectedShop.toLowerCase()) return false;
       }
 
-      if (selectedIssueFilter !== 'ALL') {
-        if (selectedIssueFilter === 'ISSUES' && !d.b2b_has_issues) return false;
-        if (selectedIssueFilter === 'CLEAN' && d.b2b_has_issues) return false;
-      }
-
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
+        const orderIdStr = `b2b-${d.id}`.toLowerCase();
         const modelMatch = (d.model || '').toLowerCase().includes(q);
         const imeiMatch = (d.imei || '').toLowerCase().includes(q);
         const imei2Match = (d.imei2 || '').toLowerCase().includes(q);
         const serialMatch = (d.serial_number || '').toLowerCase().includes(q);
         const shopMatch = (d.b2b_shop_name || '').toLowerCase().includes(q);
-        const issueMatch = (d.b2b_issue_notes || '').toLowerCase().includes(q);
-        if (!modelMatch && !imeiMatch && !imei2Match && !serialMatch && !shopMatch && !issueMatch) {
+        const orderMatch = orderIdStr.includes(q) || String(d.id).includes(q);
+        if (!modelMatch && !imeiMatch && !imei2Match && !serialMatch && !shopMatch && !orderMatch) {
           return false;
         }
       }
 
       return true;
     });
-  }, [devices, selectedStatus, selectedShop, selectedIssueFilter, searchQuery]);
+  }, [devices, selectedStatus, selectedShop, searchQuery]);
 
   const paginatedDevices = useMemo(() => {
     return filteredDevices.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -264,13 +247,13 @@ export default function B2B() {
         b2b_selling_price: newDevice.b2b_selling_price !== '' ? Number(newDevice.b2b_selling_price) : null,
         battery_health: newDevice.battery_health !== '' ? parseInt(newDevice.battery_health, 10) : null,
         b2b_shop_name: newDevice.b2b_shop_name.trim(),
+        received_date_bd: newDevice.received_date_bd || new Date().toISOString().split('T')[0],
         b2b_delivery_date: newDevice.b2b_delivery_date || null,
         b2b_has_issues: newDevice.b2b_has_issues,
         b2b_issue_notes: newDevice.b2b_has_issues ? newDevice.b2b_issue_notes.trim() : '',
         is_b2b: true,
         b2b_status: 'IN_INVENTORY',
-        current_status: 'IN_STOCK',
-        received_date_bd: new Date().toISOString().split('T')[0]
+        current_status: 'IN_STOCK'
       };
 
       await deviceApi.create(payload);
@@ -285,6 +268,7 @@ export default function B2B() {
         buying_price: '',
         b2b_selling_price: '',
         b2b_shop_name: '',
+        received_date_bd: new Date().toISOString().split('T')[0],
         b2b_delivery_date: new Date().toISOString().split('T')[0],
         battery_health: '',
         b2b_has_issues: false,
@@ -381,7 +365,7 @@ export default function B2B() {
                 B2B (Business to Business)
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Client pre-orders, partner equipment, repair round-trips, and trade profits.
+                Client pre-orders, partner equipment, and delivery schedules.
               </Typography>
             </div>
           </Box>
@@ -418,9 +402,9 @@ export default function B2B() {
         </Stack>
       </Box>
 
-      {/* KPI Cards */}
+      {/* KPI Cards (Client Safe - 4 metrics) */}
       <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={6} md={2.4}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
               p: 2,
@@ -437,12 +421,12 @@ export default function B2B() {
               {totalB2B}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Client-funded equipment
+              Total registered equipment
             </Typography>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={2.4}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
               p: 2,
@@ -464,7 +448,7 @@ export default function B2B() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={2.4}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
               p: 2,
@@ -486,7 +470,7 @@ export default function B2B() {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={2.4}>
+        <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
               p: 2,
@@ -503,29 +487,7 @@ export default function B2B() {
               {deliveredCount}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Completed client orders
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={12} md={2.4}>
-          <Card
-            sx={{
-              p: 2,
-              borderRadius: 3,
-              border: 1,
-              borderColor: 'divider',
-              background: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : '#F0FDF4'
-            }}
-          >
-            <Typography variant="caption" color="text.secondary" fontWeight={700}>
-              TOTAL NET PROFIT
-            </Typography>
-            <Typography variant="h4" fontWeight={800} color="success.main" sx={{ my: 0.5 }}>
-              ৳ {totalCalculatedProfit.toLocaleString()}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Selling - Buying - Repairs
+              Completed shop handovers
             </Typography>
           </Card>
         </Grid>
@@ -534,11 +496,11 @@ export default function B2B() {
       {/* Filter Bar */}
       <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
               size="small"
-              placeholder="Search by Model, IMEI, Shop Name, or Issue..."
+              placeholder="Search by Order ID, Model, IMEI, or Shop Name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
@@ -558,7 +520,7 @@ export default function B2B() {
             />
           </Grid>
 
-          <Grid item xs={6} sm={4} md={2.6}>
+          <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Client Shop</InputLabel>
               <Select
@@ -576,7 +538,7 @@ export default function B2B() {
             </FormControl>
           </Grid>
 
-          <Grid item xs={6} sm={4} md={2.6}>
+          <Grid item xs={12} sm={6} md={3}>
             <FormControl fullWidth size="small">
               <InputLabel>Status</InputLabel>
               <Select
@@ -592,21 +554,6 @@ export default function B2B() {
               </Select>
             </FormControl>
           </Grid>
-
-          <Grid item xs={12} sm={4} md={2.8}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Diagnostic Condition</InputLabel>
-              <Select
-                value={selectedIssueFilter}
-                label="Diagnostic Condition"
-                onChange={(e) => setSelectedIssueFilter(e.target.value)}
-              >
-                <MenuItem value="ALL">All Conditions</MenuItem>
-                <MenuItem value="CLEAN">Clean (No Issues)</MenuItem>
-                <MenuItem value="ISSUES">Has Issues / Defects</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
         </Grid>
       </Paper>
 
@@ -616,13 +563,13 @@ export default function B2B() {
           <Table size="medium">
             <TableHead>
               <TableRow>
+                <TableCell sx={{ fontWeight: 700 }}>Order ID</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Device Model</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Client Shop</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Battery & Cycles</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Receive Date (BD)</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Delivery Date</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Diagnostics</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Pricing & Net Profit</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700, pr: 2.5, minWidth: 160 }}>Actions</TableCell>
               </TableRow>
@@ -650,13 +597,30 @@ export default function B2B() {
                 </TableRow>
               ) : (
                 paginatedDevices.map((dev) => {
-                  const buy = Number(dev.buying_price) || 0;
-                  const sell = Number(dev.b2b_selling_price) || 0;
-                  const repairs = Number(dev.b2b_repair_cost) || 0;
-                  const netProfit = Number(dev.b2b_profit) || (sell > 0 ? sell - buy - repairs : 0);
-
                   return (
                     <TableRow key={dev.id} hover>
+                      {/* Order ID */}
+                      <TableCell>
+                        <Box
+                          sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            px: 1,
+                            py: 0.4,
+                            borderRadius: 1.5,
+                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : '#F3F4F6',
+                            fontFamily: 'monospace',
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            color: 'text.primary',
+                            border: '1px solid',
+                            borderColor: 'divider'
+                          }}
+                        >
+                          #B2B-{dev.id.toString().padStart(4, '0')}
+                        </Box>
+                      </TableCell>
+
                       {/* Model & Specs */}
                       <TableCell>
                         <Typography variant="body2" fontWeight={700}>
@@ -736,53 +700,17 @@ export default function B2B() {
                         )}
                       </TableCell>
 
+                      {/* Receive Date (BD) */}
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={600}>
+                          {dev.received_date_bd || '—'}
+                        </Typography>
+                      </TableCell>
+
                       {/* Delivery Date */}
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
                           {dev.b2b_delivery_date || '—'}
-                        </Typography>
-                      </TableCell>
-
-                      {/* Diagnostics */}
-                      <TableCell>
-                        {dev.b2b_has_issues ? (
-                          <Tooltip title={dev.b2b_issue_notes || 'Defect reported'} arrow>
-                            <Chip
-                              size="small"
-                              icon={<IssueIcon sx={{ fontSize: '0.9rem !important' }} />}
-                              label="Issue Reported"
-                              sx={{
-                                bgcolor: 'rgba(239, 68, 68, 0.12)',
-                                color: '#DC2626',
-                                fontWeight: 700,
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
-                                cursor: 'help'
-                              }}
-                            />
-                          </Tooltip>
-                        ) : (
-                          <Chip
-                            size="small"
-                            icon={<CleanIcon sx={{ fontSize: '0.9rem !important' }} />}
-                            label="Clean"
-                            sx={{
-                              bgcolor: 'rgba(16, 185, 129, 0.1)',
-                              color: '#059669',
-                              fontWeight: 700,
-                              border: '1px solid rgba(16, 185, 129, 0.25)'
-                            }}
-                          />
-                        )}
-                      </TableCell>
-
-                      {/* Pricing & Net Profit */}
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={800} color="success.main">
-                          {sell > 0 ? `+৳ ${netProfit.toLocaleString()}` : '—'}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Sell: {sell ? formatNumber(sell) : '—'} • Buy: {buy ? formatNumber(buy) : '—'}
-                          {repairs > 0 && ` • Rep: ${formatNumber(repairs)}`}
                         </Typography>
                       </TableCell>
 
@@ -1001,20 +929,11 @@ export default function B2B() {
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
-                  type="number"
-                  label="Buying Cost (৳)"
-                  value={newDevice.buying_price}
-                  onChange={(e) => setNewDevice((p) => ({ ...p, buying_price: e.target.value }))}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  type="number"
-                  label="Selling Price to Shop (৳)"
-                  value={newDevice.b2b_selling_price}
-                  onChange={(e) => setNewDevice((p) => ({ ...p, b2b_selling_price: e.target.value }))}
+                  type="date"
+                  label="Receive Date (BD)"
+                  value={newDevice.received_date_bd}
+                  onChange={(e) => setNewDevice((p) => ({ ...p, received_date_bd: e.target.value }))}
+                  InputLabelProps={{ shrink: true }}
                 />
               </Grid>
 
@@ -1026,6 +945,26 @@ export default function B2B() {
                   value={newDevice.b2b_delivery_date}
                   onChange={(e) => setNewDevice((p) => ({ ...p, b2b_delivery_date: e.target.value }))}
                   InputLabelProps={{ shrink: true }}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Buying Cost (৳) [Optional]"
+                  value={newDevice.buying_price}
+                  onChange={(e) => setNewDevice((p) => ({ ...p, buying_price: e.target.value }))}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Selling Price to Shop (৳) [Optional]"
+                  value={newDevice.b2b_selling_price}
+                  onChange={(e) => setNewDevice((p) => ({ ...p, b2b_selling_price: e.target.value }))}
                 />
               </Grid>
 

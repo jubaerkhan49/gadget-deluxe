@@ -653,7 +653,7 @@ class AnalyticsStatsAPIView(APIView):
         sales_qs = Sale.objects.filter(sale_date__gte=start_dt, sale_date__lte=end_dt).select_related('device', 'seller')
         total_sales_count = sales_qs.count()
         total_revenue = sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
-        total_profit = sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
+        retail_profit = sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
 
         # 2. Total Investment this month: total self-invested devices added/registered this month * buying price (excluding B2B)
         devices_invested_qs = Device.objects.filter(is_b2b=False, created_at__gte=start_dt, created_at__lte=end_dt)
@@ -671,6 +671,10 @@ class AnalyticsStatsAPIView(APIView):
         b2b_pending_count = b2b_qs.filter(b2b_status='PENDING_DELIVERY').count()
         b2b_repair_count = b2b_qs.filter(b2b_status='UNDER_REPAIR').count()
         b2b_total_profit = sum([float(d.b2b_profit) for d in b2b_qs if d.b2b_profit is not None])
+        b2b_profit_dec = Decimal(str(round(b2b_total_profit, 2)))
+
+        # Silently add B2B trade profits into overall business Total Profit
+        total_profit = retail_profit + b2b_profit_dec
 
         # 3. Monthly Repair Costs
         repairs_qs = Repair.objects.filter(
