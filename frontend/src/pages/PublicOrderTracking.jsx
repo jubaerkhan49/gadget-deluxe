@@ -283,9 +283,9 @@ export default function PublicOrderTracking() {
                       size="small"
                       sx={{
                         fontWeight: 800,
-                        bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.1)'),
-                        color: 'success.main',
-                        border: '1px solid rgba(16, 185, 129, 0.3)'
+                        bgcolor: '#10B981',
+                        color: '#ffffff',
+                        boxShadow: '0 2px 6px rgba(16, 185, 129, 0.35)'
                       }}
                     />
                   </Box>
@@ -408,7 +408,7 @@ export default function PublicOrderTracking() {
                         label={`Delivered on ${order.actual_delivery || order.actual_delivery_date}`}
                         size="small"
                         color="success"
-                        sx={{ fontWeight: 800, fontSize: '0.72rem' }}
+                        sx={{ fontWeight: 800, fontSize: '0.72rem', color: '#ffffff' }}
                       />
                     )}
                   </Box>
@@ -546,7 +546,7 @@ export default function PublicOrderTracking() {
                               label="CURRENT STAGE"
                               size="small"
                               color="primary"
-                              sx={{ fontWeight: 800, fontSize: '0.65rem', height: 20 }}
+                              sx={{ fontWeight: 800, fontSize: '0.65rem', height: 20, color: '#ffffff' }}
                             />
                           )}
                           {isLastStep && (isCompleted || isCurrent) && (
@@ -554,7 +554,7 @@ export default function PublicOrderTracking() {
                               label="DELIVERED"
                               size="small"
                               color="success"
-                              sx={{ fontWeight: 900, fontSize: '0.65rem', height: 20 }}
+                              sx={{ fontWeight: 900, fontSize: '0.65rem', height: 20, color: '#ffffff' }}
                             />
                           )}
                         </Box>

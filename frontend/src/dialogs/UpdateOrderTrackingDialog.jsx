@@ -257,7 +257,7 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
             color="info"
             startIcon={<OpenIcon fontSize="small" />}
             onClick={openCustomerPortal}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
+            sx={{ borderRadius: 2, textTransform: 'none', color: '#ffffff', fontWeight: 700 }}
           >
             Customer View
           </Button>
@@ -423,7 +423,7 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
                     label={`${marginPct}%`}
                     size="small"
                     color={profit >= 0 ? 'success' : 'error'}
-                    sx={{ height: 20, fontSize: '0.7rem', fontWeight: 800, ml: 0.5 }}
+                    sx={{ height: 20, fontSize: '0.7rem', fontWeight: 800, ml: 0.5, color: '#ffffff' }}
                   />
                 </Typography>
               </Box>

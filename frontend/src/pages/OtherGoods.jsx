@@ -644,9 +644,8 @@ export default function OtherGoods() {
                               fontSize: '0.7rem',
                               height: 20,
                               fontWeight: 700,
-                              bgcolor: (t) =>
-                                t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.1)',
-                              color: 'primary.main'
+                              bgcolor: '#2563EB',
+                              color: '#ffffff'
                             }}
                           />
                         </Stack>
@@ -675,7 +674,8 @@ export default function OtherGoods() {
                             sx={{
                               fontWeight: 800,
                               fontSize: '0.68rem',
-                              height: 20
+                              height: 20,
+                              color: '#ffffff'
                             }}
                           />
                         </Box>
@@ -720,7 +720,7 @@ export default function OtherGoods() {
                             label="PAID"
                             size="small"
                             color="success"
-                            sx={{ fontWeight: 800, fontSize: '0.68rem', height: 18, mt: 0.3 }}
+                            sx={{ fontWeight: 800, fontSize: '0.68rem', height: 18, mt: 0.3, color: '#ffffff' }}
                           />
                         )}
                       </TableCell>
@@ -733,9 +733,9 @@ export default function OtherGoods() {
                           sx={{
                             fontWeight: 700,
                             fontSize: '0.75rem',
-                            bgcolor: `${stageInfo.color}20`,
-                            color: stageInfo.color,
-                            border: `1px solid ${stageInfo.color}50`
+                            bgcolor: stageInfo.color,
+                            color: '#ffffff',
+                            boxShadow: `0 2px 6px ${stageInfo.color}35`
                           }}
                         />
                         {order.tracking_notes && (

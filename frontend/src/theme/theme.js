@@ -22,21 +22,25 @@ export const getAppTheme = (mode = 'dark') => {
         main: '#10b981', // Emerald
         light: '#34d399',
         dark: '#059669',
+        contrastText: '#ffffff',
       },
       warning: {
         main: '#f59e0b', // Amber
         light: '#fbbf24',
         dark: '#d97706',
+        contrastText: '#ffffff',
       },
       info: {
         main: '#06b6d4', // Cyan
         light: '#22d3ee',
         dark: '#0891b2',
+        contrastText: '#ffffff',
       },
       error: {
         main: '#ef4444', // Red
         light: '#f87171',
         dark: '#dc2626',
+        contrastText: '#ffffff',
       },
       background: {
         default: isDark ? '#0f172a' : '#f8fafc',
@@ -74,9 +78,27 @@ export const getAppTheme = (mode = 'dark') => {
           },
           containedPrimary: {
             background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+            color: '#ffffff',
+          },
+          containedSecondary: {
+            background: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)',
+            color: '#ffffff',
           },
           containedSuccess: {
             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+            color: '#ffffff',
+          },
+          containedInfo: {
+            background: 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)',
+            color: '#ffffff',
+          },
+          containedWarning: {
+            background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+            color: '#ffffff',
+          },
+          containedError: {
+            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+            color: '#ffffff',
           },
         },
       },
@@ -112,6 +134,27 @@ export const getAppTheme = (mode = 'dark') => {
           root: {
             fontWeight: 600,
             borderRadius: 8,
+          },
+          filled: {
+            color: '#ffffff',
+          },
+          filledPrimary: {
+            color: '#ffffff',
+          },
+          filledSecondary: {
+            color: '#ffffff',
+          },
+          filledSuccess: {
+            color: '#ffffff',
+          },
+          filledInfo: {
+            color: '#ffffff',
+          },
+          filledWarning: {
+            color: '#ffffff',
+          },
+          filledError: {
+            color: '#ffffff',
           },
         },
       },

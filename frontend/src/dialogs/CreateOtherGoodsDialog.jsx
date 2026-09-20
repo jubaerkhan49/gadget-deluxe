@@ -432,7 +432,7 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
                     label={`${marginPct}%`}
                     size="small"
                     color={profit >= 0 ? 'success' : 'error'}
-                    sx={{ height: 20, fontSize: '0.7rem', fontWeight: 800, ml: 0.5 }}
+                    sx={{ height: 20, fontSize: '0.7rem', fontWeight: 800, ml: 0.5, color: '#ffffff' }}
                   />
                 </Typography>
               </Box>
