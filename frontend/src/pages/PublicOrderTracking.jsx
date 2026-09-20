@@ -313,7 +313,7 @@ export default function PublicOrderTracking() {
               <Divider sx={{ my: 2 }} />
 
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={6} sm={3}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                     CUSTOMER NAME
                   </Typography>
@@ -322,7 +322,7 @@ export default function PublicOrderTracking() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={6} sm={3}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                     ORDER DATE
                   </Typography>
@@ -331,16 +331,93 @@ export default function PublicOrderTracking() {
                   </Typography>
                 </Grid>
 
-                <Grid item xs={12} sm={4}>
+                <Grid item xs={6} sm={3}>
                   <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
                     ESTIMATED DELIVERY
                   </Typography>
-                  <Typography variant="body2" fontWeight={700} color={order.estimated_delivery ? 'primary.main' : 'text.secondary'}>
-                    {order.actual_delivery ? `Delivered: ${order.actual_delivery}` : (order.estimated_delivery || 'In Progress')}
+                  <Typography
+                    variant="body2"
+                    fontWeight={700}
+                    color={(order.estimated_delivery || order.estimated_delivery_date) ? 'primary.main' : 'text.secondary'}
+                  >
+                    {order.estimated_delivery || order.estimated_delivery_date || 'In Progress / Sourcing'}
                   </Typography>
+                </Grid>
+
+                <Grid item xs={6} sm={3}>
+                  <Typography variant="caption" color="text.secondary" fontWeight={600} display="block">
+                    DELIVERY STATUS
+                  </Typography>
+                  {(order.stage === 'DELIVERED' || order.tracking_status === 'DELIVERED' || order.actual_delivery || order.actual_delivery_date) ? (
+                    <Typography
+                      variant="body2"
+                      fontWeight={800}
+                      color="success.main"
+                      sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                    >
+                      <CheckIcon fontSize="small" sx={{ fontSize: '1rem' }} />
+                      Delivered: {order.actual_delivery || order.actual_delivery_date || 'Completed'}
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2" fontWeight={700} color="warning.main">
+                      In Transit (Step {currentStepIndex + 1} of 8)
+                    </Typography>
+                  )}
                 </Grid>
               </Grid>
             </Paper>
+
+            {/* Delivered Celebration Banner when Step 8 reached */}
+            {(order.stage === 'DELIVERED' || order.tracking_status === 'DELIVERED') && (
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 2.5,
+                  mb: 3,
+                  borderRadius: 3,
+                  background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(16, 185, 129, 0.08) 100%)',
+                  border: '1.5px solid rgba(34, 197, 94, 0.5)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
+                    color: '#fff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: '0 0 20px rgba(34, 197, 94, 0.6)',
+                    flexShrink: 0
+                  }}
+                >
+                  <CheckIcon fontSize="medium" />
+                </Box>
+                <Box sx={{ flex: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                    <Typography variant="subtitle1" fontWeight={900} color="success.main">
+                      🎉 Package Delivered Successfully!
+                    </Typography>
+                    {(order.actual_delivery || order.actual_delivery_date) && (
+                      <Chip
+                        label={`Delivered on ${order.actual_delivery || order.actual_delivery_date}`}
+                        size="small"
+                        color="success"
+                        sx={{ fontWeight: 800, fontSize: '0.72rem' }}
+                      />
+                    )}
+                  </Box>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 0.3 }}>
+                    Your package has been safely handed over. Thank you for shopping with Gadget Deluxe!
+                  </Typography>
+                </Box>
+              </Paper>
+            )}
 
             {/* 8-Stage Visual Progress Timeline */}
             <Paper
@@ -365,6 +442,7 @@ export default function PublicOrderTracking() {
                   const isCompleted = idx < currentStepIndex;
                   const isCurrent = idx === currentStepIndex;
                   const isPending = idx > currentStepIndex;
+                  const isLastStep = idx === STAGES.length - 1;
 
                   return (
                     <Box
@@ -373,11 +451,11 @@ export default function PublicOrderTracking() {
                         display: 'flex',
                         alignItems: 'flex-start',
                         position: 'relative',
-                        pb: idx === STAGES.length - 1 ? 0 : 3.5
+                        pb: isLastStep ? 0 : 3.5
                       }}
                     >
                       {/* Vertical connecting line */}
-                      {idx !== STAGES.length - 1 && (
+                      {!isLastStep && (
                         <Box
                           sx={{
                             position: 'absolute',
@@ -402,17 +480,23 @@ export default function PublicOrderTracking() {
                           mr: 2.5,
                           zIndex: 2,
                           flexShrink: 0,
-                          bgcolor: isCompleted
+                          bgcolor: isLastStep && (isCompleted || isCurrent)
+                            ? '#22C55E'
+                            : isCompleted
                             ? '#10B981'
                             : isCurrent
                             ? '#3B82F6'
                             : (t) => (t.palette.mode === 'dark' ? '#1E293B' : '#E2E8F0'),
                           color: isCompleted || isCurrent ? '#fff' : 'text.disabled',
-                          boxShadow: isCurrent ? '0 0 16px rgba(59, 130, 246, 0.6)' : 'none',
+                          boxShadow: isLastStep && (isCompleted || isCurrent)
+                            ? '0 0 20px rgba(34, 197, 94, 0.8)'
+                            : isCurrent
+                            ? '0 0 16px rgba(59, 130, 246, 0.6)'
+                            : 'none',
                           transition: 'all 0.3s ease'
                         }}
                       >
-                        {isCompleted ? (
+                        {isCompleted || (isLastStep && isCurrent) ? (
                           <CheckIcon fontSize="small" />
                         ) : isCurrent ? (
                           <CurrentStepIcon fontSize="small" />
@@ -424,21 +508,53 @@ export default function PublicOrderTracking() {
                       </Box>
 
                       {/* Step Content */}
-                      <Box sx={{ pt: 0.5, flex: 1 }}>
+                      <Box
+                        sx={{
+                          pt: 0.5,
+                          flex: 1,
+                          ...(isLastStep && (isCompleted || isCurrent)
+                            ? {
+                                p: 1.5,
+                                borderRadius: 2.5,
+                                bgcolor: (t) =>
+                                  t.palette.mode === 'dark'
+                                    ? 'rgba(34, 197, 94, 0.12)'
+                                    : 'rgba(34, 197, 94, 0.08)',
+                                border: '1px solid rgba(34, 197, 94, 0.3)'
+                              }
+                            : {})
+                        }}
+                      >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                           <Typography
                             variant="subtitle2"
-                            fontWeight={isCurrent ? 800 : isCompleted ? 700 : 500}
-                            color={isCurrent ? 'primary.main' : isCompleted ? 'text.primary' : 'text.disabled'}
+                            fontWeight={isLastStep && (isCompleted || isCurrent) ? 900 : isCurrent ? 800 : isCompleted ? 700 : 500}
+                            color={
+                              isLastStep && (isCompleted || isCurrent)
+                                ? 'success.main'
+                                : isCurrent
+                                ? 'primary.main'
+                                : isCompleted
+                                ? 'text.primary'
+                                : 'text.disabled'
+                            }
                           >
                             Step {idx + 1}: {st.title}
                           </Typography>
-                          {isCurrent && (
+                          {isCurrent && !isLastStep && (
                             <Chip
                               label="CURRENT STAGE"
                               size="small"
                               color="primary"
                               sx={{ fontWeight: 800, fontSize: '0.65rem', height: 20 }}
+                            />
+                          )}
+                          {isLastStep && (isCompleted || isCurrent) && (
+                            <Chip
+                              label="DELIVERED"
+                              size="small"
+                              color="success"
+                              sx={{ fontWeight: 900, fontSize: '0.65rem', height: 20 }}
                             />
                           )}
                         </Box>
@@ -447,7 +563,9 @@ export default function PublicOrderTracking() {
                           color={isPending ? 'text.disabled' : 'text.secondary'}
                           sx={{ display: 'block', mt: 0.2 }}
                         >
-                          {st.desc}
+                          {isLastStep && (isCompleted || isCurrent) && (order.actual_delivery || order.actual_delivery_date)
+                            ? `Package successfully received by customer on ${order.actual_delivery || order.actual_delivery_date}`
+                            : st.desc}
                         </Typography>
                       </Box>
                     </Box>
