@@ -22,9 +22,12 @@ from apps.repairs.models import Repair, RepairStatus
 from apps.sickw.models import SickwReport
 from apps.sickw.parser import SickwParser
 
+from apps.orders.models import OtherGoodsOrder, TrackingStage, ProductCategory
+
 from .serializers import (
     UserSerializer, DeviceSerializer, ShipmentSerializer, SupplierSerializer,
-    CustomerSerializer, SaleSerializer, RepairSerializer, SickwReportSerializer
+    CustomerSerializer, SaleSerializer, RepairSerializer, SickwReportSerializer,
+    OtherGoodsOrderSerializer, PublicOrderTrackingSerializer
 )
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -853,5 +856,111 @@ class AnalyticsStatsAPIView(APIView):
             'top_models': top_models,
             'daily_trends': daily_trends
         })
+
+
+class OtherGoodsOrderViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for managing Other Goods custom orders (Laptops, AirPods, Gadgets, Cosmetics, etc.)
+    with an 8-stage tracking pipeline, payment tracking, and due calculation.
+    """
+    queryset = OtherGoodsOrder.objects.all()
+    serializer_class = OtherGoodsOrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['stage', 'category']
+    search_fields = ['order_id', 'customer_name', 'customer_phone', 'product_name', 'tracking_notes']
+    ordering_fields = ['order_date', 'created_at', 'updated_at', 'product_price', 'payment_amount']
+    ordering = ['-created_at']
+
+    def perform_create(self, serializer):
+        order = serializer.save()
+        if not order.timeline_events:
+            order.timeline_events = [{
+                'stage': order.stage,
+                'stage_display': order.get_stage_display(),
+                'timestamp': timezone.now().isoformat(),
+                'note': order.tracking_notes or 'Order registered into system'
+            }]
+            order.save(update_fields=['timeline_events'])
+
+    def perform_update(self, serializer):
+        old_order = OtherGoodsOrder.objects.get(pk=serializer.instance.pk)
+        old_stage = old_order.stage
+        old_payment = old_order.payment_amount
+        old_shipping = old_order.shipping_cost
+
+        order = serializer.save()
+
+        # Check if timeline event should be added
+        events = list(order.timeline_events or [])
+        stage_changed = (old_stage != order.stage)
+        payment_changed = (old_payment != order.payment_amount)
+        shipping_changed = (old_shipping != order.shipping_cost)
+
+        if stage_changed or payment_changed or shipping_changed:
+            note_parts = []
+            if stage_changed:
+                note_parts.append(f"Stage changed to {order.get_stage_display()}")
+            if payment_changed:
+                note_parts.append(f"Payment updated to BDT {order.payment_amount} (Due: BDT {order.due_amount})")
+            if shipping_changed:
+                note_parts.append(f"Shipping cost updated to BDT {order.shipping_cost}")
+            if order.tracking_notes and order.tracking_notes != old_order.tracking_notes:
+                note_parts.append(f"Note: {order.tracking_notes}")
+
+            events.append({
+                'stage': order.stage,
+                'stage_display': order.get_stage_display(),
+                'timestamp': timezone.now().isoformat(),
+                'note': " | ".join(note_parts) if note_parts else (order.tracking_notes or "Order updated")
+            })
+            order.timeline_events = events
+            order.save(update_fields=['timeline_events'])
+
+
+class PublicOrderTrackingAPIView(APIView):
+    """
+    Public unauthenticated API endpoint for customers to track their order status,
+    view the 8-stage progress timeline, shipping details, and paid vs due amounts.
+    Accepts ?query= or ?order_id= or ?phone=.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        query = (
+            request.query_params.get('query') or
+            request.query_params.get('order_id') or
+            request.query_params.get('phone') or
+            request.query_params.get('q') or ''
+        ).strip()
+
+        if not query:
+            return Response({
+                "found": False,
+                "message": "Please provide an Order ID (e.g. OG-2026-XXXX) or Customer Phone Number."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # 1. Match exact or prefix Order ID
+        orders = OtherGoodsOrder.objects.filter(
+            models.Q(order_id__iexact=query) |
+            models.Q(order_id__icontains=query) |
+            models.Q(customer_phone__iexact=query) |
+            models.Q(customer_phone__icontains=query)
+        ).order_by('-created_at')
+
+        if not orders.exists():
+            return Response({
+                "found": False,
+                "message": f"No order found matching '{query}'. Please check your Order ID or Phone Number."
+            }, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = PublicOrderTrackingSerializer(orders, many=True)
+        return Response({
+            "found": True,
+            "count": orders.count(),
+            "orders": serializer.data,
+            "order": serializer.data[0]
+        }, status=status.HTTP_200_OK)
+
 
 

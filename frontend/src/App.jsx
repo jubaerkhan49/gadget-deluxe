@@ -15,6 +15,8 @@ import Repairs from './pages/Repairs';
 import Archive from './pages/Archive';
 import SickwParser from './pages/SickwParser';
 import B2B from './pages/B2B';
+import OtherGoods from './pages/OtherGoods';
+import PublicOrderTracking from './pages/PublicOrderTracking';
 
 export const ColorModeContext = createContext({ toggleColorMode: () => {}, mode: 'dark' });
 
@@ -66,6 +68,7 @@ export default function App() {
           <AuthProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/track" element={<PublicOrderTracking />} />
 
               <Route
                 path="/"
@@ -79,6 +82,7 @@ export default function App() {
                 <Route path="analytics" element={<Analytics />} />
                 <Route path="inventory" element={<Inventory />} />
                 <Route path="b2b" element={<B2B />} />
+                <Route path="other-goods" element={<OtherGoods />} />
                 <Route path="shipments" element={<Shipments />} />
                 <Route path="sales" element={<Sales />} />
                 <Route path="repairs" element={<Repairs />} />

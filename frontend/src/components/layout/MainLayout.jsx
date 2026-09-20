@@ -36,6 +36,7 @@ import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import ArchiveIcon from '@mui/icons-material/Inventory2';
 import InsightsIcon from '@mui/icons-material/Insights';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 
 import { useAuth } from '../../context/AuthContext';
 import { ColorModeContext } from '../../App';
@@ -50,6 +51,7 @@ const NAV_ITEMS = [
   { text: 'Analytics', path: '/analytics', icon: <InsightsIcon /> },
   { text: 'Inventory', path: '/inventory', icon: <PhoneAndroidIcon /> },
   { text: 'B2B', path: '/b2b', icon: <StorefrontIcon /> },
+  { text: 'Other Goods', path: '/other-goods', icon: <ShoppingBagIcon /> },
   { text: 'Shipments', path: '/shipments', icon: <LocalShippingIcon /> },
   { text: 'Sales', path: '/sales', icon: <ReceiptLongIcon /> },
   { text: 'Repairs', path: '/repairs', icon: <BuildIcon /> },

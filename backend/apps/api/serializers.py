@@ -6,6 +6,7 @@ from apps.customers.models import Customer
 from apps.sales.models import Sale
 from apps.repairs.models import Repair
 from apps.sickw.models import SickwReport
+from apps.orders.models import OtherGoodsOrder
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
@@ -227,3 +228,51 @@ class ShipmentSerializer(serializers.ModelSerializer):
             return str(val) if val is not None else "0.00"
         except Exception:
             return "0.00"
+
+class OtherGoodsOrderSerializer(serializers.ModelSerializer):
+    tracking_status_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    total_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    due_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    payment_status = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = OtherGoodsOrder
+        fields = '__all__'
+
+class PublicOrderTrackingSerializer(serializers.ModelSerializer):
+    tracking_status_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    total_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    due_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    payment_status = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = OtherGoodsOrder
+        fields = [
+            'order_id',
+            'customer_name',
+            'customer_phone',
+            'customer_address',
+            'product_name',
+            'category',
+            'category_display',
+            'product_specs',
+            'product_price',
+            'shipping_cost',
+            'total_amount',
+            'payment_amount',
+            'due_amount',
+            'payment_status',
+            'order_date',
+            'payment_date',
+            'estimated_delivery_date',
+            'actual_delivery_date',
+            'tracking_status',
+            'tracking_status_display',
+            'carrier_tracking_number',
+            'tracking_notes',
+            'timeline_events',
+            'created_at',
+            'updated_at'
+        ]

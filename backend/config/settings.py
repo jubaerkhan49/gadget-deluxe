@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'apps.repairs',
     'apps.sickw',
     'apps.dashboard',
+    'apps.orders',
     'apps.api',
 ]
 

@@ -106,4 +106,14 @@ export const customerApi = {
   create: (data) => api.post('/api/customers/', data),
 };
 
+export const otherGoodsApi = {
+  getAll: (params) => api.get('/api/other-goods/', { params }),
+  getById: (id) => api.get(`/api/other-goods/${id}/`),
+  create: (data) => api.post('/api/other-goods/', data),
+  update: (id, data) => api.patch(`/api/other-goods/${id}/`, data),
+  delete: (id) => api.delete(`/api/other-goods/${id}/`),
+  trackPublic: (query) => api.get('/api/public/track-order/', { params: { query } }),
+};
+
 export default api;
+

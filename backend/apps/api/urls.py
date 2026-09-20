@@ -7,7 +7,7 @@ from .views import (
     UserViewSet, DeviceViewSet, ShipmentViewSet, CustomerViewSet,
     SaleViewSet, RepairViewSet, SickwViewSet,
     SickwParseAPIView, ExportDevicesCSVView, DashboardStatsAPIView,
-    AnalyticsStatsAPIView
+    AnalyticsStatsAPIView, OtherGoodsOrderViewSet, PublicOrderTrackingAPIView
 )
 
 app_name = 'api'
@@ -20,6 +20,7 @@ router.register(r'customers', CustomerViewSet, basename='customer')
 router.register(r'sales', SaleViewSet, basename='sale')
 router.register(r'repairs', RepairViewSet, basename='repair')
 router.register(r'sickw', SickwViewSet, basename='sickw_report')
+router.register(r'other-goods', OtherGoodsOrderViewSet, basename='other_goods')
 
 urlpatterns = [
     # JWT Auth Endpoints
@@ -30,6 +31,9 @@ urlpatterns = [
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='api:schema'), name='swagger-ui'),
     path('redoc/', SpectacularRedocView.as_view(url_name='api:schema'), name='redoc'),
+
+    # Public Order Tracking Portal (Unauthenticated)
+    path('public/track-order/', PublicOrderTrackingAPIView.as_view(), name='public_track_order'),
 
     # Specialized Utility Endpoints
     path('dashboard/stats/', DashboardStatsAPIView.as_view(), name='dashboard_stats'),
