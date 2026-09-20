@@ -156,6 +156,7 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
       if (onOrderCreated) {
         onOrderCreated(res.data);
       }
+      onClose();
     } catch (err) {
       console.error('Error creating other goods order:', err);
       let errMsg = 'Failed to create order. Check inputs.';

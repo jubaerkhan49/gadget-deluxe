@@ -44,12 +44,12 @@ import { otherGoodsApi } from '../api/client';
 const STAGES = [
   { id: 'ORDER_CONFIRMED', title: 'Order Confirmed', desc: 'Order placed & recorded', step: 0 },
   { id: 'PAYMENT_RECEIVED', title: 'Payment Made', desc: 'Advance payment received', step: 1 },
-  { id: 'PRODUCT_PURCHASED', title: 'Product Purchased', desc: 'Sourced from China store/supplier', step: 2 },
+  { id: 'PRODUCT_PURCHASED', title: 'Product Purchased', desc: 'Sourced from chinese supplier', step: 2 },
   { id: 'SHIPPED_TO_CN_WAREHOUSE', title: 'Shipped to CN Warehouse', desc: 'Domestic China logistics', step: 3 },
   { id: 'RECEIVED_AT_CN_WAREHOUSE', title: 'Received at CN Warehouse', desc: 'Verified & packed at China warehouse', step: 4 },
-  { id: 'SHIPPED_TO_BD', title: 'Shipped to BD (In Transit)', desc: 'International air/sea freight to BD', step: 5 },
+  { id: 'SHIPPED_TO_BD', title: 'Shipped to BD (In Transit)', desc: 'Air/Handcarry shipping to BD', step: 5 },
   { id: 'ARRIVED_AT_BD', title: 'Arrived at BD', desc: 'Customs clearance & BD entry', step: 6 },
-  { id: 'RECEIVED_IN_BD', title: 'Received in BD', desc: 'Sorted at local hub & weight verified', step: 7 },
+  { id: 'RECEIVED_IN_BD', title: 'Received in BD', desc: 'Weight measurement & final price calculated', step: 7 },
   { id: 'DELIVERED', title: 'Product Delivered', desc: 'Delivered to customer', step: 8 }
 ];
 
