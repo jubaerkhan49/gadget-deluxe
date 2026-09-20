@@ -361,7 +361,7 @@ export default function PublicOrderTracking() {
                     </Typography>
                   ) : (
                     <Typography variant="body2" fontWeight={700} color="warning.main">
-                      In Transit (Step {currentStepIndex + 1} of {STAGES.length})
+                      {order.stage_display || (currentStepIndex >= 0 ? STAGES[currentStepIndex]?.title : 'In Transit')}
                     </Typography>
                   )}
                 </Grid>
@@ -540,7 +540,7 @@ export default function PublicOrderTracking() {
                                     : 'text.disabled'
                             }
                           >
-                            Step {idx + 1}: {st.title}
+                            {st.title}
                           </Typography>
                           {isCurrent && !isLastStep && (
                             <Chip
@@ -617,7 +617,7 @@ export default function PublicOrderTracking() {
                 <Grid item xs={12} sm={6}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: 1, borderColor: 'divider' }}>
                     <Typography variant="body2" color="text.secondary">
-                      Item / Product Price
+                      Product Price
                     </Typography>
                     <Typography variant="body2" fontWeight={700}>
                       ৳ {numPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -626,7 +626,7 @@ export default function PublicOrderTracking() {
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1, borderBottom: 1, borderColor: 'divider' }}>
                     <Typography variant="body2" color="text.secondary">
-                      Shipping & Logistics Cost
+                      Logistics Cost
                     </Typography>
                     <Typography variant="body2" fontWeight={700}>
                       ৳ {numShipping.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -635,7 +635,7 @@ export default function PublicOrderTracking() {
 
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', py: 1.5 }}>
                     <Typography variant="subtitle2" fontWeight={800}>
-                      Total Order Amount
+                      Total Amount
                     </Typography>
                     <Typography variant="subtitle1" fontWeight={900} color="primary.main">
                       ৳ {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -678,7 +678,7 @@ export default function PublicOrderTracking() {
 
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Typography variant="body2" color="text.secondary">
-                        Paid / Advance:
+                        Advance:
                       </Typography>
                       <Typography variant="h6" fontWeight={800} color="success.main">
                         ৳ {numPaid.toLocaleString('en-US', { minimumFractionDigits: 2 })}
