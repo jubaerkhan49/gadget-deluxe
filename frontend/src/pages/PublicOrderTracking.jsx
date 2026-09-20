@@ -124,10 +124,10 @@ export default function PublicOrderTracking() {
 
   const currentStepIndex = order ? STAGES.findIndex((s) => s.id === order.stage) : -1;
 
-  const numPrice = order ? parseFloat(order.product_price) || 0 : 0;
-  const numShipping = order ? parseFloat(order.shipping_cost) || 0 : 0;
-  const numPaid = order ? parseFloat(order.payment_amount) || 0 : 0;
-  const totalAmount = order ? (parseFloat(order.total_amount) || (numPrice + numShipping)) : 0;
+  const totalAmount = order ? (parseFloat(order.selling_price) || parseFloat(order.total_amount) || 0) : 0;
+  const numShipping = order ? (parseFloat(order.shipping_cost) || 0) : 0;
+  const numPrice = Math.max(0, totalAmount - numShipping);
+  const numPaid = order ? (parseFloat(order.payment_amount) || 0) : 0;
   const dueAmount = order ? (parseFloat(order.due_amount) || Math.max(0, totalAmount - numPaid)) : 0;
 
   return (
@@ -162,7 +162,7 @@ export default function PublicOrderTracking() {
             Gadget Deluxe
           </Typography>
           <Typography variant="subtitle1" color="text.secondary" fontWeight={500}>
-            Live Package & Order Tracking Portal
+            Live Order Tracking Portal
           </Typography>
         </Box>
 
@@ -483,16 +483,16 @@ export default function PublicOrderTracking() {
                           bgcolor: isLastStep && (isCompleted || isCurrent)
                             ? '#22C55E'
                             : isCompleted
-                            ? '#10B981'
-                            : isCurrent
-                            ? '#3B82F6'
-                            : (t) => (t.palette.mode === 'dark' ? '#1E293B' : '#E2E8F0'),
+                              ? '#10B981'
+                              : isCurrent
+                                ? '#3B82F6'
+                                : (t) => (t.palette.mode === 'dark' ? '#1E293B' : '#E2E8F0'),
                           color: isCompleted || isCurrent ? '#fff' : 'text.disabled',
                           boxShadow: isLastStep && (isCompleted || isCurrent)
                             ? '0 0 20px rgba(34, 197, 94, 0.8)'
                             : isCurrent
-                            ? '0 0 16px rgba(59, 130, 246, 0.6)'
-                            : 'none',
+                              ? '0 0 16px rgba(59, 130, 246, 0.6)'
+                              : 'none',
                           transition: 'all 0.3s ease'
                         }}
                       >
@@ -514,14 +514,14 @@ export default function PublicOrderTracking() {
                           flex: 1,
                           ...(isLastStep && (isCompleted || isCurrent)
                             ? {
-                                p: 1.5,
-                                borderRadius: 2.5,
-                                bgcolor: (t) =>
-                                  t.palette.mode === 'dark'
-                                    ? 'rgba(34, 197, 94, 0.12)'
-                                    : 'rgba(34, 197, 94, 0.08)',
-                                border: '1px solid rgba(34, 197, 94, 0.3)'
-                              }
+                              p: 1.5,
+                              borderRadius: 2.5,
+                              bgcolor: (t) =>
+                                t.palette.mode === 'dark'
+                                  ? 'rgba(34, 197, 94, 0.12)'
+                                  : 'rgba(34, 197, 94, 0.08)',
+                              border: '1px solid rgba(34, 197, 94, 0.3)'
+                            }
                             : {})
                         }}
                       >
@@ -533,10 +533,10 @@ export default function PublicOrderTracking() {
                               isLastStep && (isCompleted || isCurrent)
                                 ? 'success.main'
                                 : isCurrent
-                                ? 'primary.main'
-                                : isCompleted
-                                ? 'text.primary'
-                                : 'text.disabled'
+                                  ? 'primary.main'
+                                  : isCompleted
+                                    ? 'text.primary'
+                                    : 'text.disabled'
                             }
                           >
                             Step {idx + 1}: {st.title}
@@ -759,7 +759,7 @@ export default function PublicOrderTracking() {
             {/* Customer Support Footer */}
             <Box sx={{ textAlign: 'center', mt: 4, mb: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                Need help with your order? Contact Gadget Deluxe Customer Support.
+                Need help with your order? Contact Gadget Deluxe Support Team.
               </Typography>
             </Box>
           </Box>
