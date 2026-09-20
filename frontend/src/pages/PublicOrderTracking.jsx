@@ -46,10 +46,11 @@ const STAGES = [
   { id: 'PAYMENT_RECEIVED', title: 'Payment Made', desc: 'Advance payment received', step: 1 },
   { id: 'PRODUCT_PURCHASED', title: 'Product Purchased', desc: 'Sourced from China store/supplier', step: 2 },
   { id: 'SHIPPED_TO_CN_WAREHOUSE', title: 'Shipped to CN Warehouse', desc: 'Domestic China logistics', step: 3 },
-  { id: 'SHIPPED_TO_BD', title: 'Shipped to BD (In Transit)', desc: 'International air/sea freight to BD', step: 4 },
-  { id: 'ARRIVED_AT_BD', title: 'Arrived at BD', desc: 'Customs clearance & BD entry', step: 5 },
-  { id: 'RECEIVED_IN_BD', title: 'Received in BD', desc: 'Sorted at local hub & weight verified', step: 6 },
-  { id: 'DELIVERED', title: 'Product Delivered', desc: 'Delivered to customer', step: 7 }
+  { id: 'RECEIVED_AT_CN_WAREHOUSE', title: 'Received at CN Warehouse', desc: 'Verified & packed at China warehouse', step: 4 },
+  { id: 'SHIPPED_TO_BD', title: 'Shipped to BD (In Transit)', desc: 'International air/sea freight to BD', step: 5 },
+  { id: 'ARRIVED_AT_BD', title: 'Arrived at BD', desc: 'Customs clearance & BD entry', step: 6 },
+  { id: 'RECEIVED_IN_BD', title: 'Received in BD', desc: 'Sorted at local hub & weight verified', step: 7 },
+  { id: 'DELIVERED', title: 'Product Delivered', desc: 'Delivered to customer', step: 8 }
 ];
 
 export default function PublicOrderTracking() {
@@ -360,7 +361,7 @@ export default function PublicOrderTracking() {
                     </Typography>
                   ) : (
                     <Typography variant="body2" fontWeight={700} color="warning.main">
-                      In Transit (Step {currentStepIndex + 1} of 8)
+                      In Transit (Step {currentStepIndex + 1} of {STAGES.length})
                     </Typography>
                   )}
                 </Grid>
@@ -419,7 +420,7 @@ export default function PublicOrderTracking() {
               </Paper>
             )}
 
-            {/* 8-Stage Visual Progress Timeline */}
+            {/* 9-Stage Visual Progress Timeline */}
             <Paper
               elevation={0}
               sx={{

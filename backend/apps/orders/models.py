@@ -10,6 +10,7 @@ class TrackingStage(models.TextChoices):
     PAYMENT_RECEIVED = 'PAYMENT_RECEIVED', 'Payment Made / Advance Paid'
     PRODUCT_PURCHASED = 'PRODUCT_PURCHASED', 'Product Purchased'
     SHIPPED_TO_CN_WAREHOUSE = 'SHIPPED_TO_CN_WAREHOUSE', 'Shipped to China Warehouse'
+    RECEIVED_AT_CN_WAREHOUSE = 'RECEIVED_AT_CN_WAREHOUSE', 'Received at CN Warehouse'
     SHIPPED_TO_BD = 'SHIPPED_TO_BD', 'Shipped to BD (In Transit)'
     ARRIVED_AT_BD = 'ARRIVED_AT_BD', 'Arrived at BD'
     RECEIVED_IN_BD = 'RECEIVED_IN_BD', 'Received in BD (Shipping Cost Confirmed)'

@@ -56,10 +56,11 @@ const STAGE_CONFIG = {
   PAYMENT_RECEIVED: { label: '2. Payment Made', color: '#3B82F6', step: 2 },
   PRODUCT_PURCHASED: { label: '3. Product Purchased', color: '#8B5CF6', step: 3 },
   SHIPPED_TO_CN_WAREHOUSE: { label: '4. Shipped (CN Wh)', color: '#EC4899', step: 4 },
-  SHIPPED_TO_BD: { label: '5. In Transit to BD', color: '#F59E0B', step: 5 },
-  ARRIVED_AT_BD: { label: '6. Arrived at BD', color: '#10B981', step: 6 },
-  RECEIVED_IN_BD: { label: '7. Received in BD', color: '#06B6D4', step: 7 },
-  DELIVERED: { label: '8. Delivered', color: '#22C55E', step: 8 }
+  RECEIVED_AT_CN_WAREHOUSE: { label: '5. Received at CN Wh', color: '#6366F1', step: 5 },
+  SHIPPED_TO_BD: { label: '6. In Transit to BD', color: '#F59E0B', step: 6 },
+  ARRIVED_AT_BD: { label: '7. Arrived at BD', color: '#10B981', step: 7 },
+  RECEIVED_IN_BD: { label: '8. Received in BD', color: '#06B6D4', step: 8 },
+  DELIVERED: { label: '9. Delivered', color: '#22C55E', step: 9 }
 };
 
 const CATEGORIES = [
@@ -250,7 +251,7 @@ export default function OtherGoods() {
               Other Goods & Custom Orders
             </Typography>
             <Typography variant="caption" color="text.secondary" fontWeight={500}>
-              Manage individual retail orders (Laptops, AirPods, Gadgets, Cosmetics) with 8-Stage Live Tracking
+              Manage individual retail orders (Laptops, AirPods, Gadgets, Cosmetics) with 9-Stage Live Tracking
             </Typography>
           </Box>
         </Box>
@@ -453,7 +454,7 @@ export default function OtherGoods() {
               setPage(0);
             }}
           >
-            <MenuItem value="ALL">All Stages (1-8)</MenuItem>
+            <MenuItem value="ALL">All Stages (1-9)</MenuItem>
             {TRACKING_STAGES.map((st) => (
               <MenuItem key={st.id} value={st.id}>
                 {st.step + 1}. {st.label}

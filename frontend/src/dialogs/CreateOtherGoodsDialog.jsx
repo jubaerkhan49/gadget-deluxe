@@ -44,10 +44,11 @@ const STAGE_OPTIONS = [
   { value: 'PAYMENT_RECEIVED', label: '2. Payment Made / Advance Paid' },
   { value: 'PRODUCT_PURCHASED', label: '3. Product Purchased' },
   { value: 'SHIPPED_TO_CN_WAREHOUSE', label: '4. Shipped to China Warehouse' },
-  { value: 'SHIPPED_TO_BD', label: '5. Shipped to BD (In Transit)' },
-  { value: 'ARRIVED_AT_BD', label: '6. Arrived at BD' },
-  { value: 'RECEIVED_IN_BD', label: '7. Received in BD' },
-  { value: 'DELIVERED', label: '8. Product Delivered' }
+  { value: 'RECEIVED_AT_CN_WAREHOUSE', label: '5. Received at CN Warehouse' },
+  { value: 'SHIPPED_TO_BD', label: '6. Shipped to BD (In Transit)' },
+  { value: 'ARRIVED_AT_BD', label: '7. Arrived at BD' },
+  { value: 'RECEIVED_IN_BD', label: '8. Received in BD' },
+  { value: 'DELIVERED', label: '9. Product Delivered' }
 ];
 
 const PAYMENT_METHODS = [

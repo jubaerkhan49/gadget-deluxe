@@ -47,10 +47,11 @@ export const TRACKING_STAGES = [
   { id: 'PAYMENT_RECEIVED', label: 'Payment Made', step: 1 },
   { id: 'PRODUCT_PURCHASED', label: 'Product Purchased', step: 2 },
   { id: 'SHIPPED_TO_CN_WAREHOUSE', label: 'Shipped (CN Warehouse)', step: 3 },
-  { id: 'SHIPPED_TO_BD', label: 'Shipped to BD', step: 4 },
-  { id: 'ARRIVED_AT_BD', label: 'Arrived at BD', step: 5 },
-  { id: 'RECEIVED_IN_BD', label: 'Received in BD', step: 6 },
-  { id: 'DELIVERED', label: 'Product Delivered', step: 7 }
+  { id: 'RECEIVED_AT_CN_WAREHOUSE', label: 'Received at CN Warehouse', step: 4 },
+  { id: 'SHIPPED_TO_BD', label: 'Shipped to BD', step: 5 },
+  { id: 'ARRIVED_AT_BD', label: 'Arrived at BD', step: 6 },
+  { id: 'RECEIVED_IN_BD', label: 'Received in BD', step: 7 },
+  { id: 'DELIVERED', label: 'Product Delivered', step: 8 }
 ];
 
 const PAYMENT_METHODS = [
@@ -267,10 +268,10 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
       <Divider />
 
       <DialogContent sx={{ py: 2.5 }}>
-        {/* 8-Stage Visual Stepper */}
+        {/* 9-Stage Visual Stepper */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle2" fontWeight={700} color="primary" sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-            <ShippingIcon fontSize="small" /> Update 8-Stage Tracking Pipeline (Click a step to select)
+            <ShippingIcon fontSize="small" /> Update 9-Stage Tracking Pipeline (Click a step to select)
           </Typography>
           <Paper
             variant="outlined"
