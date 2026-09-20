@@ -37,6 +37,39 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     search_fields = ['username', 'first_name', 'last_name', 'email']
 
+    @action(detail=False, methods=['post'], url_path='change-password')
+    def change_password(self, request):
+        """
+        Allows currently logged-in admin or employee to change their password.
+        Expected body: { 'old_password': str, 'new_password': str }
+        """
+        user = request.user
+        old_password = request.data.get('old_password', '')
+        new_password = request.data.get('new_password', '')
+
+        if not old_password or not new_password:
+            return Response(
+                {"error": "Both current password and new password are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if not user.check_password(old_password):
+            return Response(
+                {"error": "Current password is incorrect."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(new_password) < 6:
+            return Response(
+                {"error": "New password must be at least 6 characters long."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"success": True, "message": "Password changed successfully."})
+
 class DeviceViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing device inventory.

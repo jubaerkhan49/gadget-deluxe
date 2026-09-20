@@ -33,6 +33,7 @@ import AddIcon from '@mui/icons-material/Add';
 import LogoutIcon from '@mui/icons-material/Logout';
 import BuildIcon from '@mui/icons-material/Build';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import LockResetIcon from '@mui/icons-material/LockReset';
 import ArchiveIcon from '@mui/icons-material/Inventory2';
 import InsightsIcon from '@mui/icons-material/Insights';
 import StorefrontIcon from '@mui/icons-material/Storefront';
@@ -43,6 +44,7 @@ import { ColorModeContext } from '../../App';
 import AddDeviceDialog from '../../dialogs/AddDeviceDialog';
 import AddShipmentDialog from '../../dialogs/AddShipmentDialog';
 import AddOwnerDialog from '../../dialogs/AddOwnerDialog';
+import ChangePasswordDialog from '../../dialogs/ChangePasswordDialog';
 
 const DRAWER_WIDTH = 250;
 
@@ -71,6 +73,7 @@ export default function MainLayout() {
   const [showAddDevice, setShowAddDevice] = useState(false);
   const [showAddShipment, setShowAddShipment] = useState(false);
   const [showAddOwner, setShowAddOwner] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -283,9 +286,14 @@ export default function MainLayout() {
 
               <Divider sx={{ my: 0.5 }} />
 
+              <MenuItem onClick={() => { setUserMenuAnchor(null); setShowChangePassword(true); }}>
+                <ListItemIcon><LockResetIcon fontSize="small" color="primary" /></ListItemIcon>
+                <Typography variant="body2" fontWeight={600}>Change Password</Typography>
+              </MenuItem>
+
               <MenuItem onClick={() => { setUserMenuAnchor(null); setShowAddOwner(true); }}>
                 <ListItemIcon><PersonAddIcon fontSize="small" color="primary" /></ListItemIcon>
-                <Typography variant="body2" fontWeight={600}>Add Owner</Typography>
+                <Typography variant="body2" fontWeight={600}>Add Employee</Typography>
               </MenuItem>
 
               <Divider sx={{ my: 0.5 }} />
@@ -378,6 +386,13 @@ export default function MainLayout() {
             setShowAddOwner(false);
             window.location.reload();
           }}
+        />
+      )}
+
+      {showChangePassword && (
+        <ChangePasswordDialog
+          open={showChangePassword}
+          onClose={() => setShowChangePassword(false)}
         />
       )}
     </Box>

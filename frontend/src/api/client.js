@@ -99,6 +99,7 @@ export const repairApi = {
 export const userApi = {
   getAll: (params) => api.get('/api/users/', { params }),
   create: (data) => api.post('/api/users/', data),
+  changePassword: (data) => api.post('/api/users/change-password/', data),
 };
 
 export const customerApi = {

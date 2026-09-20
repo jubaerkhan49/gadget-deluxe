@@ -68,7 +68,7 @@ export default function AddOwnerDialog({ open, onClose, onOwnerAdded }) {
       };
 
       const res = await userApi.create(payload);
-      enqueueSnackbar(`Owner/Employee "${res.data.username}" created successfully!`, {
+      enqueueSnackbar(`Employee "${res.data.username}" created successfully!`, {
         variant: 'success'
       });
 
@@ -80,7 +80,7 @@ export default function AddOwnerDialog({ open, onClose, onOwnerAdded }) {
       const msg =
         err.response?.data?.username?.[0] ||
         err.response?.data?.detail ||
-        'Failed to create owner';
+        'Failed to create employee';
       enqueueSnackbar(msg, { variant: 'error' });
     } finally {
       setLoading(false);
@@ -93,10 +93,10 @@ export default function AddOwnerDialog({ open, onClose, onOwnerAdded }) {
         <PersonAddIcon color="primary" />
         <Box>
           <Typography variant="h6" fontWeight={700}>
-            Add Owner / Employee
+            Add Employee
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Register a new team owner for device assignment & store operations
+            Register a new employee for device assignment & store operations
           </Typography>
         </Box>
       </DialogTitle>
@@ -140,7 +140,6 @@ export default function AddOwnerDialog({ open, onClose, onOwnerAdded }) {
                 label="First Name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
-                placeholder="Optional"
               />
             </Grid>
 
@@ -151,7 +150,6 @@ export default function AddOwnerDialog({ open, onClose, onOwnerAdded }) {
                 label="Last Name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
-                placeholder="Optional"
               />
             </Grid>
 
@@ -162,7 +160,7 @@ export default function AddOwnerDialog({ open, onClose, onOwnerAdded }) {
                 label="Phone Number"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+880..."
+                placeholder="e.g. 01711223344"
               />
             </Grid>
 
@@ -171,7 +169,7 @@ export default function AddOwnerDialog({ open, onClose, onOwnerAdded }) {
                 fullWidth
                 size="small"
                 type={showPassword ? 'text' : 'password'}
-                label="Password"
+                label="Password (Optional)"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Default: GadgetDeluxe123!"
@@ -203,7 +201,7 @@ export default function AddOwnerDialog({ open, onClose, onOwnerAdded }) {
             disabled={loading || !username.trim()}
             startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <PersonAddIcon />}
           >
-            {loading ? 'Creating...' : 'Create Owner'}
+            {loading ? 'Creating...' : 'Create Employee'}
           </Button>
         </DialogActions>
       </form>
