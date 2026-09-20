@@ -44,6 +44,7 @@ class OtherGoodsOrder(TimeStampedModel):
         max_length=50,
         unique=True,
         db_index=True,
+        blank=True,
         help_text="Unique customer-facing Order ID (e.g. OG-2026-0001)"
     )
     
@@ -55,9 +56,9 @@ class OtherGoodsOrder(TimeStampedModel):
     # Product Details
     product_name = models.CharField(max_length=255, db_index=True)
     category = models.CharField(
-        max_length=50,
-        choices=ProductCategory.choices,
-        default=ProductCategory.OTHER
+        max_length=100,
+        default='Other Goods',
+        blank=True
     )
     product_specs = models.TextField(blank=True, null=True, help_text="Specs, color, model number, serial, etc.")
     source_url = models.URLField(blank=True, null=True, help_text="Link to supplier / Taobao / JD / Amazon store")

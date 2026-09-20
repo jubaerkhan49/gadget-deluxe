@@ -230,6 +230,7 @@ class ShipmentSerializer(serializers.ModelSerializer):
             return "0.00"
 
 class OtherGoodsOrderSerializer(serializers.ModelSerializer):
+    order_id = serializers.CharField(required=False, allow_blank=True)
     stage = serializers.CharField(source='tracking_status', required=False)
     stage_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
     tracking_status_display = serializers.CharField(source='get_tracking_status_display', read_only=True)

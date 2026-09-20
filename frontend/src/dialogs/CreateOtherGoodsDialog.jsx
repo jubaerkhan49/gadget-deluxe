@@ -155,10 +155,22 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
       if (onOrderCreated) {
         onOrderCreated(res.data);
       }
-      onClose();
     } catch (err) {
       console.error('Error creating other goods order:', err);
-      enqueueSnackbar(err.response?.data?.error || err.response?.data?.detail || 'Failed to create order. Check inputs.', { variant: 'error' });
+      let errMsg = 'Failed to create order. Check inputs.';
+      if (err.response?.data) {
+        const d = err.response.data;
+        if (typeof d === 'string') {
+          errMsg = d;
+        } else if (d.error || d.detail) {
+          errMsg = d.error || d.detail;
+        } else if (typeof d === 'object') {
+          const firstKey = Object.keys(d)[0];
+          const val = d[firstKey];
+          errMsg = `${firstKey}: ${Array.isArray(val) ? val.join(', ') : val}`;
+        }
+      }
+      enqueueSnackbar(errMsg, { variant: 'error' });
     } finally {
       setSubmitting(false);
     }
