@@ -867,9 +867,9 @@ class OtherGoodsOrderViewSet(viewsets.ModelViewSet):
     serializer_class = OtherGoodsOrderSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['tracking_status', 'category']
-    search_fields = ['order_id', 'customer_name', 'customer_phone', 'product_name', 'tracking_notes', 'product_specs']
-    ordering_fields = ['order_date', 'created_at', 'updated_at', 'product_price', 'payment_amount', 'shipping_cost']
+    filterset_fields = ['tracking_status', 'category', 'payment_method']
+    search_fields = ['order_id', 'customer_name', 'customer_phone', 'product_name', 'tracking_notes', 'product_specs', 'transaction_id']
+    ordering_fields = ['order_date', 'created_at', 'updated_at', 'buying_price', 'selling_price', 'product_price', 'payment_amount', 'shipping_cost']
     ordering = ['-created_at']
 
     def perform_create(self, serializer):
@@ -888,6 +888,7 @@ class OtherGoodsOrderViewSet(viewsets.ModelViewSet):
         old_stage = old_order.tracking_status
         old_payment = old_order.payment_amount
         old_shipping = old_order.shipping_cost
+        old_selling = old_order.selling_price
 
         order = serializer.save()
 
@@ -896,15 +897,20 @@ class OtherGoodsOrderViewSet(viewsets.ModelViewSet):
         stage_changed = (old_stage != order.tracking_status)
         payment_changed = (old_payment != order.payment_amount)
         shipping_changed = (old_shipping != order.shipping_cost)
+        selling_changed = (old_selling != order.selling_price)
 
-        if stage_changed or payment_changed or shipping_changed:
+        if stage_changed or payment_changed or shipping_changed or selling_changed:
             note_parts = []
             if stage_changed:
                 note_parts.append(f"Stage changed to {order.get_tracking_status_display()}")
             if payment_changed:
-                note_parts.append(f"Payment updated to BDT {order.payment_amount} (Due: BDT {order.due_amount})")
+                pm_text = f" via {order.get_payment_method_display()}" if order.payment_method else ""
+                trx_text = f" (TrxID: {order.transaction_id})" if order.transaction_id else ""
+                note_parts.append(f"Payment updated to BDT {order.payment_amount}{pm_text}{trx_text} (Due: BDT {order.due_amount})")
             if shipping_changed:
                 note_parts.append(f"Shipping cost updated to BDT {order.shipping_cost}")
+            if selling_changed:
+                note_parts.append(f"Selling price updated to BDT {order.selling_price}")
             if order.tracking_notes and order.tracking_notes != old_order.tracking_notes:
                 note_parts.append(f"Note: {order.tracking_notes}")
 

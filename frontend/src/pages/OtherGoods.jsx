@@ -164,11 +164,18 @@ export default function OtherGoods() {
     ).length;
     const arrivedBD = orders.filter((o) => ['ARRIVED_AT_BD', 'RECEIVED_IN_BD'].includes(o.stage || o.tracking_status)).length;
     const delivered = orders.filter((o) => (o.stage || o.tracking_status) === 'DELIVERED').length;
+    
+    const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.selling_price || o.total_amount) || 0), 0);
+    const totalCost = orders.reduce((sum, o) => {
+      const buy = parseFloat(o.buying_price || o.product_price) || 0;
+      const ship = parseFloat(o.shipping_cost) || 0;
+      return sum + (buy + ship);
+    }, 0);
+    const totalProfit = orders.reduce((sum, o) => sum + (parseFloat(o.profit) || 0), 0);
     const totalDue = orders.reduce((sum, o) => sum + (parseFloat(o.due_amount) || 0), 0);
-    const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
     const totalCollected = orders.reduce((sum, o) => sum + (parseFloat(o.payment_amount) || 0), 0);
 
-    return { totalOrders, inTransit, arrivedBD, delivered, totalDue, totalRevenue, totalCollected };
+    return { totalOrders, inTransit, arrivedBD, delivered, totalDue, totalRevenue, totalCost, totalProfit, totalCollected };
   }, [orders]);
 
   // Filtered Orders
@@ -184,8 +191,9 @@ export default function OtherGoods() {
         const matchesPhone = order.customer_phone?.toLowerCase().includes(q);
         const matchesProduct = order.product_name?.toLowerCase().includes(q);
         const matchesNotes = order.tracking_notes?.toLowerCase().includes(q);
+        const matchesTrx = order.transaction_id?.toLowerCase().includes(q);
 
-        if (!matchesId && !matchesCust && !matchesPhone && !matchesProduct && !matchesNotes) {
+        if (!matchesId && !matchesCust && !matchesPhone && !matchesProduct && !matchesNotes && !matchesTrx) {
           return false;
         }
       }
@@ -289,13 +297,13 @@ export default function OtherGoods() {
             }}
           >
             <Typography variant="caption" color="text.secondary" fontWeight={700}>
-              TOTAL CUSTOM ORDERS
+              TOTAL ORDERS
             </Typography>
             <Typography variant="h4" fontWeight={800} sx={{ mt: 0.5 }}>
               {metrics.totalOrders}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              ৳ {metrics.totalRevenue.toLocaleString()} Total Value
+              ৳ {metrics.totalCost.toLocaleString()} Total Cost
             </Typography>
           </Card>
         </Grid>
@@ -311,37 +319,14 @@ export default function OtherGoods() {
               background: (t) => (t.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.6)' : '#fff')
             }}
           >
-            <Typography variant="caption" color="warning.main" fontWeight={700}>
-              IN TRANSIT / PIPELINE
+            <Typography variant="caption" color="primary.main" fontWeight={700}>
+              TOTAL SOLD VALUE
             </Typography>
-            <Typography variant="h4" fontWeight={800} color="warning.main" sx={{ mt: 0.5 }}>
-              {metrics.inTransit}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Stages 1 to 5 (Purchased/Shipped)
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={2.4}>
-          <Card
-            elevation={0}
-            sx={{
-              p: 2,
-              borderRadius: 3,
-              border: 1,
-              borderColor: 'divider',
-              background: (t) => (t.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.6)' : '#fff')
-            }}
-          >
-            <Typography variant="caption" color="info.main" fontWeight={700}>
-              ARRIVED / RECEIVED BD
-            </Typography>
-            <Typography variant="h4" fontWeight={800} color="info.main" sx={{ mt: 0.5 }}>
-              {metrics.arrivedBD}
+            <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ mt: 0.5 }}>
+              ৳ {metrics.totalRevenue.toLocaleString()}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Stages 6 & 7 (Ready for Customer)
+              ৳ {metrics.totalCollected.toLocaleString()} Collected
             </Typography>
           </Card>
         </Grid>
@@ -358,13 +343,38 @@ export default function OtherGoods() {
             }}
           >
             <Typography variant="caption" color="success.main" fontWeight={700}>
-              DELIVERED ORDERS
+              TOTAL NET PROFIT
             </Typography>
             <Typography variant="h4" fontWeight={800} color="success.main" sx={{ mt: 0.5 }}>
-              {metrics.delivered}
+              ৳ {metrics.totalProfit.toLocaleString()}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Stage 8 (Completed)
+              {metrics.totalRevenue > 0
+                ? `${((metrics.totalProfit / metrics.totalRevenue) * 100).toFixed(1)}% Net Margin`
+                : '0.0% Margin'}
+            </Typography>
+          </Card>
+        </Grid>
+
+        <Grid item xs={12} sm={6} md={2.4}>
+          <Card
+            elevation={0}
+            sx={{
+              p: 2,
+              borderRadius: 3,
+              border: 1,
+              borderColor: 'divider',
+              background: (t) => (t.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.6)' : '#fff')
+            }}
+          >
+            <Typography variant="caption" color="warning.main" fontWeight={700}>
+              IN PIPELINE / TRANSIT
+            </Typography>
+            <Typography variant="h4" fontWeight={800} color="warning.main" sx={{ mt: 0.5 }}>
+              {metrics.inTransit}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {metrics.arrivedBD} Arrived in BD
             </Typography>
           </Card>
         </Grid>
@@ -387,7 +397,7 @@ export default function OtherGoods() {
               ৳ {metrics.totalDue.toLocaleString()}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              ৳ {metrics.totalCollected.toLocaleString()} Collected
+              Payable upon delivery
             </Typography>
           </Card>
         </Grid>
@@ -410,7 +420,7 @@ export default function OtherGoods() {
       >
         <TextField
           size="small"
-          placeholder="Search by Order ID, Customer, Phone, Product..."
+          placeholder="Search by Order ID, Customer, Phone, Product, TrxID..."
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
@@ -505,10 +515,10 @@ export default function OtherGoods() {
                 <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Order ID</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Customer Details</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Product & Category</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Order Date</TableCell>
+                <TableCell sx={{ fontWeight: 700, textAlign: 'right' }}>Cost (Buy + Ship)</TableCell>
+                <TableCell sx={{ fontWeight: 700, textAlign: 'right' }}>Sold Price & Profit</TableCell>
+                <TableCell sx={{ fontWeight: 700, textAlign: 'right' }}>Payment & TrxID</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Tracking Stage</TableCell>
-                <TableCell sx={{ fontWeight: 700, textAlign: 'right' }}>Total / Shipping</TableCell>
-                <TableCell sx={{ fontWeight: 700, textAlign: 'right' }}>Paid / Due</TableCell>
                 <TableCell sx={{ fontWeight: 700, textAlign: 'center' }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -538,16 +548,21 @@ export default function OtherGoods() {
                 </TableRow>
               ) : (
                 paginatedOrders.map((order) => {
-                  const stageInfo = STAGE_CONFIG[order.stage] || {
-                    label: order.stage_display || order.stage,
+                  const stageInfo = STAGE_CONFIG[order.stage || order.tracking_status] || {
+                    label: order.stage_display || order.tracking_status_display || order.stage,
                     color: '#64748B',
                     step: 1
                   };
-                  const price = parseFloat(order.product_price) || 0;
+                  const buyPrice = parseFloat(order.buying_price || order.product_price) || 0;
                   const shipping = parseFloat(order.shipping_cost) || 0;
-                  const total = parseFloat(order.total_amount) || price + shipping;
+                  const totalCost = buyPrice + shipping;
+                  const sellingPrice = parseFloat(order.selling_price || order.total_amount) || totalCost;
+                  const profit = parseFloat(order.profit) !== undefined && !isNaN(parseFloat(order.profit))
+                    ? parseFloat(order.profit)
+                    : sellingPrice - totalCost;
                   const paid = parseFloat(order.payment_amount) || 0;
-                  const due = parseFloat(order.due_amount) || Math.max(0, total - paid);
+                  const due = parseFloat(order.due_amount) || Math.max(0, sellingPrice - paid);
+                  const marginPct = sellingPrice > 0 ? ((profit / sellingPrice) * 100).toFixed(0) : 0;
 
                   return (
                     <TableRow
@@ -591,6 +606,9 @@ export default function OtherGoods() {
                             </IconButton>
                           </Tooltip>
                         </Box>
+                        <Typography variant="caption" color="text.secondary">
+                          {order.order_date || (order.created_at ? order.created_at.split('T')[0] : '—')}
+                        </Typography>
                       </TableCell>
 
                       {/* Customer Details */}
@@ -634,15 +652,76 @@ export default function OtherGoods() {
                         </Stack>
                       </TableCell>
 
-                      {/* Order Date */}
-                      <TableCell>
-                        <Typography variant="body2">
-                          {order.order_date || (order.created_at ? order.created_at.split('T')[0] : '—')}
+                      {/* Cost (Buy + Ship) */}
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight={700}>
+                          ৳ {totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </Typography>
-                        {order.estimated_delivery && (
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Est: {order.estimated_delivery}
+                        <Typography variant="caption" color="text.secondary" display="block">
+                          Buy: ৳ {buyPrice.toLocaleString()} | Ship: ৳ {shipping.toLocaleString()}
+                        </Typography>
+                      </TableCell>
+
+                      {/* Sold Price & Profit */}
+                      <TableCell align="right">
+                        <Typography variant="body2" fontWeight={800} color="primary.main">
+                          ৳ {sellingPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </Typography>
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.3 }}>
+                          <Chip
+                            label={`Profit: +৳ ${profit.toLocaleString()} (${marginPct}%)`}
+                            size="small"
+                            color={profit >= 0 ? 'success' : 'error'}
+                            sx={{
+                              fontWeight: 800,
+                              fontSize: '0.68rem',
+                              height: 20
+                            }}
+                          />
+                        </Box>
+                      </TableCell>
+
+                      {/* Payment & TrxID */}
+                      <TableCell align="right">
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 0.5 }}>
+                          <Chip
+                            label={order.payment_method_display || order.payment_method || 'bKash'}
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              fontWeight: 800,
+                              fontSize: '0.65rem',
+                              height: 18,
+                              borderColor: 'primary.main',
+                              color: 'primary.main'
+                            }}
+                          />
+                          <Typography variant="body2" fontWeight={800} color="success.main">
+                            Paid: ৳ {paid.toLocaleString()}
                           </Typography>
+                        </Box>
+
+                        {order.transaction_id && (
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>
+                            Trx: {order.transaction_id}
+                          </Typography>
+                        )}
+
+                        {due > 0 ? (
+                          <Chip
+                            label={`Due: ৳ ${due.toLocaleString()}`}
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            sx={{ fontWeight: 800, fontSize: '0.68rem', height: 18, mt: 0.3 }}
+                          />
+                        ) : (
+                          <Chip
+                            label="PAID"
+                            size="small"
+                            color="success"
+                            sx={{ fontWeight: 800, fontSize: '0.68rem', height: 18, mt: 0.3 }}
+                          />
                         )}
                       </TableCell>
 
@@ -665,50 +744,17 @@ export default function OtherGoods() {
                             color="text.secondary"
                             display="block"
                             noWrap
-                            sx={{ maxWidth: 180, mt: 0.3 }}
+                            sx={{ maxWidth: 160, mt: 0.3 }}
                           >
                             {order.tracking_notes}
                           </Typography>
                         )}
                       </TableCell>
 
-                      {/* Total / Shipping */}
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight={800}>
-                          ৳ {total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Item: ৳ {price.toLocaleString()} | Ship: ৳ {shipping.toLocaleString()}
-                        </Typography>
-                      </TableCell>
-
-                      {/* Paid / Due */}
-                      <TableCell align="right">
-                        <Typography variant="body2" fontWeight={800} color="success.main">
-                          Paid: ৳ {paid.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                        </Typography>
-                        {due > 0 ? (
-                          <Chip
-                            label={`Due: ৳ ${due.toLocaleString()}`}
-                            size="small"
-                            color="error"
-                            variant="outlined"
-                            sx={{ fontWeight: 800, fontSize: '0.7rem', height: 20, mt: 0.3 }}
-                          />
-                        ) : (
-                          <Chip
-                            label="PAID"
-                            size="small"
-                            color="success"
-                            sx={{ fontWeight: 800, fontSize: '0.7rem', height: 20, mt: 0.3 }}
-                          />
-                        )}
-                      </TableCell>
-
                       {/* Actions */}
                       <TableCell align="center" onClick={(e) => e.stopPropagation()}>
                         <Stack direction="row" spacing={0.5} justifyContent="center">
-                          <Tooltip title="Update Status & Payments">
+                          <Tooltip title="Update Status, Payments & TrxID">
                             <IconButton
                               size="small"
                               color="primary"

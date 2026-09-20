@@ -234,9 +234,12 @@ class OtherGoodsOrderSerializer(serializers.ModelSerializer):
     stage_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
     tracking_status_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
     category_display = serializers.CharField(source='get_category_display', read_only=True)
+    payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
     product_description = serializers.CharField(source='product_specs', required=False, allow_blank=True, allow_null=True)
     estimated_delivery = serializers.DateField(source='estimated_delivery_date', required=False, allow_null=True)
     actual_delivery = serializers.DateField(source='actual_delivery_date', required=False, allow_null=True)
+    total_cost = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
+    profit = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     total_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     due_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     payment_status = serializers.CharField(read_only=True)
@@ -250,6 +253,7 @@ class PublicOrderTrackingSerializer(serializers.ModelSerializer):
     stage_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
     tracking_status_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
     category_display = serializers.CharField(source='get_category_display', read_only=True)
+    payment_method_display = serializers.CharField(source='get_payment_method_display', read_only=True)
     product_description = serializers.CharField(source='product_specs', read_only=True)
     estimated_delivery = serializers.DateField(source='estimated_delivery_date', read_only=True)
     actual_delivery = serializers.DateField(source='actual_delivery_date', read_only=True)
@@ -269,12 +273,15 @@ class PublicOrderTrackingSerializer(serializers.ModelSerializer):
             'category_display',
             'product_specs',
             'product_description',
-            'product_price',
+            'selling_price',
             'shipping_cost',
             'total_amount',
             'payment_amount',
             'due_amount',
             'payment_status',
+            'payment_method',
+            'payment_method_display',
+            'transaction_id',
             'order_date',
             'payment_date',
             'estimated_delivery_date',

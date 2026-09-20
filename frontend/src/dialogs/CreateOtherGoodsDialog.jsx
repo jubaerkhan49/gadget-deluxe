@@ -12,7 +12,8 @@ import {
   Box,
   InputAdornment,
   Divider,
-  Paper
+  Paper,
+  Chip
 } from '@mui/material';
 import {
   ShoppingBag as OrderIcon,
@@ -21,20 +22,21 @@ import {
   LocationOn as AddressIcon,
   AttachMoney as MoneyIcon,
   LocalShipping as ShippingIcon,
-  CalendarToday as DateIcon,
-  Notes as NotesIcon
+  TrendingUp as ProfitIcon,
+  AccountBalance as BankIcon,
+  Receipt as TrxIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { otherGoodsApi } from '../api/client';
 
 const CATEGORY_OPTIONS = [
-  { value: 'LAPTOP', label: 'Laptop & Notebooks' },
-  { value: 'AIRPODS', label: 'AirPods & Audio' },
-  { value: 'GADGETS', label: 'Smart Gadgets & Watches' },
-  { value: 'LAPTOP_PARTS', label: 'Laptop & Computer Parts' },
-  { value: 'COSMETICS', label: 'Cosmetics & Skincare' },
-  { value: 'ACCESSORIES', label: 'Accessories & Cables' },
-  { value: 'OTHER', label: 'Other Custom Goods' }
+  { value: 'Laptop', label: 'Laptop & Notebooks' },
+  { value: 'AirPods', label: 'AirPods & Audio' },
+  { value: 'Gadgets', label: 'Smart Gadgets & Watches' },
+  { value: 'Laptop Parts', label: 'Laptop & Computer Parts' },
+  { value: 'Cosmetics', label: 'Cosmetics & Skincare' },
+  { value: 'Accessories', label: 'Accessories & Cables' },
+  { value: 'Other Goods', label: 'Other Custom Goods' }
 ];
 
 const STAGE_OPTIONS = [
@@ -48,6 +50,13 @@ const STAGE_OPTIONS = [
   { value: 'DELIVERED', label: '8. Product Delivered' }
 ];
 
+const PAYMENT_METHODS = [
+  { value: 'BKASH', label: 'bKash' },
+  { value: 'NAGAD', label: 'Nagad' },
+  { value: 'BANK', label: 'Bank Transfer' },
+  { value: 'CASH', label: 'Cash' }
+];
+
 export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }) {
   const { enqueueSnackbar } = useSnackbar();
   const [submitting, setSubmitting] = useState(false);
@@ -59,15 +68,17 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
     customer_phone: '',
     customer_address: '',
     product_name: '',
-    category: 'LAPTOP',
+    category: 'Laptop',
     product_description: '',
-    product_price: '',
+    buying_price: '',
     shipping_cost: '0.00',
-    order_date: todayStr,
-    stage: 'ORDER_CONFIRMED',
+    selling_price: '',
+    payment_method: 'BKASH',
+    transaction_id: '',
     payment_amount: '0.00',
     payment_date: todayStr,
-    payment_reference: '',
+    order_date: todayStr,
+    stage: 'ORDER_CONFIRMED',
     tracking_notes: '',
     estimated_delivery: ''
   });
@@ -79,12 +90,19 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
     }));
   };
 
-  // Live calculations
-  const numPrice = parseFloat(formData.product_price) || 0;
+  // Live financial calculations
+  const numBuying = parseFloat(formData.buying_price) || 0;
   const numShipping = parseFloat(formData.shipping_cost) || 0;
+  const numSelling = parseFloat(formData.selling_price) || 0;
   const numPaid = parseFloat(formData.payment_amount) || 0;
-  const totalAmount = numPrice + numShipping;
-  const dueAmount = Math.max(0, totalAmount - numPaid);
+
+  const totalCost = numBuying + numShipping;
+  const profit = numSelling > 0 ? numSelling - totalCost : 0;
+  const marginPct = numSelling > 0 ? ((profit / numSelling) * 100).toFixed(1) : '0.0';
+  const billedTotal = numSelling > 0 ? numSelling : totalCost;
+  const dueAmount = Math.max(0, billedTotal - numPaid);
+
+  const isElectronicPayment = ['BKASH', 'NAGAD', 'BANK'].includes(formData.payment_method);
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -101,8 +119,8 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
       enqueueSnackbar('Product Name is required.', { variant: 'warning' });
       return;
     }
-    if (!formData.product_price || isNaN(formData.product_price) || Number(formData.product_price) < 0) {
-      enqueueSnackbar('Valid Product Price is required.', { variant: 'warning' });
+    if (!formData.buying_price || isNaN(formData.buying_price) || Number(formData.buying_price) < 0) {
+      enqueueSnackbar('Valid Buying Price is required.', { variant: 'warning' });
       return;
     }
 
@@ -114,16 +132,22 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
         customer_address: formData.customer_address.trim(),
         product_name: formData.product_name.trim(),
         category: formData.category,
+        product_specs: formData.product_description.trim(),
         product_description: formData.product_description.trim(),
-        product_price: Number(formData.product_price).toFixed(2),
+        buying_price: Number(formData.buying_price).toFixed(2),
+        product_price: Number(formData.buying_price).toFixed(2),
         shipping_cost: (Number(formData.shipping_cost) || 0).toFixed(2),
-        order_date: formData.order_date || todayStr,
-        stage: formData.stage,
+        selling_price: (Number(formData.selling_price) || Number(formData.buying_price)).toFixed(2),
+        payment_method: formData.payment_method,
+        transaction_id: isElectronicPayment ? formData.transaction_id.trim() : '',
         payment_amount: (Number(formData.payment_amount) || 0).toFixed(2),
         payment_date: formData.payment_date || todayStr,
-        payment_reference: formData.payment_reference.trim(),
+        order_date: formData.order_date || todayStr,
+        stage: formData.stage,
+        tracking_status: formData.stage,
         tracking_notes: formData.tracking_notes.trim(),
-        estimated_delivery: formData.estimated_delivery || null
+        estimated_delivery: formData.estimated_delivery || null,
+        estimated_delivery_date: formData.estimated_delivery || null
       };
 
       const res = await otherGoodsApi.create(payload);
@@ -145,24 +169,25 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
       <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
         <Box
           sx={{
-            width: 38,
-            height: 38,
-            borderRadius: 2,
-            background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+            width: 40,
+            height: 40,
+            borderRadius: 2.5,
+            background: 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff'
+            color: '#fff',
+            boxShadow: '0 4px 14px rgba(236, 72, 153, 0.4)'
           }}
         >
           <OrderIcon fontSize="small" />
         </Box>
         <Box>
-          <Typography variant="h6" fontWeight={700}>
+          <Typography variant="h6" fontWeight={800}>
             New Custom Order ("Other Goods")
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Register single item purchase (Laptops, AirPods, Gadgets, Cosmetics, etc.)
+            Register single item purchase with cost, sold price, profit & payment method
           </Typography>
         </Box>
       </DialogTitle>
@@ -250,7 +275,7 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
               size="small"
               value={formData.product_name}
               onChange={(e) => handleChange('product_name', e.target.value)}
-              placeholder="e.g. MacBook Pro M3 14-inch 16GB / 512GB Space Black"
+              placeholder="e.g. Dell Latitude 7400 2-in-1 Screen Assembly"
             />
           </Grid>
 
@@ -284,24 +309,25 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
             />
           </Grid>
 
-          {/* Pricing & Logistics */}
+          {/* Pricing, Cost & Profit */}
           <Grid item xs={12}>
             <Divider sx={{ my: 0.5 }} />
             <Typography variant="subtitle2" color="primary" fontWeight={700} sx={{ mt: 1, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <MoneyIcon fontSize="small" /> Pricing & Advance Payment
+              <MoneyIcon fontSize="small" /> Pricing, Cost & Profit
             </Typography>
           </Grid>
 
           <Grid item xs={12} sm={4}>
             <TextField
-              label="Product Price (BDT)"
+              label="Buying Price / Item Cost (BDT)"
               fullWidth
               required
               type="number"
               size="small"
-              value={formData.product_price}
-              onChange={(e) => handleChange('product_price', e.target.value)}
-              placeholder="15000"
+              value={formData.buying_price}
+              onChange={(e) => handleChange('buying_price', e.target.value)}
+              placeholder="9625"
+              helperText="Cost to buy product abroad"
               InputProps={{
                 startAdornment: <InputAdornment position="start">৳</InputAdornment>
               }}
@@ -316,13 +342,160 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
               size="small"
               value={formData.shipping_cost}
               onChange={(e) => handleChange('shipping_cost', e.target.value)}
-              placeholder="0.00"
-              helperText="Can be updated when received in BD"
+              placeholder="1000"
+              helperText="Estimated or confirmed logistics"
               InputProps={{
                 startAdornment: <InputAdornment position="start">৳</InputAdornment>
               }}
             />
           </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <TextField
+              label="Selling Amount / Sold Price (BDT)"
+              fullWidth
+              required
+              type="number"
+              size="small"
+              value={formData.selling_price}
+              onChange={(e) => handleChange('selling_price', e.target.value)}
+              placeholder="14000"
+              helperText="Final price charged to customer"
+              InputProps={{
+                startAdornment: <InputAdornment position="start">৳</InputAdornment>
+              }}
+            />
+          </Grid>
+
+          {/* Live Profit & Calculation Card */}
+          <Grid item xs={12}>
+            <Paper
+              variant="outlined"
+              sx={{
+                p: 2,
+                borderRadius: 2.5,
+                bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(241, 245, 249, 0.8)'),
+                display: 'flex',
+                justifyContent: 'space-around',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: 2
+              }}
+            >
+              <Box textAlign="center">
+                <Typography variant="caption" color="text.secondary">
+                  Total Cost (Buy + Ship)
+                </Typography>
+                <Typography variant="subtitle1" fontWeight={800} color="text.primary">
+                  ৳ {totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </Typography>
+              </Box>
+
+              <Divider orientation="vertical" flexItem />
+
+              <Box textAlign="center">
+                <Typography variant="caption" color="text.secondary">
+                  Sold / Selling Price
+                </Typography>
+                <Typography variant="subtitle1" fontWeight={800} color="primary.main">
+                  ৳ {numSelling.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </Typography>
+              </Box>
+
+              <Divider orientation="vertical" flexItem />
+
+              <Box textAlign="center">
+                <Typography variant="caption" color="text.secondary">
+                  Net Profit (Margin)
+                </Typography>
+                <Typography
+                  variant="h6"
+                  fontWeight={900}
+                  color={profit >= 0 ? 'success.main' : 'error.main'}
+                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}
+                >
+                  <ProfitIcon fontSize="small" />
+                  ৳ {profit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  <Chip
+                    label={`${marginPct}%`}
+                    size="small"
+                    color={profit >= 0 ? 'success' : 'error'}
+                    sx={{ height: 20, fontSize: '0.7rem', fontWeight: 800, ml: 0.5 }}
+                  />
+                </Typography>
+              </Box>
+
+              <Divider orientation="vertical" flexItem />
+
+              <Box textAlign="center">
+                <Typography variant="caption" color="text.secondary">
+                  Remaining Due
+                </Typography>
+                <Typography
+                  variant="h6"
+                  fontWeight={800}
+                  color={dueAmount > 0 ? 'error.main' : 'success.main'}
+                >
+                  ৳ {dueAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+
+          {/* Payment Method & TrxID */}
+          <Grid item xs={12}>
+            <Divider sx={{ my: 0.5 }} />
+            <Typography variant="subtitle2" color="primary" fontWeight={700} sx={{ mt: 1, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BankIcon fontSize="small" /> Payment Method & Advance Paid
+            </Typography>
+          </Grid>
+
+          <Grid item xs={12} sm={4}>
+            <TextField
+              label="Payment Method"
+              select
+              fullWidth
+              size="small"
+              value={formData.payment_method}
+              onChange={(e) => handleChange('payment_method', e.target.value)}
+            >
+              {PAYMENT_METHODS.map((pm) => (
+                <MenuItem key={pm.value} value={pm.value}>
+                  {pm.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          {isElectronicPayment ? (
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label={`TrxID / Transaction ID (${formData.payment_method === 'BKASH' ? 'bKash' : formData.payment_method === 'NAGAD' ? 'Nagad' : 'Bank Reference'})`}
+                fullWidth
+                size="small"
+                value={formData.transaction_id}
+                onChange={(e) => handleChange('transaction_id', e.target.value)}
+                placeholder="e.g. 9K382HA92L or Bank Trx #"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <TrxIcon fontSize="small" color="primary" />
+                    </InputAdornment>
+                  )
+                }}
+              />
+            </Grid>
+          ) : (
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="Payment Note"
+                fullWidth
+                size="small"
+                disabled
+                value="Cash Received at Store"
+              />
+            </Grid>
+          )}
 
           <Grid item xs={12} sm={4}>
             <TextField
@@ -338,58 +511,6 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
                 startAdornment: <InputAdornment position="start">৳</InputAdornment>
               }}
             />
-          </Grid>
-
-          {/* Live Calculation Card */}
-          <Grid item xs={12}>
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(241, 245, 249, 0.8)'),
-                display: 'flex',
-                justifyContent: 'space-around',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: 2
-              }}
-            >
-              <Box textAlign="center">
-                <Typography variant="caption" color="text.secondary">
-                  Total Order Value
-                </Typography>
-                <Typography variant="h6" fontWeight={800} color="primary.main">
-                  ৳ {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </Typography>
-              </Box>
-
-              <Divider orientation="vertical" flexItem />
-
-              <Box textAlign="center">
-                <Typography variant="caption" color="text.secondary">
-                  Paid So Far
-                </Typography>
-                <Typography variant="h6" fontWeight={800} color="success.main">
-                  ৳ {numPaid.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </Typography>
-              </Box>
-
-              <Divider orientation="vertical" flexItem />
-
-              <Box textAlign="center">
-                <Typography variant="caption" color="text.secondary">
-                  Remaining Due
-                </Typography>
-                <Typography
-                  variant="h6"
-                  fontWeight={800}
-                  color={dueAmount > 0 ? 'error.main' : 'text.secondary'}
-                >
-                  ৳ {dueAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </Typography>
-              </Box>
-            </Paper>
           </Grid>
 
           {/* Tracking Pipeline Initial Stage */}
@@ -431,17 +552,6 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
 
           <Grid item xs={12} sm={6}>
             <TextField
-              label="Payment Reference / TrxID / Method"
-              fullWidth
-              size="small"
-              value={formData.payment_reference}
-              onChange={(e) => handleChange('payment_reference', e.target.value)}
-              placeholder="e.g. Bkash Trx 9K382HA, Bank Transfer, Cash"
-            />
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
               label="Estimated Delivery Date"
               type="date"
               fullWidth
@@ -452,14 +562,14 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid item xs={12} sm={6}>
             <TextField
-              label="Initial Tracking Note (Visible to Customer in Portal)"
+              label="Initial Tracking Note (Visible in Customer Portal)"
               fullWidth
               size="small"
               value={formData.tracking_notes}
               onChange={(e) => handleChange('tracking_notes', e.target.value)}
-              placeholder="e.g. Advance paid 10,000 BDT. Sourcing from official China supplier."
+              placeholder="e.g. Sourcing from official China supplier."
             />
           </Grid>
         </Grid>
@@ -476,7 +586,14 @@ export default function CreateOtherGoodsDialog({ open, onClose, onOrderCreated }
           variant="contained"
           disabled={submitting}
           startIcon={<OrderIcon />}
-          sx={{ borderRadius: 2, px: 3 }}
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            background: 'linear-gradient(135deg, #EC4899 0%, #BE185D 100%)',
+            '&:hover': {
+              background: 'linear-gradient(135deg, #DB2777 0%, #9D174D 100%)'
+            }
+          }}
         >
           {submitting ? 'Creating Order...' : 'Create Order'}
         </Button>

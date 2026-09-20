@@ -539,6 +539,26 @@ export default function PublicOrderTracking() {
                   >
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Typography variant="body2" color="text.secondary">
+                        Payment Method:
+                      </Typography>
+                      <Box sx={{ textAlign: 'right' }}>
+                        <Chip
+                          label={order.payment_method_display || order.payment_method || 'bKash'}
+                          size="small"
+                          color="primary"
+                          variant="outlined"
+                          sx={{ fontWeight: 800, height: 22 }}
+                        />
+                        {order.transaction_id && (
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontFamily: 'monospace', fontSize: '0.72rem', mt: 0.3 }}>
+                            Trx: {order.transaction_id}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
                         Paid / Advance:
                       </Typography>
                       <Typography variant="h6" fontWeight={800} color="success.main">

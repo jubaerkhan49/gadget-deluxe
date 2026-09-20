@@ -34,7 +34,10 @@ import {
   Timeline as TimelineIcon,
   Person as PersonIcon,
   Edit as EditIcon,
-  AccessTime as TimeIcon
+  AccessTime as TimeIcon,
+  TrendingUp as ProfitIcon,
+  AccountBalance as BankIcon,
+  Receipt as TrxIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { otherGoodsApi } from '../api/client';
@@ -50,17 +53,26 @@ export const TRACKING_STAGES = [
   { id: 'DELIVERED', label: 'Product Delivered', step: 7 }
 ];
 
+const PAYMENT_METHODS = [
+  { value: 'BKASH', label: 'bKash' },
+  { value: 'NAGAD', label: 'Nagad' },
+  { value: 'BANK', label: 'Bank Transfer' },
+  { value: 'CASH', label: 'Cash' }
+];
+
 export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrderUpdated }) {
   const { enqueueSnackbar } = useSnackbar();
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     stage: 'ORDER_CONFIRMED',
-    product_price: '0.00',
+    buying_price: '0.00',
     shipping_cost: '0.00',
+    selling_price: '0.00',
+    payment_method: 'BKASH',
+    transaction_id: '',
     payment_amount: '0.00',
     payment_date: '',
-    payment_reference: '',
     tracking_notes: '',
     estimated_delivery: '',
     actual_delivery: '',
@@ -74,20 +86,22 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
   useEffect(() => {
     if (order) {
       setFormData({
-        stage: order.stage || 'ORDER_CONFIRMED',
-        product_price: order.product_price || '0.00',
+        stage: order.stage || order.tracking_status || 'ORDER_CONFIRMED',
+        buying_price: order.buying_price || order.product_price || '0.00',
         shipping_cost: order.shipping_cost || '0.00',
+        selling_price: order.selling_price || order.total_amount || order.buying_price || '0.00',
+        payment_method: order.payment_method || 'BKASH',
+        transaction_id: order.transaction_id || '',
         payment_amount: order.payment_amount || '0.00',
         payment_date: order.payment_date || '',
-        payment_reference: order.payment_reference || '',
         tracking_notes: order.tracking_notes || '',
-        estimated_delivery: order.estimated_delivery || '',
-        actual_delivery: order.actual_delivery || '',
+        estimated_delivery: order.estimated_delivery || order.estimated_delivery_date || '',
+        actual_delivery: order.actual_delivery || order.actual_delivery_date || '',
         customer_name: order.customer_name || '',
         customer_phone: order.customer_phone || '',
         customer_address: order.customer_address || '',
         product_name: order.product_name || '',
-        product_description: order.product_description || ''
+        product_description: order.product_description || order.product_specs || ''
       });
     }
   }, [order, open]);
@@ -96,11 +110,19 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
 
   const currentStepIndex = TRACKING_STAGES.findIndex((s) => s.id === formData.stage);
 
-  const numPrice = parseFloat(formData.product_price) || 0;
+  // Financial calculations
+  const numBuying = parseFloat(formData.buying_price) || 0;
   const numShipping = parseFloat(formData.shipping_cost) || 0;
+  const numSelling = parseFloat(formData.selling_price) || 0;
   const numPaid = parseFloat(formData.payment_amount) || 0;
-  const totalAmount = numPrice + numShipping;
-  const dueAmount = Math.max(0, totalAmount - numPaid);
+
+  const totalCost = numBuying + numShipping;
+  const profit = numSelling > 0 ? numSelling - totalCost : 0;
+  const marginPct = numSelling > 0 ? ((profit / numSelling) * 100).toFixed(1) : '0.0';
+  const billedTotal = numSelling > 0 ? numSelling : totalCost;
+  const dueAmount = Math.max(0, billedTotal - numPaid);
+
+  const isElectronicPayment = ['BKASH', 'NAGAD', 'BANK'].includes(formData.payment_method);
 
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -129,19 +151,26 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
       setSubmitting(true);
       const payload = {
         stage: formData.stage,
-        product_price: Number(formData.product_price).toFixed(2),
+        tracking_status: formData.stage,
+        buying_price: Number(formData.buying_price).toFixed(2),
+        product_price: Number(formData.buying_price).toFixed(2),
         shipping_cost: Number(formData.shipping_cost).toFixed(2),
+        selling_price: Number(formData.selling_price).toFixed(2),
+        payment_method: formData.payment_method,
+        transaction_id: isElectronicPayment ? formData.transaction_id.trim() : '',
         payment_amount: Number(formData.payment_amount).toFixed(2),
         payment_date: formData.payment_date || null,
-        payment_reference: formData.payment_reference.trim(),
         tracking_notes: formData.tracking_notes.trim(),
         estimated_delivery: formData.estimated_delivery || null,
+        estimated_delivery_date: formData.estimated_delivery || null,
         actual_delivery: formData.actual_delivery || null,
+        actual_delivery_date: formData.actual_delivery || null,
         customer_name: formData.customer_name.trim(),
         customer_phone: formData.customer_phone.trim(),
         customer_address: formData.customer_address.trim(),
         product_name: formData.product_name.trim(),
-        product_description: formData.product_description.trim()
+        product_description: formData.product_description.trim(),
+        product_specs: formData.product_description.trim()
       };
 
       const res = await otherGoodsApi.update(order.id, payload);
@@ -166,14 +195,15 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: 38,
-              height: 38,
-              borderRadius: 2,
+              width: 40,
+              height: 40,
+              borderRadius: 2.5,
               background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#fff'
+              color: '#fff',
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
             }}
           >
             <ShippingIcon fontSize="small" />
@@ -197,7 +227,7 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
           </Box>
         </Box>
 
-        {/* Quick Link Buttons */}
+        {/* Action Buttons */}
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
             size="small"
@@ -233,7 +263,7 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
             variant="outlined"
             sx={{
               p: 2,
-              borderRadius: 2,
+              borderRadius: 2.5,
               bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : 'rgba(248, 250, 252, 0.9)'),
               overflowX: 'auto'
             }}
@@ -270,34 +300,33 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
         </Box>
 
         <Grid container spacing={2.5}>
-          {/* Tracking Note */}
+          {/* Tracking Status Note */}
           <Grid item xs={12}>
             <TextField
-              label="Tracking Status Note / Update"
+              label="Tracking Status Note / Update (Visible to Customer in Portal)"
               fullWidth
               size="small"
               value={formData.tracking_notes}
               onChange={(e) => handleChange('tracking_notes', e.target.value)}
-              placeholder="e.g. Received at BD sorting hub. Final shipping cost calculated as 1,800 BDT."
-              helperText="This note will be logged in the timeline and visible to customer."
+              placeholder="e.g. Received at BD sorting hub. Weight verified."
             />
           </Grid>
 
-          {/* Pricing & Financial Adjustments */}
+          {/* Pricing, Sold Amount & Profit */}
           <Grid item xs={12}>
             <Typography variant="subtitle2" fontWeight={700} color="primary" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <MoneyIcon fontSize="small" /> Financial Breakdown & Payment Update
+              <MoneyIcon fontSize="small" /> Pricing, Sold Price & Profit Management
             </Typography>
           </Grid>
 
           <Grid item xs={12} sm={4}>
             <TextField
-              label="Product Price (BDT)"
+              label="Buying Price / Cost (BDT)"
               fullWidth
               type="number"
               size="small"
-              value={formData.product_price}
-              onChange={(e) => handleChange('product_price', e.target.value)}
+              value={formData.buying_price}
+              onChange={(e) => handleChange('buying_price', e.target.value)}
               InputProps={{ startAdornment: <InputAdornment position="start">৳</InputAdornment> }}
             />
           </Grid>
@@ -310,31 +339,31 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
               size="small"
               value={formData.shipping_cost}
               onChange={(e) => handleChange('shipping_cost', e.target.value)}
-              helperText="Add shipping cost upon arrival in BD"
+              helperText="Update upon arrival in BD"
               InputProps={{ startAdornment: <InputAdornment position="start">৳</InputAdornment> }}
             />
           </Grid>
 
           <Grid item xs={12} sm={4}>
             <TextField
-              label="Paid Amount So Far (BDT)"
+              label="Selling Amount / Sold Price (BDT)"
               fullWidth
               type="number"
               size="small"
-              value={formData.payment_amount}
-              onChange={(e) => handleChange('payment_amount', e.target.value)}
-              helperText="Increase if customer made further payments"
+              value={formData.selling_price}
+              onChange={(e) => handleChange('selling_price', e.target.value)}
+              helperText="Total customer bill"
               InputProps={{ startAdornment: <InputAdornment position="start">৳</InputAdornment> }}
             />
           </Grid>
 
-          {/* Live Due Status Card */}
+          {/* Live Profit Calculation Card */}
           <Grid item xs={12}>
             <Paper
               variant="outlined"
               sx={{
                 p: 2,
-                borderRadius: 2,
+                borderRadius: 2.5,
                 bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.7)' : 'rgba(241, 245, 249, 0.8)'),
                 display: 'flex',
                 justifyContent: 'space-around',
@@ -345,10 +374,10 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
             >
               <Box textAlign="center">
                 <Typography variant="caption" color="text.secondary">
-                  Total Order Value
+                  Total Cost (Buy + Ship)
                 </Typography>
-                <Typography variant="h6" fontWeight={800} color="primary.main">
-                  ৳ {totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                <Typography variant="subtitle1" fontWeight={800} color="text.primary">
+                  ৳ {totalCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                 </Typography>
               </Box>
 
@@ -356,10 +385,33 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
 
               <Box textAlign="center">
                 <Typography variant="caption" color="text.secondary">
-                  Total Received
+                  Sold Amount
                 </Typography>
-                <Typography variant="h6" fontWeight={800} color="success.main">
-                  ৳ {numPaid.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                <Typography variant="subtitle1" fontWeight={800} color="primary.main">
+                  ৳ {numSelling.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                </Typography>
+              </Box>
+
+              <Divider orientation="vertical" flexItem />
+
+              <Box textAlign="center">
+                <Typography variant="caption" color="text.secondary">
+                  Net Profit (Margin)
+                </Typography>
+                <Typography
+                  variant="h6"
+                  fontWeight={900}
+                  color={profit >= 0 ? 'success.main' : 'error.main'}
+                  sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}
+                >
+                  <ProfitIcon fontSize="small" />
+                  ৳ {profit.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  <Chip
+                    label={`${marginPct}%`}
+                    size="small"
+                    color={profit >= 0 ? 'success' : 'error'}
+                    sx={{ height: 20, fontSize: '0.7rem', fontWeight: 800, ml: 0.5 }}
+                  />
                 </Typography>
               </Box>
 
@@ -371,7 +423,7 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
                 </Typography>
                 <Typography
                   variant="h6"
-                  fontWeight={800}
+                  fontWeight={900}
                   color={dueAmount > 0 ? 'error.main' : 'success.main'}
                 >
                   {dueAmount > 0
@@ -382,10 +434,77 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
             </Paper>
           </Grid>
 
-          {/* Dates & Reference */}
+          {/* Payment Method & TrxID */}
+          <Grid item xs={12}>
+            <Divider sx={{ my: 0.5 }} />
+            <Typography variant="subtitle2" fontWeight={700} color="primary" sx={{ mt: 1, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <BankIcon fontSize="small" /> Payment Method & Collection
+            </Typography>
+          </Grid>
+
           <Grid item xs={12} sm={4}>
             <TextField
-              label="Last Payment Date"
+              label="Payment Method"
+              select
+              fullWidth
+              size="small"
+              value={formData.payment_method}
+              onChange={(e) => handleChange('payment_method', e.target.value)}
+            >
+              {PAYMENT_METHODS.map((pm) => (
+                <MenuItem key={pm.value} value={pm.value}>
+                  {pm.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+
+          {isElectronicPayment ? (
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label={`TrxID / Ref (${formData.payment_method === 'BKASH' ? 'bKash' : formData.payment_method === 'NAGAD' ? 'Nagad' : 'Bank Reference'})`}
+                fullWidth
+                size="small"
+                value={formData.transaction_id}
+                onChange={(e) => handleChange('transaction_id', e.target.value)}
+                placeholder="e.g. 9K382HA92L"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <TrxIcon fontSize="small" color="primary" />
+                    </InputAdornment>
+                  )
+                }}
+              />
+            </Grid>
+          ) : (
+            <Grid item xs={12} sm={4}>
+              <TextField
+                label="Payment Note"
+                fullWidth
+                size="small"
+                disabled
+                value="Cash Received at Store"
+              />
+            </Grid>
+          )}
+
+          <Grid item xs={12} sm={4}>
+            <TextField
+              label="Paid Amount So Far (BDT)"
+              fullWidth
+              type="number"
+              size="small"
+              value={formData.payment_amount}
+              onChange={(e) => handleChange('payment_amount', e.target.value)}
+              InputProps={{ startAdornment: <InputAdornment position="start">৳</InputAdornment> }}
+            />
+          </Grid>
+
+          {/* Dates */}
+          <Grid item xs={12} sm={4}>
+            <TextField
+              label="Payment Date"
               type="date"
               fullWidth
               size="small"
@@ -522,7 +641,11 @@ export default function UpdateOrderTrackingDialog({ open, onClose, order, onOrde
           variant="contained"
           disabled={submitting}
           startIcon={<CheckIcon />}
-          sx={{ borderRadius: 2, px: 3 }}
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+          }}
         >
           {submitting ? 'Saving...' : 'Save Updates'}
         </Button>
