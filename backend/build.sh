@@ -18,7 +18,7 @@ pip install -r requirements.txt
 python manage.py collectstatic --no-input
 
 # Apply database migrations
-python manage.py migrate --fake-initial
+python manage.py migrate --noinput
 
 # Ensure default admin user exists from environment variables if provided
 python -c "

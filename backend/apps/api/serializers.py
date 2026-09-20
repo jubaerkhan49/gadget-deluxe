@@ -230,8 +230,13 @@ class ShipmentSerializer(serializers.ModelSerializer):
             return "0.00"
 
 class OtherGoodsOrderSerializer(serializers.ModelSerializer):
+    stage = serializers.CharField(source='tracking_status', required=False)
+    stage_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
     tracking_status_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
     category_display = serializers.CharField(source='get_category_display', read_only=True)
+    product_description = serializers.CharField(source='product_specs', required=False, allow_blank=True, allow_null=True)
+    estimated_delivery = serializers.DateField(source='estimated_delivery_date', required=False, allow_null=True)
+    actual_delivery = serializers.DateField(source='actual_delivery_date', required=False, allow_null=True)
     total_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     due_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     payment_status = serializers.CharField(read_only=True)
@@ -241,8 +246,13 @@ class OtherGoodsOrderSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PublicOrderTrackingSerializer(serializers.ModelSerializer):
+    stage = serializers.CharField(source='tracking_status', read_only=True)
+    stage_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
     tracking_status_display = serializers.CharField(source='get_tracking_status_display', read_only=True)
     category_display = serializers.CharField(source='get_category_display', read_only=True)
+    product_description = serializers.CharField(source='product_specs', read_only=True)
+    estimated_delivery = serializers.DateField(source='estimated_delivery_date', read_only=True)
+    actual_delivery = serializers.DateField(source='actual_delivery_date', read_only=True)
     total_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     due_amount = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     payment_status = serializers.CharField(read_only=True)
@@ -258,6 +268,7 @@ class PublicOrderTrackingSerializer(serializers.ModelSerializer):
             'category',
             'category_display',
             'product_specs',
+            'product_description',
             'product_price',
             'shipping_cost',
             'total_amount',
@@ -267,9 +278,13 @@ class PublicOrderTrackingSerializer(serializers.ModelSerializer):
             'order_date',
             'payment_date',
             'estimated_delivery_date',
+            'estimated_delivery',
             'actual_delivery_date',
+            'actual_delivery',
             'tracking_status',
             'tracking_status_display',
+            'stage',
+            'stage_display',
             'carrier_tracking_number',
             'tracking_notes',
             'timeline_events',

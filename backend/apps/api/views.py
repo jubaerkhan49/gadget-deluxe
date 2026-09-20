@@ -867,17 +867,17 @@ class OtherGoodsOrderViewSet(viewsets.ModelViewSet):
     serializer_class = OtherGoodsOrderSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields = ['stage', 'category']
-    search_fields = ['order_id', 'customer_name', 'customer_phone', 'product_name', 'tracking_notes']
-    ordering_fields = ['order_date', 'created_at', 'updated_at', 'product_price', 'payment_amount']
+    filterset_fields = ['tracking_status', 'category']
+    search_fields = ['order_id', 'customer_name', 'customer_phone', 'product_name', 'tracking_notes', 'product_specs']
+    ordering_fields = ['order_date', 'created_at', 'updated_at', 'product_price', 'payment_amount', 'shipping_cost']
     ordering = ['-created_at']
 
     def perform_create(self, serializer):
         order = serializer.save()
         if not order.timeline_events:
             order.timeline_events = [{
-                'stage': order.stage,
-                'stage_display': order.get_stage_display(),
+                'stage': order.tracking_status,
+                'stage_display': order.get_tracking_status_display(),
                 'timestamp': timezone.now().isoformat(),
                 'note': order.tracking_notes or 'Order registered into system'
             }]
@@ -885,7 +885,7 @@ class OtherGoodsOrderViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         old_order = OtherGoodsOrder.objects.get(pk=serializer.instance.pk)
-        old_stage = old_order.stage
+        old_stage = old_order.tracking_status
         old_payment = old_order.payment_amount
         old_shipping = old_order.shipping_cost
 
@@ -893,14 +893,14 @@ class OtherGoodsOrderViewSet(viewsets.ModelViewSet):
 
         # Check if timeline event should be added
         events = list(order.timeline_events or [])
-        stage_changed = (old_stage != order.stage)
+        stage_changed = (old_stage != order.tracking_status)
         payment_changed = (old_payment != order.payment_amount)
         shipping_changed = (old_shipping != order.shipping_cost)
 
         if stage_changed or payment_changed or shipping_changed:
             note_parts = []
             if stage_changed:
-                note_parts.append(f"Stage changed to {order.get_stage_display()}")
+                note_parts.append(f"Stage changed to {order.get_tracking_status_display()}")
             if payment_changed:
                 note_parts.append(f"Payment updated to BDT {order.payment_amount} (Due: BDT {order.due_amount})")
             if shipping_changed:
@@ -909,8 +909,8 @@ class OtherGoodsOrderViewSet(viewsets.ModelViewSet):
                 note_parts.append(f"Note: {order.tracking_notes}")
 
             events.append({
-                'stage': order.stage,
-                'stage_display': order.get_stage_display(),
+                'stage': order.tracking_status,
+                'stage_display': order.get_tracking_status_display(),
                 'timestamp': timezone.now().isoformat(),
                 'note': " | ".join(note_parts) if note_parts else (order.tracking_notes or "Order updated")
             })

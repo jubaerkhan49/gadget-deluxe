@@ -160,10 +160,10 @@ export default function OtherGoods() {
   const metrics = useMemo(() => {
     const totalOrders = orders.length;
     const inTransit = orders.filter((o) =>
-      ['ORDER_CONFIRMED', 'PAYMENT_RECEIVED', 'PRODUCT_PURCHASED', 'SHIPPED_TO_CN_WAREHOUSE', 'SHIPPED_TO_BD'].includes(o.stage)
+      ['ORDER_CONFIRMED', 'PAYMENT_RECEIVED', 'PRODUCT_PURCHASED', 'SHIPPED_TO_CN_WAREHOUSE', 'SHIPPED_TO_BD'].includes(o.stage || o.tracking_status)
     ).length;
-    const arrivedBD = orders.filter((o) => ['ARRIVED_AT_BD', 'RECEIVED_IN_BD'].includes(o.stage)).length;
-    const delivered = orders.filter((o) => o.stage === 'DELIVERED').length;
+    const arrivedBD = orders.filter((o) => ['ARRIVED_AT_BD', 'RECEIVED_IN_BD'].includes(o.stage || o.tracking_status)).length;
+    const delivered = orders.filter((o) => (o.stage || o.tracking_status) === 'DELIVERED').length;
     const totalDue = orders.reduce((sum, o) => sum + (parseFloat(o.due_amount) || 0), 0);
     const totalRevenue = orders.reduce((sum, o) => sum + (parseFloat(o.total_amount) || 0), 0);
     const totalCollected = orders.reduce((sum, o) => sum + (parseFloat(o.payment_amount) || 0), 0);
@@ -174,6 +174,8 @@ export default function OtherGoods() {
   // Filtered Orders
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
+      const orderStage = order.stage || order.tracking_status;
+
       // Search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
@@ -189,7 +191,7 @@ export default function OtherGoods() {
       }
 
       // Stage Filter
-      if (selectedStage !== 'ALL' && order.stage !== selectedStage) {
+      if (selectedStage !== 'ALL' && orderStage !== selectedStage) {
         return false;
       }
 
