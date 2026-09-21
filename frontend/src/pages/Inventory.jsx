@@ -74,6 +74,7 @@ export default function Inventory() {
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedVariant, setSelectedVariant] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedOwner, setSelectedOwner] = useState('ALL');
 
@@ -187,6 +188,11 @@ export default function Inventory() {
 
     // Exclude SOLD devices from active inventory (accessible in Archive page)
     if (dev.current_status === 'SOLD') {
+      return false;
+    }
+
+    // Variant Filter
+    if (selectedVariant !== 'ALL' && dev.variant !== selectedVariant) {
       return false;
     }
 
@@ -323,13 +329,14 @@ export default function Inventory() {
       {/* Filter Control Box */}
       <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 3 }}>
         <Stack spacing={2}>
-          {/* Top Filter Bar: Search, Status & Owner Selectors */}
+          {/* Top Filter Bar: Search, Variant, Status & Owner Selectors */}
           <Box
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', md: 'row' },
               gap: 2,
-              alignItems: 'center'
+              alignItems: 'center',
+              flexWrap: 'wrap'
             }}
           >
             <TextField
@@ -340,7 +347,7 @@ export default function Inventory() {
                 setSearchQuery(e.target.value);
                 setPage(0);
               }}
-              sx={{ flex: 1, width: { xs: '100%', md: 'auto' } }}
+              sx={{ width: { xs: '100%', md: 280, lg: 320 } }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -357,7 +364,26 @@ export default function Inventory() {
               }}
             />
 
-            <FormControl size="small" sx={{ minWidth: 160, width: { xs: '100%', md: 'auto' } }}>
+            <FormControl size="small" sx={{ minWidth: 140, width: { xs: '100%', md: 'auto' } }}>
+              <InputLabel>Variant</InputLabel>
+              <Select
+                value={selectedVariant}
+                label="Variant"
+                onChange={(e) => {
+                  setSelectedVariant(e.target.value);
+                  setPage(0);
+                }}
+              >
+                <MenuItem value="ALL">All Variants</MenuItem>
+                {VARIANTS.filter((v) => v !== 'All').map((v) => (
+                  <MenuItem key={v} value={v}>
+                    {v}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 150, width: { xs: '100%', md: 'auto' } }}>
               <InputLabel>Status</InputLabel>
               <Select
                 value={selectedStatus}
@@ -411,12 +437,13 @@ export default function Inventory() {
               onClick={() => {
                 setSelectedStatus('ALL');
                 setSelectedOwner('ALL');
+                setSelectedVariant('ALL');
                 setPage(0);
               }}
-              color={selectedStatus === 'ALL' && selectedOwner === 'ALL' ? 'primary' : 'default'}
-              variant={selectedStatus === 'ALL' && selectedOwner === 'ALL' ? 'filled' : 'outlined'}
+              color={selectedStatus === 'ALL' && selectedOwner === 'ALL' && selectedVariant === 'ALL' ? 'primary' : 'default'}
+              variant={selectedStatus === 'ALL' && selectedOwner === 'ALL' && selectedVariant === 'ALL' ? 'filled' : 'outlined'}
               sx={{
-                fontWeight: selectedStatus === 'ALL' && selectedOwner === 'ALL' ? 700 : 500,
+                fontWeight: selectedStatus === 'ALL' && selectedOwner === 'ALL' && selectedVariant === 'ALL' ? 700 : 500,
                 borderRadius: '8px'
               }}
             />
