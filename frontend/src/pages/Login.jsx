@@ -11,22 +11,28 @@ import {
   CircularProgress,
   Alert,
   Stack,
-  Container
+  Container,
+  Chip
 } from '@mui/material';
 import {
   Visibility,
   VisibilityOff,
   LockOutlined as LockIcon,
   PersonOutline as PersonIcon,
-  Smartphone as PhoneIcon
+  Smartphone as PhoneIcon,
+  ArrowBack as BackIcon,
+  AdminPanelSettings as AdminIcon,
+  Badge as EmployeeIcon
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const roleParam = searchParams.get('role');
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -34,7 +40,10 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const from = location.state?.from?.pathname || '/';
+  const from =
+    location.state?.from?.pathname && location.state.from.pathname !== '/'
+      ? location.state.from.pathname
+      : '/dashboard';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -73,6 +82,19 @@ export default function Login() {
       }}
     >
       <Container maxWidth="xs">
+        {/* Back to Home button */}
+        <Box sx={{ mb: 2 }}>
+          <Button
+            size="small"
+            color="inherit"
+            startIcon={<BackIcon />}
+            onClick={() => navigate('/')}
+            sx={{ fontWeight: 600, borderRadius: 2 }}
+          >
+            Back to Portal
+          </Button>
+        </Box>
+
         <Card
           sx={{
             p: { xs: 2, sm: 3 },
@@ -93,21 +115,52 @@ export default function Login() {
                   width: 56,
                   height: 56,
                   borderRadius: '16px',
-                  background: 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
+                  background:
+                    roleParam === 'employee'
+                      ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                      : roleParam === 'admin'
+                        ? 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)'
+                        : 'linear-gradient(135deg, #2563EB 0%, #3B82F6 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: '0 8px 16px rgba(37, 99, 235, 0.3)'
                 }}
               >
-                <PhoneIcon sx={{ color: '#FFFFFF', fontSize: 30 }} />
+                {roleParam === 'employee' ? (
+                  <EmployeeIcon sx={{ color: '#FFFFFF', fontSize: 30 }} />
+                ) : roleParam === 'admin' ? (
+                  <AdminIcon sx={{ color: '#FFFFFF', fontSize: 30 }} />
+                ) : (
+                  <PhoneIcon sx={{ color: '#FFFFFF', fontSize: 30 }} />
+                )}
               </Box>
+
               <Typography variant="h5" fontWeight={800} align="center" letterSpacing={-0.5}>
                 Gadget Deluxe
               </Typography>
-              <Typography variant="body2" color="text.secondary" align="center">
-                Cloud Phone Management
-              </Typography>
+
+              {roleParam === 'admin' ? (
+                <Chip
+                  icon={<AdminIcon fontSize="small" sx={{ color: '#fff !important' }} />}
+                  label="Administrator Access"
+                  color="secondary"
+                  size="small"
+                  sx={{ fontWeight: 800, color: '#ffffff' }}
+                />
+              ) : roleParam === 'employee' ? (
+                <Chip
+                  icon={<EmployeeIcon fontSize="small" sx={{ color: '#fff !important' }} />}
+                  label="Staff / Employee Access"
+                  color="success"
+                  size="small"
+                  sx={{ fontWeight: 800, color: '#ffffff' }}
+                />
+              ) : (
+                <Typography variant="body2" color="text.secondary" align="center">
+                  Cloud Portal Authentication
+                </Typography>
+              )}
             </Stack>
 
             {error && (

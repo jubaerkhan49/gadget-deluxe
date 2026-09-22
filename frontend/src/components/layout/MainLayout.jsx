@@ -49,7 +49,7 @@ import ChangePasswordDialog from '../../dialogs/ChangePasswordDialog';
 const DRAWER_WIDTH = 250;
 
 const NAV_ITEMS = [
-  { text: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+  { text: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
   { text: 'Analytics', path: '/analytics', icon: <InsightsIcon /> },
   { text: 'Inventory', path: '/inventory', icon: <PhoneAndroidIcon /> },
   { text: 'B2B', path: '/b2b', icon: <StorefrontIcon /> },
@@ -82,7 +82,17 @@ export default function MainLayout() {
   const drawerContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Brand Header */}
-      <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+      <Box
+        onClick={() => navigate('/dashboard')}
+        sx={{
+          p: 2.5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          cursor: 'pointer',
+          '&:hover': { opacity: 0.9 }
+        }}
+      >
         <Box
           sx={{
             width: 40,
@@ -113,10 +123,7 @@ export default function MainLayout() {
       {/* Navigation List */}
       <List sx={{ px: 1.5, py: 1.5, flexGrow: 1 }}>
         {NAV_ITEMS.map((item) => {
-          const isSelected =
-            item.path === '/'
-              ? location.pathname === '/'
-              : location.pathname.startsWith(item.path);
+          const isSelected = location.pathname.startsWith(item.path);
 
           return (
             <ListItem key={item.text} disablePadding sx={{ mb: 0.6 }}>
@@ -199,9 +206,8 @@ export default function MainLayout() {
     </Box>
   );
 
-  const activePageTitle = NAV_ITEMS.find((n) =>
-    n.path === '/' ? location.pathname === '/' : location.pathname.startsWith(n.path)
-  )?.text || 'Dashboard';
+  const activePageTitle =
+    NAV_ITEMS.find((n) => location.pathname.startsWith(n.path))?.text || 'Dashboard';
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
