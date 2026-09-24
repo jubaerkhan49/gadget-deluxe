@@ -140,11 +140,11 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="md"
+      maxWidth="lg"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3, minHeight: 520 } }}
+      PaperProps={{ sx: { borderRadius: 3, width: '100%', maxWidth: 980, minHeight: 520 } }}
     >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1.5, px: 3, pt: 2.5 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
@@ -161,7 +161,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
             <PeopleIcon fontSize="small" />
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight={700}>
+            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px">
               Employee Management
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -322,11 +322,10 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
         {/* Tab 1: Active Staff & Employees */}
         {!loading && tabIndex === 1 && (
           <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-            <Table size="small">
+            <Table size="small" sx={{ '& .MuiTableCell-root': { py: 1.2, px: 1.5 } }}>
               <TableHead>
                 <TableRow sx={{ bgcolor: 'action.hover' }}>
                   <TableCell sx={{ fontWeight: 700 }}>Employee</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Username</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Contact</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">Assigned Devices</TableCell>
@@ -339,23 +338,21 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                   <TableRow key={emp.id} hover>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main', fontSize: '0.85rem' }}>
-                          {emp.first_name ? emp.first_name.charAt(0) : emp.username.charAt(0).toUpperCase()}
+                        <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: '0.85rem', fontWeight: 700 }}>
+                          {emp.first_name ? emp.first_name.charAt(0).toUpperCase() : emp.username.charAt(0).toUpperCase()}
                         </Avatar>
                         <Box>
-                          <Typography variant="body2" fontWeight={600}>
+                          <Typography variant="body2" fontWeight={700}>
                             {emp.first_name ? `${emp.first_name} ${emp.last_name || ''}` : emp.username}
+                            <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.8, fontFamily: 'monospace' }}>
+                              @{emp.username}
+                            </Typography>
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                             {emp.email || 'No email registered'}
                           </Typography>
                         </Box>
                       </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontFamily="monospace">
-                        @{emp.username}
-                      </Typography>
                     </TableCell>
                     <TableCell>
                       <Chip
