@@ -204,6 +204,27 @@ class DeviceSerializer(serializers.ModelSerializer):
         except Exception:
             return None
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        user = getattr(request, 'user', None)
+        if user and user.is_authenticated:
+            is_admin = user.role == User.Role.ADMIN or user.is_superuser or user.username in ['jubaer', 'admin']
+            if not is_admin:
+                # Sanitize confidential business financials & supplier details for employees
+                data['buying_price'] = None
+                data['selling_price'] = None
+                data['b2b_selling_price'] = None
+                data['b2b_repair_cost'] = None
+                data['b2b_profit'] = None
+                data['shipment_supplier'] = None
+                data['shipment_agent'] = None
+                data['shipment_tracking'] = None
+                data['shipment_receive_date_cn'] = None
+                data['sales'] = []
+                data['device_notes'] = []
+        return data
+
 class ShipmentSerializer(serializers.ModelSerializer):
     supplier_name = serializers.SerializerMethodField()
     devices_count = serializers.SerializerMethodField()

@@ -54,8 +54,9 @@ import {
   CheckCircle as ActiveCheckIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber, formatDate } from '../utils/formatters';
 import { deviceApi, userApi } from '../api/client';
+import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
@@ -80,6 +81,7 @@ export default function DeviceDetailDrawer({
   onDeviceDeleted
 }) {
   const { enqueueSnackbar } = useSnackbar();
+  const { isAdmin, user: authUser } = useAuth();
   const [currentTab, setCurrentTab] = useState(0);
 
   const [users, setUsers] = useState([]);
@@ -100,9 +102,11 @@ export default function DeviceDetailDrawer({
       setOwner(device.current_owner || '');
       setReceivedDateBd(device.received_date_bd || '');
       setSellingPrice(device.selling_price ? String(device.selling_price) : '');
-      fetchUsers();
+      if (isAdmin) {
+        fetchUsers();
+      }
     }
-  }, [open, device]);
+  }, [open, device, isAdmin]);
 
   const fetchUsers = async () => {
     try {
@@ -255,44 +259,49 @@ export default function DeviceDetailDrawer({
             </Stack>
           </Box>
           <Stack direction="row" spacing={0.5} alignItems="center">
-            <Tooltip title="Edit Device Specs">
-              <IconButton
-                color="primary"
-                onClick={() => {
-                  onClose();
-                  if (onEditRequested) onEditRequested(device);
-                }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Delete Device">
-              <IconButton color="error" onClick={() => setDeleteConfirmOpen(true)}>
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            {isAdmin && (
+              <>
+                <Tooltip title="Edit Device Specs">
+                  <IconButton
+                    color="primary"
+                    onClick={() => {
+                      onClose();
+                      if (onEditRequested) onEditRequested(device);
+                    }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Delete Device">
+                  <IconButton color="error" onClick={() => setDeleteConfirmOpen(true)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
             <IconButton onClick={onClose} edge="end">
               <CloseIcon />
             </IconButton>
           </Stack>
         </Box>
 
-        {/* Tab Navigation Header */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 1, sm: 2 }, bgcolor: 'background.paper' }}>
-          <Tabs
-            value={currentTab}
-            onChange={(e, val) => setCurrentTab(val)}
-            variant="scrollable"
-            scrollButtons={false}
-            sx={{
-              minHeight: 46,
-              '& .MuiTabs-scrollButtons': { display: 'none' },
-              '& .MuiTabs-flexContainer': {
-                gap: { xs: 0.5, sm: 0.8 },
-                flexWrap: { xs: 'nowrap', sm: 'wrap' }
-              }
-            }}
-          >
+        {/* Tab Navigation Header (Admin only) */}
+        {isAdmin && (
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 1, sm: 2 }, bgcolor: 'background.paper' }}>
+            <Tabs
+              value={currentTab}
+              onChange={(e, val) => setCurrentTab(val)}
+              variant="scrollable"
+              scrollButtons={false}
+              sx={{
+                minHeight: 46,
+                '& .MuiTabs-scrollButtons': { display: 'none' },
+                '& .MuiTabs-flexContainer': {
+                  gap: { xs: 0.5, sm: 0.8 },
+                  flexWrap: { xs: 'nowrap', sm: 'wrap' }
+                }
+              }}
+            >
             <Tab
               icon={<OverviewIcon sx={{ fontSize: 17 }} />}
               iconPosition="start"
@@ -441,6 +450,7 @@ export default function DeviceDetailDrawer({
             />
           </Tabs>
         </Box>
+        )}
 
         {/* Tab Content Panes */}
         <Box sx={{ p: 3, flex: 1, overflowY: 'auto' }}>
@@ -448,116 +458,147 @@ export default function DeviceDetailDrawer({
           {/* TAB 0: OVERVIEW */}
           {currentTab === 0 && (
             <Stack spacing={3}>
-              {/* Quick Management Actions */}
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 2.5,
-                  borderRadius: 2,
-                  backgroundColor: (theme) =>
-                    theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC'
-                }}
-              >
-                <Typography variant="subtitle2" color="primary" fontWeight={700} gutterBottom sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                  Quick Status & Assignment
-                </Typography>
-                <Grid container spacing={2} sx={{ mt: 0.5 }}>
-                  <Grid item xs={12} sm={status === 'SOLD' ? 4 : 8}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Status</InputLabel>
-                      <Select
-                        value={status}
-                        label="Status"
-                        onChange={(e) => {
-                          const newStatus = e.target.value;
-                          setStatus(newStatus);
-                          if (newStatus === 'UNDER_REPAIR') {
-                            setRepairDialogOpen(true);
+              {/* Quick Management Actions (Admin Only) */}
+              {isAdmin ? (
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 2,
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC'
+                  }}
+                >
+                  <Typography variant="subtitle2" color="primary" fontWeight={700} gutterBottom sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    Quick Status & Assignment
+                  </Typography>
+                  <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                    <Grid item xs={12} sm={status === 'SOLD' ? 4 : 8}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Status</InputLabel>
+                        <Select
+                          value={status}
+                          label="Status"
+                          onChange={(e) => {
+                            const newStatus = e.target.value;
+                            setStatus(newStatus);
+                            if (newStatus === 'UNDER_REPAIR') {
+                              setRepairDialogOpen(true);
+                            }
+                          }}
+                        >
+                          {STATUS_CHOICES.map((c) => (
+                            <MenuItem key={c.value} value={c.value}>
+                              {c.label}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    {status === 'SOLD' && (
+                      <Grid item xs={12} sm={4}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          type="number"
+                          label="Selling Price (BDT)"
+                          value={sellingPrice}
+                          onChange={(e) => setSellingPrice(e.target.value)}
+                          placeholder="Enter price"
+                        />
+                      </Grid>
+                    )}
+
+                    <Grid item xs={12} sm={4}>
+                      <Button
+                        fullWidth
+                        variant="contained"
+                        disabled={savingStatus || (status === device.current_status && (!sellingPrice || sellingPrice === String(device.selling_price || '')))}
+                        onClick={handleStatusChange}
+                        startIcon={savingStatus ? <CircularProgress size={16} color="inherit" /> : <CheckIcon sx={{ color: '#ffffff !important' }} />}
+                        sx={{
+                          color: '#ffffff !important',
+                          fontWeight: 600,
+                          '&.Mui-disabled': {
+                            color: 'rgba(255, 255, 255, 0.7) !important',
+                            bgcolor: 'primary.main',
+                            opacity: 0.65
                           }
                         }}
                       >
-                        {STATUS_CHOICES.map((c) => (
-                          <MenuItem key={c.value} value={c.value}>
-                            {c.label}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-
-                  {status === 'SOLD' && (
-                    <Grid item xs={12} sm={4}>
-                      <TextField
-                        fullWidth
-                        size="small"
-                        type="number"
-                        label="Selling Price (BDT)"
-                        value={sellingPrice}
-                        onChange={(e) => setSellingPrice(e.target.value)}
-                        placeholder="Enter price"
-                      />
+                        Update Status
+                      </Button>
                     </Grid>
-                  )}
 
-                  <Grid item xs={12} sm={4}>
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      disabled={savingStatus || (status === device.current_status && (!sellingPrice || sellingPrice === String(device.selling_price || '')))}
-                      onClick={handleStatusChange}
-                      startIcon={savingStatus ? <CircularProgress size={16} color="inherit" /> : <CheckIcon sx={{ color: '#ffffff !important' }} />}
-                      sx={{
-                        color: '#ffffff !important',
-                        fontWeight: 600,
-                        '&.Mui-disabled': {
-                          color: 'rgba(255, 255, 255, 0.7) !important',
-                          bgcolor: 'primary.main',
-                          opacity: 0.65
-                        }
-                      }}
-                    >
-                      Update Status
-                    </Button>
-                  </Grid>
+                    <Grid item xs={12} sm={8}>
+                      <FormControl fullWidth size="small" disabled={loadingUsers}>
+                        <InputLabel>Assigned To</InputLabel>
+                        <Select
+                          value={owner}
+                          label="Assigned To"
+                          onChange={(e) => setOwner(e.target.value)}
+                        >
+                          <MenuItem value="">
+                            <em>None (Unassigned)</em>
+                          </MenuItem>
+                          {users
+                            .filter((u) => u.username?.toLowerCase() !== 'admin')
+                            .map((u) => {
+                              const roleDisplay = u.username?.toLowerCase() === 'jubaer' || u.role === 'ADMIN' ? 'Admin' : 'Employee';
+                              return (
+                                <MenuItem key={u.id} value={u.id}>
+                                  {u.username} ({roleDisplay})
+                                </MenuItem>
+                              );
+                            })}
+                        </Select>
+                      </FormControl>
+                    </Grid>
 
-                  <Grid item xs={12} sm={8}>
-                    <FormControl fullWidth size="small" disabled={loadingUsers}>
-                      <InputLabel>Assigned To</InputLabel>
-                      <Select
-                        value={owner}
-                        label="Assigned To"
-                        onChange={(e) => setOwner(e.target.value)}
+                    <Grid item xs={12} sm={4}>
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        disabled={savingOwner || owner === (device.current_owner || '')}
+                        onClick={handleOwnerChange}
+                        startIcon={savingOwner ? <CircularProgress size={16} color="inherit" /> : <PersonIcon />}
                       >
-                        <MenuItem value="">
-                          <em>None (Unassigned)</em>
-                        </MenuItem>
-                        {users
-                          .filter((u) => u.username?.toLowerCase() !== 'admin')
-                          .map((u) => {
-                            const roleDisplay = u.username?.toLowerCase() === 'jubaer' || u.role === 'ADMIN' ? 'Admin' : 'Employee';
-                            return (
-                              <MenuItem key={u.id} value={u.id}>
-                                {u.username} ({roleDisplay})
-                              </MenuItem>
-                            );
-                          })}
-                      </Select>
-                    </FormControl>
+                        Assign
+                      </Button>
+                    </Grid>
                   </Grid>
-
-                  <Grid item xs={12} sm={4}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      disabled={savingOwner || owner === (device.current_owner || '')}
-                      onClick={handleOwnerChange}
-                      startIcon={savingOwner ? <CircularProgress size={16} color="inherit" /> : <PersonIcon />}
-                    >
-                      Assign
-                    </Button>
+                </Paper>
+              ) : (
+                /* Employee Custody Overview Card */
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 2,
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC'
+                  }}
+                >
+                  <Typography variant="subtitle2" color="primary" fontWeight={700} gutterBottom sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    Custody & Assignment
+                  </Typography>
+                  <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Assigned To</Typography>
+                      <Typography variant="body2" fontWeight={700}>
+                        {device.current_owner_name || authUser?.username || 'You'}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Assigned Date</Typography>
+                      <Typography variant="body2" fontWeight={700}>
+                        {formatDate(device.assigned_date || device.received_date_bd || device.created_at)}
+                      </Typography>
+                    </Grid>
                   </Grid>
-                </Grid>
-              </Paper>
+                </Paper>
+              )}
 
               {/* Hardware & Identifiers */}
               <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
@@ -599,66 +640,68 @@ export default function DeviceDetailDrawer({
                 </Grid>
               </Paper>
 
-              {/* Financial & Logistics */}
-              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <ShippingIcon color="action" fontSize="small" />
-                  <Typography variant="subtitle2" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                    Financial & Logistics
-                  </Typography>
-                </Box>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Buying Cost</Typography>
-                    <Typography variant="body2" fontWeight={700} color="primary.main">
-                      {buyingCostFormatted !== '—' ? `${buyingCostFormatted} BDT` : '—'}
+              {/* Financial & Logistics (Admin Only) */}
+              {isAdmin && (
+                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <ShippingIcon color="action" fontSize="small" />
+                    <Typography variant="subtitle2" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                      Financial & Logistics
                     </Typography>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Buying Cost</Typography>
+                      <Typography variant="body2" fontWeight={700} color="primary.main">
+                        {buyingCostFormatted !== '—' ? `${buyingCostFormatted} BDT` : '—'}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Selling Price</Typography>
+                      <Typography variant="body2" fontWeight={700} color="success.main">
+                        {sellingPriceFormatted !== '—' ? `${sellingPriceFormatted} BDT` : '—'}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Supplier</Typography>
+                      <Typography variant="body2" fontWeight={600}>{device.shipment_supplier || '—'}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Shipping Agent</Typography>
+                      <Typography variant="body2" fontWeight={600}>{device.shipment_agent || '—'}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Received Date (CN)</Typography>
+                      <Typography variant="body2" fontWeight={600}>{device.shipment_receive_date_cn || '—'}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" color="text.secondary">Received Date (BD)</Typography>
+                      <TextField
+                        type="date"
+                        size="small"
+                        value={receivedDateBd}
+                        onChange={(e) => handleReceivedDateBdUpdate(e.target.value)}
+                        InputLabelProps={{ shrink: true }}
+                        sx={{
+                          mt: 0.5,
+                          width: '100%',
+                          maxWidth: 170,
+                          display: 'block',
+                          '& .MuiOutlinedInput-root': {
+                            height: 32,
+                            borderRadius: 1.5,
+                            fontSize: '0.8rem'
+                          },
+                          '& .MuiInputBase-input': {
+                            py: 0.5,
+                            px: 1
+                          }
+                        }}
+                      />
+                    </Grid>
                   </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Selling Price</Typography>
-                    <Typography variant="body2" fontWeight={700} color="success.main">
-                      {sellingPriceFormatted !== '—' ? `${sellingPriceFormatted} BDT` : '—'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Supplier</Typography>
-                    <Typography variant="body2" fontWeight={600}>{device.shipment_supplier || '—'}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Shipping Agent</Typography>
-                    <Typography variant="body2" fontWeight={600}>{device.shipment_agent || '—'}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Received Date (CN)</Typography>
-                    <Typography variant="body2" fontWeight={600}>{device.shipment_receive_date_cn || '—'}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Received Date (BD)</Typography>
-                    <TextField
-                      type="date"
-                      size="small"
-                      value={receivedDateBd}
-                      onChange={(e) => handleReceivedDateBdUpdate(e.target.value)}
-                      InputLabelProps={{ shrink: true }}
-                      sx={{
-                        mt: 0.5,
-                        width: '100%',
-                        maxWidth: 170,
-                        display: 'block',
-                        '& .MuiOutlinedInput-root': {
-                          height: 32,
-                          borderRadius: 1.5,
-                          fontSize: '0.8rem'
-                        },
-                        '& .MuiInputBase-input': {
-                          py: 0.5,
-                          px: 1
-                        }
-                      }}
-                    />
-                  </Grid>
-                </Grid>
-              </Paper>
+                </Paper>
+              )}
             </Stack>
           )}
 
