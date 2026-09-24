@@ -55,12 +55,15 @@ export default function Login() {
     try {
       setLoading(true);
       setError('');
-      await login(username, password);
+      await login(username, password, roleParam);
       navigate(from, { replace: true });
     } catch (err) {
       console.error('Login error', err);
       setError(
-        err.response?.data?.detail || 'Invalid username or password. Please check your credentials.'
+        err.message ||
+        err.response?.data?.detail ||
+        err.response?.data?.error ||
+        'Invalid username or password. Please check your credentials.'
       );
     } finally {
       setLoading(false);
@@ -232,6 +235,34 @@ export default function Login() {
                 >
                   {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
                 </Button>
+
+                {roleParam === 'admin' ? (
+                  <Button
+                    variant="text"
+                    size="small"
+                    color="inherit"
+                    onClick={() => {
+                      setError('');
+                      navigate('/login?role=employee');
+                    }}
+                    sx={{ textTransform: 'none', fontSize: '0.82rem', color: 'text.secondary' }}
+                  >
+                    Employee / Staff Member? Switch to Staff Login →
+                  </Button>
+                ) : roleParam === 'employee' ? (
+                  <Button
+                    variant="text"
+                    size="small"
+                    color="inherit"
+                    onClick={() => {
+                      setError('');
+                      navigate('/login?role=admin');
+                    }}
+                    sx={{ textTransform: 'none', fontSize: '0.82rem', color: 'text.secondary' }}
+                  >
+                    Administrator? Switch to Admin Login →
+                  </Button>
+                ) : null}
               </Stack>
             </form>
           </CardContent>

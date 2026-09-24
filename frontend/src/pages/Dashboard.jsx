@@ -97,15 +97,16 @@ export default function Dashboard() {
       const allDevs = devsRes.data.results || devsRes.data || [];
       setRecentDevices(allDevs.slice(0, 6));
 
-      // Filter devices assigned to current user
-      const myDevs = allDevs.filter((d) => {
+      // Filter devices assigned to current user and exclude SOLD devices
+      const activeDevs = allDevs.filter((d) => d.current_status !== 'SOLD');
+      const myDevs = activeDevs.filter((d) => {
         if (!d.current_owner) return false;
         if (typeof d.current_owner === 'object') {
           return d.current_owner.id === user?.id || d.current_owner.username === user?.username;
         }
         return d.current_owner === user?.id || d.current_owner === user?.username;
       });
-      setMyAssignedDevices(myDevs.length > 0 ? myDevs : allDevs); // If employee endpoint already filtered, allDevs is myDevs
+      setMyAssignedDevices(myDevs.length > 0 ? myDevs : activeDevs);
 
       const allSales = salesRes.data.results || salesRes.data || [];
       setRecentSales(allSales.slice(0, 5));
@@ -285,7 +286,7 @@ export default function Dashboard() {
                   <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Current Status</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Received Date</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Assigned Date</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -330,7 +331,7 @@ export default function Dashboard() {
                       </TableCell>
                       <TableCell>
                         <Typography variant="caption" color="text.secondary">
-                          {dev.received_date_bd || formatDate(dev.created_at)}
+                          {formatDate(dev.assigned_date || dev.received_date_bd || dev.created_at)}
                         </Typography>
                       </TableCell>
                     </TableRow>

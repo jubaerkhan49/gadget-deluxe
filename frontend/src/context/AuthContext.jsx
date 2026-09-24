@@ -38,29 +38,45 @@ export const AuthProvider = ({ children }) => {
     }
   }, [token]);
 
-  const login = async (username, password) => {
+  const login = async (username, password, requiredRole = null) => {
     const response = await api.post('/api/token/', { username, password });
     if (response.data.access) {
-      localStorage.setItem('access_token', response.data.access);
-      if (response.data.refresh) {
-        localStorage.setItem('refresh_token', response.data.refresh);
-      }
-      setToken(response.data.access);
+      const accessToken = response.data.access;
+      const refreshToken = response.data.refresh;
 
       // Fetch full user profile with role
+      let profile;
       try {
         const profileRes = await api.get('/api/users/me/', {
-          headers: { Authorization: `Bearer ${response.data.access}` }
+          headers: { Authorization: `Bearer ${accessToken}` }
         });
-        const profile = profileRes.data;
-        localStorage.setItem('user_info', JSON.stringify(profile));
-        setUser(profile);
+        profile = profileRes.data;
       } catch {
-        const basicUser = { username, role: username === 'jubaer' || username === 'admin' ? 'ADMIN' : 'EMPLOYEE' };
-        localStorage.setItem('user_info', JSON.stringify(basicUser));
-        setUser(basicUser);
+        const isUserAdmin = username.toLowerCase() === 'jubaer' || username.toLowerCase() === 'admin';
+        profile = { username, role: isUserAdmin ? 'ADMIN' : 'EMPLOYEE' };
       }
-      return true;
+
+      const isUserAdmin =
+        profile.role === 'ADMIN' ||
+        profile.username?.toLowerCase() === 'jubaer' ||
+        profile.username?.toLowerCase() === 'admin';
+
+      // Enforce strict role-based gateway authorization
+      if (requiredRole === 'admin' && !isUserAdmin) {
+        throw new Error('Access denied: This gateway is for Administrators only. Please log in through the Staff Portal.');
+      }
+      if (requiredRole === 'employee' && isUserAdmin) {
+        throw new Error('Access denied: Administrator accounts must log in through the Admin Command Center.');
+      }
+
+      localStorage.setItem('access_token', accessToken);
+      if (refreshToken) {
+        localStorage.setItem('refresh_token', refreshToken);
+      }
+      localStorage.setItem('user_info', JSON.stringify(profile));
+      setToken(accessToken);
+      setUser(profile);
+      return profile;
     }
     return false;
   };

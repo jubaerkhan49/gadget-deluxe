@@ -248,9 +248,9 @@ class DeviceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         qs = Device.objects.select_related('current_owner', 'current_shipment').all()
-        # If regular employee, only show devices assigned to them!
+        # If regular employee, only show active in-stock devices assigned to them!
         if user.is_authenticated and user.role == User.Role.EMPLOYEE and not user.is_superuser and user.username not in ['jubaer', 'admin']:
-            return qs.filter(current_owner=user)
+            return qs.filter(current_owner=user).exclude(current_status=DeviceStatus.SOLD)
         return qs
 
     @action(detail=False, methods=['get'])

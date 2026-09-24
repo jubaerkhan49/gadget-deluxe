@@ -142,6 +142,7 @@ class DeviceSerializer(serializers.ModelSerializer):
     shipment_supplier = serializers.CharField(source='current_shipment.supplier.name', read_only=True, default=None)
     shipment_agent = serializers.CharField(source='current_shipment.shipping_company', read_only=True, default=None)
     shipment_receive_date_cn = serializers.DateField(source='current_shipment.receive_date', read_only=True, default=None)
+    assigned_date = serializers.SerializerMethodField()
 
     # B2B calculated fields
     b2b_repair_cost = serializers.SerializerMethodField()
@@ -158,6 +159,19 @@ class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
         fields = '__all__'
+
+    def get_assigned_date(self, obj):
+        try:
+            if obj.current_owner:
+                assignment = obj.assignments.filter(employee=obj.current_owner).order_by('-assigned_date', '-created_at').first()
+                if assignment and assignment.assigned_date:
+                    return assignment.assigned_date
+            last_assign = obj.assignments.order_by('-assigned_date', '-created_at').first()
+            if last_assign and last_assign.assigned_date:
+                return last_assign.assigned_date
+            return obj.received_date_bd or obj.created_at
+        except Exception:
+            return obj.received_date_bd or obj.created_at
 
     def get_selling_price(self, obj):
         try:
