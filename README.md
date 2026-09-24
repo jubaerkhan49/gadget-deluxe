@@ -20,7 +20,7 @@ Gadget Deluxe is an all-in-one cloud inventory, sourcing, and logistics operatio
 ### 1. Device Inventory and IMEI Lifecycle Management
 - Universal Identifier Indexing: Instant search by primary IMEI, secondary IMEI2, Serial Number (SN), MEID, or Model.
 - Hardware Telemetry & Battery Health: Comprehensive tracking of battery health percentage, cycle counts, display types, Face ID / True Tone status, and original hardware components.
-- Dynamic Country & Variant Filtering: Built-in indexing for international device variants (Modified, USA eSim, Canada, Mexican, Korea, Singapore, Bypass).
+- Dynamic Country & Variant Filtering: Built-in indexing for international device variants (Modified, USA eSim, Canada, Mexican, Korea, Singapore, WIFI).
 - Physical Custody Audit Log: Real-time ownership assignment with time tracking to monitor stock in employee possession.
 
 ### 2. "Other Goods" & Custom Order Pipeline (9-Stage Live Tracking)
