@@ -11,29 +11,7 @@ Next-generation cross-border electronics procurement, hardware refurbishment, 9-
 
 ## Overview
 
-Gadget Deluxe is an all-in-one cloud inventory, sourcing, and logistics operations platform tailored for modern consumer electronics enterprises. Built specifically for high-turnover cross-border electronics trade (Shenzhen/Hong Kong/USA to Bangladesh), hardware refurbishing pipelines, team sales commissions, custom single-item import orders, and Business-to-Business (B2B) client networks.
-
-```mermaid
-graph TD
-    A[Public Portal / Landing] -->|Track Parcel| B[9-Stage Live Order Tracking Portal]
-    A -->|Apply to Join| H[Employee Application Gateway]
-    A -->|Staff / Admin Login| C[JWT Authentication Service]
-    C --> D[Django REST Framework Core API]
-    D --> E[(PostgreSQL / Supabase)]
-    D --> F[React 18 + Vite Web App]
-    D --> G[Native Android App - Jetpack Compose & ML Kit]
-    
-    subgraph Core Modules
-        F --> M1[Device Inventory & Variants]
-        F --> M2[B2B Wholesale & Partner Portals]
-        F --> M3[Other Goods 9-Stage Pipeline]
-        F --> M4[Shipments & Batch Intake]
-        F --> M5[Diagnostics & Shenzhen Repairs]
-        F --> M6[Business Intelligence & ROI Analytics]
-        F --> M7[Employee Application & Team Management]
-        F --> M8[Apple GSX / Sickw Telemetry Parser]
-    end
-```
+Gadget Deluxe is an all-in-one cloud inventory, sourcing, and logistics operations platform tailored for modern consumer electronics enterprises. Built specifically for high-turnover cross-border electronics trade (China to Bangladesh), hardware renovation pipelines, team sales commissions, custom single-item import orders, and Business-to-Business (B2B) client networks.
 
 ---
 
