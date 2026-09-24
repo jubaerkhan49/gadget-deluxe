@@ -36,6 +36,25 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function AdminRoute({ children }) {
+  const { token, loading, isAdmin } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return null;
+  }
+
+  if (!token) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return children;
+}
+
 export default function App() {
   const [mode, setMode] = useState(() => {
     return localStorage.getItem('themeMode') || 'dark';
@@ -82,15 +101,78 @@ export default function App() {
                 }
               >
                 <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/analytics" element={<Analytics />} />
-                <Route path="/inventory" element={<Inventory />} />
-                <Route path="/b2b" element={<B2B />} />
-                <Route path="/other-goods" element={<OtherGoods />} />
-                <Route path="/shipments" element={<Shipments />} />
-                <Route path="/sales" element={<Sales />} />
-                <Route path="/repairs" element={<Repairs />} />
-                <Route path="/archive" element={<Archive />} />
-                <Route path="/sickw" element={<SickwParser />} />
+                <Route
+                  path="/analytics"
+                  element={
+                    <AdminRoute>
+                      <Analytics />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/inventory"
+                  element={
+                    <AdminRoute>
+                      <Inventory />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/b2b"
+                  element={
+                    <AdminRoute>
+                      <B2B />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/other-goods"
+                  element={
+                    <AdminRoute>
+                      <OtherGoods />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/shipments"
+                  element={
+                    <AdminRoute>
+                      <Shipments />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/sales"
+                  element={
+                    <AdminRoute>
+                      <Sales />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/repairs"
+                  element={
+                    <AdminRoute>
+                      <Repairs />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/archive"
+                  element={
+                    <AdminRoute>
+                      <Archive />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/sickw"
+                  element={
+                    <AdminRoute>
+                      <SickwParser />
+                    </AdminRoute>
+                  }
+                />
               </Route>
 
               {/* Catch-all fallback */}
