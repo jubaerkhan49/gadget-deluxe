@@ -103,6 +103,19 @@ export const userApi = {
   updateProfile: (data) => api.post('/api/users/update-profile/', data),
 };
 
+export const profileUpdateApi = {
+  getAll: (params) => api.get('/api/profile-update-requests/', { params }),
+  approve: (id, data) => api.post(`/api/profile-update-requests/${id}/approve/`, data),
+  reject: (id, data) => api.post(`/api/profile-update-requests/${id}/reject/`, data),
+};
+
+export const employeeApplicationApi = {
+  getAll: (params) => api.get('/api/employee-applications/', { params }),
+  submit: (data) => api.post('/api/employee-applications/', data),
+  approve: (id) => api.post(`/api/employee-applications/${id}/approve/`),
+  reject: (id, data) => api.post(`/api/employee-applications/${id}/reject/`, data),
+};
+
 export const customerApi = {
   getAll: (params) => api.get('/api/customers/', { params }),
   create: (data) => api.post('/api/customers/', data),

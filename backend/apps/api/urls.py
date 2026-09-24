@@ -8,7 +8,7 @@ from .views import (
     SaleViewSet, RepairViewSet, SickwViewSet,
     SickwParseAPIView, ExportDevicesCSVView, DashboardStatsAPIView,
     AnalyticsStatsAPIView, OtherGoodsOrderViewSet, PublicOrderTrackingAPIView,
-    EmployeeApplicationViewSet
+    EmployeeApplicationViewSet, EmployeeProfileUpdateRequestViewSet
 )
 
 app_name = 'api'
@@ -23,6 +23,7 @@ router.register(r'repairs', RepairViewSet, basename='repair')
 router.register(r'sickw', SickwViewSet, basename='sickw_report')
 router.register(r'other-goods', OtherGoodsOrderViewSet, basename='other_goods')
 router.register(r'employee-applications', EmployeeApplicationViewSet, basename='employee_application')
+router.register(r'profile-update-requests', EmployeeProfileUpdateRequestViewSet, basename='profile_update_request')
 
 urlpatterns = [
     # JWT Auth Endpoints

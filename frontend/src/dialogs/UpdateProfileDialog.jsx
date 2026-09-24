@@ -14,7 +14,8 @@ import {
   Avatar,
   Stack,
   Chip,
-  IconButton
+  IconButton,
+  Alert
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -22,7 +23,8 @@ import {
   Phone as PhoneIcon,
   Badge as BadgeIcon,
   CheckCircle as SaveIcon,
-  Close as CloseIcon
+  Close as CloseIcon,
+  InfoOutlined as InfoIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { useAuth } from '../context/AuthContext';
@@ -130,6 +132,21 @@ export default function UpdateProfileDialog({ open, onClose }) {
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ px: 3, py: 2.5 }}>
           <Stack spacing={2.2}>
+            {user?.role === 'EMPLOYEE' && (
+              <Alert
+                severity="info"
+                icon={<InfoIcon fontSize="small" />}
+                sx={{
+                  borderRadius: 2,
+                  py: 0.5,
+                  fontSize: '0.8rem',
+                  '& .MuiAlert-message': { py: 0.2 }
+                }}
+              >
+                Profile updates submitted by employees require Administrator approval before being applied to your account.
+              </Alert>
+            )}
+
             <Grid container spacing={1.5}>
               <Grid item xs={12} sm={6}>
                 <TextField

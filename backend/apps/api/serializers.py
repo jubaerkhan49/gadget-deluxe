@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.accounts.models import User, EmployeeApplication
+from apps.accounts.models import User, EmployeeApplication, EmployeeProfileUpdateRequest
 from apps.inventory.models import Device, DeviceAssignment, DeviceHistory, Photo, Note, CarrierInformation, Warranty
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
@@ -31,6 +31,18 @@ class UserSerializer(serializers.ModelSerializer):
             user.set_password('GadgetDeluxe123!')
         user.save()
         return user
+
+class EmployeeProfileUpdateRequestSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+    current_first_name = serializers.CharField(source='user.first_name', read_only=True)
+    current_last_name = serializers.CharField(source='user.last_name', read_only=True)
+    current_email = serializers.CharField(source='user.email', read_only=True)
+    current_phone = serializers.CharField(source='user.phone', read_only=True)
+    reviewed_by_username = serializers.CharField(source='reviewed_by.username', read_only=True)
+
+    class Meta:
+        model = EmployeeProfileUpdateRequest
+        fields = '__all__'
 
 class EmployeeApplicationSerializer(serializers.ModelSerializer):
     reviewed_by_username = serializers.CharField(source='reviewed_by.username', read_only=True)

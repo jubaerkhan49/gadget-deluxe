@@ -13,7 +13,7 @@ from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 
 from django.utils import timezone
-from apps.accounts.models import User, EmployeeApplication
+from apps.accounts.models import User, EmployeeApplication, EmployeeProfileUpdateRequest
 from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory, DeviceAssignment
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
@@ -27,7 +27,8 @@ from apps.orders.models import OtherGoodsOrder, TrackingStage, ProductCategory
 from .serializers import (
     UserSerializer, DeviceSerializer, ShipmentSerializer, SupplierSerializer,
     CustomerSerializer, SaleSerializer, RepairSerializer, SickwReportSerializer,
-    OtherGoodsOrderSerializer, PublicOrderTrackingSerializer, EmployeeApplicationSerializer
+    OtherGoodsOrderSerializer, PublicOrderTrackingSerializer, EmployeeApplicationSerializer,
+    EmployeeProfileUpdateRequestSerializer
 )
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -89,36 +90,65 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post', 'patch'], url_path='update-profile')
     def update_profile(self, request):
         """
-        Allows currently logged-in user (admin or employee) to update their personal information
+        Allows currently logged-in user to update their personal information
         (first_name, last_name, email, phone).
+        Admins/Managers update immediately.
+        Employees submit a change request that requires administrator approval.
         """
         user = request.user
         data = request.data
-        if 'first_name' in data:
-            user.first_name = data['first_name'].strip()
-        if 'last_name' in data:
-            user.last_name = data['last_name'].strip()
-        if 'email' in data:
-            user.email = data['email'].strip()
-        if 'phone' in data:
-            user.phone = data['phone'].strip()
-        user.save()
+        is_admin = user.role in [User.Role.ADMIN, User.Role.MANAGER] or user.is_superuser or user.username.lower() in ['jubaer', 'admin']
 
-        assigned_devices_count = user.assigned_devices.exclude(current_status=DeviceStatus.SOLD).count()
-        return Response({
-            "success": True,
-            "message": "Profile updated successfully.",
-            "user": {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'role': user.role,
-                'phone': user.phone,
-                'assigned_devices_count': assigned_devices_count
-            }
-        })
+        new_first_name = data.get('first_name', user.first_name).strip() if 'first_name' in data else user.first_name
+        new_last_name = data.get('last_name', user.last_name).strip() if 'last_name' in data else user.last_name
+        new_email = data.get('email', user.email).strip().lower() if 'email' in data else user.email
+        new_phone = data.get('phone', user.phone).strip() if 'phone' in data else user.phone
+
+        if is_admin:
+            user.first_name = new_first_name
+            user.last_name = new_last_name
+            user.email = new_email
+            user.phone = new_phone
+            user.save()
+
+            assigned_devices_count = user.assigned_devices.exclude(current_status=DeviceStatus.SOLD).count()
+            return Response({
+                "success": True,
+                "pending_approval": False,
+                "message": "Profile updated successfully.",
+                "user": {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'role': user.role,
+                    'phone': user.phone,
+                    'assigned_devices_count': assigned_devices_count
+                }
+            })
+        else:
+            # Employee: require Admin approval
+            # Check if there is already a pending request or create a new one
+            update_req, created = EmployeeProfileUpdateRequest.objects.update_or_create(
+                user=user,
+                status=EmployeeProfileUpdateRequest.Status.PENDING,
+                defaults={
+                    'first_name': new_first_name,
+                    'last_name': new_last_name,
+                    'email': new_email,
+                    'phone': new_phone,
+                    'reviewed_by': None,
+                    'review_notes': None,
+                }
+            )
+
+            return Response({
+                "success": True,
+                "pending_approval": True,
+                "message": "Your profile update request has been submitted to Admin for approval. Your changes will reflect once approved.",
+                "request": EmployeeProfileUpdateRequestSerializer(update_req).data
+            })
 
     def destroy(self, request, *args, **kwargs):
         """
@@ -306,6 +336,78 @@ class EmployeeApplicationViewSet(viewsets.ModelViewSet):
             "success": True,
             "message": "Application has been marked as rejected."
         })
+
+
+class EmployeeProfileUpdateRequestViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for managing employee profile update requests.
+    Employees see only their own requests.
+    Admins can view all pending requests, approve, or reject them.
+    """
+    serializer_class = EmployeeProfileUpdateRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status']
+    search_fields = ['user__username', 'first_name', 'last_name', 'email', 'phone']
+    ordering_fields = ['created_at', 'status']
+
+    def get_queryset(self):
+        user = self.request.user
+        is_admin = user.role in [User.Role.ADMIN, User.Role.MANAGER] or user.is_superuser or user.username.lower() in ['jubaer', 'admin']
+        if is_admin:
+            return EmployeeProfileUpdateRequest.objects.all().order_by('-created_at')
+        return EmployeeProfileUpdateRequest.objects.filter(user=user).order_by('-created_at')
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approves the update request and updates the employee user profile."""
+        if not (request.user.role in [User.Role.ADMIN, User.Role.MANAGER] or request.user.is_superuser or request.user.username.lower() in ['jubaer', 'admin']):
+            return Response({"error": "Only administrators can approve profile update requests."}, status=status.HTTP_403_FORBIDDEN)
+
+        update_req = self.get_object()
+        if update_req.status == EmployeeProfileUpdateRequest.Status.APPROVED:
+            return Response({"error": "This update request has already been approved."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = update_req.user
+        if update_req.first_name:
+            user.first_name = update_req.first_name
+        if update_req.last_name:
+            user.last_name = update_req.last_name
+        if update_req.email:
+            user.email = update_req.email
+        if update_req.phone:
+            user.phone = update_req.phone
+        user.save()
+
+        update_req.status = EmployeeProfileUpdateRequest.Status.APPROVED
+        update_req.reviewed_by = request.user
+        update_req.review_notes = request.data.get('notes', 'Approved by administrator.')
+        update_req.save()
+
+        return Response({
+            "success": True,
+            "message": f"Profile changes for @{user.username} approved and applied successfully!",
+            "request": EmployeeProfileUpdateRequestSerializer(update_req).data
+        })
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Rejects the profile update request."""
+        if not (request.user.role in [User.Role.ADMIN, User.Role.MANAGER] or request.user.is_superuser or request.user.username.lower() in ['jubaer', 'admin']):
+            return Response({"error": "Only administrators can reject profile update requests."}, status=status.HTTP_403_FORBIDDEN)
+
+        update_req = self.get_object()
+        update_req.status = EmployeeProfileUpdateRequest.Status.REJECTED
+        update_req.reviewed_by = request.user
+        update_req.review_notes = request.data.get('notes', 'Profile update rejected by administrator.')
+        update_req.save()
+
+        return Response({
+            "success": True,
+            "message": f"Profile update request for @{update_req.user.username} has been rejected.",
+            "request": EmployeeProfileUpdateRequestSerializer(update_req).data
+        })
+
 
 class DeviceViewSet(viewsets.ModelViewSet):
     """
