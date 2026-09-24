@@ -1017,13 +1017,13 @@ class DashboardStatsAPIView(APIView):
 
             if rank == 1:
                 performance = 'Good'
-                performance_desc = 'Top Performer (#1 in team sales)'
+                performance_desc = 'High Sales Activity'
             elif rank == 2:
                 performance = 'Average'
-                performance_desc = 'Consistent Seller (#2 in team sales)'
+                performance_desc = 'Moderate Sales Activity'
             else:
                 performance = 'Below Average'
-                performance_desc = f'Rank #{rank} in team sales'
+                performance_desc = 'Low Sales Volume'
 
             return Response({
                 'user_role': 'EMPLOYEE',

@@ -179,8 +179,7 @@ export default function Dashboard() {
     }
 
     const performanceValue = stats?.performance || 'Good';
-    const performanceRank = stats?.performance_rank || 1;
-    const performanceDesc = stats?.performance_desc || (performanceValue === 'Good' ? 'Top Performer (#1 in sales)' : performanceValue === 'Average' ? 'Consistent (#2 in sales)' : `Rank #${performanceRank} in sales`);
+    const performanceDesc = stats?.performance_desc || (performanceValue === 'Good' ? 'High Sales Activity' : performanceValue === 'Average' ? 'Moderate Sales Activity' : 'Low Sales Volume');
 
     const employeeMetricCards = [
       {
@@ -422,7 +421,7 @@ export default function Dashboard() {
                   <TableCell sx={{ fontWeight: 700 }}>Model</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Battery Health & CC</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Current Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Assigned Date</TableCell>
                 </TableRow>
@@ -460,9 +459,42 @@ export default function Dashboard() {
                         <VariantBadge variant={dev.variant} />
                       </TableCell>
                       <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
-                          {dev.battery_health ? `${dev.battery_health}%` : '-'}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'nowrap' }}>
+                          <Typography variant="body2" fontWeight={700}>
+                            {dev.battery_health ? `${dev.battery_health}%` : '—'}
+                          </Typography>
+                          {(dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ? (
+                            <Chip
+                              label={`CC ${dev.battery_cycle}`}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#F1F5F9',
+                                color: (theme) =>
+                                  theme.palette.mode === 'dark' ? '#CBD5E1' : '#475569',
+                                borderRadius: 1
+                              }}
+                            />
+                          ) : (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '') ? (
+                            <Chip
+                              label={`CC ${dev.battery_cycles}`}
+                              size="small"
+                              sx={{
+                                height: 20,
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#F1F5F9',
+                                color: (theme) =>
+                                  theme.palette.mode === 'dark' ? '#CBD5E1' : '#475569',
+                                borderRadius: 1
+                              }}
+                            />
+                          ) : null}
+                        </Box>
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={dev.current_status} />
@@ -822,7 +854,7 @@ export default function Dashboard() {
                   <TableCell sx={{ fontWeight: 700 }}>Model</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Battery Health & CC</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Current Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Received Date</TableCell>
                 </TableRow>
@@ -871,9 +903,42 @@ export default function Dashboard() {
                           <VariantBadge variant={dev.variant} />
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" fontWeight={600}>
-                            {dev.battery_health ? `${dev.battery_health}%` : '-'}
-                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'nowrap' }}>
+                            <Typography variant="body2" fontWeight={700}>
+                              {dev.battery_health ? `${dev.battery_health}%` : '—'}
+                            </Typography>
+                            {(dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ? (
+                              <Chip
+                                label={`CC ${dev.battery_cycle}`}
+                                size="small"
+                                sx={{
+                                  height: 20,
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  bgcolor: (theme) =>
+                                    theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#F1F5F9',
+                                  color: (theme) =>
+                                    theme.palette.mode === 'dark' ? '#CBD5E1' : '#475569',
+                                  borderRadius: 1
+                                }}
+                              />
+                            ) : (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '') ? (
+                              <Chip
+                                label={`CC ${dev.battery_cycles}`}
+                                size="small"
+                                sx={{
+                                  height: 20,
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  bgcolor: (theme) =>
+                                    theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#F1F5F9',
+                                  color: (theme) =>
+                                    theme.palette.mode === 'dark' ? '#CBD5E1' : '#475569',
+                                  borderRadius: 1
+                                }}
+                              />
+                            ) : null}
+                          </Box>
                         </TableCell>
                         <TableCell>
                           <StatusBadge status={dev.current_status} />
