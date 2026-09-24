@@ -66,7 +66,7 @@ export default function MainLayout() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const colorMode = useContext(ColorModeContext);
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -81,6 +81,12 @@ export default function MainLayout() {
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
+
+  const visibleNavItems = isAdmin
+    ? NAV_ITEMS
+    : [
+        { text: 'My Assigned Devices', path: '/dashboard', icon: <PhoneAndroidIcon /> }
+      ];
 
   const drawerContent = (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -116,7 +122,7 @@ export default function MainLayout() {
             Gadget Deluxe
           </Typography>
           <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-            Cloud Phone Management
+            {isAdmin ? 'Admin Workspace' : 'Staff Custody Portal'}
           </Typography>
         </Box>
       </Box>
@@ -125,7 +131,7 @@ export default function MainLayout() {
 
       {/* Navigation List */}
       <List sx={{ px: 1.5, py: 1.5, flexGrow: 1 }}>
-        {NAV_ITEMS.map((item) => {
+        {visibleNavItems.map((item) => {
           const isSelected = location.pathname.startsWith(item.path);
 
           return (
@@ -242,23 +248,27 @@ export default function MainLayout() {
 
           {/* Header Action Buttons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={() => setShowAddShipment(true)}
-              sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
-            >
-              New Shipment
-            </Button>
-            <Button
-              variant="contained"
-              size="small"
-              startIcon={<AddIcon />}
-              onClick={() => setShowAddDevice(true)}
-            >
-              Add Device
-            </Button>
+            {isAdmin && (
+              <>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => setShowAddShipment(true)}
+                  sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                >
+                  New Shipment
+                </Button>
+                <Button
+                  variant="contained"
+                  size="small"
+                  startIcon={<AddIcon />}
+                  onClick={() => setShowAddDevice(true)}
+                >
+                  Add Device
+                </Button>
+              </>
+            )}
 
             <Tooltip title={`Switch to ${colorMode.mode === 'dark' ? 'Light' : 'Dark'} mode`}>
               <IconButton onClick={colorMode.toggleColorMode} color="inherit" size="small">
@@ -286,10 +296,10 @@ export default function MainLayout() {
             >
               <Box sx={{ px: 2, py: 1 }}>
                 <Typography variant="subtitle2" fontWeight={700} noWrap>
-                  {user?.username || 'Admin'}
+                  {user?.first_name || user?.username || 'Staff'}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-                  {user?.role ? `${user.role.charAt(0) + user.role.slice(1).toLowerCase()}` : 'Administrator'}
+                  {isAdmin ? 'Administrator' : 'Staff Employee'}
                 </Typography>
               </Box>
 
@@ -300,15 +310,19 @@ export default function MainLayout() {
                 <Typography variant="body2" fontWeight={600}>Change Password</Typography>
               </MenuItem>
 
-              <MenuItem onClick={() => { setUserMenuAnchor(null); setShowAddOwner(true); }}>
-                <ListItemIcon><PersonAddIcon fontSize="small" color="primary" /></ListItemIcon>
-                <Typography variant="body2" fontWeight={600}>Add Employee</Typography>
-              </MenuItem>
+              {isAdmin && (
+                <>
+                  <MenuItem onClick={() => { setUserMenuAnchor(null); setShowAddOwner(true); }}>
+                    <ListItemIcon><PersonAddIcon fontSize="small" color="primary" /></ListItemIcon>
+                    <Typography variant="body2" fontWeight={600}>Add Employee</Typography>
+                  </MenuItem>
 
-              <MenuItem onClick={() => { setUserMenuAnchor(null); setShowManageEmployees(true); }}>
-                <ListItemIcon><PeopleIcon fontSize="small" color="primary" /></ListItemIcon>
-                <Typography variant="body2" fontWeight={600}>Manage Employees</Typography>
-              </MenuItem>
+                  <MenuItem onClick={() => { setUserMenuAnchor(null); setShowManageEmployees(true); }}>
+                    <ListItemIcon><PeopleIcon fontSize="small" color="primary" /></ListItemIcon>
+                    <Typography variant="body2" fontWeight={600}>Manage Employees</Typography>
+                  </MenuItem>
+                </>
+              )}
 
               <Divider sx={{ my: 0.5 }} />
 

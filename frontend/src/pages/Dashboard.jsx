@@ -58,7 +58,7 @@ import { formatNumber, formatDate } from '../utils/formatters';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const [stats, setStats] = useState(null);
   const [recentDevices, setRecentDevices] = useState([]);
@@ -105,7 +105,7 @@ export default function Dashboard() {
         }
         return d.current_owner === user?.id || d.current_owner === user?.username;
       });
-      setMyAssignedDevices(myDevs);
+      setMyAssignedDevices(myDevs.length > 0 ? myDevs : allDevs); // If employee endpoint already filtered, allDevs is myDevs
 
       const allSales = salesRes.data.results || salesRes.data || [];
       setRecentSales(allSales.slice(0, 5));
@@ -136,6 +136,227 @@ export default function Dashboard() {
       setScanning(false);
     }
   };
+
+  // ==========================================
+  // 1. DEDICATED EMPLOYEE / STAFF CUSTODY VIEW
+  // ==========================================
+  if (!isAdmin) {
+    const filteredAssigned = myAssignedDevices.filter((d) => {
+      if (!assignedSearch) return true;
+      const q = assignedSearch.toLowerCase();
+      return (
+        d.model?.toLowerCase().includes(q) ||
+        d.imei?.toLowerCase().includes(q) ||
+        d.serial_number?.toLowerCase().includes(q) ||
+        d.color?.toLowerCase().includes(q)
+      );
+    });
+
+    return (
+      <Box sx={{ pb: 4 }}>
+        {/* Employee Header */}
+        <Paper
+          elevation={0}
+          sx={{
+            p: 3,
+            mb: 3.5,
+            borderRadius: 3,
+            border: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper'
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box
+                sx={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 2.5,
+                  bgcolor: 'primary.main',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <AssignmentIndIcon fontSize="medium" />
+              </Box>
+              <Box>
+                <Typography variant="h5" fontWeight={800}>
+                  Staff Custody Dashboard
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Welcome, <strong>{user?.first_name || user?.username}</strong>. You are viewing devices assigned to your custody.
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box component="form" onSubmit={handleScanSearch} sx={{ width: { xs: '100%', sm: 300 } }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Scan or Search My IMEI..."
+                value={scanCode}
+                onChange={(e) => setScanCode(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <ScanIcon color="primary" fontSize="small" />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton type="submit" size="small" disabled={scanning || !scanCode.trim()}>
+                        {scanning ? <CircularProgress size={16} /> : <SearchIcon fontSize="small" />}
+                      </IconButton>
+                    </InputAdornment>
+                  )
+                }}
+              />
+            </Box>
+          </Box>
+        </Paper>
+
+        {/* Employee Summary KPIs */}
+        <Grid container spacing={2.5} sx={{ mb: 4 }}>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ p: 2.5, borderRadius: 3, border: 1, borderColor: 'primary.main', bgcolor: 'background.paper' }}>
+              <Typography variant="caption" color="primary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>
+                DEVICES IN YOUR CUSTODY
+              </Typography>
+              <Typography variant="h4" fontWeight={800} sx={{ mt: 0.5, fontFamily: 'monospace' }}>
+                {loading ? '...' : myAssignedDevices.length}
+              </Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ p: 2.5, borderRadius: 3, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>
+                IN STOCK (READY)
+              </Typography>
+              <Typography variant="h4" fontWeight={800} sx={{ mt: 0.5, fontFamily: 'monospace', color: 'success.main' }}>
+                {loading ? '...' : myAssignedDevices.filter((d) => d.current_status === 'IN_STOCK').length}
+              </Typography>
+            </Card>
+          </Grid>
+          <Grid item xs={12} sm={4}>
+            <Card sx={{ p: 2.5, borderRadius: 3, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>
+                UNDER REPAIR
+              </Typography>
+              <Typography variant="h4" fontWeight={800} sx={{ mt: 0.5, fontFamily: 'monospace', color: 'warning.main' }}>
+                {loading ? '...' : myAssignedDevices.filter((d) => d.current_status === 'UNDER_REPAIR').length}
+              </Typography>
+            </Card>
+          </Grid>
+        </Grid>
+
+        {/* Assigned Devices Table */}
+        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: 'background.paper' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
+            <Typography variant="subtitle1" fontWeight={800}>
+              Assigned Devices List ({myAssignedDevices.length})
+            </Typography>
+            <Box sx={{ width: { xs: '100%', sm: 260 } }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Filter by model, IMEI..."
+                value={assignedSearch}
+                onChange={(e) => setAssignedSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  )
+                }}
+              />
+            </Box>
+          </Box>
+
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: 'action.hover' }}>
+                  <TableCell sx={{ fontWeight: 700 }}>Model</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Current Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Received Date</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredAssigned.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                      No devices are currently assigned to your custody.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredAssigned.map((dev) => (
+                    <TableRow
+                      key={dev.id}
+                      hover
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        setSelectedDevice(dev);
+                        setDrawerOpen(true);
+                      }}
+                    >
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={600}>
+                          {dev.model}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
+                        </Typography>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <CopyableText text={dev.imei} />
+                      </TableCell>
+                      <TableCell>
+                        <VariantBadge variant={dev.variant} />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={600}>
+                          {dev.battery_health ? `${dev.battery_health}%` : '-'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge status={dev.current_status} />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="caption" color="text.secondary">
+                          {dev.received_date_bd || formatDate(dev.created_at)}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+
+        <DeviceDetailDrawer
+          open={drawerOpen}
+          onClose={() => {
+            setDrawerOpen(false);
+            setSelectedDevice(null);
+          }}
+          device={selectedDevice}
+          onDeviceUpdated={() => fetchDashboardData()}
+        />
+      </Box>
+    );
+  }
+
+  // ==========================================
+  // 2. FULL ADMINISTRATOR DASHBOARD VIEW
+  // ==========================================
 
   // 8 Uniform Metric Cards configuration
   const statCards = [

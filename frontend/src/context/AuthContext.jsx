@@ -9,13 +9,34 @@ export const AuthProvider = ({ children }) => {
     try {
       const savedUser = localStorage.getItem('user_info');
       if (savedUser) return JSON.parse(savedUser);
-      if (localStorage.getItem('access_token')) return { username: 'Admin' };
     } catch {
       // fallback
     }
     return null;
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchUserProfile = async () => {
+    try {
+      const res = await api.get('/api/users/me/');
+      if (res.data) {
+        setUser(res.data);
+        localStorage.setItem('user_info', JSON.stringify(res.data));
+      }
+    } catch (err) {
+      console.error('Failed to fetch user profile', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchUserProfile();
+    } else {
+      setLoading(false);
+    }
+  }, [token]);
 
   const login = async (username, password) => {
     const response = await api.post('/api/token/', { username, password });
@@ -24,10 +45,21 @@ export const AuthProvider = ({ children }) => {
       if (response.data.refresh) {
         localStorage.setItem('refresh_token', response.data.refresh);
       }
-      const userInfo = { username };
-      localStorage.setItem('user_info', JSON.stringify(userInfo));
       setToken(response.data.access);
-      setUser(userInfo);
+
+      // Fetch full user profile with role
+      try {
+        const profileRes = await api.get('/api/users/me/', {
+          headers: { Authorization: `Bearer ${response.data.access}` }
+        });
+        const profile = profileRes.data;
+        localStorage.setItem('user_info', JSON.stringify(profile));
+        setUser(profile);
+      } catch {
+        const basicUser = { username, role: username === 'jubaer' || username === 'admin' ? 'ADMIN' : 'EMPLOYEE' };
+        localStorage.setItem('user_info', JSON.stringify(basicUser));
+        setUser(basicUser);
+      }
       return true;
     }
     return false;
@@ -42,8 +74,27 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/login';
   };
 
+  const isAdmin =
+    user?.role === 'ADMIN' ||
+    user?.username?.toLowerCase() === 'jubaer' ||
+    user?.username?.toLowerCase() === 'admin';
+
+  const isEmployee = !isAdmin;
+
   return (
-    <AuthContext.Provider value={{ token, user, isAuthenticated: !!token, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        user,
+        isAdmin,
+        isEmployee,
+        isAuthenticated: !!token,
+        login,
+        logout,
+        loading,
+        refreshProfile: fetchUserProfile
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

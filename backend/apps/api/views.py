@@ -236,14 +236,22 @@ class DeviceViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing device inventory.
     Filter by status, search by IMEI, IMEI2, Serial, Model, MEID.
+    Employees are strictly restricted to devices in their own custody.
     """
-    queryset = Device.objects.select_related('current_owner', 'current_shipment').all()
     serializer_class = DeviceSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['current_status', 'current_shipment', 'is_b2b', 'b2b_shop_name', 'b2b_status', 'b2b_has_issues', 'demo_unit', 'refurbished', 'purchase_country', 'icloud_status']
     search_fields = ['imei', 'imei2', 'serial_number', 'meid', 'model', 'model_description', 'b2b_shop_name']
     ordering_fields = ['created_at', 'updated_at', 'model', 'battery_health']
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = Device.objects.select_related('current_owner', 'current_shipment').all()
+        # If regular employee, only show devices assigned to them!
+        if user.is_authenticated and user.role == User.Role.EMPLOYEE and not user.is_superuser and user.username not in ['jubaer', 'admin']:
+            return qs.filter(current_owner=user)
+        return qs
 
     @action(detail=False, methods=['get'])
     def scan(self, request):
@@ -252,13 +260,14 @@ class DeviceViewSet(viewsets.ModelViewSet):
         if not query:
             return Response({"error": "Missing 'code' query parameter"}, status=status.HTTP_400_BAD_REQUEST)
 
-        device = Device.objects.filter(imei=query).first() or \
-                 Device.objects.filter(imei2=query).first() or \
-                 Device.objects.filter(serial_number=query).first() or \
-                 Device.objects.filter(meid=query).first()
+        qs = self.get_queryset()
+        device = qs.filter(imei=query).first() or \
+                 qs.filter(imei2=query).first() or \
+                 qs.filter(serial_number=query).first() or \
+                 qs.filter(meid=query).first()
 
         if not device:
-            return Response({"found": False, "message": "No device matches scanned code"}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"found": False, "message": "No device matches scanned code in your inventory"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = self.get_serializer(device)
         return Response({"found": True, "device": serializer.data})
@@ -769,6 +778,33 @@ class DashboardStatsAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
+        user = request.user
+
+        # If regular employee, return ONLY their personal assigned custody metrics!
+        if user.is_authenticated and user.role == User.Role.EMPLOYEE and not user.is_superuser and user.username not in ['jubaer', 'admin']:
+            my_devices = Device.objects.filter(current_owner=user)
+            my_assigned_count = my_devices.exclude(current_status=DeviceStatus.SOLD).count()
+            return Response({
+                'user_role': 'EMPLOYEE',
+                'is_admin': False,
+                'username': user.username,
+                'my_assigned_count': my_assigned_count,
+                'total_devices': my_devices.count(),
+                'in_stock': my_devices.filter(current_status=DeviceStatus.IN_STOCK).count(),
+                'under_repair': my_devices.filter(current_status=DeviceStatus.UNDER_REPAIR).count(),
+                'sold': my_devices.filter(current_status=DeviceStatus.SOLD).count(),
+                'waiting_shipment': 0,
+                'returned': 0,
+                'total_assets': 0,
+                'today_sales': 0,
+                'total_sales': 0,
+                'today_profit': 0,
+                'total_profit': 0,
+                'monthly_profit': 0,
+                'others_owned': 0,
+                'pending_applications_count': 0,
+            })
+
         local_today = timezone.localdate()
         month_start = local_today.replace(day=1)
 
@@ -816,6 +852,8 @@ class DashboardStatsAPIView(APIView):
             ).count()
 
         return Response({
+            'user_role': request.user.role if request.user.is_authenticated else 'ADMIN',
+            'is_admin': True,
             'total_devices': total_devices,
             'in_stock': in_stock_count,
             'sold': sold_count,
@@ -831,7 +869,6 @@ class DashboardStatsAPIView(APIView):
             'others_owned': others_owned_count,
             'my_assigned_count': my_assigned_count,
             'pending_applications_count': pending_applications_count,
-            'user_role': request.user.role if request.user.is_authenticated else 'EMPLOYEE',
             'username': request.user.username if request.user.is_authenticated else ''
         })
 
