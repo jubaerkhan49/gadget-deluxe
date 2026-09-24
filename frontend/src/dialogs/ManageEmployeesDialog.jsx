@@ -35,6 +35,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import BadgeIcon from '@mui/icons-material/Badge';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import { useSnackbar } from 'notistack';
 import api from '../api/client';
 
@@ -45,6 +46,8 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchApplications = async () => {
     try {
@@ -103,6 +106,30 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
       enqueueSnackbar('Failed to reject application', { variant: 'error' });
     } finally {
       setActionLoadingId(null);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) return;
+    try {
+      setDeleting(true);
+      if (deleteTarget.type === 'user') {
+        await api.delete(`/api/users/${deleteTarget.id}/`);
+        enqueueSnackbar(`Employee @${deleteTarget.username} deleted and image storage wiped.`, { variant: 'success' });
+        fetchEmployees();
+        fetchApplications();
+        if (onEmployeeUpdated) onEmployeeUpdated();
+      } else if (deleteTarget.type === 'application') {
+        await api.delete(`/api/employee-applications/${deleteTarget.id}/`);
+        enqueueSnackbar(`Application record for ${deleteTarget.name} deleted.`, { variant: 'success' });
+        fetchApplications();
+      }
+      setDeleteTarget(null);
+    } catch (err) {
+      const msg = err.response?.data?.error || err.response?.data?.detail || 'Failed to delete record';
+      enqueueSnackbar(msg, { variant: 'error' });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -304,6 +331,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                   <TableCell sx={{ fontWeight: 700 }}>Contact</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="center">Assigned Devices</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Joined</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -355,6 +383,26 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                         {emp.date_joined ? new Date(emp.date_joined).toLocaleDateString() : '-'}
                       </Typography>
                     </TableCell>
+                    <TableCell align="right">
+                      {emp.username?.toLowerCase() !== 'jubaer' && emp.username?.toLowerCase() !== 'admin' && (
+                        <Tooltip title="Delete Employee & Wipe Image Storage">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() =>
+                              setDeleteTarget({
+                                type: 'user',
+                                id: emp.id,
+                                name: emp.first_name ? `${emp.first_name} ${emp.last_name || ''}` : emp.username,
+                                username: emp.username
+                              })
+                            }
+                          >
+                            <DeleteOutlineIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -382,6 +430,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                       <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Reviewed By</TableCell>
                       <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                      <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -422,6 +471,23 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                             {new Date(app.created_at).toLocaleDateString()}
                           </Typography>
                         </TableCell>
+                        <TableCell align="right">
+                          <Tooltip title="Delete Application Record & Wipe Photo">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() =>
+                                setDeleteTarget({
+                                  type: 'application',
+                                  id: app.id,
+                                  name: app.full_name
+                                })
+                              }
+                            >
+                              <DeleteOutlineIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -437,6 +503,47 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
           Close
         </Button>
       </DialogActions>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onClose={() => !deleting && setDeleteTarget(null)}
+        PaperProps={{ sx: { borderRadius: 3, p: 1, maxWidth: 460 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, color: 'error.main', pb: 1 }}>
+          {deleteTarget?.type === 'user' ? 'Delete Employee Account?' : 'Delete Application Record?'}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" sx={{ mb: 1.5, color: 'text.primary' }}>
+            Are you sure you want to permanently delete{' '}
+            <strong>{deleteTarget?.name}</strong>{' '}
+            {deleteTarget?.username ? `(@${deleteTarget.username})` : ''}?
+          </Typography>
+          <Alert severity="warning" sx={{ borderRadius: 2 }}>
+            This will permanently delete the employee account, unassign any devices in custody, and wipe all application image data and personal information from database storage.
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setDeleteTarget(null)}
+            disabled={deleting}
+            color="inherit"
+            sx={{ borderRadius: 2, textTransform: 'none' }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            disabled={deleting}
+            variant="contained"
+            color="error"
+            startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <DeleteOutlineIcon />}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
+          >
+            {deleting ? 'Deleting...' : 'Permanently Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Dialog>
   );
 }

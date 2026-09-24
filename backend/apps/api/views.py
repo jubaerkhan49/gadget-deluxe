@@ -86,6 +86,47 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response({"success": True, "message": "Password changed successfully."})
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Permanently deletes an employee user account, unassigns devices in their custody,
+        and wipes any associated application records & uploaded images to free database storage.
+        """
+        if not (request.user.role in [User.Role.ADMIN, User.Role.MANAGER] or request.user.is_superuser or request.user.username in ['jubaer', 'admin']):
+            return Response(
+                {"error": "Only administrators can delete employee accounts."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        user_to_delete = self.get_object()
+
+        if user_to_delete.username.lower() in ['jubaer', 'admin'] or user_to_delete.is_superuser:
+            return Response(
+                {"error": "Primary administrator and superuser accounts cannot be deleted."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if user_to_delete.id == request.user.id:
+            return Response(
+                {"error": "You cannot delete your own account while logged in."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Unassign any active devices in their custody
+        Device.objects.filter(current_owner=user_to_delete).update(current_owner=None)
+
+        # Delete any associated EmployeeApplications and wipe photo / base64 image data to free storage
+        EmployeeApplication.objects.filter(
+            models.Q(created_user=user_to_delete) | models.Q(email__iexact=user_to_delete.email)
+        ).delete()
+
+        username = user_to_delete.username
+        user_to_delete.delete()
+
+        return Response({
+            "success": True,
+            "message": f"Employee @{username} and all associated data/storage deleted successfully."
+        })
+
 
 class EmployeeApplicationViewSet(viewsets.ModelViewSet):
     """
