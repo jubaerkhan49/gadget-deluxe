@@ -1,6 +1,6 @@
 # Gadget Deluxe — Enterprise IMEI Inventory, Sourcing & Tracking Ecosystem
 
-Next-generation cross-border electronics procurement, hardware refurbishment, 9-stage live parcel tracking, and multi-channel B2B wholesale management system.
+Next-generation cross-border electronics procurement, hardware renovation, 9-stage live parcel tracking, and multi-channel B2B wholesale management system.
 
 - Public Portal & Tracking: https://gadgetdeluxe.store
 - Track Orders: https://gadgetdeluxe.store/track
@@ -35,7 +35,7 @@ Manage single-item import purchases (Laptops, AirPods, laptop screens, cosmetics
 8. Received in BD Local Hub (`RECEIVED_IN_BD`)
 9. Product Delivered (`DELIVERED`)
 
-- Customer Tracking Portal (`/track`): Public-facing, responsive tracking with confidential pricing logic (`Product Price = Total Amount - Logistics Cost`).
+- Customer Tracking Portal (`/track`): Public-facing, responsive tracking with pricing logic (`Product Price = Total Amount - Logistics Cost`).
 - Multi-Channel Payment Logging: Support for bKash, Nagad, Bank Transfer, and Cash with unique TrxID logging.
 
 ### 3. Employee Application and Staff Management
