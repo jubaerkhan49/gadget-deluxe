@@ -41,5 +41,24 @@ u.is_staff = True
 u.is_superuser = True
 u.role = 'ADMIN'
 u.save()
-print(f'Admin user configured successfully')
+print('Admin user configured successfully')
+
+employees = {
+    'ochi': ('Ochi#GD789!', 'Ochi'),
+    'ashraf': ('Ashraf#GD456!', 'Ashraf'),
+    'emon': ('Emon#GD123!', 'Emon')
+}
+
+for username, (password, first_name) in employees.items():
+    emp, created = User.objects.get_or_create(
+        username=username,
+        defaults={'role': 'EMPLOYEE', 'first_name': first_name, 'is_active': True}
+    )
+    emp.set_password(password)
+    emp.role = 'EMPLOYEE'
+    emp.first_name = first_name
+    emp.is_active = True
+    emp.save()
+    print(f'Employee {username} configured with password')
 " || true
+
