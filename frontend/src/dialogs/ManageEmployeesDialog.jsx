@@ -182,6 +182,16 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
   const pendingUpdates = profileUpdates.filter((u) => u.status === 'PENDING');
   const pastUpdates = profileUpdates.filter((u) => u.status !== 'PENDING');
 
+  const activeEmployees = employees
+    .filter((emp) => emp.username?.toLowerCase() !== 'admin')
+    .sort((a, b) => {
+      const aUser = a.username?.toLowerCase();
+      const bUser = b.username?.toLowerCase();
+      if (aUser === 'jubaer') return -1;
+      if (bUser === 'jubaer') return 1;
+      return (a.first_name || a.username).localeCompare(b.first_name || b.username);
+    });
+
   return (
     <Dialog
       open={open}
@@ -270,10 +280,17 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <span>Active Staff & Team</span>
                 <Chip
-                  label={employees.length}
+                  label={activeEmployees.length}
                   size="small"
-                  color="default"
-                  sx={{ height: 20, fontSize: '0.75rem', fontWeight: 600 }}
+                  sx={{
+                    height: 20,
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF'),
+                    color: (theme) => (theme.palette.mode === 'dark' ? '#93C5FD' : '#2563EB'),
+                    border: '1px solid',
+                    borderColor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE')
+                  }}
                 />
               </Box>
             }
@@ -533,7 +550,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                 </TableRow>
               </TableHead>
               <TableBody>
-                {employees.map((emp) => (
+                {activeEmployees.map((emp) => (
                   <TableRow key={emp.id} hover>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
