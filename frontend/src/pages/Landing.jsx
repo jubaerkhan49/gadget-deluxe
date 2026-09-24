@@ -203,7 +203,7 @@ export default function Landing() {
                 lineHeight: 1.6
               }}
             >
-              Real-time IMEI tracking, 9-stage cross-border shipment pipeline from China to Bangladesh, and wholesale consignment management.
+              Real-time device tracking, Cross-border shipment pipeline from China to Bangladesh, and wholesale consignment management.
             </Typography>
           </Box>
 
@@ -228,7 +228,7 @@ export default function Landing() {
             <TextField
               fullWidth
               size="small"
-              placeholder="Enter Custom Order ID (e.g. OG-2609-0001) or Phone Number..."
+              placeholder="Enter Order ID or Phone Number"
               value={orderQuery}
               onChange={(e) => setOrderQuery(e.target.value)}
               variant="standard"
@@ -313,7 +313,7 @@ export default function Landing() {
                     Track Custom Order
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
-                    Check live milestone status across 9 stages from China warehouse to Bangladesh delivery.
+                    Check live product shipment status from China to Bangladesh.
                   </Typography>
                   <Button
                     variant="outlined"
@@ -367,7 +367,7 @@ export default function Landing() {
                     Join as Employee
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
-                    Submit an application with your credentials and National ID to join our inventory & logistics team.
+                    Submit an application with your credentials and National ID to join our inventory.
                   </Typography>
                   <Button
                     variant="outlined"
@@ -504,10 +504,10 @@ export default function Landing() {
                 <DeviceIcon color="primary" sx={{ fontSize: 28, mt: 0.5 }} />
                 <Box>
                   <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                    IMEI & Hardware Auditing
+                    Device Information & Sales Auditing
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                    Dual IMEI, battery health percentage, cycle counts, international carrier policies, and hardware variant tags.
+                    Track Device Information, Sell Records, and Sales Auditing.
                   </Typography>
                 </Box>
               </Box>

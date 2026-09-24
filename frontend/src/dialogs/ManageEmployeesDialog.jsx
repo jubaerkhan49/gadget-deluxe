@@ -359,10 +359,33 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                     </TableCell>
                     <TableCell>
                       <Chip
-                        label={emp.role || 'Employee'}
+                        label={emp.role || 'EMPLOYEE'}
                         size="small"
-                        color={emp.role === 'ADMIN' ? 'primary' : emp.role === 'MANAGER' ? 'secondary' : 'default'}
-                        sx={{ height: 22, fontSize: '0.75rem', fontWeight: 600 }}
+                        sx={{
+                          height: 22,
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          borderRadius: 1.5,
+                          ...(emp.role === 'ADMIN' || emp.username?.toLowerCase() === 'jubaer' || emp.username?.toLowerCase() === 'admin'
+                            ? {
+                                bgcolor: '#2563EB',
+                                color: '#FFFFFF'
+                              }
+                            : emp.role === 'MANAGER'
+                            ? {
+                                bgcolor: '#7C3AED',
+                                color: '#FFFFFF'
+                              }
+                            : {
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === 'dark' ? 'rgba(51, 65, 85, 0.7)' : '#E2E8F0',
+                                color: (theme) =>
+                                  theme.palette.mode === 'dark' ? '#E2E8F0' : '#334155',
+                                border: 1,
+                                borderColor: (theme) =>
+                                  theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.2)' : '#CBD5E1'
+                              })
+                        }}
                       />
                     </TableCell>
                     <TableCell>

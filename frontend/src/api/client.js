@@ -100,6 +100,7 @@ export const userApi = {
   getAll: (params) => api.get('/api/users/', { params }),
   create: (data) => api.post('/api/users/', data),
   changePassword: (data) => api.post('/api/users/change-password/', data),
+  updateProfile: (data) => api.post('/api/users/update-profile/', data),
 };
 
 export const customerApi = {

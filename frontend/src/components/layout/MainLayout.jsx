@@ -40,6 +40,7 @@ import InsightsIcon from '@mui/icons-material/Insights';
 import StorefrontIcon from '@mui/icons-material/Storefront';
 import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { useAuth } from '../../context/AuthContext';
 import { ColorModeContext } from '../../App';
 import AddDeviceDialog from '../../dialogs/AddDeviceDialog';
@@ -47,6 +48,7 @@ import AddShipmentDialog from '../../dialogs/AddShipmentDialog';
 import AddOwnerDialog from '../../dialogs/AddOwnerDialog';
 import ChangePasswordDialog from '../../dialogs/ChangePasswordDialog';
 import ManageEmployeesDialog from '../../dialogs/ManageEmployeesDialog';
+import UpdateProfileDialog from '../../dialogs/UpdateProfileDialog';
 
 const DRAWER_WIDTH = 250;
 
@@ -76,6 +78,7 @@ export default function MainLayout() {
   const [showAddShipment, setShowAddShipment] = useState(false);
   const [showAddOwner, setShowAddOwner] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showUpdateProfile, setShowUpdateProfile] = useState(false);
   const [showManageEmployees, setShowManageEmployees] = useState(false);
 
   const handleDrawerToggle = () => {
@@ -305,6 +308,11 @@ export default function MainLayout() {
 
               <Divider sx={{ my: 0.5 }} />
 
+              <MenuItem onClick={() => { setUserMenuAnchor(null); setShowUpdateProfile(true); }}>
+                <ListItemIcon><PersonOutlineIcon fontSize="small" color="primary" /></ListItemIcon>
+                <Typography variant="body2" fontWeight={600}>Update Information</Typography>
+              </MenuItem>
+
               <MenuItem onClick={() => { setUserMenuAnchor(null); setShowChangePassword(true); }}>
                 <ListItemIcon><LockResetIcon fontSize="small" color="primary" /></ListItemIcon>
                 <Typography variant="body2" fontWeight={600}>Change Password</Typography>
@@ -414,6 +422,13 @@ export default function MainLayout() {
             setShowAddOwner(false);
             window.location.reload();
           }}
+        />
+      )}
+
+      {showUpdateProfile && (
+        <UpdateProfileDialog
+          open={showUpdateProfile}
+          onClose={() => setShowUpdateProfile(false)}
         />
       )}
 

@@ -108,6 +108,7 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         loading,
+        fetchUserProfile,
         refreshProfile: fetchUserProfile
       }}
     >

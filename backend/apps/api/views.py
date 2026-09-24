@@ -86,6 +86,40 @@ class UserViewSet(viewsets.ModelViewSet):
 
         return Response({"success": True, "message": "Password changed successfully."})
 
+    @action(detail=False, methods=['post', 'patch'], url_path='update-profile')
+    def update_profile(self, request):
+        """
+        Allows currently logged-in user (admin or employee) to update their personal information
+        (first_name, last_name, email, phone).
+        """
+        user = request.user
+        data = request.data
+        if 'first_name' in data:
+            user.first_name = data['first_name'].strip()
+        if 'last_name' in data:
+            user.last_name = data['last_name'].strip()
+        if 'email' in data:
+            user.email = data['email'].strip()
+        if 'phone' in data:
+            user.phone = data['phone'].strip()
+        user.save()
+
+        assigned_devices_count = user.assigned_devices.exclude(current_status=DeviceStatus.SOLD).count()
+        return Response({
+            "success": True,
+            "message": "Profile updated successfully.",
+            "user": {
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'role': user.role,
+                'phone': user.phone,
+                'assigned_devices_count': assigned_devices_count
+            }
+        })
+
     def destroy(self, request, *args, **kwargs):
         """
         Permanently deletes an employee user account, unassigns devices in their custody,
