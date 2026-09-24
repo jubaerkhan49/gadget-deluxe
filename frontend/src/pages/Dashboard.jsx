@@ -179,7 +179,13 @@ export default function Dashboard() {
     }
 
     const performanceValue = stats?.performance || 'Good';
-    const performanceDesc = stats?.performance_desc || (performanceValue === 'Good' ? 'High Sales Activity' : performanceValue === 'Average' ? 'Moderate Sales Activity' : 'Low Sales Volume');
+    const performanceDesc = stats?.performance_desc || (
+      performanceValue === 'Good'
+        ? "You're doing great. Please keep it up!"
+        : performanceValue === 'Average'
+        ? "Need to put in more effort"
+        : "Hey! Please wake up! Post ASAP"
+    );
 
     const employeeMetricCards = [
       {
@@ -421,7 +427,7 @@ export default function Dashboard() {
                   <TableCell sx={{ fontWeight: 700 }}>Model</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Battery Health & CC</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Current Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Assigned Date</TableCell>
                 </TableRow>
