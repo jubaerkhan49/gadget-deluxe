@@ -38,7 +38,11 @@ import {
   Person as PersonIcon,
   AssignmentInd as AssignmentIndIcon,
   NotificationImportant as AlertBadgeIcon,
-  People as PeopleIcon
+  People as PeopleIcon,
+  HourglassEmpty as HourglassIcon,
+  EventAvailable as EventIcon,
+  EmojiEvents as TrophyIcon,
+  Stars as StarsIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -153,6 +157,79 @@ export default function Dashboard() {
       );
     });
 
+    // Compute custody dates and max duration
+    const now = new Date();
+    let computedLongestDays = stats?.longest_held_days ?? 0;
+    let computedLongestDate = stats?.longest_held_date;
+    let computedLatestDate = stats?.latest_assigned_date;
+
+    if (myAssignedDevices.length > 0 && (computedLongestDays === 0 || !computedLatestDate)) {
+      const dates = myAssignedDevices.map((d) => {
+        const raw = d.assigned_date || d.received_date_bd || d.created_at;
+        return raw ? new Date(raw) : null;
+      }).filter(Boolean);
+
+      if (dates.length > 0) {
+        const oldest = new Date(Math.min(...dates));
+        const newest = new Date(Math.max(...dates));
+        computedLongestDate = oldest;
+        computedLatestDate = newest;
+        computedLongestDays = Math.max(0, Math.floor((now - oldest) / (1000 * 60 * 60 * 24)));
+      }
+    }
+
+    const performanceValue = stats?.performance || 'Good';
+    const performanceRank = stats?.performance_rank || 1;
+    const performanceDesc = stats?.performance_desc || (performanceValue === 'Good' ? 'Top Performer (#1 in sales)' : performanceValue === 'Average' ? 'Consistent (#2 in sales)' : `Rank #${performanceRank} in sales`);
+
+    const employeeMetricCards = [
+      {
+        title: 'DEVICES IN CUSTODY',
+        value: myAssignedDevices.length,
+        subtitle: 'In-hand physical stock',
+        icon: <PhoneIcon sx={{ fontSize: 22 }} />,
+        color: '#2563EB',
+        bgLight: 'rgba(37, 99, 235, 0.1)',
+        isNumber: true
+      },
+      {
+        title: 'DEVICE LAST SOLD AT',
+        value: stats?.last_sold_date ? formatDate(stats.last_sold_date) : 'No Sales Yet',
+        subtitle: stats?.last_sold_date ? 'Most recent sale closed' : 'No sales recorded yet',
+        icon: <SaleIcon sx={{ fontSize: 22 }} />,
+        color: '#10B981',
+        bgLight: 'rgba(16, 185, 129, 0.1)',
+        isDate: true
+      },
+      {
+        title: 'LONGEST IN CUSTODY',
+        value: `${computedLongestDays} Days`,
+        subtitle: computedLongestDate ? `Since ${formatDate(computedLongestDate)}` : 'Max holding duration',
+        icon: <HourglassIcon sx={{ fontSize: 22 }} />,
+        color: '#F59E0B',
+        bgLight: 'rgba(245, 158, 11, 0.1)',
+        isHighlight: true
+      },
+      {
+        title: 'LATEST RECEIVED DATE',
+        value: computedLatestDate ? formatDate(computedLatestDate) : '—',
+        subtitle: 'Newest device handover',
+        icon: <EventIcon sx={{ fontSize: 22 }} />,
+        color: '#8B5CF6',
+        bgLight: 'rgba(139, 92, 246, 0.1)',
+        isDate: true
+      },
+      {
+        title: 'SALES PERFORMANCE',
+        value: performanceValue,
+        subtitle: performanceDesc,
+        icon: <TrophyIcon sx={{ fontSize: 22 }} />,
+        color: performanceValue === 'Good' ? '#10B981' : performanceValue === 'Average' ? '#2563EB' : '#F59E0B',
+        bgLight: performanceValue === 'Good' ? 'rgba(16, 185, 129, 0.1)' : performanceValue === 'Average' ? 'rgba(37, 99, 235, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+        isBadge: true
+      }
+    ];
+
     return (
       <Box sx={{ pb: 4 }}>
         {/* Employee Header */}
@@ -219,38 +296,99 @@ export default function Dashboard() {
           </Box>
         </Paper>
 
-        {/* Employee Summary KPIs */}
-        <Grid container spacing={2.5} sx={{ mb: 4 }}>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ p: 2.5, borderRadius: 3, border: 1, borderColor: 'primary.main', bgcolor: 'background.paper' }}>
-              <Typography variant="caption" color="primary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>
-                DEVICES IN YOUR CUSTODY
-              </Typography>
-              <Typography variant="h4" fontWeight={800} sx={{ mt: 0.5, fontFamily: 'monospace' }}>
-                {loading ? '...' : myAssignedDevices.length}
-              </Typography>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ p: 2.5, borderRadius: 3, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>
-                IN STOCK (READY)
-              </Typography>
-              <Typography variant="h4" fontWeight={800} sx={{ mt: 0.5, fontFamily: 'monospace', color: 'success.main' }}>
-                {loading ? '...' : myAssignedDevices.filter((d) => d.current_status === 'IN_STOCK').length}
-              </Typography>
-            </Card>
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <Card sx={{ p: 2.5, borderRadius: 3, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase' }}>
-                UNDER REPAIR
-              </Typography>
-              <Typography variant="h4" fontWeight={800} sx={{ mt: 0.5, fontFamily: 'monospace', color: 'warning.main' }}>
-                {loading ? '...' : myAssignedDevices.filter((d) => d.current_status === 'UNDER_REPAIR').length}
-              </Typography>
-            </Card>
-          </Grid>
+        {/* Employee Summary 5 KPIs */}
+        <Grid container spacing={2} sx={{ mb: 4 }}>
+          {employeeMetricCards.map((card, idx) => (
+            <Grid item xs={12} sm={6} md={4} lg={2.4} key={idx}>
+              <Card
+                sx={{
+                  p: 2.2,
+                  borderRadius: 3,
+                  border: 1,
+                  borderColor: 'divider',
+                  bgcolor: 'background.paper',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  '&:hover': {
+                    transform: 'translateY(-2px)',
+                    boxShadow: (theme) =>
+                      theme.palette.mode === 'dark' ? '0 8px 24px rgba(0,0,0,0.4)' : '0 8px 24px rgba(0,0,0,0.06)'
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
+                  <Typography
+                    variant="caption"
+                    fontWeight={800}
+                    color="text.secondary"
+                    sx={{
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.5,
+                      fontSize: '0.7rem'
+                    }}
+                    noWrap
+                  >
+                    {card.title}
+                  </Typography>
+                  <Box
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      minWidth: 36,
+                      borderRadius: 2,
+                      bgcolor: card.bgLight,
+                      color: card.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {card.icon}
+                  </Box>
+                </Box>
+
+                <Box sx={{ my: 0.5 }}>
+                  {card.isBadge ? (
+                    <Chip
+                      label={card.value}
+                      size="small"
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: '0.85rem',
+                        height: 28,
+                        px: 0.8,
+                        bgcolor: card.bgLight,
+                        color: card.color,
+                        border: 1,
+                        borderColor: card.color
+                      }}
+                    />
+                  ) : (
+                    <Typography
+                      variant={card.isNumber ? 'h4' : 'h6'}
+                      fontWeight={800}
+                      sx={{
+                        fontFamily: card.isNumber ? '"JetBrains Mono", monospace' : 'inherit',
+                        color: card.color,
+                        lineHeight: 1.2,
+                        fontSize: card.isNumber ? '1.8rem' : '1.1rem'
+                      }}
+                      noWrap
+                    >
+                      {loading ? '...' : card.value}
+                    </Typography>
+                  )}
+                </Box>
+
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontSize: '0.72rem', display: 'block' }} noWrap>
+                  {card.subtitle}
+                </Typography>
+              </Card>
+            </Grid>
+          ))}
         </Grid>
 
         {/* Assigned Devices Table */}

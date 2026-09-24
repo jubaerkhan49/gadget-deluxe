@@ -959,17 +959,88 @@ class DashboardStatsAPIView(APIView):
 
         # If regular employee, return ONLY their personal assigned custody metrics!
         if user.is_authenticated and user.role == User.Role.EMPLOYEE and not user.is_superuser and user.username not in ['jubaer', 'admin']:
-            my_devices = Device.objects.filter(current_owner=user)
-            my_assigned_count = my_devices.exclude(current_status=DeviceStatus.SOLD).count()
+            my_devices = Device.objects.filter(current_owner=user).exclude(current_status=DeviceStatus.SOLD)
+            my_assigned_count = my_devices.count()
+
+            # 1. Last sold date by this employee
+            last_sale = Sale.objects.filter(seller=user).order_by('-sale_date').first()
+            last_sold_date = last_sale.sale_date if last_sale and last_sale.sale_date else None
+
+            # 2. Longest held in custody & latest assigned date
+            now_date = timezone.localdate()
+            longest_held_days = 0
+            longest_held_date = None
+            latest_assigned_date = None
+
+            assigned_dates = []
+            for dev in my_devices:
+                assign = dev.assignments.filter(employee=user).order_by('-assigned_date', '-created_at').first()
+                if assign and assign.assigned_date:
+                    d_date = assign.assigned_date.date() if hasattr(assign.assigned_date, 'date') else assign.assigned_date
+                elif dev.received_date_bd:
+                    d_date = dev.received_date_bd
+                else:
+                    d_date = dev.created_at.date() if hasattr(dev.created_at, 'date') else dev.created_at
+
+                if d_date:
+                    assigned_dates.append(d_date)
+
+            if assigned_dates:
+                oldest_date = min(assigned_dates)
+                longest_held_days = max(0, (now_date - oldest_date).days)
+                longest_held_date = oldest_date
+                latest_assigned_date = max(assigned_dates)
+
+            # 3. Performance rank across all active employees based on sales volume/profit
+            month_start = now_date.replace(day=1)
+            active_employees = User.objects.filter(role=User.Role.EMPLOYEE, is_active=True).exclude(username__in=['jubaer', 'admin'])
+            
+            seller_scores = []
+            for emp in active_employees:
+                month_sales_count = Sale.objects.filter(seller=emp, sale_date__date__gte=month_start).count()
+                total_sales_count = Sale.objects.filter(seller=emp).count()
+                seller_scores.append({
+                    'user_id': emp.id,
+                    'username': emp.username,
+                    'month_sales': month_sales_count,
+                    'total_sales': total_sales_count
+                })
+
+            # Sort descending: top seller first
+            seller_scores.sort(key=lambda x: (x['month_sales'], x['total_sales']), reverse=True)
+
+            rank = 1
+            for idx, s in enumerate(seller_scores):
+                if s['user_id'] == user.id or s['username'] == user.username:
+                    rank = idx + 1
+                    break
+
+            if rank == 1:
+                performance = 'Good'
+                performance_desc = 'Top Performer (#1 in team sales)'
+            elif rank == 2:
+                performance = 'Average'
+                performance_desc = 'Consistent Seller (#2 in team sales)'
+            else:
+                performance = 'Below Average'
+                performance_desc = f'Rank #{rank} in team sales'
+
             return Response({
                 'user_role': 'EMPLOYEE',
                 'is_admin': False,
                 'username': user.username,
                 'my_assigned_count': my_assigned_count,
+                'last_sold_date': last_sold_date,
+                'longest_held_days': longest_held_days,
+                'longest_held_date': longest_held_date,
+                'latest_assigned_date': latest_assigned_date,
+                'performance': performance,
+                'performance_desc': performance_desc,
+                'performance_rank': rank,
                 'total_devices': my_devices.count(),
                 'in_stock': my_devices.filter(current_status=DeviceStatus.IN_STOCK).count(),
                 'under_repair': my_devices.filter(current_status=DeviceStatus.UNDER_REPAIR).count(),
-                'sold': my_devices.filter(current_status=DeviceStatus.SOLD).count(),
+                'sold': Sale.objects.filter(seller=user).count(),
                 'waiting_shipment': 0,
                 'returned': 0,
                 'total_assets': 0,
