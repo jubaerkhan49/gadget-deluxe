@@ -35,10 +35,14 @@ import {
   Search as SearchIcon,
   ArrowForward as ArrowForwardIcon,
   PointOfSale as SaleIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  AssignmentInd as AssignmentIndIcon,
+  NotificationImportant as AlertBadgeIcon,
+  People as PeopleIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import { useAuth } from '../context/AuthContext';
 import { dashboardApi, deviceApi, saleApi } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
@@ -48,16 +52,20 @@ import AddShipmentDialog from '../dialogs/AddShipmentDialog';
 import RecordSaleDialog from '../dialogs/RecordSaleDialog';
 import DeviceDetailDrawer from '../dialogs/DeviceDetailDrawer';
 import EditDeviceDialog from '../dialogs/EditDeviceDialog';
+import ManageEmployeesDialog from '../dialogs/ManageEmployeesDialog';
 import { formatNumber, formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
+  const { user } = useAuth();
 
   const [stats, setStats] = useState(null);
   const [recentDevices, setRecentDevices] = useState([]);
+  const [myAssignedDevices, setMyAssignedDevices] = useState([]);
   const [recentSales, setRecentSales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [assignedSearch, setAssignedSearch] = useState('');
 
   // Modals & Drawers state
   const [addDeviceOpen, setAddDeviceOpen] = useState(false);
@@ -67,6 +75,7 @@ export default function Dashboard() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editDevice, setEditDevice] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [manageEmployeesOpen, setManageEmployeesOpen] = useState(false);
 
   // Quick Scan/Search bar
   const [scanCode, setScanCode] = useState('');
@@ -87,6 +96,17 @@ export default function Dashboard() {
       setStats(statsRes.data);
       const allDevs = devsRes.data.results || devsRes.data || [];
       setRecentDevices(allDevs.slice(0, 6));
+
+      // Filter devices assigned to current user
+      const myDevs = allDevs.filter((d) => {
+        if (!d.current_owner) return false;
+        if (typeof d.current_owner === 'object') {
+          return d.current_owner.id === user?.id || d.current_owner.username === user?.username;
+        }
+        return d.current_owner === user?.id || d.current_owner === user?.username;
+      });
+      setMyAssignedDevices(myDevs);
+
       const allSales = salesRes.data.results || salesRes.data || [];
       setRecentSales(allSales.slice(0, 5));
     } catch (err) {
@@ -179,6 +199,42 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ pb: 4 }}>
+      {/* Pending Applications Alert Banner for Admins */}
+      {stats?.pending_applications_count > 0 && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 3,
+            borderRadius: 2.5,
+            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.15)' : '#FEF2F2'),
+            borderColor: 'error.main',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <AlertBadgeIcon color="error" />
+            <Typography variant="body2" fontWeight={600}>
+              <strong>{stats.pending_applications_count} new employee join application(s)</strong> awaiting administrator approval.
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            color="error"
+            size="small"
+            startIcon={<PeopleIcon />}
+            onClick={() => setManageEmployeesOpen(true)}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+          >
+            Review Applications
+          </Button>
+        </Paper>
+      )}
+
       {/* Top Banner: Quick Scan & Quick Action Buttons */}
       <Paper
         elevation={0}
@@ -333,6 +389,148 @@ export default function Dashboard() {
           </Grid>
         ))}
       </Grid>
+
+      {/* Employee Assigned Devices Custody Section */}
+      {(user?.role === 'EMPLOYEE' || myAssignedDevices.length > 0) && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2.5,
+            mb: 4,
+            borderRadius: 3,
+            borderColor: 'primary.main',
+            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#FFFFFF')
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              mb: 2,
+              flexWrap: 'wrap',
+              gap: 1.5
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 38,
+                  height: 38,
+                  borderRadius: 2,
+                  bgcolor: 'primary.main',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <AssignmentIndIcon fontSize="small" />
+              </Box>
+              <Box>
+                <Typography variant="subtitle1" fontWeight={800}>
+                  My Assigned Devices in Physical Custody
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {myAssignedDevices.length} device{myAssignedDevices.length === 1 ? '' : 's'} currently assigned to your account
+                </Typography>
+              </Box>
+            </Box>
+
+            <Box sx={{ width: { xs: '100%', sm: 260 } }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Filter assigned devices..."
+                value={assignedSearch}
+                onChange={(e) => setAssignedSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon fontSize="small" />
+                    </InputAdornment>
+                  )
+                }}
+              />
+            </Box>
+          </Box>
+
+          <TableContainer>
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: 'action.hover' }}>
+                  <TableCell sx={{ fontWeight: 700 }}>Model</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Current Status</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Received Date</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {myAssignedDevices.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} align="center" sx={{ py: 3, color: 'text.secondary' }}>
+                      No devices are currently assigned to your custody.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  myAssignedDevices
+                    .filter((d) => {
+                      if (!assignedSearch) return true;
+                      const q = assignedSearch.toLowerCase();
+                      return (
+                        d.model?.toLowerCase().includes(q) ||
+                        d.imei?.toLowerCase().includes(q) ||
+                        d.serial_number?.toLowerCase().includes(q) ||
+                        d.color?.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((dev) => (
+                      <TableRow
+                        key={dev.id}
+                        hover
+                        sx={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          setSelectedDevice(dev);
+                          setDrawerOpen(true);
+                        }}
+                      >
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {dev.model}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
+                          </Typography>
+                        </TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <CopyableText text={dev.imei} />
+                        </TableCell>
+                        <TableCell>
+                          <VariantBadge variant={dev.variant} />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {dev.battery_health ? `${dev.battery_health}%` : '-'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge status={dev.current_status} />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" color="text.secondary">
+                            {dev.received_date_bd || formatDate(dev.created_at)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                )}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Paper>
+      )}
 
       {/* Tables Section: Recent Inventory & Recent Sales */}
       <Grid container spacing={3}>
@@ -554,6 +752,12 @@ export default function Dashboard() {
         }}
         device={editDevice}
         onDeviceUpdated={() => fetchDashboardData()}
+      />
+
+      <ManageEmployeesDialog
+        open={manageEmployeesOpen}
+        onClose={() => setManageEmployeesOpen(false)}
+        onEmployeeUpdated={() => fetchDashboardData()}
       />
     </Box>
   );

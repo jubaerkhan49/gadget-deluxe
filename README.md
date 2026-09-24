@@ -1,27 +1,22 @@
-# 📱 Gadget Deluxe — Enterprise IMEI Inventory, Sourcing & Tracking Ecosystem
+# Gadget Deluxe — Enterprise IMEI Inventory, Sourcing & Tracking Ecosystem
 
-<div align="center">
+Next-generation cross-border electronics procurement, hardware refurbishment, 9-stage live parcel tracking, and multi-channel B2B wholesale management system.
 
-![Gadget Deluxe Banner](https://img.shields.io/badge/Gadget%20Deluxe-Cloud%20Inventory%20%26%20Tracking-3B82F6?style=for-the-badge&logo=apple&logoColor=white)
-![Version](https://img.shields.io/badge/version-2.4.0-emerald?style=for-the-badge)
-![License](https://img.shields.io/badge/license-Proprietary-purple?style=for-the-badge)
-![Status](https://img.shields.io/badge/production-live-success?style=for-the-badge)
-
-**Next-Gen Cross-Border Electronics Procurement, Hardware Refurbishment, 9-Stage Live Parcel Tracking & Multi-Channel B2B Wholesale Management System.**
-
-[🌐 Public Portal & Tracking](https://gadgetdeluxe.store) • [📦 Track Orders](https://gadgetdeluxe.store/track) • [📊 Admin Workspace](https://gadgetdeluxe.store/login) • [📂 GitHub Repository](https://github.com/jubaerkhan49/gadget-deluxe)
-
-</div>
+- Public Portal & Tracking: https://gadgetdeluxe.store
+- Track Orders: https://gadgetdeluxe.store/track
+- Admin Workspace: https://gadgetdeluxe.store/login
+- GitHub Repository: https://github.com/jubaerkhan49/gadget-deluxe
 
 ---
 
-## 🌟 Overview
+## Overview
 
-**Gadget Deluxe** is an all-in-one cloud inventory, sourcing, and logistics operations platform tailored for modern consumer electronics enterprises. Built specifically for high-turnover cross-border electronics trade (e.g., Shenzhen/Hong Kong/USA $\to$ Bangladesh), hardware refurbishing pipelines, team sales commissions, custom single-item import orders, and Business-to-Business (B2B) client networks.
+Gadget Deluxe is an all-in-one cloud inventory, sourcing, and logistics operations platform tailored for modern consumer electronics enterprises. Built specifically for high-turnover cross-border electronics trade (Shenzhen/Hong Kong/USA to Bangladesh), hardware refurbishing pipelines, team sales commissions, custom single-item import orders, and Business-to-Business (B2B) client networks.
 
 ```mermaid
 graph TD
     A[Public Portal / Landing] -->|Track Parcel| B[9-Stage Live Order Tracking Portal]
+    A -->|Apply to Join| H[Employee Application Gateway]
     A -->|Staff / Admin Login| C[JWT Authentication Service]
     C --> D[Django REST Framework Core API]
     D --> E[(PostgreSQL / Supabase)]
@@ -34,197 +29,173 @@ graph TD
         F --> M3[Other Goods 9-Stage Pipeline]
         F --> M4[Shipments & Batch Intake]
         F --> M5[Diagnostics & Shenzhen Repairs]
-        F --> M6[Business Intelligence & Best Seller Leaderboard]
-        F --> M7[Apple GSX / Sickw Telemetry Parser]
+        F --> M6[Business Intelligence & ROI Analytics]
+        F --> M7[Employee Application & Team Management]
+        F --> M8[Apple GSX / Sickw Telemetry Parser]
     end
 ```
 
 ---
 
-## 🚀 Key Modules & Capabilities
+## Key Modules and Capabilities
 
-### 1. 📱 Device Inventory & IMEI Lifecycle Management
-- **Universal Identifier Indexing**: Instant search by primary IMEI, secondary IMEI2, Serial Number (SN), MEID, or Model.
-- **Hardware Telemetry & Battery Health**: Comprehensive tracking of battery health %, cycle counts, display types, Face ID / True Tone status, and original hardware components.
-- **Dynamic Country & Variant Filtering**: Built-in indexing for international device variants (`Modified`, `USA eSim`, `Canada`, `Mexican`, `Korea`, `Singapore`, `Bypass`).
-- **Physical Custody Audit Log**: Real-time ownership assignment with time tracking (days in possession) to prevent stock stagnation.
+### 1. Device Inventory and IMEI Lifecycle Management
+- Universal Identifier Indexing: Instant search by primary IMEI, secondary IMEI2, Serial Number (SN), MEID, or Model.
+- Hardware Telemetry & Battery Health: Comprehensive tracking of battery health percentage, cycle counts, display types, Face ID / True Tone status, and original hardware components.
+- Dynamic Country & Variant Filtering: Built-in indexing for international device variants (Modified, USA eSim, Canada, Mexican, Korea, Singapore, Bypass).
+- Physical Custody Audit Log: Real-time ownership assignment with time tracking to monitor stock in employee possession.
 
-### 2. 📦 "Other Goods" & Custom Order Pipeline (9-Stage Live Tracking)
+### 2. "Other Goods" & Custom Order Pipeline (9-Stage Live Tracking)
 Manage single-item import purchases (Laptops, AirPods, laptop screens, cosmetics, gadgets) with complete customer transparency:
-1. **Order Confirmed** (`ORDER_CONFIRMED`)
-2. **Payment Made / Advance Paid** (`PAYMENT_RECEIVED`)
-3. **Product Purchased** (`PRODUCT_PURCHASED`)
-4. **Shipped to CN Warehouse** (`SHIPPED_TO_CN_WAREHOUSE`)
-5. **Received at CN Warehouse** (`RECEIVED_AT_CN_WAREHOUSE`)
-6. **Shipped to BD (In Transit)** (`SHIPPED_TO_BD`)
-7. **Arrived at BD Customs** (`ARRIVED_AT_BD`)
-8. **Received in BD Local Hub** (`RECEIVED_IN_BD`)
-9. **Product Delivered** (`DELIVERED`)
+1. Order Confirmed (`ORDER_CONFIRMED`)
+2. Payment Made / Advance Paid (`PAYMENT_RECEIVED`)
+3. Product Purchased (`PRODUCT_PURCHASED`)
+4. Shipped to CN Warehouse (`SHIPPED_TO_CN_WAREHOUSE`)
+5. Received at CN Warehouse (`RECEIVED_AT_CN_WAREHOUSE`)
+6. Shipped to BD (In Transit) (`SHIPPED_TO_BD`)
+7. Arrived at BD Customs (`ARRIVED_AT_BD`)
+8. Received in BD Local Hub (`RECEIVED_IN_BD`)
+9. Product Delivered (`DELIVERED`)
 
-* **Customer Tracking Portal (`/track`)**: Public-facing, responsive tracking with confidential pricing logic ($\text{Product Price} = \text{Total Amount} - \text{Logistics Cost}$).
-* **Multi-Channel Payment Logging**: Support for `bKash`, `Nagad`, `Bank Transfer`, and `Cash` with unique `TrxID` logging.
+- Customer Tracking Portal (`/track`): Public-facing, responsive tracking with confidential pricing logic (`Product Price = Total Amount - Logistics Cost`).
+- Multi-Channel Payment Logging: Support for bKash, Nagad, Bank Transfer, and Cash with unique TrxID logging.
 
-### 3. 🏬 B2B Client Orders & Wholesale Network
-- **Capital Isolation**: Client-funded lots (`is_b2b=True`) are automatically isolated from the owner's personal capital investment metrics.
-- **Client-Safe Mode**: Dedicated interface that safeguards internal wholesale margins and purchasing origins when viewed alongside B2B clients.
-- **Repair Round-Trip**: Seamless workflow to route defective B2B devices to repair centers and return them directly to the client's inventory lot.
+### 3. Employee Application and Staff Management
+- Online Application Gateway: Prospective staff can apply directly via the landing portal with verification details (Full Name, Nickname, Phone, Email, National ID, Address, Photo under 100KB, Password).
+- Admin Review & Instant Activation: Administrators review pending submissions, verify National ID/address, and approve applicants into active employee accounts with single-click activation.
+- Assigned Inventory Custody: Logged-in employees can immediately view the devices currently assigned to them and track their physical inventory status.
 
-### 4. 🚢 Inbound Shipments & Daily Batch Intake
-- **Batch Logistics**: Multi-device intake from global freight forwarding agents with automatic unit shipping cost distribution ($\text{Net Shipping} / \text{Devices Count}$).
-- **Active vs. Archived Shipments**: Automatic archival of completed shipment batches once all units arrive in Bangladesh stock.
-- **Daily BD Received Reports**: One-click generation of receipt summaries for local logistics verification.
+### 4. B2B Client Orders & Wholesale Network
+- Capital Isolation: Client-funded lots (`is_b2b=True`) are automatically isolated from personal capital investment metrics.
+- Client-Safe Mode: Dedicated interface that safeguards internal wholesale margins and purchasing origins when viewed alongside B2B clients.
+- Repair Round-Trip: Workflow to route defective B2B devices to repair centers and return them directly to the client's inventory lot.
 
-### 5. 🛠️ Hardware Diagnostics & Shenzhen Lab Tracker
-- **Shenzhen Round-Trip Logging**: Track repair costs, issues, sent dates, and returned dates.
-- **Profit Margin Protection**: Accurately accounts for repair expenditures against final selling margins.
+### 5. Inbound Shipments & Daily Batch Intake
+- Batch Logistics: Multi-device intake from global freight forwarding agents with automatic unit shipping cost distribution (`Net Shipping / Devices Count`).
+- Active vs. Archived Shipments: Automatic archival of completed shipment batches once all units arrive in Bangladesh stock.
+- Daily BD Received Reports: One-click generation of receipt summaries for local logistics verification.
 
-### 6. 📊 Analytics, ROI & Best Seller Leaderboard
-- **Consolidated Monthly ROI**:
-  $$\text{Net Profit} = \text{Retail Profit} + \text{B2B Profit} - \sum \text{Repair Costs} - \sum \text{Shipping Costs}$$
-  $$\text{ROI \%} = \left( \frac{\text{Net Profit}}{\text{Total Self-Invested Capital}} \right) \times 100$$
-- **Seller Performance Scoring**: Tracks sales rep volume, profit generation, turnaround speed, and sales consistency indices (0–100).
+### 6. Hardware Diagnostics & Shenzhen Lab Tracker
+- Shenzhen Round-Trip Logging: Track repair costs, issues, sent dates, and returned dates.
+- Profit Margin Protection: Accurately accounts for repair expenditures against final selling margins.
+
+### 7. Analytics, ROI & Best Seller Leaderboard
+- Consolidated Monthly ROI calculation accounting for retail sales, B2B sales, repair overhead, and shipping logistics expenses.
+- Seller Performance Scoring: Tracks sales representative volume, profit generation, turnaround speed, and sales consistency indices (0-100).
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Layer | Technologies |
 |---|---|
-| **Backend** | Python 3.11+, Django 5.x, Django REST Framework, SimpleJWT, Gunicorn, Whitenoise |
-| **Database** | PostgreSQL (Production) / SQLite (Local Development) |
-| **Frontend Web** | React 18, Vite, Material-UI (MUI v5), React Router v6, Axios, Notistack, Emotion |
-| **Mobile Client** | Android (Kotlin), Jetpack Compose (Material 3), Coroutines, StateFlow, Retrofit 2, ML Kit |
-| **Infrastructure** | Render Cloud (`render.yaml`), HTTPS, Custom Domain (`gadgetdeluxe.store`) |
+| Backend | Python 3.11+, Django 5.x, Django REST Framework, SimpleJWT, Gunicorn, Whitenoise |
+| Database | PostgreSQL (Production) / SQLite (Local Development) |
+| Frontend Web | React 18, Vite, Material-UI (MUI v5), React Router v6, Axios, Notistack, Emotion |
+| Mobile Client | Android (Kotlin), Jetpack Compose (Material 3), Coroutines, StateFlow, Retrofit 2, ML Kit |
+| Infrastructure | Render Cloud (`render.yaml`), HTTPS, Custom Domain (`gadgetdeluxe.store`) |
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
-gadget-deluxe/
-├── backend/                        # Django REST Framework backend
+imei_inventory_system/
+├── backend/
 │   ├── apps/
-│   │   ├── accounts/               # User authentication, roles & staff management
-│   │   ├── api/                    # ViewSets, REST endpoints & serializers
-│   │   ├── inventory/              # Device, DeviceAssignment, Note & History models
-│   │   ├── orders/                 # OtherGoodsOrder & 9-stage tracking models
-│   │   ├── repairs/                # Hardware repair workflows & lab logs
-│   │   ├── sales/                  # Sales invoices & commission accounting
-│   │   ├── shipments/              # Freight batches & supplier management
-│   │   └── sickw/                  # Apple GSX / Sickw telemetry parser
-│   ├── config/                     # Django core settings, WSGI, URLs & JWT config
-│   ├── build.sh                    # Production build script (migrate + collectstatic)
+│   │   ├── accounts/     # Custom User model, Roles, EmployeeApplication
+│   │   ├── api/          # DRF Serializers, ViewSets, OpenAPI documentation
+│   │   ├── core/         # TimeStampedModel, audit logging middleware
+│   │   ├── customers/    # Customer profiles, purchase history
+│   │   ├── dashboard/    # Real-time KPIs, operational stats
+│   │   ├── inventory/    # Device models, variants, IMEI tracking, history
+│   │   ├── orders/       # Other Goods 9-stage custom order tracking
+│   │   ├── repairs/      # Shenzhen repair lab tracking
+│   │   ├── sales/        # Sales registry, profit calculation, invoices
+│   │   ├── shipments/    # Inbound batches, freight cost distribution
+│   │   └── sickw/        # Apple GSX / Sickw raw report telemetry parser
+│   ├── config/           # Django settings, WSGI, ASGI, URLs
+│   ├── requirements.txt  # Python package dependencies
 │   └── manage.py
-├── frontend/                       # React (Vite) Single-Page Application
+├── frontend/
 │   ├── src/
-│   │   ├── api/                    # Central Axios API client with token refresh
-│   │   ├── components/             # Layouts, Badges, CopyableText, Navbar
-│   │   ├── context/                # AuthContext (JWT state & role management)
-│   │   ├── dialogs/                # AddDevice, EditDevice, ChangePassword, OtherGoods
-│   │   ├── pages/                  # Landing, Dashboard, Inventory, B2B, Track, Analytics
-│   │   └── theme/                  # Material-UI dynamic light/dark theme engine
-│   ├── package.json
-│   └── vite.config.js
-├── android/                        # Native Android Jetpack Compose App
-│   ├── app/src/main/java/com/imei/inventory/
-│   │   ├── data/                   # Retrofit API clients, DTOs & repositories
-│   │   ├── ui/                     # Compose Screens, Scanner, Tabs, Dialogs
-│   │   └── viewmodel/              # StateFlow reactive ViewModels
-│   └── build.gradle.kts
-├── render.yaml                     # Render Infrastructure-as-Code deployment config
-└── README.md                       # Comprehensive Project Documentation
+│   │   ├── api/          # Axios client with JWT interceptors
+│   │   ├── components/   # MainLayout, UI components
+│   │   ├── context/      # AuthContext
+│   │   ├── dialogs/      # AddDevice, AddShipment, ManageEmployees, ApplyEmployee
+│   │   ├── pages/        # Landing, Dashboard, Inventory, B2B, Sales, Track
+│   │   └── theme/        # Light/Dark mode design system
+│   └── package.json
+├── android/              # Native Android CameraX & Barcode Scanner App
+└── README.md
 ```
 
 ---
 
-## 🔗 Key API Endpoints
+## API Endpoints Catalog
 
-All authenticated endpoints require header: `Authorization: Bearer <JWT_ACCESS_TOKEN>`
+### Authentication & Users
+- `POST /api/token/` — Obtain JWT access and refresh tokens
+- `POST /api/token/refresh/` — Refresh expired JWT access token
+- `GET /api/users/me/` — Retrieve authenticated user profile and assigned device count
+- `POST /api/users/change-password/` — Change current user password
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/token/` | Obtain JWT Token Pair (Access + Refresh) |
-| `POST` | `/api/token/refresh/` | Refresh expired JWT token |
-| `POST` | `/api/users/change-password/` | Self-service password change for logged-in user |
-| `GET` | `/api/public/track-order/?query=` | Public order lookup (No auth required) |
-| `GET` | `/api/devices/` | List/filter devices (`is_b2b`, `variant`, `current_status`, `search`) |
-| `GET` | `/api/devices/scan/?code=` | Instant barcode/IMEI lookup |
-| `GET` | `/api/devices/export-csv/` | Download CSV dataset of active or sold inventory |
-| `GET` | `/api/other-goods/` | List 9-stage custom import orders with profit accounting |
-| `POST` | `/api/other-goods/` | Create new custom import order |
-| `GET` | `/api/shipments/` | List active and archived inbound batches |
-| `POST` | `/api/shipments/create-batch/` | Bulk create shipment and populate devices |
-| `GET` | `/api/analytics/` | Monthly financials, ROI metrics & Best Seller rankings |
-| `POST` | `/api/sickw/parse-raw/` | Parse Apple GSX raw report text into structured JSON |
+### Public Portals (No Auth Required)
+- `GET /api/public/track-order/?order=<ID_OR_PHONE>` — Public 9-stage shipment tracking
+- `POST /api/employee-applications/` — Public submission for prospective employee join application
+
+### Employee Management & Applications (Admin / Manager)
+- `GET /api/employee-applications/` — List employee applications (filter by `status`)
+- `POST /api/employee-applications/{id}/approve/` — Approve applicant and generate active account
+- `POST /api/employee-applications/{id}/reject/` — Reject applicant
+
+### Device Inventory
+- `GET /api/devices/` — List devices (filter by `current_status`, `is_b2b`, `current_owner`)
+- `POST /api/devices/` — Register new device in inventory
+- `GET /api/devices/scan/?code=<IMEI_OR_SN>` — Barcode / IMEI instant scan lookup
+- `GET /api/export/devices/csv/` — Export inventory to CSV
+
+### 9-Stage Sourcing Orders ("Other Goods")
+- `GET /api/other-goods/` — List custom customer sourcing orders
+- `POST /api/other-goods/` — Create new custom customer sourcing order
+- `POST /api/other-goods/{id}/advance_stage/` — Advance order through 9-stage pipeline
+
+### Analytics & Dashboard
+- `GET /api/dashboard/stats/` — Real-time operational counters, assigned inventory metrics
+- `GET /api/analytics/?year=YYYY&month=M` — Executive monthly ROI and leaderboard
 
 ---
 
-## 💻 Local Development Setup
+## Getting Started
 
-### 1. Prerequisites
-- Python 3.11+
-- Node.js 18+ and npm
-- Android Studio (for mobile development)
+### Backend Setup
 
-### 2. Backend Setup
-```powershell
-# Navigate to backend directory
+```bash
 cd backend
-
-# Create and activate virtual environment
 python -m venv venv
-.\venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# Run migrations
 python manage.py migrate
-
-# Seed initial admin & demo data (Optional)
-python manage.py seed_initial_data
-
-# Start local server
-python manage.py runserver 0.0.0.0:8000
+python manage.py runserver
 ```
 
-### 3. Frontend Web Setup
-```powershell
-# Navigate to frontend directory
+### Frontend Setup
+
+```bash
 cd frontend
-
-# Install npm packages
 npm install
-
-# Start development server
 npm run dev
-
-# Build production bundle
-npm run build
 ```
 
-### 4. Android App Setup
-1. Open the `android/` directory in **Android Studio**.
-2. Configure `BASE_URL` inside `ApiClient.kt` to point to your backend API URL (e.g. `https://gadgetdeluxe.store` or local LAN IP).
-3. Build and deploy to a physical device or emulator:
-```powershell
-cd android
-.\gradlew assembleDebug
-```
+### Android Native App Setup
+
+1. Open the `android/` directory in Android Studio (Ladybug or newer).
+2. Sync Gradle dependencies.
+3. Configure `API_BASE_URL` in `Constants.kt` or `gradle.properties`.
+4. Run on a physical Android device to test CameraX hardware barcode scanning.
 
 ---
 
-## 🔒 Security & Best Practices
+## License
 
-- **Zero-Exposure Wholesale Privacy**: Client-facing portals (`/track`, `/b2b`) sanitize all wholesale purchasing origins and profit margins.
-- **JWT Token Refresh Interceptor**: Transparently handles token expirations and re-authenticates without interrupting active user workflows.
-- **Audit Trails**: Every physical device handoff, price adjustment, and repair phase is logged chronologically in `DeviceHistory`.
-
----
-
-<div align="center">
-
-**Developed with ❤️ for Gadget Deluxe**  
-*Proprietary & Confidential • All Rights Reserved © 2026*
-
-</div>
+Copyright (c) Gadget Deluxe. All rights reserved.

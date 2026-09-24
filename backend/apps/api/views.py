@@ -13,7 +13,7 @@ from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 
 from django.utils import timezone
-from apps.accounts.models import User
+from apps.accounts.models import User, EmployeeApplication
 from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory, DeviceAssignment
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
@@ -27,7 +27,7 @@ from apps.orders.models import OtherGoodsOrder, TrackingStage, ProductCategory
 from .serializers import (
     UserSerializer, DeviceSerializer, ShipmentSerializer, SupplierSerializer,
     CustomerSerializer, SaleSerializer, RepairSerializer, SickwReportSerializer,
-    OtherGoodsOrderSerializer, PublicOrderTrackingSerializer
+    OtherGoodsOrderSerializer, PublicOrderTrackingSerializer, EmployeeApplicationSerializer
 )
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -36,6 +36,22 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
     search_fields = ['username', 'first_name', 'last_name', 'email']
+
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        """Returns currently authenticated user profile and assigned device metrics."""
+        user = request.user
+        assigned_devices_count = user.assigned_devices.exclude(current_status=DeviceStatus.SOLD).count()
+        return Response({
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'role': user.role,
+            'phone': user.phone,
+            'assigned_devices_count': assigned_devices_count
+        })
 
     @action(detail=False, methods=['post'], url_path='change-password')
     def change_password(self, request):
@@ -69,6 +85,152 @@ class UserViewSet(viewsets.ModelViewSet):
         user.save()
 
         return Response({"success": True, "message": "Password changed successfully."})
+
+
+class EmployeeApplicationViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for employee recruitment applications.
+    Public visitors can submit applications via POST.
+    Admins/Managers can list, review, approve, or reject applications.
+    """
+    queryset = EmployeeApplication.objects.all().order_by('-created_at')
+    serializer_class = EmployeeApplicationSerializer
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status']
+    search_fields = ['full_name', 'nickname', 'phone', 'email', 'nid_number']
+    ordering_fields = ['created_at', 'status']
+
+    def get_permissions(self):
+        if self.action == 'create':
+            return [permissions.AllowAny()]
+        return [permissions.IsAuthenticated()]
+
+    def create(self, request, *args, **kwargs):
+        data = request.data.copy()
+        email = data.get('email', '').strip().lower()
+        phone = data.get('phone', '').strip()
+        full_name = data.get('full_name', '').strip()
+        nid_number = data.get('nid_number', '').strip()
+        address = data.get('address', '').strip()
+        photo = data.get('photo', '')
+        password = data.get('password', '')
+
+        if not full_name or not phone or not email or not nid_number or not address or not password:
+            return Response(
+                {"error": "Please provide all required fields (Full Name, Phone, Email, NID Number, Address, and Password)."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if len(password) < 6:
+            return Response(
+                {"error": "Password must be at least 6 characters long."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate photo size (must be strictly under 100KB: 102,400 bytes)
+        if photo:
+            if len(photo) > 145000:
+                return Response(
+                    {"error": "Photo exceeds the maximum allowed size of 100KB. Please upload a smaller compressed image under 100KB."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        # Check if email is already registered as an active user
+        if User.objects.filter(email__iexact=email).exists():
+            return Response(
+                {"error": "An employee account with this email address is already registered in the system."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Check if there is already an unreviewed pending application
+        if EmployeeApplication.objects.filter(email__iexact=email, status=EmployeeApplication.Status.PENDING).exists():
+            return Response(
+                {"error": "You already have an application under review. Our team will verify and approve your request shortly."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        application = EmployeeApplication.objects.create(
+            full_name=full_name,
+            nickname=data.get('nickname', '').strip(),
+            phone=phone,
+            email=email,
+            nid_number=nid_number,
+            address=address,
+            photo=photo,
+            password=password,
+            status=EmployeeApplication.Status.PENDING
+        )
+
+        return Response({
+            "success": True,
+            "message": "Your employee application has been submitted successfully! It is pending administrator review.",
+            "application_id": application.id
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approves application and creates an active Employee User account."""
+        application = self.get_object()
+
+        if application.status == EmployeeApplication.Status.APPROVED:
+            return Response({"error": "This application has already been approved."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Determine unique username
+        base_username = (application.nickname or application.full_name.split()[0] or application.email.split('@')[0]).lower()
+        base_username = re.sub(r'[^a-z0-9_]', '', base_username)
+        if not base_username:
+            base_username = 'employee'
+
+        username = base_username
+        counter = 1
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{counter}"
+            counter += 1
+
+        first_name = application.full_name
+        last_name = ''
+        name_parts = application.full_name.split(' ', 1)
+        if len(name_parts) == 2:
+            first_name, last_name = name_parts
+
+        user = User.objects.create(
+            username=username,
+            email=application.email,
+            first_name=first_name,
+            last_name=last_name,
+            phone=application.phone,
+            role=User.Role.EMPLOYEE,
+            notes=f"Approved Employee Application #{application.id}\nNID: {application.nid_number}\nAddress: {application.address}",
+            is_active=True
+        )
+        user.set_password(application.password)
+        user.save()
+
+        application.status = EmployeeApplication.Status.APPROVED
+        application.reviewed_by = request.user
+        application.created_user = user
+        application.review_notes = request.data.get('notes', 'Approved by administrator.')
+        application.save()
+
+        return Response({
+            "success": True,
+            "message": f"Employee {user.get_full_name() or user.username} approved! Username: {user.username}",
+            "user": UserSerializer(user).data
+        })
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Rejects employee join application."""
+        application = self.get_object()
+        application.status = EmployeeApplication.Status.REJECTED
+        application.reviewed_by = request.user
+        application.review_notes = request.data.get('notes', 'Application rejected by administrator.')
+        application.save()
+
+        return Response({
+            "success": True,
+            "message": "Application has been marked as rejected."
+        })
 
 class DeviceViewSet(viewsets.ModelViewSet):
     """
@@ -639,6 +801,20 @@ class DashboardStatsAPIView(APIView):
             current_status=DeviceStatus.SOLD
         ).count()
 
+        my_assigned_count = 0
+        if request.user.is_authenticated:
+            my_assigned_count = Device.objects.filter(
+                current_owner=request.user
+            ).exclude(
+                current_status=DeviceStatus.SOLD
+            ).count()
+
+        pending_applications_count = 0
+        if request.user.is_authenticated and (request.user.role in [User.Role.ADMIN, User.Role.MANAGER] or request.user.is_superuser):
+            pending_applications_count = EmployeeApplication.objects.filter(
+                status=EmployeeApplication.Status.PENDING
+            ).count()
+
         return Response({
             'total_devices': total_devices,
             'in_stock': in_stock_count,
@@ -653,6 +829,10 @@ class DashboardStatsAPIView(APIView):
             'total_profit': float(total_profit),
             'monthly_profit': float(monthly_profit),
             'others_owned': others_owned_count,
+            'my_assigned_count': my_assigned_count,
+            'pending_applications_count': pending_applications_count,
+            'user_role': request.user.role if request.user.is_authenticated else 'EMPLOYEE',
+            'username': request.user.username if request.user.is_authenticated else ''
         })
 
 

@@ -34,6 +34,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import BuildIcon from '@mui/icons-material/Build';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import LockResetIcon from '@mui/icons-material/LockReset';
+import PeopleIcon from '@mui/icons-material/People';
 import ArchiveIcon from '@mui/icons-material/Inventory2';
 import InsightsIcon from '@mui/icons-material/Insights';
 import StorefrontIcon from '@mui/icons-material/Storefront';
@@ -45,6 +46,7 @@ import AddDeviceDialog from '../../dialogs/AddDeviceDialog';
 import AddShipmentDialog from '../../dialogs/AddShipmentDialog';
 import AddOwnerDialog from '../../dialogs/AddOwnerDialog';
 import ChangePasswordDialog from '../../dialogs/ChangePasswordDialog';
+import ManageEmployeesDialog from '../../dialogs/ManageEmployeesDialog';
 
 const DRAWER_WIDTH = 250;
 
@@ -74,6 +76,7 @@ export default function MainLayout() {
   const [showAddShipment, setShowAddShipment] = useState(false);
   const [showAddOwner, setShowAddOwner] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showManageEmployees, setShowManageEmployees] = useState(false);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -302,6 +305,11 @@ export default function MainLayout() {
                 <Typography variant="body2" fontWeight={600}>Add Employee</Typography>
               </MenuItem>
 
+              <MenuItem onClick={() => { setUserMenuAnchor(null); setShowManageEmployees(true); }}>
+                <ListItemIcon><PeopleIcon fontSize="small" color="primary" /></ListItemIcon>
+                <Typography variant="body2" fontWeight={600}>Manage Employees</Typography>
+              </MenuItem>
+
               <Divider sx={{ my: 0.5 }} />
 
               <MenuItem onClick={() => { setUserMenuAnchor(null); logout(); }}>
@@ -399,6 +407,13 @@ export default function MainLayout() {
         <ChangePasswordDialog
           open={showChangePassword}
           onClose={() => setShowChangePassword(false)}
+        />
+      )}
+
+      {showManageEmployees && (
+        <ManageEmployeesDialog
+          open={showManageEmployees}
+          onClose={() => setShowManageEmployees(false)}
         />
       )}
     </Box>

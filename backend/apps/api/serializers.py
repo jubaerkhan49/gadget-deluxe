@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.accounts.models import User
+from apps.accounts.models import User, EmployeeApplication
 from apps.inventory.models import Device, DeviceAssignment, DeviceHistory, Photo, Note, CarrierInformation, Warranty
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
@@ -10,10 +10,17 @@ from apps.orders.models import OtherGoodsOrder
 
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    assigned_devices_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'password', 'email', 'first_name', 'last_name', 'role', 'phone', 'employee_code']
+        fields = [
+            'id', 'username', 'password', 'email', 'first_name', 'last_name',
+            'role', 'phone', 'employee_code', 'notes', 'date_joined', 'assigned_devices_count'
+        ]
+
+    def get_assigned_devices_count(self, obj):
+        return obj.assigned_devices.exclude(current_status='SOLD').count()
 
     def create(self, validated_data):
         password = validated_data.pop('password', None)
@@ -24,6 +31,21 @@ class UserSerializer(serializers.ModelSerializer):
             user.set_password('GadgetDeluxe123!')
         user.save()
         return user
+
+class EmployeeApplicationSerializer(serializers.ModelSerializer):
+    reviewed_by_username = serializers.CharField(source='reviewed_by.username', read_only=True)
+
+    class Meta:
+        model = EmployeeApplication
+        fields = [
+            'id', 'full_name', 'nickname', 'phone', 'email',
+            'nid_number', 'address', 'photo', 'password', 'status',
+            'review_notes', 'reviewed_by', 'reviewed_by_username',
+            'created_user', 'created_at', 'updated_at'
+        ]
+        extra_kwargs = {
+            'password': {'write_only': True}
+        }
 
 class SupplierSerializer(serializers.ModelSerializer):
     class Meta:

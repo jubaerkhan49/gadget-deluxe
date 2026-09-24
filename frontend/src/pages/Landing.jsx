@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import {
   Box,
   Container,
@@ -9,7 +9,6 @@ import {
   CardContent,
   TextField,
   InputAdornment,
-  Chip,
   Stack,
   IconButton,
   Tooltip,
@@ -23,25 +22,19 @@ import {
   AdminPanelSettings as AdminIcon,
   Badge as EmployeeIcon,
   PhoneAndroid as DeviceIcon,
-  Build as RepairIcon,
-  Storefront as B2BIcon,
-  Insights as AnalyticsIcon,
   Brightness4 as DarkModeIcon,
   Brightness7 as LightModeIcon,
   ArrowForward as ArrowForwardIcon,
-  CheckCircle as CheckIcon,
-  VerifiedUser as SecurityIcon,
-  CloudDone as CloudIcon,
-  SupportAgent as SupportIcon,
-  QrCodeScanner as ScannerIcon,
+  PersonAdd as JoinIcon,
+  Shield as ShieldIcon,
   Timeline as TimelineIcon,
-  Speed as SpeedIcon,
+  Storefront as B2BIcon,
   Lock as LockIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useContext } from 'react';
 import { ColorModeContext } from '../App';
 import { useAuth } from '../context/AuthContext';
+import ApplyEmployeeDialog from '../dialogs/ApplyEmployeeDialog';
 
 export default function Landing() {
   const theme = useTheme();
@@ -50,6 +43,7 @@ export default function Landing() {
   const { user } = useAuth();
 
   const [orderQuery, setOrderQuery] = useState('');
+  const [showApplyDialog, setShowApplyDialog] = useState(false);
 
   const handleTrackSubmit = (e) => {
     e.preventDefault();
@@ -66,28 +60,34 @@ export default function Landing() {
     <Box
       sx={{
         minHeight: '100vh',
-        bgcolor: 'background.default',
-        color: 'text.primary',
-        overflowX: 'hidden'
+        bgcolor: isDark ? '#0F172A' : '#F8FAFC',
+        color: isDark ? '#F1F5F9' : '#0F172A',
+        display: 'flex',
+        flexDirection: 'column'
       }}
     >
       {/* 1. Header / Navbar */}
       <Box
         component="header"
         sx={{
+          borderBottom: 1,
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+          bgcolor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(8px)',
           position: 'sticky',
           top: 0,
-          zIndex: 1100,
-          backdropFilter: 'blur(16px)',
-          bgcolor: isDark ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.85)',
-          borderBottom: 1,
-          borderColor: 'divider',
-          py: 1.5,
-          px: { xs: 2, md: 4 }
+          zIndex: 100
         }}
       >
         <Container maxWidth="lg">
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              py: 2
+            }}
+          >
             {/* Logo */}
             <Box
               onClick={() => navigate('/')}
@@ -101,25 +101,24 @@ export default function Landing() {
             >
               <Box
                 sx={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: 2.5,
-                  background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
+                  width: 38,
+                  height: 38,
+                  borderRadius: 2,
+                  bgcolor: 'primary.main',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: '#fff',
-                  boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)'
+                  color: '#fff'
                 }}
               >
                 <DeviceIcon fontSize="small" />
               </Box>
               <Box>
-                <Typography variant="h6" fontWeight={900} letterSpacing="-0.5px" sx={{ lineHeight: 1.1 }}>
+                <Typography variant="subtitle1" fontWeight={800} letterSpacing="-0.3px" sx={{ lineHeight: 1.2 }}>
                   Gadget Deluxe
                 </Typography>
-                <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: '0.72rem' }}>
-                  Cloud Sourcing & Inventory
+                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
+                  Inventory & Logistics
                 </Typography>
               </Box>
             </Box>
@@ -127,13 +126,22 @@ export default function Landing() {
             {/* Nav Actions */}
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Button
-                variant="text"
                 color="inherit"
+                size="small"
                 onClick={() => navigate('/track')}
-                startIcon={<ShippingIcon fontSize="small" color="primary" />}
-                sx={{ display: { xs: 'none', sm: 'inline-flex' }, fontWeight: 700 }}
+                sx={{ fontWeight: 600, textTransform: 'none', display: { xs: 'none', sm: 'inline-flex' } }}
               >
                 Track Parcel
+              </Button>
+
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => setShowApplyDialog(true)}
+                startIcon={<JoinIcon fontSize="small" />}
+                sx={{ fontWeight: 600, textTransform: 'none' }}
+              >
+                Join Team
               </Button>
 
               <Tooltip title={`Switch to ${isDark ? 'Light' : 'Dark'} mode`}>
@@ -146,31 +154,22 @@ export default function Landing() {
                 <Button
                   variant="contained"
                   color="primary"
+                  size="small"
                   onClick={() => navigate('/dashboard')}
-                  endIcon={<ArrowForwardIcon />}
-                  sx={{
-                    borderRadius: 2.5,
-                    px: 2.5,
-                    fontWeight: 700,
-                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)'
-                  }}
+                  sx={{ borderRadius: 2, px: 2, fontWeight: 700, textTransform: 'none' }}
                 >
-                  Enter Dashboard
+                  Dashboard
                 </Button>
               ) : (
                 <Button
                   variant="contained"
                   color="primary"
+                  size="small"
                   onClick={() => navigate('/login')}
                   startIcon={<LockIcon fontSize="small" />}
-                  sx={{
-                    borderRadius: 2.5,
-                    px: 2.5,
-                    fontWeight: 700,
-                    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.35)'
-                  }}
+                  sx={{ borderRadius: 2, px: 2, fontWeight: 700, textTransform: 'none' }}
                 >
-                  Portal Login
+                  Sign In
                 </Button>
               )}
             </Stack>
@@ -178,381 +177,316 @@ export default function Landing() {
         </Container>
       </Box>
 
-      {/* 2. Hero Section */}
-      <Box
-        sx={{
-          position: 'relative',
-          pt: { xs: 6, md: 10 },
-          pb: { xs: 8, md: 12 },
-          background: isDark
-            ? 'radial-gradient(ellipse 80% 60% at 50% 10%, rgba(59, 130, 246, 0.18), transparent 100%)'
-            : 'radial-gradient(ellipse 80% 60% at 50% 10%, rgba(59, 130, 246, 0.12), transparent 100%)'
-        }}
-      >
+      {/* 2. Minimalist Hero & Tracking Section */}
+      <Box sx={{ pt: { xs: 7, md: 10 }, pb: { xs: 6, md: 8 } }}>
         <Container maxWidth="md">
-          {/* Badge */}
-          <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <Chip
-              icon={<CloudIcon fontSize="small" sx={{ color: '#fff !important' }} />}
-              label="Enterprise Cloud IMEI, Sourcing & Tracking Ecosystem"
-              color="primary"
+          <Box sx={{ textAlign: 'center', mb: 4 }}>
+            <Typography
+              variant="h3"
+              fontWeight={800}
+              letterSpacing="-0.8px"
               sx={{
-                fontWeight: 700,
-                fontSize: '0.8rem',
-                py: 2,
-                px: 1,
-                borderRadius: 4,
-                boxShadow: '0 4px 20px rgba(59, 130, 246, 0.25)'
-              }}
-            />
-          </Box>
-
-          {/* Headline */}
-          <Typography
-            variant="h2"
-            align="center"
-            fontWeight={900}
-            letterSpacing="-1.5px"
-            sx={{
-              fontSize: { xs: '2.3rem', sm: '3.2rem', md: '3.8rem' },
-              lineHeight: 1.15,
-              mb: 2.5
-            }}
-          >
-            Next-Gen Device Inventory &{' '}
-            <Box
-              component="span"
-              sx={{
-                background: 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent'
+                fontSize: { xs: '2rem', sm: '2.8rem', md: '3.2rem' },
+                lineHeight: 1.2,
+                mb: 2
               }}
             >
-              Live Sourcing Logistics
-            </Box>
-          </Typography>
+              Device Inventory & Supply Logistics
+            </Typography>
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{
+                fontSize: { xs: '0.95rem', md: '1.05rem' },
+                maxWidth: 620,
+                mx: 'auto',
+                lineHeight: 1.6
+              }}
+            >
+              Real-time IMEI tracking, 9-stage cross-border shipment pipeline from China to Bangladesh, and wholesale consignment management.
+            </Typography>
+          </Box>
 
-          {/* Subtitle */}
-          <Typography
-            variant="subtitle1"
-            align="center"
-            color="text.secondary"
-            sx={{
-              fontSize: { xs: '1rem', md: '1.2rem' },
-              maxWidth: 720,
-              mx: 'auto',
-              mb: 5,
-              lineHeight: 1.6
-            }}
-          >
-            A unified operations hub for cross-border electronics trade, 9-stage China-to-BD parcel tracking,
-            hardware refurbishing lifecycle, and multi-channel B2B wholesale distribution.
-          </Typography>
-
-          {/* Interactive Live Tracking Search Bar */}
+          {/* Minimalist Tracking Search Bar */}
           <Paper
-            elevation={0}
             component="form"
             onSubmit={handleTrackSubmit}
+            variant="outlined"
             sx={{
-              p: { xs: 1, sm: 1.2 },
-              borderRadius: 3.5,
-              border: '2px solid',
-              borderColor: 'primary.main',
-              bgcolor: isDark ? '#131B2E' : '#FFFFFF',
-              boxShadow: isDark
-                ? '0 12px 36px rgba(59, 130, 246, 0.25)'
-                : '0 12px 36px rgba(59, 130, 246, 0.15)',
+              p: 1,
+              borderRadius: 2.5,
               display: 'flex',
               alignItems: 'center',
               gap: 1,
-              flexWrap: { xs: 'wrap', sm: 'nowrap' },
-              mb: 3
+              bgcolor: isDark ? '#1E293B' : '#FFFFFF',
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
+              maxWidth: 680,
+              mx: 'auto',
+              boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 20px rgba(0,0,0,0.04)'
             }}
           >
             <TextField
               fullWidth
-              size="medium"
+              size="small"
               placeholder="Enter Custom Order ID (e.g. OG-2609-0001) or Phone Number..."
               value={orderQuery}
               onChange={(e) => setOrderQuery(e.target.value)}
+              variant="standard"
               InputProps={{
                 disableUnderline: true,
                 startAdornment: (
-                  <InputAdornment position="start" sx={{ pl: 1 }}>
-                    <SearchIcon color="primary" />
+                  <InputAdornment position="start" sx={{ pl: 1.5 }}>
+                    <SearchIcon color="action" fontSize="small" />
                   </InputAdornment>
                 )
               }}
-              variant="standard"
               sx={{ px: 1 }}
             />
             <Button
               type="submit"
               variant="contained"
               color="primary"
-              size="large"
-              startIcon={<ShippingIcon />}
+              startIcon={<ShippingIcon fontSize="small" />}
               sx={{
-                borderRadius: 2.5,
-                px: 3.5,
-                py: 1.3,
-                fontWeight: 800,
-                fontSize: '0.95rem',
-                whiteSpace: 'nowrap',
-                width: { xs: '100%', sm: 'auto' },
-                background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)',
-                boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)'
+                borderRadius: 2,
+                px: 3,
+                py: 1,
+                fontWeight: 700,
+                textTransform: 'none',
+                whiteSpace: 'nowrap'
               }}
             >
-              Track Parcel
+              Track Order
             </Button>
           </Paper>
-
-          {/* Quick suggestions */}
-          <Stack
-            direction="row"
-            spacing={1}
-            justifyContent="center"
-            alignItems="center"
-            flexWrap="wrap"
-            sx={{ gap: 0.8 }}
-          >
-            <Typography variant="caption" color="text.secondary" fontWeight={700}>
-              POPULAR ACTIONS:
-            </Typography>
-            <Chip
-              label="Track Sourcing Order"
-              size="small"
-              clickable
-              onClick={() => navigate('/track')}
-              color="info"
-              variant="outlined"
-              sx={{ fontWeight: 700 }}
-            />
-            <Chip
-              label="Admin Workspace"
-              size="small"
-              clickable
-              onClick={() => navigate('/login?role=admin')}
-              color="primary"
-              variant="outlined"
-              sx={{ fontWeight: 700 }}
-            />
-            <Chip
-              label="Staff Login"
-              size="small"
-              clickable
-              onClick={() => navigate('/login?role=employee')}
-              color="secondary"
-              variant="outlined"
-              sx={{ fontWeight: 700 }}
-            />
-          </Stack>
         </Container>
       </Box>
 
-      {/* 3. Role-Based Quick Access Gateways */}
-      <Box sx={{ py: { xs: 6, md: 8 }, bgcolor: isDark ? '#0B0F19' : '#F1F5F9' }}>
+      {/* 3. Action Cards Grid */}
+      <Box sx={{ py: 6, flexGrow: 1 }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Typography variant="overline" color="primary" fontWeight={800} letterSpacing={1.5}>
-              DIRECT PORTAL ACCESS
-            </Typography>
-            <Typography variant="h4" fontWeight={900} letterSpacing="-0.5px">
-              Choose Your Access Gateway
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Fast-track authentication and tracking entrypoints for customers, admins, and staff
-            </Typography>
-          </Box>
+          <Typography
+            variant="overline"
+            color="text.secondary"
+            fontWeight={700}
+            letterSpacing={1.2}
+            sx={{ display: 'block', textAlign: 'center', mb: 4 }}
+          >
+            PORTAL ACCESS & OPERATIONS
+          </Typography>
 
-          <Grid container spacing={3.5}>
-            {/* Gateway 1: Customer Order Tracking */}
-            <Grid item xs={12} md={4}>
+          <Grid container spacing={3}>
+            {/* Card 1: Track Order */}
+            <Grid item xs={12} sm={6} md={3}>
               <Card
-                elevation={0}
+                variant="outlined"
                 sx={{
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: 3.5,
-                  border: 1,
-                  borderColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)',
-                  bgcolor: isDark ? '#131B2E' : '#FFFFFF',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  borderRadius: 2.5,
+                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                  transition: 'border-color 0.2s',
                   '&:hover': {
-                    transform: 'translateY(-6px)',
-                    boxShadow: '0 16px 32px rgba(59, 130, 246, 0.2)',
                     borderColor: 'primary.main'
                   }
                 }}
               >
-                <CardContent sx={{ p: 3.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <Box
                     sx={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 3,
-                      bgcolor: 'rgba(59, 130, 246, 0.15)',
-                      color: 'primary.main',
+                      width: 44,
+                      height: 44,
+                      borderRadius: 2,
+                      bgcolor: 'primary.main',
+                      color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      mb: 2.5
+                      mb: 2
                     }}
                   >
-                    <ShippingIcon fontSize="medium" />
+                    <ShippingIcon fontSize="small" />
                   </Box>
-                  <Typography variant="h6" fontWeight={800} gutterBottom>
-                    📦 Customer Order Tracking
+                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                    Track Custom Order
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.6 }}>
-                    Track live 9-stage shipment milestones from Chinese supplier purchase, CN warehouse verification,
-                    international flight transit, to Bangladesh customs & local home delivery.
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
+                    Check live milestone status across 9 stages from China warehouse to Bangladesh delivery.
                   </Typography>
-
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     color="primary"
                     fullWidth
+                    size="small"
                     onClick={() => navigate('/track')}
-                    endIcon={<ArrowForwardIcon />}
-                    sx={{
-                      borderRadius: 2.5,
-                      py: 1.2,
-                      fontWeight: 800,
-                      background: 'linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%)'
-                    }}
+                    endIcon={<ArrowForwardIcon fontSize="small" />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
                   >
-                    Track Custom Order
+                    Track Order
                   </Button>
                 </CardContent>
               </Card>
             </Grid>
 
-            {/* Gateway 2: Administrator Workspace */}
-            <Grid item xs={12} md={4}>
+            {/* Card 2: Join as Employee */}
+            <Grid item xs={12} sm={6} md={3}>
               <Card
-                elevation={0}
+                variant="outlined"
                 sx={{
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: 3.5,
-                  border: 1,
-                  borderColor: isDark ? 'rgba(139, 92, 246, 0.3)' : 'rgba(139, 92, 246, 0.2)',
-                  bgcolor: isDark ? '#131B2E' : '#FFFFFF',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  borderRadius: 2.5,
+                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                  transition: 'border-color 0.2s',
                   '&:hover': {
-                    transform: 'translateY(-6px)',
-                    boxShadow: '0 16px 32px rgba(139, 92, 246, 0.2)',
-                    borderColor: 'secondary.main'
+                    borderColor: 'info.main'
                   }
                 }}
               >
-                <CardContent sx={{ p: 3.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <Box
                     sx={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 3,
-                      bgcolor: 'rgba(139, 92, 246, 0.15)',
-                      color: 'secondary.main',
+                      width: 44,
+                      height: 44,
+                      borderRadius: 2,
+                      bgcolor: 'info.main',
+                      color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      mb: 2.5
+                      mb: 2
                     }}
                   >
-                    <AdminIcon fontSize="medium" />
+                    <JoinIcon fontSize="small" />
                   </Box>
-                  <Typography variant="h6" fontWeight={800} gutterBottom>
-                    🛡️ Admin Command Center
+                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                    Join as Employee
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.6 }}>
-                    Full operational control: live inventory valuation, B2B wholesale consignment lots, net profit auditing,
-                    inbound shipment batches, and team sales commission leaderboards.
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
+                    Submit an application with your credentials and National ID to join our inventory & logistics team.
                   </Typography>
-
                   <Button
-                    variant="contained"
-                    color="secondary"
+                    variant="outlined"
+                    color="info"
                     fullWidth
-                    onClick={() => navigate('/login?role=admin')}
-                    endIcon={<ArrowForwardIcon />}
-                    sx={{
-                      borderRadius: 2.5,
-                      py: 1.2,
-                      fontWeight: 800,
-                      background: 'linear-gradient(135deg, #8B5CF6 0%, #6D28D9 100%)'
-                    }}
+                    size="small"
+                    onClick={() => setShowApplyDialog(true)}
+                    endIcon={<ArrowForwardIcon fontSize="small" />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
                   >
-                    Login as Administrator
+                    Apply to Join
                   </Button>
                 </CardContent>
               </Card>
             </Grid>
 
-            {/* Gateway 3: Employee / Staff Portal */}
-            <Grid item xs={12} md={4}>
+            {/* Card 3: Employee Login */}
+            <Grid item xs={12} sm={6} md={3}>
               <Card
-                elevation={0}
+                variant="outlined"
                 sx={{
                   height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
-                  borderRadius: 3.5,
-                  border: 1,
-                  borderColor: isDark ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)',
-                  bgcolor: isDark ? '#131B2E' : '#FFFFFF',
-                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  borderRadius: 2.5,
+                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                  transition: 'border-color 0.2s',
                   '&:hover': {
-                    transform: 'translateY(-6px)',
-                    boxShadow: '0 16px 32px rgba(16, 185, 129, 0.2)',
                     borderColor: 'success.main'
                   }
                 }}
               >
-                <CardContent sx={{ p: 3.5, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <Box
                     sx={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: 3,
-                      bgcolor: 'rgba(16, 185, 129, 0.15)',
-                      color: 'success.main',
+                      width: 44,
+                      height: 44,
+                      borderRadius: 2,
+                      bgcolor: 'success.main',
+                      color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      mb: 2.5
+                      mb: 2
                     }}
                   >
-                    <EmployeeIcon fontSize="medium" />
+                    <EmployeeIcon fontSize="small" />
                   </Box>
-                  <Typography variant="h6" fontWeight={800} gutterBottom>
-                    👤 Staff & Operations Portal
+                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                    Staff Portal
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.6 }}>
-                    Staff workbench: Barcode & IMEI camera scanner, physical custody check-ins, daily BD shipment batch
-                    receiving, device repair updates, and customer sales registry.
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
+                    Staff workbench to check in incoming devices, record repair updates, and manage assigned custody.
                   </Typography>
-
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     color="success"
                     fullWidth
+                    size="small"
                     onClick={() => navigate('/login?role=employee')}
-                    endIcon={<ArrowForwardIcon />}
+                    endIcon={<ArrowForwardIcon fontSize="small" />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                  >
+                    Staff Login
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Card 4: Admin Workspace */}
+            <Grid item xs={12} sm={6} md={3}>
+              <Card
+                variant="outlined"
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  borderRadius: 2.5,
+                  bgcolor: isDark ? '#1E293B' : '#FFFFFF',
+                  borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
+                  transition: 'border-color 0.2s',
+                  '&:hover': {
+                    borderColor: 'secondary.main'
+                  }
+                }}
+              >
+                <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Box
                     sx={{
-                      borderRadius: 2.5,
-                      py: 1.2,
-                      fontWeight: 800,
-                      color: '#ffffff',
-                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)'
+                      width: 44,
+                      height: 44,
+                      borderRadius: 2,
+                      bgcolor: 'secondary.main',
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mb: 2
                     }}
                   >
-                    Login as Employee
+                    <AdminIcon fontSize="small" />
+                  </Box>
+                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                    Admin Workspace
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
+                    Executive dashboard for capital auditing, B2B wholesale ledgers, and team recruitment approvals.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    fullWidth
+                    size="small"
+                    onClick={() => navigate('/login?role=admin')}
+                    endIcon={<ArrowForwardIcon fontSize="small" />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                  >
+                    Admin Login
                   </Button>
                 </CardContent>
               </Card>
@@ -561,235 +495,101 @@ export default function Landing() {
         </Container>
       </Box>
 
-      {/* 4. Enterprise Capabilities Grid */}
-      <Box sx={{ py: { xs: 8, md: 10 } }}>
+      {/* 4. Minimalist System Capabilities */}
+      <Box sx={{ py: 6, borderTop: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }}>
         <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 7 }}>
-            <Typography variant="overline" color="primary" fontWeight={800} letterSpacing={1.5}>
-              SYSTEM HIGHLIGHTS
-            </Typography>
-            <Typography variant="h4" fontWeight={900} letterSpacing="-0.5px">
-              Built for Scale, Accuracy & Velocity
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1, maxWidth: 650, mx: 'auto' }}>
-              Designed to solve the real-world operational challenges of electronics importers, refurbishers, and retailers.
-            </Typography>
-          </Box>
-
-          <Grid container spacing={3}>
-            {/* Feature 1 */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  height: '100%',
-                  bgcolor: isDark ? 'rgba(30, 41, 59, 0.4)' : '#FFFFFF'
-                }}
-              >
-                <DeviceIcon color="primary" sx={{ fontSize: 32, mb: 1.5 }} />
-                <Typography variant="subtitle1" fontWeight={800} gutterBottom>
-                  IMEI & Serial Lifecycle Auditing
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Deep hardware tracking: dual IMEI, serial, MEID, battery health %, cycle counts, carrier policy, and international variant tags.
-                </Typography>
-              </Paper>
+          <Grid container spacing={4}>
+            <Grid item xs={12} md={4}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <DeviceIcon color="primary" sx={{ fontSize: 28, mt: 0.5 }} />
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                    IMEI & Hardware Auditing
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                    Dual IMEI, battery health percentage, cycle counts, international carrier policies, and hardware variant tags.
+                  </Typography>
+                </Box>
+              </Box>
             </Grid>
 
-            {/* Feature 2 */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  height: '100%',
-                  bgcolor: isDark ? 'rgba(30, 41, 59, 0.4)' : '#FFFFFF'
-                }}
-              >
-                <TimelineIcon color="primary" sx={{ fontSize: 32, mb: 1.5 }} />
-                <Typography variant="subtitle1" fontWeight={800} gutterBottom>
-                  9-Stage Live Pipeline
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Custom retail import pipeline for Laptops, AirPods, Gadgets and Cosmetics with payment TrxID logging and confidential customer portals.
-                </Typography>
-              </Paper>
+            <Grid item xs={12} md={4}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <TimelineIcon color="primary" sx={{ fontSize: 28, mt: 0.5 }} />
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                    9-Stage Sourcing Pipeline
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                    China purchase to Bangladesh delivery with milestone logging and customer-facing order tracking.
+                  </Typography>
+                </Box>
+              </Box>
             </Grid>
 
-            {/* Feature 3 */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  height: '100%',
-                  bgcolor: isDark ? 'rgba(30, 41, 59, 0.4)' : '#FFFFFF'
-                }}
-              >
-                <B2BIcon color="primary" sx={{ fontSize: 32, mb: 1.5 }} />
-                <Typography variant="subtitle1" fontWeight={800} gutterBottom>
-                  Client-Safe B2B Wholesale
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Separates client-funded inventory from owner capital, supporting custom shop deliveries while shielding confidential margins.
-                </Typography>
-              </Paper>
-            </Grid>
-
-            {/* Feature 4 */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  height: '100%',
-                  bgcolor: isDark ? 'rgba(30, 41, 59, 0.4)' : '#FFFFFF'
-                }}
-              >
-                <RepairIcon color="primary" sx={{ fontSize: 32, mb: 1.5 }} />
-                <Typography variant="subtitle1" fontWeight={800} gutterBottom>
-                  Shenzhen Hardware Lab Tracker
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Tracks overseas repair round-trips, component costs, and automatically reconciles repair overhead against product profit.
-                </Typography>
-              </Paper>
-            </Grid>
-
-            {/* Feature 5 */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  height: '100%',
-                  bgcolor: isDark ? 'rgba(30, 41, 59, 0.4)' : '#FFFFFF'
-                }}
-              >
-                <ScannerIcon color="primary" sx={{ fontSize: 32, mb: 1.5 }} />
-                <Typography variant="subtitle1" fontWeight={800} gutterBottom>
-                  ML-Kit Camera Barcode Scanner
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Native Android client with Google ML-Kit camera scanning for rapid warehouse check-ins and ownership handovers.
-                </Typography>
-              </Paper>
-            </Grid>
-
-            {/* Feature 6 */}
-            <Grid item xs={12} sm={6} md={4}>
-              <Paper
-                variant="outlined"
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  height: '100%',
-                  bgcolor: isDark ? 'rgba(30, 41, 59, 0.4)' : '#FFFFFF'
-                }}
-              >
-                <AnalyticsIcon color="primary" sx={{ fontSize: 32, mb: 1.5 }} />
-                <Typography variant="subtitle1" fontWeight={800} gutterBottom>
-                  Executive ROI & Leaderboard
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-                  Live business intelligence: net monthly profit, sales representative turnaround speeds, and sales consistency indices.
-                </Typography>
-              </Paper>
+            <Grid item xs={12} md={4}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <B2BIcon color="primary" sx={{ fontSize: 28, mt: 0.5 }} />
+                <Box>
+                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                    B2B Wholesale Ledgers
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                    Client-safe wholesale management that keeps client inventory lots separated from personal investment capital.
+                  </Typography>
+                </Box>
+              </Box>
             </Grid>
           </Grid>
         </Container>
       </Box>
 
-      {/* 5. System Trust & Security Banner */}
-      <Box sx={{ py: 6, bgcolor: isDark ? '#111827' : '#E2E8F0', borderTop: 1, borderBottom: 1, borderColor: 'divider' }}>
-        <Container maxWidth="lg">
-          <Grid container spacing={3} alignItems="center" justifyContent="space-around" sx={{ textAlign: 'center' }}>
-            <Grid item xs={6} sm={3}>
-              <Typography variant="h4" fontWeight={900} color="primary.main">
-                9-Stage
-              </Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                Live Sourcing Pipeline
-              </Typography>
-            </Grid>
-
-            <Grid item xs={6} sm={3}>
-              <Typography variant="h4" fontWeight={900} color="success.main">
-                100%
-              </Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                Cloud & Mobile Sync
-              </Typography>
-            </Grid>
-
-            <Grid item xs={6} sm={3}>
-              <Typography variant="h4" fontWeight={900} color="secondary.main">
-                360°
-              </Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                Hardware Lifecycle Audit
-              </Typography>
-            </Grid>
-
-            <Grid item xs={6} sm={3}>
-              <Typography variant="h4" fontWeight={900} color="warning.main">
-                99.9%
-              </Typography>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                Platform Uptime
-              </Typography>
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-
-      {/* 6. Footer */}
+      {/* 5. Clean Footer */}
       <Box
         component="footer"
         sx={{
-          py: 5,
-          bgcolor: isDark ? '#0B0F17' : '#FFFFFF',
+          py: 4,
           borderTop: 1,
-          borderColor: 'divider',
-          textAlign: 'center'
+          borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
+          bgcolor: isDark ? '#0B0F19' : '#F1F5F9'
         }}
       >
-        <Container maxWidth="md">
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 2 }}>
-            <DeviceIcon color="primary" fontSize="small" />
-            <Typography variant="subtitle1" fontWeight={900}>
-              Gadget Deluxe
+        <Container maxWidth="lg">
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 2
+            }}
+          >
+            <Typography variant="body2" color="text.secondary">
+              Gadget Deluxe — Cloud Phone Inventory & Sourcing Logistics
             </Typography>
+
+            <Stack direction="row" spacing={2.5}>
+              <Button size="small" color="inherit" onClick={() => navigate('/track')} sx={{ textTransform: 'none' }}>
+                Track Order
+              </Button>
+              <Button size="small" color="inherit" onClick={() => setShowApplyDialog(true)} sx={{ textTransform: 'none' }}>
+                Join Team
+              </Button>
+              <Button size="small" color="inherit" onClick={() => navigate('/login')} sx={{ textTransform: 'none' }}>
+                Portal Login
+              </Button>
+            </Stack>
           </Box>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
-            Cloud IMEI Inventory, Sourcing Logistics & B2B Trading Ecosystem.
-          </Typography>
-
-          <Stack direction="row" spacing={3} justifyContent="center" sx={{ mb: 3 }}>
-            <Button size="small" color="inherit" onClick={() => navigate('/track')} sx={{ fontWeight: 600 }}>
-              Track Parcel
-            </Button>
-            <Button size="small" color="inherit" onClick={() => navigate('/login?role=admin')} sx={{ fontWeight: 600 }}>
-              Admin Portal
-            </Button>
-            <Button size="small" color="inherit" onClick={() => navigate('/login?role=employee')} sx={{ fontWeight: 600 }}>
-              Employee Portal
-            </Button>
-          </Stack>
-
-          <Divider sx={{ my: 2, maxWidth: 300, mx: 'auto' }} />
-
-          <Typography variant="caption" color="text.disabled" display="block">
-            © {new Date().getFullYear()} Gadget Deluxe. All Rights Reserved. Powered by Google Antigravity & Django Cloud.
-          </Typography>
         </Container>
       </Box>
+
+      {/* Apply as Employee Dialog */}
+      {showApplyDialog && (
+        <ApplyEmployeeDialog
+          open={showApplyDialog}
+          onClose={() => setShowApplyDialog(false)}
+        />
+      )}
     </Box>
   );
 }
