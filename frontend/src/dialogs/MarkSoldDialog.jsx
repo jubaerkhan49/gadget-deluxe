@@ -79,7 +79,7 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 3,
+          borderRadius: 2,
           bgcolor: 'background.paper',
           p: 0.5
         }
@@ -124,7 +124,7 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
             sx={{
               p: 2,
               mb: 2.5,
-              borderRadius: 2.5,
+              borderRadius: 2,
               bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : '#F8FAFC'),
               borderColor: 'divider'
             }}
@@ -162,7 +162,7 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
             </Box>
           </Paper>
 
-          <Alert severity="info" sx={{ mb: 2.5, borderRadius: 2 }}>
+          <Alert severity="info" sx={{ mb: 2.5, borderRadius: 1.5 }}>
             Once submitted, this device status will become <strong>Pending Sale</strong>. When Admin confirms the sale amount, the sale is finalized and the device will be moved out of your active custody.
           </Alert>
 
@@ -232,30 +232,32 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
         <DialogActions
           sx={{
             px: { xs: 2, sm: 3 },
-            pb: 2.5,
-            pt: 1,
+            pb: { xs: 2, sm: 2.5 },
+            pt: 1.5,
             display: 'flex',
-            flexDirection: { xs: 'column-reverse', sm: 'row' },
-            justifyContent: 'flex-end',
-            gap: 1
+            gap: 1.5,
+            borderTop: 1,
+            borderColor: 'divider'
           }}
         >
           <Button
+            fullWidth
             variant="outlined"
             color="inherit"
             onClick={onClose}
             disabled={loading}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
+            sx={{ borderRadius: 1.5, py: 0.9, textTransform: 'none', fontWeight: 600 }}
           >
             Cancel
           </Button>
           <Button
+            fullWidth
             type="submit"
             variant="contained"
             color="success"
             disabled={loading}
             startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <PointOfSaleIcon />}
-            sx={{ px: 2.5, fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}
+            sx={{ borderRadius: 1.5, py: 0.9, fontWeight: 700, textTransform: 'none' }}
           >
             {loading ? 'Submitting...' : 'Submit Sale for Approval'}
           </Button>

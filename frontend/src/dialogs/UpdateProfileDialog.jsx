@@ -83,13 +83,12 @@ export default function UpdateProfileDialog({ open, onClose }) {
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 3.5,
-          p: 0,
-          overflow: 'hidden'
+          borderRadius: 2,
+          p: 0
         }
       }}
     >
-      <Box sx={{ position: 'relative', pt: 3.5, pb: 1, px: { xs: 2, sm: 3 }, textAlign: 'center' }}>
+      <Box sx={{ position: 'relative', pt: 3, pb: 0.5, px: { xs: 2, sm: 3 }, textAlign: 'center' }}>
         <IconButton
           onClick={onClose}
           disabled={submitting}
@@ -99,21 +98,20 @@ export default function UpdateProfileDialog({ open, onClose }) {
           <CloseIcon fontSize="small" />
         </IconButton>
 
-        <Stack alignItems="center" spacing={1.2}>
+        <Stack alignItems="center" spacing={1}>
           <Avatar
             sx={{
-              width: 58,
-              height: 58,
+              width: 48,
+              height: 48,
               bgcolor: 'primary.main',
-              fontSize: '1.4rem',
-              fontWeight: 800,
-              boxShadow: '0 6px 16px rgba(37, 99, 235, 0.35)'
+              fontSize: '1.25rem',
+              fontWeight: 800
             }}
           >
             {firstName ? firstName.charAt(0).toUpperCase() : user?.username?.charAt(0).toUpperCase() || 'U'}
           </Avatar>
           <Box>
-            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: { xs: '1.05rem', sm: '1.25rem' } }}>
+            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: { xs: '1.05rem', sm: '1.2rem' } }}>
               Update Profile Info
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -124,22 +122,22 @@ export default function UpdateProfileDialog({ open, onClose }) {
             label={`@${user?.username || 'user'} • ${user?.role || 'Employee'}`}
             size="small"
             variant="outlined"
-            sx={{ fontWeight: 600, fontSize: '0.75rem', height: 24, mt: 0.5 }}
+            sx={{ fontWeight: 600, fontSize: '0.72rem', height: 22 }}
           />
         </Stack>
       </Box>
 
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
-          <Stack spacing={2.2}>
+          <Stack spacing={2}>
             {user?.role === 'EMPLOYEE' && (
               <Alert
                 severity="info"
                 icon={<InfoIcon fontSize="small" />}
                 sx={{
-                  borderRadius: 2,
+                  borderRadius: 1.5,
                   py: 0.5,
-                  fontSize: '0.8rem',
+                  fontSize: '0.78rem',
                   '& .MuiAlert-message': { py: 0.2 }
                 }}
               >
@@ -216,34 +214,36 @@ export default function UpdateProfileDialog({ open, onClose }) {
         <DialogActions
           sx={{
             px: { xs: 2, sm: 3 },
-            pb: 3,
-            pt: 1,
+            pb: { xs: 2.5, sm: 2.5 },
+            pt: 1.5,
             display: 'flex',
-            flexDirection: { xs: 'column-reverse', sm: 'row' },
-            justifyContent: 'space-between',
-            gap: 1
+            gap: 1.5,
+            borderTop: 1,
+            borderColor: 'divider'
           }}
         >
           <Button
+            fullWidth
+            variant="outlined"
+            color="inherit"
             onClick={onClose}
             disabled={submitting}
-            color="inherit"
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, width: { xs: '100%', sm: 'auto' } }}
+            sx={{ borderRadius: 1.5, py: 0.9, textTransform: 'none', fontWeight: 600 }}
           >
             Cancel
           </Button>
           <Button
+            fullWidth
             type="submit"
             variant="contained"
             disabled={submitting}
             startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
             sx={{
-              borderRadius: 2,
-              px: 3,
+              borderRadius: 1.5,
+              py: 0.9,
               fontWeight: 700,
               textTransform: 'none',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
-              width: { xs: '100%', sm: 'auto' }
+              boxShadow: 'none'
             }}
           >
             {submitting ? 'Saving...' : 'Save Changes'}

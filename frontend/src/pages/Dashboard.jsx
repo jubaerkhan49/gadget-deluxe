@@ -193,46 +193,46 @@ export default function Dashboard() {
 
     const employeeMetricCards = [
       {
-        title: 'DEVICES IN CUSTODY',
+        title: 'Devices in Custody',
         value: myAssignedDevices.length,
         subtitle: 'In-hand physical stock',
-        icon: <PhoneIcon sx={{ fontSize: 22 }} />,
+        icon: <PhoneIcon sx={{ fontSize: 20 }} />,
         color: '#2563EB',
         bgLight: 'rgba(37, 99, 235, 0.1)',
         isNumber: true
       },
       {
-        title: 'DEVICE LAST SOLD AT',
+        title: 'Last Sold Date',
         value: stats?.last_sold_date ? formatDate(stats.last_sold_date) : 'No Sales Yet',
         subtitle: stats?.last_sold_date ? 'Most recent sale closed' : 'No sales recorded yet',
-        icon: <SaleIcon sx={{ fontSize: 22 }} />,
+        icon: <SaleIcon sx={{ fontSize: 20 }} />,
         color: '#10B981',
         bgLight: 'rgba(16, 185, 129, 0.1)',
         isDate: true
       },
       {
-        title: 'LONGEST IN CUSTODY',
+        title: 'Longest in Custody',
         value: `${computedLongestDays} Days`,
         subtitle: computedLongestDate ? `Since ${formatDate(computedLongestDate)}` : 'Max holding duration',
-        icon: <HourglassIcon sx={{ fontSize: 22 }} />,
+        icon: <HourglassIcon sx={{ fontSize: 20 }} />,
         color: '#F59E0B',
         bgLight: 'rgba(245, 158, 11, 0.1)',
         isHighlight: true
       },
       {
-        title: 'LATEST RECEIVED DATE',
+        title: 'Latest Received',
         value: computedLatestDate ? formatDate(computedLatestDate) : '—',
         subtitle: 'Newest device handover',
-        icon: <EventIcon sx={{ fontSize: 22 }} />,
+        icon: <EventIcon sx={{ fontSize: 20 }} />,
         color: '#8B5CF6',
         bgLight: 'rgba(139, 92, 246, 0.1)',
         isDate: true
       },
       {
-        title: 'SALES PERFORMANCE',
+        title: 'Sales Performance',
         value: performanceValue,
         subtitle: performanceDesc,
-        icon: <TrophyIcon sx={{ fontSize: 22 }} />,
+        icon: <TrophyIcon sx={{ fontSize: 20 }} />,
         color: performanceValue === 'Good' ? '#10B981' : performanceValue === 'Average' ? '#2563EB' : '#F59E0B',
         bgLight: performanceValue === 'Good' ? 'rgba(16, 185, 129, 0.1)' : performanceValue === 'Average' ? 'rgba(37, 99, 235, 0.1)' : 'rgba(245, 158, 11, 0.1)',
         isBadge: true
@@ -245,9 +245,9 @@ export default function Dashboard() {
         <Paper
           elevation={0}
           sx={{
-            p: { xs: 2, sm: 3 },
-            mb: { xs: 2.5, sm: 3.5 },
-            borderRadius: 3,
+            p: { xs: 2, sm: 2.5 },
+            mb: { xs: 2, sm: 3 },
+            borderRadius: 2,
             border: 1,
             borderColor: 'divider',
             bgcolor: 'background.paper'
@@ -257,9 +257,9 @@ export default function Dashboard() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
               <Box
                 sx={{
-                  width: { xs: 40, sm: 48 },
-                  height: { xs: 40, sm: 48 },
-                  borderRadius: 2.5,
+                  width: { xs: 40, sm: 46 },
+                  height: { xs: 40, sm: 46 },
+                  borderRadius: 2,
                   bgcolor: 'primary.main',
                   color: '#fff',
                   display: 'flex',
@@ -268,13 +268,13 @@ export default function Dashboard() {
                   flexShrink: 0
                 }}
               >
-                <AssignmentIndIcon sx={{ fontSize: { xs: 22, sm: 28 } }} />
+                <AssignmentIndIcon sx={{ fontSize: { xs: 22, sm: 26 } }} />
               </Box>
               <Box>
-                <Typography variant="h5" fontWeight={800} sx={{ fontSize: { xs: '1.15rem', sm: '1.5rem' } }}>
+                <Typography variant="h5" fontWeight={800} sx={{ fontSize: { xs: '1.15rem', sm: '1.45rem' } }}>
                   Staff Custody Dashboard
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', sm: '0.875rem' } }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', sm: '0.85rem' } }}>
                   Welcome, <strong>{user?.first_name || user?.username}</strong>. You are viewing devices assigned to your custody.
                 </Typography>
               </Box>
@@ -307,13 +307,13 @@ export default function Dashboard() {
         </Paper>
 
         {/* Employee Summary 5 KPIs */}
-        <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2.5, sm: 4 } }}>
+        <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2.5, sm: 3.5 } }}>
           {employeeMetricCards.map((card, idx) => (
             <Grid item xs={idx === 4 ? 12 : 6} sm={6} md={4} lg={2.4} key={idx}>
               <Card
                 sx={{
-                  p: { xs: 1.5, sm: 2.2 },
-                  borderRadius: 3,
+                  p: { xs: 1.6, sm: 2 },
+                  borderRadius: 2,
                   border: 1,
                   borderColor: 'divider',
                   bgcolor: 'background.paper',
@@ -329,38 +329,41 @@ export default function Dashboard() {
                   }
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 0.8 }}>
                   <Typography
                     variant="caption"
                     fontWeight={800}
                     color="text.secondary"
                     sx={{
                       textTransform: 'uppercase',
-                      letterSpacing: 0.5,
-                      fontSize: { xs: '0.62rem', sm: '0.7rem' }
+                      letterSpacing: 0.4,
+                      fontSize: { xs: '0.68rem', sm: '0.72rem' },
+                      lineHeight: 1.25,
+                      minHeight: { xs: '2.5em', sm: 'auto' },
+                      flex: 1
                     }}
-                    noWrap
                   >
                     {card.title}
                   </Typography>
                   <Box
                     sx={{
-                      width: { xs: 30, sm: 36 },
-                      height: { xs: 30, sm: 36 },
-                      minWidth: { xs: 30, sm: 36 },
-                      borderRadius: 2,
+                      width: { xs: 28, sm: 32 },
+                      height: { xs: 28, sm: 32 },
+                      minWidth: { xs: 28, sm: 32 },
+                      borderRadius: 1.5,
                       bgcolor: card.bgLight,
                       color: card.color,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      flexShrink: 0
                     }}
                   >
                     {card.icon}
                   </Box>
                 </Box>
 
-                <Box sx={{ my: 0.5 }}>
+                <Box sx={{ my: 0.4 }}>
                   {card.isBadge ? (
                     <Chip
                       label={card.value}
@@ -373,7 +376,8 @@ export default function Dashboard() {
                         bgcolor: card.bgLight,
                         color: card.color,
                         border: 1,
-                        borderColor: card.color
+                        borderColor: card.color,
+                        borderRadius: 1.5
                       }}
                     />
                   ) : (
@@ -386,10 +390,9 @@ export default function Dashboard() {
                         lineHeight: 1.2,
                         fontSize: {
                           xs: card.isNumber ? '1.35rem' : '0.95rem',
-                          sm: card.isNumber ? '1.8rem' : '1.1rem'
+                          sm: card.isNumber ? '1.65rem' : '1.05rem'
                         }
                       }}
-                      noWrap
                     >
                       {loading ? '...' : card.value}
                     </Typography>
@@ -399,8 +402,12 @@ export default function Dashboard() {
                 <Typography
                   variant="caption"
                   color="text.secondary"
-                  sx={{ mt: 0.8, fontSize: { xs: '0.66rem', sm: '0.72rem' }, display: 'block' }}
-                  noWrap
+                  sx={{
+                    mt: 0.6,
+                    fontSize: { xs: '0.68rem', sm: '0.72rem' },
+                    lineHeight: 1.25,
+                    display: 'block'
+                  }}
                 >
                   {card.subtitle}
                 </Typography>
@@ -410,7 +417,7 @@ export default function Dashboard() {
         </Grid>
 
         {/* Assigned Devices Section */}
-        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 3, bgcolor: 'background.paper' }}>
+        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 2, bgcolor: 'background.paper' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
             <Typography variant="subtitle1" fontWeight={800}>
               Assigned Devices List ({filteredAssigned.length})
@@ -450,7 +457,7 @@ export default function Dashboard() {
                   }}
                   sx={{
                     p: 2,
-                    borderRadius: 2.5,
+                    borderRadius: 2,
                     cursor: 'pointer',
                     transition: 'border-color 0.2s, box-shadow 0.2s',
                     '&:hover': {
@@ -895,9 +902,9 @@ export default function Dashboard() {
       <Paper
         elevation={0}
         sx={{
-          p: 2.5,
-          mb: 3.5,
-          borderRadius: 3,
+          p: { xs: 2, sm: 2.5 },
+          mb: { xs: 2.5, sm: 3.5 },
+          borderRadius: 2,
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
           alignItems: 'center',
@@ -973,7 +980,7 @@ export default function Dashboard() {
       </Paper>
 
       {/* 8 Uniform Metric Cards Grid */}
-      <Grid container spacing={2.5} sx={{ mb: 4 }}>
+      <Grid container spacing={2} sx={{ mb: 4 }}>
         {statCards.map((card, idx) => (
           <Grid item xs={12} sm={6} md={3} key={idx}>
             <Card
@@ -982,7 +989,7 @@ export default function Dashboard() {
                 display: 'flex',
                 alignItems: 'center',
                 p: 2,
-                borderRadius: 3,
+                borderRadius: 2,
                 border: 1,
                 borderColor: 'divider',
                 transition: 'transform 0.2s, box-shadow 0.2s',
