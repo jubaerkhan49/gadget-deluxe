@@ -609,12 +609,20 @@ export default function DeviceDetailDrawer({
                       fullWidth
                       variant="contained"
                       color="success"
-                      startIcon={<SalesIcon />}
+                      startIcon={<SalesIcon sx={{ fontSize: '18px !important' }} />}
                       onClick={() => {
                         onClose();
                         if (onMarkSoldRequested) onMarkSoldRequested(device);
                       }}
-                      sx={{ mt: 2.5, fontWeight: 700, borderRadius: 2, py: 1 }}
+                      sx={{
+                        mt: 2,
+                        fontWeight: 700,
+                        borderRadius: 1.75,
+                        height: 42,
+                        textTransform: 'none',
+                        fontSize: '0.88rem',
+                        boxShadow: 'none'
+                      }}
                     >
                       Mark as Sold (Submit for Approval)
                     </Button>
@@ -637,31 +645,35 @@ export default function DeviceDetailDrawer({
                   </Typography>
                 </Box>
                 <Grid container spacing={2}>
-                  <Grid item xs={6}>
+                  <Grid item xs={12} sm={6}>
                     <Typography variant="caption" color="text.secondary">IMEI</Typography>
-                    <CopyableText text={device.imei} />
+                    <Box sx={{ mt: 0.3 }}>
+                      <CopyableText text={device.imei} />
+                    </Box>
                   </Grid>
-                  <Grid item xs={6}>
+                  <Grid item xs={12} sm={6}>
                     <Typography variant="caption" color="text.secondary">Serial Number</Typography>
-                    <CopyableText text={device.serial_number} />
+                    <Box sx={{ mt: 0.3 }}>
+                      <CopyableText text={device.serial_number} />
+                    </Box>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" color="text.secondary">Capacity</Typography>
-                    <Typography variant="body2" fontWeight={600}>{device.capacity || '—'}</Typography>
+                    <Typography variant="body2" fontWeight={600} sx={{ mt: 0.3 }}>{device.capacity || '—'}</Typography>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" color="text.secondary">Color</Typography>
-                    <Typography variant="body2" fontWeight={600}>{device.color || '—'}</Typography>
+                    <Typography variant="body2" fontWeight={600} sx={{ mt: 0.3 }}>{device.color || '—'}</Typography>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" color="text.secondary">Battery Health</Typography>
-                    <Typography variant="body2" fontWeight={600} color={device.battery_health ? 'success.main' : 'text.primary'}>
+                    <Typography variant="body2" fontWeight={700} color={device.battery_health ? 'success.main' : 'text.primary'} sx={{ mt: 0.3 }}>
                       {device.battery_health ? `${device.battery_health}%` : '—'}
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" color="text.secondary">Cycle Count</Typography>
-                    <Typography variant="body2" fontWeight={600}>
+                    <Typography variant="body2" fontWeight={600} sx={{ mt: 0.3 }}>
                       {device.battery_cycle ? `${device.battery_cycle} cycles` : '—'}
                     </Typography>
                   </Grid>

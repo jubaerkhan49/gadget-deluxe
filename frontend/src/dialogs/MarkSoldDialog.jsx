@@ -75,63 +75,66 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="xs"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 2,
+          borderRadius: 2.5,
           bgcolor: 'background.paper',
-          p: 0.5
+          p: 0,
+          backgroundImage: 'none'
         }
       }}
     >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1, pt: 2, px: { xs: 2, sm: 3 } }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box
-            sx={{
-              width: { xs: 34, sm: 40 },
-              height: { xs: 34, sm: 40 },
-              borderRadius: 2,
-              bgcolor: 'rgba(16, 185, 129, 0.15)',
-              color: '#10B981',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}
-          >
-            <PointOfSaleIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
+      <DialogTitle sx={{ pb: 1, pt: 2.5, px: 3 }}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Box
+              sx={{
+                width: 38,
+                height: 38,
+                borderRadius: 2,
+                bgcolor: 'rgba(16, 185, 129, 0.15)',
+                color: '#10B981',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <PointOfSaleIcon sx={{ fontSize: 22 }} />
+            </Box>
+            <Box>
+              <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: '1.15rem' }}>
+                Mark Device as Sold
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.76rem', display: 'block' }}>
+                Submit sale for Admin review & price confirmation
+              </Typography>
+            </Box>
           </Box>
-          <Box>
-            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-              Mark Device as Sold
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.68rem', sm: '0.75rem' } }}>
-              Submit sale request for Administrator review & price confirmation
-            </Typography>
-          </Box>
+          <IconButton size="small" onClick={onClose} disabled={loading} sx={{ mt: -0.5, mr: -0.5, color: 'text.secondary' }}>
+            <CloseIcon fontSize="small" />
+          </IconButton>
         </Box>
-        <IconButton size="small" onClick={onClose} disabled={loading}>
-          <CloseIcon fontSize="small" />
-        </IconButton>
       </DialogTitle>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 1.5 }}>
+        <DialogContent sx={{ px: 3, py: 1.5 }}>
           {/* Device Summary Card */}
           <Paper
             variant="outlined"
             sx={{
-              p: 2,
-              mb: 2.5,
+              p: 1.8,
+              mb: 2,
               borderRadius: 2,
               bgcolor: (theme) => (theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : '#F8FAFC'),
               borderColor: 'divider'
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5, mb: 1 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                <SmartphoneIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 0.8 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <SmartphoneIcon sx={{ color: 'primary.main', fontSize: 20 }} />
                 <Typography variant="subtitle2" fontWeight={800}>
                   {device.model}
                 </Typography>
@@ -139,7 +142,7 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
               <StatusBadge status={device.current_status} />
             </Box>
 
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', mt: 1 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, alignItems: 'center', mt: 0.5 }}>
               <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary', fontWeight: 600 }}>
                 IMEI: {device.imei}
               </Typography>
@@ -162,104 +165,115 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
             </Box>
           </Paper>
 
-          <Alert severity="info" sx={{ mb: 2.5, borderRadius: 1.5 }}>
-            Once submitted, this device status will become <strong>Pending Sale</strong>. When Admin confirms the sale amount, the sale is finalized and the device will be moved out of your active custody.
+          <Alert severity="info" sx={{ mb: 2, borderRadius: 1.5, py: 0.5, fontSize: '0.76rem', lineHeight: 1.4, '& .MuiAlert-message': { py: 0.2 } }}>
+            Once submitted, device status changes to <strong>Pending Sale</strong> until Admin confirms the final selling amount.
           </Alert>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                label="Proposed / Selling Amount (BDT)"
-                type="number"
-                placeholder="e.g. 115000"
-                value={proposedPrice}
-                onChange={(e) => setProposedPrice(e.target.value)}
-                helperText="Admin will verify or finalize the final sold amount"
-                inputProps={{ min: 0, step: 'any' }}
-              />
-            </Grid>
+          <Stack spacing={1.8}>
+            <TextField
+              fullWidth
+              size="small"
+              label="Selling Amount (BDT)"
+              type="number"
+              placeholder="e.g. 115000"
+              value={proposedPrice}
+              onChange={(e) => setProposedPrice(e.target.value)}
+              helperText="Admin will verify and confirm final sold price"
+              inputProps={{ min: 0, step: 'any' }}
+            />
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Customer Name (Optional)"
-                placeholder="Buyer's full name"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-              />
-            </Grid>
+            <TextField
+              fullWidth
+              size="small"
+              label="Customer Name (Optional)"
+              placeholder="Buyer's full name"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+            />
 
-            <Grid item xs={12} sm={6}>
-              <TextField
-                fullWidth
-                label="Customer Phone (Optional)"
-                placeholder="01XXXXXXXXX"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-              />
-            </Grid>
+            <TextField
+              fullWidth
+              size="small"
+              label="Customer Phone (Optional)"
+              placeholder="01XXXXXXXXX"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+            />
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                select
-                label="Payment Method"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-              >
-                <MenuItem value="CASH">Cash</MenuItem>
-                <MenuItem value="BANK">Bank Transfer</MenuItem>
-                <MenuItem value="MOBILE">Mobile Banking (bKash / Nagad / Rocket)</MenuItem>
-                <MenuItem value="CARD">Credit / Debit Card</MenuItem>
-              </TextField>
-            </Grid>
+            <TextField
+              fullWidth
+              size="small"
+              select
+              label="Payment Method"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            >
+              <MenuItem value="CASH">Cash</MenuItem>
+              <MenuItem value="BANK">Bank Transfer</MenuItem>
+              <MenuItem value="MOBILE">Mobile Banking (bKash / Nagad / Rocket)</MenuItem>
+              <MenuItem value="CARD">Credit / Debit Card</MenuItem>
+            </TextField>
 
-            <Grid item xs={12}>
-              <TextField
-                fullWidth
-                multiline
-                rows={2}
-                label="Sale Notes / Remarks (Optional)"
-                placeholder="Any special remarks, accessories included, or customer warranty notes..."
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-              />
-            </Grid>
-          </Grid>
+            <TextField
+              fullWidth
+              size="small"
+              multiline
+              rows={2}
+              label="Sale Notes (Optional)"
+              placeholder="Special remarks, accessories included, etc."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
+          </Stack>
         </DialogContent>
 
         <DialogActions
           sx={{
-            px: { xs: 2, sm: 3 },
-            pb: { xs: 2, sm: 2.5 },
+            px: 3,
+            pb: 2.5,
             pt: 1.5,
             display: 'flex',
             gap: 1.5,
             borderTop: 1,
-            borderColor: 'divider'
+            borderColor: 'divider',
+            bgcolor: (theme) =>
+              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)'
           }}
         >
           <Button
-            fullWidth
             variant="outlined"
             color="inherit"
             onClick={onClose}
             disabled={loading}
-            sx={{ borderRadius: 1.5, py: 0.9, textTransform: 'none', fontWeight: 600 }}
+            sx={{
+              flex: 1,
+              height: 40,
+              borderRadius: 1.75,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.85rem'
+            }}
           >
             Cancel
           </Button>
           <Button
-            fullWidth
             type="submit"
             variant="contained"
             color="success"
             disabled={loading}
-            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <PointOfSaleIcon />}
-            sx={{ borderRadius: 1.5, py: 0.9, fontWeight: 700, textTransform: 'none' }}
+            startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <PointOfSaleIcon sx={{ fontSize: '18px !important' }} />}
+            sx={{
+              flex: 1.4,
+              height: 40,
+              borderRadius: 1.75,
+              fontWeight: 700,
+              textTransform: 'none',
+              fontSize: '0.82rem',
+              whiteSpace: 'nowrap',
+              boxShadow: 'none'
+            }}
           >
-            {loading ? 'Submitting...' : 'Submit Sale for Approval'}
+            {loading ? 'Submitting...' : 'Submit Request'}
           </Button>
         </DialogActions>
       </form>
