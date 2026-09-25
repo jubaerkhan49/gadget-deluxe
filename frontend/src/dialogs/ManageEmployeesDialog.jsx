@@ -69,9 +69,11 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
     try {
       setLoading(true);
       const res = await api.get('/api/employee-applications/');
-      setApplications(res.data.results || res.data || []);
+      const data = res.data?.results || res.data || [];
+      setApplications(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load employee applications', err);
+      setApplications([]);
     } finally {
       setLoading(false);
     }
@@ -81,9 +83,11 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
     try {
       setLoading(true);
       const res = await api.get('/api/users/');
-      setEmployees(res.data.results || res.data || []);
+      const data = res.data?.results || res.data || [];
+      setEmployees(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load employees', err);
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
@@ -92,18 +96,22 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
   const fetchProfileUpdates = async () => {
     try {
       const res = await api.get('/api/profile-update-requests/');
-      setProfileUpdates(res.data.results || res.data || []);
+      const data = res.data?.results || res.data || [];
+      setProfileUpdates(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load profile update requests', err);
+      setProfileUpdates([]);
     }
   };
 
   const fetchSaleRequests = async () => {
     try {
       const res = await deviceSaleRequestApi.getAll();
-      setSaleRequests(res.data.results || res.data || []);
+      const data = res.data?.results || res.data || [];
+      setSaleRequests(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load sale requests', err);
+      setSaleRequests([]);
     }
   };
 
@@ -199,18 +207,18 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
     }
   };
 
-  const pendingApps = applications.filter((a) => a.status === 'PENDING');
-  const pastApps = applications.filter((a) => a.status !== 'PENDING');
-  const pendingUpdates = profileUpdates.filter((u) => u.status === 'PENDING');
-  const pastUpdates = profileUpdates.filter((u) => u.status !== 'PENDING');
-  const pendingSaleRequests = saleRequests.filter((s) => s.status === 'PENDING');
-  const pastSaleRequests = saleRequests.filter((s) => s.status !== 'PENDING');
+  const pendingApps = Array.isArray(applications) ? applications.filter((a) => a && a.status === 'PENDING') : [];
+  const pastApps = Array.isArray(applications) ? applications.filter((a) => a && a.status !== 'PENDING') : [];
+  const pendingUpdates = Array.isArray(profileUpdates) ? profileUpdates.filter((u) => u && u.status === 'PENDING') : [];
+  const pastUpdates = Array.isArray(profileUpdates) ? profileUpdates.filter((u) => u && u.status !== 'PENDING') : [];
+  const pendingSaleRequests = Array.isArray(saleRequests) ? saleRequests.filter((s) => s && s.status === 'PENDING') : [];
+  const pastSaleRequests = Array.isArray(saleRequests) ? saleRequests.filter((s) => s && s.status !== 'PENDING') : [];
 
   const handleRejectSaleRequest = async (saleReqId, deviceModel) => {
     setActionLoadingId(`salereq_${saleReqId}`);
     try {
       await deviceSaleRequestApi.reject(saleReqId);
-      enqueueSnackbar(`Sale request for ${deviceModel} rejected. Device returned to In Stock.`, { variant: 'info' });
+      enqueueSnackbar(`Sale request for ${deviceModel || 'device'} rejected. Device returned to In Stock.`, { variant: 'info' });
       fetchSaleRequests();
       if (onEmployeeUpdated) onEmployeeUpdated();
     } catch (err) {
@@ -221,14 +229,14 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
     }
   };
 
-  const activeEmployees = employees
-    .filter((emp) => emp.username?.toLowerCase() !== 'admin')
+  const activeEmployees = (Array.isArray(employees) ? employees : [])
+    .filter((emp) => emp && emp.username?.toLowerCase() !== 'admin')
     .sort((a, b) => {
-      const aUser = a.username?.toLowerCase();
-      const bUser = b.username?.toLowerCase();
+      const aUser = a?.username?.toLowerCase() || '';
+      const bUser = b?.username?.toLowerCase() || '';
       if (aUser === 'jubaer') return -1;
       if (bUser === 'jubaer') return 1;
-      return (a.first_name || a.username).localeCompare(b.first_name || b.username);
+      return (a?.first_name || a?.username || '').localeCompare(b?.first_name || b?.username || '');
     });
 
   return (
@@ -611,239 +619,254 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
               </Box>
             ) : (
               <Stack spacing={2.5}>
-                {pendingSaleRequests.map((saleReq) => (
-                  <Card
-                    key={saleReq.id}
-                    variant="outlined"
-                    sx={{
-                      borderRadius: 2.5,
-                      p: 2.5,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 2,
-                      borderColor: 'warning.light',
-                      bgcolor: (theme) =>
-                        theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.05)' : 'rgba(245, 158, 11, 0.02)'
-                    }}
-                  >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1.5 }}>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                        <Box
-                          sx={{
-                            width: 44,
-                            height: 44,
-                            borderRadius: 2,
-                            bgcolor: 'warning.main',
-                            color: '#fff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center'
-                          }}
-                        >
-                          <SmartphoneIcon fontSize="medium" />
-                        </Box>
-                        <Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
-                            <Typography variant="subtitle1" fontWeight={800}>
-                              {saleReq.device_model || 'Unknown Model'}
-                            </Typography>
-                            {saleReq.device_variant && <VariantBadge variant={saleReq.device_variant} />}
-                            <Chip
-                              label="Pending Approval"
-                              size="small"
-                              sx={{
-                                height: 22,
-                                fontSize: '0.72rem',
-                                fontWeight: 800,
-                                bgcolor: 'rgba(245, 158, 11, 0.15)',
-                                color: '#D97706',
-                                border: '1px solid rgba(245, 158, 11, 0.3)'
-                              }}
-                            />
-                          </Box>
-                          <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary', fontWeight: 600 }}>
-                            IMEI: {saleReq.device_imei}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                            • {saleReq.device_capacity || ''} {saleReq.device_color ? `• ${saleReq.device_color}` : ''}
-                          </Typography>
-                          {saleReq.device_battery_health && (
-                            <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                              • BH {saleReq.device_battery_health}%
-                              {saleReq.device_battery_cycle ? ` (CC ${saleReq.device_battery_cycle})` : ''}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Box>
+                {pendingSaleRequests.map((saleReq) => {
+                  if (!saleReq) return null;
+                  const reqId = saleReq.id;
+                  const proposedNum = parseFloat(saleReq.proposed_price || 0);
+                  const currentComm = commissions?.[reqId] !== undefined ? commissions[reqId] : '';
+                  const commNum = parseFloat(currentComm || 0);
+                  const netDbPrice = Math.max(0, proposedNum - commNum);
+                  const costNum = parseFloat(saleReq.device_buying_price || 0);
 
-                      <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          Sold by Staff:
-                        </Typography>
-                        <Typography variant="body2" fontWeight={700} color="primary.main">
-                          {saleReq.employee_name || `@${saleReq.employee_username}`}
-                          <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
-                            (@{saleReq.employee_username})
-                          </Typography>
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" display="block">
-                          {new Date(saleReq.created_at).toLocaleString()}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Divider />
-
-                    <Grid container spacing={1.5} alignItems="stretch">
-                      <Grid item xs={12} sm={6} md={3}>
-                        <Paper
-                          variant="outlined"
-                          sx={{ p: 1.5, borderRadius: 2, height: '100%', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
-                        >
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Proposed Sale Price:
-                          </Typography>
-                          <Typography variant="subtitle1" fontWeight={800} color="warning.main">
-                            {saleReq.proposed_price ? `BDT ${formatNumber(saleReq.proposed_price)}` : 'Not specified'}
-                          </Typography>
-                          {parseFloat(saleReq.device_buying_price || 0) > 0 && (
-                            <Typography variant="caption" color="text.secondary">
-                              Device Cost: BDT {formatNumber(saleReq.device_buying_price)}
-                            </Typography>
-                          )}
-                        </Paper>
-                      </Grid>
-
-                      <Grid item xs={12} sm={6} md={3}>
-                        <Paper
-                          variant="outlined"
-                          sx={{
-                            p: 1.5,
-                            borderRadius: 2,
-                            height: '100%',
-                            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff'),
-                            borderColor: commissions[saleReq.id] > 0 ? 'primary.main' : 'divider'
-                          }}
-                        >
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-                            Staff Commission (BDT):
-                          </Typography>
-                          <TextField
-                            size="small"
-                            fullWidth
-                            type="number"
-                            placeholder="e.g. 1000"
-                            value={commissions[saleReq.id] !== undefined ? commissions[saleReq.id] : ''}
-                            onChange={(e) => setCommissions({ ...commissions, [saleReq.id]: e.target.value })}
-                            inputProps={{ min: 0, step: 'any' }}
-                            sx={{
-                              '& .MuiOutlinedInput-root': {
-                                borderRadius: 1.5,
-                                fontSize: '0.85rem'
-                              }
-                            }}
-                          />
-                          <Box sx={{ mt: 0.8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <Typography variant="caption" color="text.secondary">Net Sale:</Typography>
-                            <Typography variant="caption" fontWeight={800} color="success.main">
-                              BDT {formatNumber(Math.max(0, (parseFloat(saleReq.proposed_price) || 0) - (parseFloat(commissions[saleReq.id]) || 0)))}
-                            </Typography>
-                          </Box>
-                        </Paper>
-                      </Grid>
-
-                      <Grid item xs={12} sm={6} md={3}>
-                        <Paper
-                          variant="outlined"
-                          sx={{ p: 1.5, borderRadius: 2, height: '100%', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
-                        >
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Customer Info:
-                          </Typography>
-                          <Typography variant="body2" fontWeight={600}>
-                            {saleReq.customer_name || 'Walk-in Customer'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {saleReq.customer_phone || 'No phone provided'}
-                          </Typography>
-                        </Paper>
-                      </Grid>
-
-                      <Grid item xs={12} sm={6} md={3}>
-                        <Paper
-                          variant="outlined"
-                          sx={{ p: 1.5, borderRadius: 2, height: '100%', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
-                        >
-                          <Typography variant="caption" color="text.secondary" display="block">
-                            Payment & Notes:
-                          </Typography>
-                          <Typography variant="body2" fontWeight={600}>
-                            {saleReq.payment_method || 'CASH'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" noWrap display="block">
-                            {saleReq.notes ? `"${saleReq.notes}"` : 'No remarks'}
-                          </Typography>
-                        </Paper>
-                      </Grid>
-                    </Grid>
-
-                    <Stack
-                      direction={{ xs: 'column', sm: 'row' }}
-                      spacing={1.5}
+                  return (
+                    <Card
+                      key={reqId || Math.random()}
+                      variant="outlined"
                       sx={{
-                        width: '100%',
-                        justifyContent: 'space-between',
-                        alignItems: { xs: 'stretch', sm: 'center' },
-                        pt: 1.2,
-                        borderTop: 1,
-                        borderColor: 'divider'
+                        borderRadius: 2.5,
+                        p: { xs: 2, sm: 2.5 },
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 2,
+                        borderColor: 'warning.light',
+                        bgcolor: (theme) =>
+                          theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.05)' : 'rgba(245, 158, 11, 0.02)'
                       }}
                     >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                        <Typography variant="caption" color="text.secondary">
-                          DB Selling Price (Proposed - Commission):
-                        </Typography>
-                        <Chip
-                          size="small"
-                          color="success"
-                          variant="filled"
-                          label={`BDT ${formatNumber(Math.max(0, (parseFloat(saleReq.proposed_price) || 0) - (parseFloat(commissions[saleReq.id]) || 0)))}`}
-                          sx={{ fontWeight: 800, fontSize: '0.78rem' }}
-                        />
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 1.5 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                          <Box
+                            sx={{
+                              width: 44,
+                              height: 44,
+                              borderRadius: 2,
+                              bgcolor: 'warning.main',
+                              color: '#fff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0
+                            }}
+                          >
+                            <SmartphoneIcon fontSize="medium" />
+                          </Box>
+                          <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
+                              <Typography variant="subtitle1" fontWeight={800}>
+                                {saleReq.device_model || 'Unknown Model'}
+                              </Typography>
+                              {saleReq.device_variant && <VariantBadge variant={saleReq.device_variant} />}
+                              <Chip
+                                label="Pending Approval"
+                                size="small"
+                                sx={{
+                                  height: 22,
+                                  fontSize: '0.72rem',
+                                  fontWeight: 800,
+                                  bgcolor: 'rgba(245, 158, 11, 0.15)',
+                                  color: '#D97706',
+                                  border: '1px solid rgba(245, 158, 11, 0.3)'
+                                }}
+                              />
+                            </Box>
+                            <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary', fontWeight: 600 }}>
+                              IMEI: {saleReq.device_imei || '—'}
+                            </Typography>
+                            {(saleReq.device_capacity || saleReq.device_color) && (
+                              <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                • {saleReq.device_capacity || ''} {saleReq.device_color ? `• ${saleReq.device_color}` : ''}
+                              </Typography>
+                            )}
+                            {saleReq.device_battery_health ? (
+                              <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                • BH {saleReq.device_battery_health}%
+                                {saleReq.device_battery_cycle ? ` (CC ${saleReq.device_battery_cycle})` : ''}
+                              </Typography>
+                            ) : null}
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Sold by Staff:
+                          </Typography>
+                          <Typography variant="body2" fontWeight={700} color="primary.main">
+                            {saleReq.employee_name || `@${saleReq.employee_username || 'staff'}`}
+                            {saleReq.employee_username ? (
+                              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
+                                (@{saleReq.employee_username})
+                              </Typography>
+                            ) : null}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            {saleReq.created_at ? new Date(saleReq.created_at).toLocaleString() : '—'}
+                          </Typography>
+                        </Box>
                       </Box>
 
-                      <Stack direction="row" spacing={1.2} sx={{ justifyContent: 'flex-end' }}>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          size="small"
-                          disabled={actionLoadingId === `salereq_${saleReq.id}`}
-                          onClick={() => handleRejectSaleRequest(saleReq.id, saleReq.device_model)}
-                          sx={{ borderRadius: 2, textTransform: 'none', px: 2 }}
-                        >
-                          Reject Sale
-                        </Button>
-                        <Button
-                          variant="contained"
-                          color="success"
-                          size="small"
-                          startIcon={<CheckCircleIcon />}
-                          disabled={actionLoadingId === `salereq_${saleReq.id}`}
-                          onClick={() => {
-                            setSelectedSaleForApproval({
-                              ...saleReq,
-                              initialCommission: commissions[saleReq.id] !== undefined ? commissions[saleReq.id] : '0'
-                            });
-                            setConfirmSaleModalOpen(true);
-                          }}
-                          sx={{ borderRadius: 2, textTransform: 'none', px: 2.5, fontWeight: 700 }}
-                        >
-                          Confirm Sold Amount & Approve
-                        </Button>
+                      <Divider />
+
+                      <Grid container spacing={1.5} alignItems="stretch">
+                        <Grid item xs={12} sm={6} md={3}>
+                          <Paper
+                            variant="outlined"
+                            sx={{ p: 1.5, borderRadius: 2, height: '100%', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
+                          >
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Proposed Sale Price:
+                            </Typography>
+                            <Typography variant="subtitle1" fontWeight={800} color="warning.main">
+                              {proposedNum > 0 ? `BDT ${formatNumber(proposedNum)}` : 'Not specified'}
+                            </Typography>
+                            {costNum > 0 && (
+                              <Typography variant="caption" color="text.secondary">
+                                Device Cost: BDT {formatNumber(costNum)}
+                              </Typography>
+                            )}
+                          </Paper>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                          <Paper
+                            variant="outlined"
+                            sx={{
+                              p: 1.5,
+                              borderRadius: 2,
+                              height: '100%',
+                              bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff'),
+                              borderColor: commNum > 0 ? 'primary.main' : 'divider'
+                            }}
+                          >
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                              Staff Commission (BDT):
+                            </Typography>
+                            <TextField
+                              size="small"
+                              fullWidth
+                              type="number"
+                              placeholder="0"
+                              value={currentComm}
+                              onChange={(e) => setCommissions((prev) => ({ ...prev, [reqId]: e.target.value }))}
+                              inputProps={{ min: 0, step: 'any' }}
+                              sx={{
+                                '& .MuiOutlinedInput-root': {
+                                  borderRadius: 1.5,
+                                  fontSize: '0.85rem'
+                                }
+                              }}
+                            />
+                            <Box sx={{ mt: 0.8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                              <Typography variant="caption" color="text.secondary">Net Sale:</Typography>
+                              <Typography variant="caption" fontWeight={800} color="success.main">
+                                BDT {formatNumber(netDbPrice)}
+                              </Typography>
+                            </Box>
+                          </Paper>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                          <Paper
+                            variant="outlined"
+                            sx={{ p: 1.5, borderRadius: 2, height: '100%', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
+                          >
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Customer Info:
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                              {saleReq.customer_name || 'Walk-in Customer'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {saleReq.customer_phone || 'No phone provided'}
+                            </Typography>
+                          </Paper>
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={3}>
+                          <Paper
+                            variant="outlined"
+                            sx={{ p: 1.5, borderRadius: 2, height: '100%', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
+                          >
+                            <Typography variant="caption" color="text.secondary" display="block">
+                              Payment & Notes:
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600}>
+                              {saleReq.payment_method || 'CASH'}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary" noWrap display="block">
+                              {saleReq.notes ? `"${saleReq.notes}"` : 'No remarks'}
+                            </Typography>
+                          </Paper>
+                        </Grid>
+                      </Grid>
+
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={1.5}
+                        sx={{
+                          width: '100%',
+                          justifyContent: 'space-between',
+                          alignItems: { xs: 'stretch', sm: 'center' },
+                          pt: 1.2,
+                          borderTop: 1,
+                          borderColor: 'divider'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                          <Typography variant="caption" color="text.secondary">
+                            DB Selling Price (Proposed - Commission):
+                          </Typography>
+                          <Chip
+                            size="small"
+                            color="success"
+                            variant="filled"
+                            label={`BDT ${formatNumber(netDbPrice)}`}
+                            sx={{ fontWeight: 800, fontSize: '0.78rem' }}
+                          />
+                        </Box>
+
+                        <Stack direction="row" spacing={1.2} sx={{ justifyContent: 'flex-end' }}>
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            size="small"
+                            disabled={actionLoadingId === `salereq_${reqId}`}
+                            onClick={() => handleRejectSaleRequest(reqId, saleReq.device_model)}
+                            sx={{ borderRadius: 2, textTransform: 'none', px: 2 }}
+                          >
+                            Reject Sale
+                          </Button>
+                          <Button
+                            variant="contained"
+                            color="success"
+                            size="small"
+                            startIcon={<CheckCircleIcon />}
+                            disabled={actionLoadingId === `salereq_${reqId}`}
+                            onClick={() => {
+                              setSelectedSaleForApproval({
+                                ...saleReq,
+                                initialCommission: commissions?.[reqId] !== undefined ? commissions[reqId] : '0'
+                              });
+                              setConfirmSaleModalOpen(true);
+                            }}
+                            sx={{ borderRadius: 2, textTransform: 'none', px: 2.5, fontWeight: 700 }}
+                          >
+                            Confirm Sold Amount & Approve
+                          </Button>
+                        </Stack>
                       </Stack>
-                    </Stack>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </Stack>
             )}
           </Box>

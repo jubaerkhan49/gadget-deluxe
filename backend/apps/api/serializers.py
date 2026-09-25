@@ -101,18 +101,18 @@ class SaleSerializer(serializers.ModelSerializer):
 
 
 class DeviceSaleRequestSerializer(serializers.ModelSerializer):
-    device_imei = serializers.CharField(source='device.imei', read_only=True)
-    device_model = serializers.CharField(source='device.model', read_only=True)
-    device_capacity = serializers.CharField(source='device.capacity', read_only=True)
-    device_color = serializers.CharField(source='device.color', read_only=True)
-    device_variant = serializers.CharField(source='device.variant', read_only=True)
-    device_battery_health = serializers.IntegerField(source='device.battery_health', read_only=True)
-    device_battery_cycle = serializers.IntegerField(source='device.battery_cycle', read_only=True)
-    device_buying_price = serializers.DecimalField(source='device.buying_price', max_digits=12, decimal_places=2, read_only=True)
-    employee_username = serializers.CharField(source='employee.username', read_only=True)
+    device_imei = serializers.CharField(source='device.imei', read_only=True, allow_null=True, default=None)
+    device_model = serializers.CharField(source='device.model', read_only=True, allow_null=True, default=None)
+    device_capacity = serializers.CharField(source='device.capacity', read_only=True, allow_null=True, default=None)
+    device_color = serializers.CharField(source='device.color', read_only=True, allow_null=True, default=None)
+    device_variant = serializers.CharField(source='device.variant', read_only=True, allow_null=True, default=None)
+    device_battery_health = serializers.IntegerField(source='device.battery_health', read_only=True, allow_null=True, default=None)
+    device_battery_cycle = serializers.IntegerField(source='device.battery_cycle', read_only=True, allow_null=True, default=None)
+    device_buying_price = serializers.DecimalField(source='device.buying_price', max_digits=12, decimal_places=2, read_only=True, allow_null=True, default=None)
+    employee_username = serializers.CharField(source='employee.username', read_only=True, allow_null=True, default=None)
     employee_name = serializers.SerializerMethodField()
-    reviewed_by_username = serializers.CharField(source='reviewed_by.username', read_only=True)
-    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    reviewed_by_username = serializers.CharField(source='reviewed_by.username', read_only=True, allow_null=True, default=None)
+    status_display = serializers.CharField(source='get_status_display', read_only=True, allow_null=True, default=None)
 
     class Meta:
         model = DeviceSaleRequest
@@ -120,7 +120,7 @@ class DeviceSaleRequestSerializer(serializers.ModelSerializer):
 
     def get_employee_name(self, obj):
         if obj.employee:
-            full = f"{obj.employee.first_name} {obj.employee.last_name}".strip()
+            full = f"{obj.employee.first_name or ''} {obj.employee.last_name or ''}".strip()
             return full if full else obj.employee.username
         return "Unknown"
 
