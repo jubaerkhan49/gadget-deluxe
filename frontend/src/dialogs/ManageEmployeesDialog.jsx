@@ -26,7 +26,8 @@ import {
   CardContent,
   Stack,
   Badge,
-  Grid
+  Grid,
+  Divider
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import PeopleIcon from '@mui/icons-material/People';
