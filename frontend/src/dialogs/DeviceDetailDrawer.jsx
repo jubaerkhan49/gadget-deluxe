@@ -30,7 +30,8 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TableRow
+  TableRow,
+  Alert
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -65,6 +66,7 @@ import AddRepairDialog from './AddRepairDialog';
 const STATUS_CHOICES = [
   { value: 'WAITING_SHIPMENT', label: 'Waiting Shipment' },
   { value: 'IN_STOCK', label: 'In Stock' },
+  { value: 'PENDING_SALE', label: 'Pending Sale' },
   { value: 'UNDER_REPAIR', label: 'Under Repair' },
   { value: 'SOLD', label: 'Sold' },
   { value: 'ASSIGNED', label: 'Assigned' },
@@ -100,7 +102,7 @@ export default function DeviceDetailDrawer({
   useEffect(() => {
     if (open && device) {
       setStatus(device.current_status || 'WAITING_SHIPMENT');
-      setOwner(device.current_owner || '');
+      setOwner(typeof device.current_owner === 'object' ? (device.current_owner?.id || '') : (device.current_owner || ''));
       setReceivedDateBd(device.received_date_bd || '');
       setSellingPrice(device.selling_price ? String(device.selling_price) : '');
       if (isAdmin) {
