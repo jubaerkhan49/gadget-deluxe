@@ -63,6 +63,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
   const [deleting, setDeleting] = useState(false);
   const [selectedSaleForApproval, setSelectedSaleForApproval] = useState(null);
   const [confirmSaleModalOpen, setConfirmSaleModalOpen] = useState(false);
+  const [commissions, setCommissions] = useState({});
 
   const fetchApplications = async () => {
     try {
@@ -693,11 +694,11 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
 
                     <Divider />
 
-                    <Grid container spacing={2} alignItems="center">
-                      <Grid item xs={12} sm={4}>
+                    <Grid container spacing={1.5} alignItems="stretch">
+                      <Grid item xs={12} sm={6} md={3}>
                         <Paper
                           variant="outlined"
-                          sx={{ p: 1.5, borderRadius: 2, bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
+                          sx={{ p: 1.5, borderRadius: 2, height: '100%', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
                         >
                           <Typography variant="caption" color="text.secondary" display="block">
                             Proposed Sale Price:
@@ -713,10 +714,48 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                         </Paper>
                       </Grid>
 
-                      <Grid item xs={12} sm={4}>
+                      <Grid item xs={12} sm={6} md={3}>
                         <Paper
                           variant="outlined"
-                          sx={{ p: 1.5, borderRadius: 2, bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
+                          sx={{
+                            p: 1.5,
+                            borderRadius: 2,
+                            height: '100%',
+                            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff'),
+                            borderColor: commissions[saleReq.id] > 0 ? 'primary.main' : 'divider'
+                          }}
+                        >
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                            Staff Commission (BDT):
+                          </Typography>
+                          <TextField
+                            size="small"
+                            fullWidth
+                            type="number"
+                            placeholder="e.g. 1000"
+                            value={commissions[saleReq.id] !== undefined ? commissions[saleReq.id] : ''}
+                            onChange={(e) => setCommissions({ ...commissions, [saleReq.id]: e.target.value })}
+                            inputProps={{ min: 0, step: 'any' }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 1.5,
+                                fontSize: '0.85rem'
+                              }
+                            }}
+                          />
+                          <Box sx={{ mt: 0.8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <Typography variant="caption" color="text.secondary">Net Sale:</Typography>
+                            <Typography variant="caption" fontWeight={800} color="success.main">
+                              BDT {formatNumber(Math.max(0, (parseFloat(saleReq.proposed_price) || 0) - (parseFloat(commissions[saleReq.id]) || 0)))}
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Grid>
+
+                      <Grid item xs={12} sm={6} md={3}>
+                        <Paper
+                          variant="outlined"
+                          sx={{ p: 1.5, borderRadius: 2, height: '100%', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
                         >
                           <Typography variant="caption" color="text.secondary" display="block">
                             Customer Info:
@@ -730,10 +769,10 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                         </Paper>
                       </Grid>
 
-                      <Grid item xs={12} sm={4}>
+                      <Grid item xs={12} sm={6} md={3}>
                         <Paper
                           variant="outlined"
-                          sx={{ p: 1.5, borderRadius: 2, bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
+                          sx={{ p: 1.5, borderRadius: 2, height: '100%', bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#fff') }}
                         >
                           <Typography variant="caption" color="text.secondary" display="block">
                             Payment & Notes:
@@ -748,31 +787,60 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                       </Grid>
                     </Grid>
 
-                    <Stack direction="row" spacing={1.5} sx={{ width: '100%', justifyContent: 'flex-end', pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        disabled={actionLoadingId === `salereq_${saleReq.id}`}
-                        onClick={() => handleRejectSaleRequest(saleReq.id, saleReq.device_model)}
-                        sx={{ borderRadius: 2, textTransform: 'none' }}
-                      >
-                        Reject Sale
-                      </Button>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        size="small"
-                        startIcon={<CheckCircleIcon />}
-                        disabled={actionLoadingId === `salereq_${saleReq.id}`}
-                        onClick={() => {
-                          setSelectedSaleForApproval(saleReq);
-                          setConfirmSaleModalOpen(true);
-                        }}
-                        sx={{ borderRadius: 2, textTransform: 'none', px: 2.5, fontWeight: 700 }}
-                      >
-                        Confirm Sold Amount & Approve
-                      </Button>
+                    <Stack
+                      direction={{ xs: 'column', sm: 'row' }}
+                      spacing={1.5}
+                      sx={{
+                        width: '100%',
+                        justifyContent: 'space-between',
+                        alignItems: { xs: 'stretch', sm: 'center' },
+                        pt: 1.2,
+                        borderTop: 1,
+                        borderColor: 'divider'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <Typography variant="caption" color="text.secondary">
+                          DB Selling Price (Proposed - Commission):
+                        </Typography>
+                        <Chip
+                          size="small"
+                          color="success"
+                          variant="filled"
+                          label={`BDT ${formatNumber(Math.max(0, (parseFloat(saleReq.proposed_price) || 0) - (parseFloat(commissions[saleReq.id]) || 0)))}`}
+                          sx={{ fontWeight: 800, fontSize: '0.78rem' }}
+                        />
+                      </Box>
+
+                      <Stack direction="row" spacing={1.2} sx={{ justifyContent: 'flex-end' }}>
+                        <Button
+                          variant="outlined"
+                          color="error"
+                          size="small"
+                          disabled={actionLoadingId === `salereq_${saleReq.id}`}
+                          onClick={() => handleRejectSaleRequest(saleReq.id, saleReq.device_model)}
+                          sx={{ borderRadius: 2, textTransform: 'none', px: 2 }}
+                        >
+                          Reject Sale
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          startIcon={<CheckCircleIcon />}
+                          disabled={actionLoadingId === `salereq_${saleReq.id}`}
+                          onClick={() => {
+                            setSelectedSaleForApproval({
+                              ...saleReq,
+                              initialCommission: commissions[saleReq.id] !== undefined ? commissions[saleReq.id] : '0'
+                            });
+                            setConfirmSaleModalOpen(true);
+                          }}
+                          sx={{ borderRadius: 2, textTransform: 'none', px: 2.5, fontWeight: 700 }}
+                        >
+                          Confirm Sold Amount & Approve
+                        </Button>
+                      </Stack>
                     </Stack>
                   </Card>
                 ))}

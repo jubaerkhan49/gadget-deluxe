@@ -35,6 +35,7 @@ export default function ConfirmSaleApprovalDialog({
   onApproved
 }) {
   const { enqueueSnackbar } = useSnackbar();
+  const [basePrice, setBasePrice] = useState(0);
   const [soldAmount, setSoldAmount] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
@@ -46,21 +47,31 @@ export default function ConfirmSaleApprovalDialog({
 
   useEffect(() => {
     if (open && saleRequest) {
-      setSoldAmount(
-        saleRequest.proposed_price
-          ? String(saleRequest.proposed_price)
-          : saleRequest.device_selling_price
-            ? String(saleRequest.device_selling_price)
-            : ''
+      const proposed = parseFloat(
+        saleRequest.proposed_price || saleRequest.device_selling_price || 0
       );
+      const initComm = parseFloat(saleRequest.initialCommission || 0);
+      const net = Math.max(0, proposed - initComm);
+
+      setBasePrice(proposed);
+      setCommission(saleRequest.initialCommission !== undefined ? String(saleRequest.initialCommission) : '0');
+      setSoldAmount(String(net > 0 ? net : proposed));
       setCustomerName(saleRequest.customer_name || '');
       setCustomerPhone(saleRequest.customer_phone || '');
       setPaymentMethod(saleRequest.payment_method || 'CASH');
-      setCommission('0');
       setDiscount('0');
       setReviewNotes('');
     }
   }, [open, saleRequest]);
+
+  const handleCommissionChange = (val) => {
+    setCommission(val);
+    const commNum = parseFloat(val) || 0;
+    if (basePrice > 0) {
+      const calculatedNet = Math.max(0, basePrice - commNum);
+      setSoldAmount(String(calculatedNet));
+    }
+  };
 
   if (!saleRequest) return null;
 
@@ -74,7 +85,7 @@ export default function ConfirmSaleApprovalDialog({
     try {
       setLoading(true);
       const payload = {
-        selling_price: parseFloat(soldAmount),
+        selling_price: parseFloat(soldAmount), // Recorded to DB as: Proposed price - commission
         confirmed_price: parseFloat(soldAmount),
         customer_name: customerName.trim() || null,
         customer_phone: customerPhone.trim() || null,
@@ -102,7 +113,7 @@ export default function ConfirmSaleApprovalDialog({
   const soldAmountNum = parseFloat(soldAmount || 0);
   const discountNum = parseFloat(discount || 0);
   const commissionNum = parseFloat(commission || 0);
-  const estimatedProfit = soldAmountNum - buyingPriceNum - discountNum - commissionNum;
+  const estimatedProfit = soldAmountNum - buyingPriceNum - discountNum;
 
   return (
     <Dialog
@@ -223,13 +234,32 @@ export default function ConfirmSaleApprovalDialog({
           </Paper>
 
           <Grid container spacing={2}>
-            {/* Required Sold Amount */}
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Staff Commission (BDT)"
+                type="number"
+                value={commission}
+                onChange={(e) => handleCommissionChange(e.target.value)}
+                placeholder="0"
+                helperText="Deducted from proposed price to determine DB selling price"
+                inputProps={{ min: 0, step: 'any' }}
+                InputProps={{
+                  startAdornment: (
+                    <Typography variant="body2" sx={{ mr: 1, fontWeight: 700, color: 'text.secondary' }}>
+                      BDT
+                    </Typography>
+                  )
+                }}
+              />
+            </Grid>
+
+            {/* Required Sold Amount to be recorded in DB */}
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 required
-                autoFocus
-                label="Final Sold Amount (BDT)"
+                label="Final DB Selling Price (BDT)"
                 type="number"
                 placeholder="Enter sold amount in BDT"
                 value={soldAmount}
@@ -237,12 +267,12 @@ export default function ConfirmSaleApprovalDialog({
                 helperText={
                   soldAmountNum > 0
                     ? `Estimated Gross Profit: BDT ${formatNumber(estimatedProfit)}`
-                    : 'Enter the exact final amount received for this device sale'
+                    : 'Proposed Price - Commission saved to DB'
                 }
                 inputProps={{ min: 0, step: 'any' }}
                 InputProps={{
                   startAdornment: (
-                    <Typography variant="body2" sx={{ mr: 1, fontWeight: 700, color: 'text.secondary' }}>
+                    <Typography variant="body2" sx={{ mr: 1, fontWeight: 700, color: 'success.main' }}>
                       BDT
                     </Typography>
                   )
@@ -288,10 +318,10 @@ export default function ConfirmSaleApprovalDialog({
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                label="Staff Commission (BDT)"
+                label="Additional Discount (BDT)"
                 type="number"
-                value={commission}
-                onChange={(e) => setCommission(e.target.value)}
+                value={discount}
+                onChange={(e) => setDiscount(e.target.value)}
                 inputProps={{ min: 0, step: 'any' }}
               />
             </Grid>

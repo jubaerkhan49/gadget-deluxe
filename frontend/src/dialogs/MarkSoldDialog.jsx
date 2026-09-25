@@ -83,11 +83,13 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
           borderRadius: 2.5,
           bgcolor: 'background.paper',
           p: 0,
-          backgroundImage: 'none'
+          backgroundImage: 'none',
+          m: { xs: 1.5, sm: 2 },
+          width: { xs: 'calc(100% - 24px)', sm: '100%' }
         }
       }}
     >
-      <DialogTitle sx={{ pb: 1, pt: 2.5, px: 3 }}>
+      <DialogTitle sx={{ pb: 1, pt: 2, px: { xs: 2, sm: 3 } }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1.5 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Box
@@ -106,10 +108,10 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
               <PointOfSaleIcon sx={{ fontSize: 22 }} />
             </Box>
             <Box>
-              <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: '1.15rem' }}>
+              <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: { xs: '1.05rem', sm: '1.15rem' } }}>
                 Mark Device as Sold
               </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.76rem', display: 'block' }}>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', display: 'block' }}>
                 Submit sale for Admin review & price confirmation
               </Typography>
             </Box>
@@ -121,7 +123,7 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
       </DialogTitle>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent sx={{ px: 3, py: 1.5 }}>
+        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 1.5 }}>
           {/* Device Summary Card */}
           <Paper
             variant="outlined"
@@ -230,11 +232,11 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
 
         <DialogActions
           sx={{
-            px: 3,
-            pb: 2.5,
+            px: { xs: 2, sm: 3 },
+            pb: 2,
             pt: 1.5,
             display: 'flex',
-            gap: 1.5,
+            gap: 1.2,
             borderTop: 1,
             borderColor: 'divider',
             bgcolor: (theme) =>
@@ -248,11 +250,12 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
             disabled={loading}
             sx={{
               flex: 1,
-              height: 40,
-              borderRadius: 1.75,
+              height: 42,
+              borderRadius: 2,
               textTransform: 'none',
               fontWeight: 600,
-              fontSize: '0.85rem'
+              fontSize: { xs: '0.82rem', sm: '0.875rem' },
+              minWidth: 0
             }}
           >
             Cancel
@@ -265,12 +268,14 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
             startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <PointOfSaleIcon sx={{ fontSize: '18px !important' }} />}
             sx={{
               flex: 1.4,
-              height: 40,
-              borderRadius: 1.75,
+              height: 42,
+              borderRadius: 2,
               fontWeight: 700,
               textTransform: 'none',
-              fontSize: '0.82rem',
+              fontSize: { xs: '0.82rem', sm: '0.875rem' },
               whiteSpace: 'nowrap',
+              minWidth: 0,
+              px: { xs: 1.5, sm: 2 },
               boxShadow: 'none'
             }}
           >
