@@ -79,13 +79,13 @@ export default function Landing() {
           zIndex: 100
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
           <Box
             sx={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              py: 2
+              py: { xs: 1.5, sm: 2 }
             }}
           >
             {/* Logo */}
@@ -94,15 +94,15 @@ export default function Landing() {
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.5,
+                gap: { xs: 1, sm: 1.5 },
                 cursor: 'pointer',
                 userSelect: 'none'
               }}
             >
               <Box
                 sx={{
-                  width: 38,
-                  height: 38,
+                  width: { xs: 34, sm: 38 },
+                  height: { xs: 34, sm: 38 },
                   borderRadius: 2,
                   bgcolor: 'primary.main',
                   display: 'flex',
@@ -111,20 +111,29 @@ export default function Landing() {
                   color: '#fff'
                 }}
               >
-                <DeviceIcon fontSize="small" />
+                <DeviceIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
               </Box>
               <Box>
-                <Typography variant="subtitle1" fontWeight={800} letterSpacing="-0.3px" sx={{ lineHeight: 1.2 }}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={800}
+                  letterSpacing="-0.3px"
+                  sx={{ lineHeight: 1.2, fontSize: { xs: '0.95rem', sm: '1.1rem' } }}
+                >
                   Gadget Deluxe
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: { xs: '0.65rem', sm: '0.72rem' }, display: { xs: 'none', sm: 'block' } }}
+                >
                   Inventory & Logistics
                 </Typography>
               </Box>
             </Box>
 
             {/* Nav Actions */}
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={{ xs: 0.8, sm: 1.5 }} alignItems="center">
               <Button
                 color="inherit"
                 size="small"
@@ -139,9 +148,15 @@ export default function Landing() {
                 size="small"
                 onClick={() => setShowApplyDialog(true)}
                 startIcon={<JoinIcon fontSize="small" />}
-                sx={{ fontWeight: 600, textTransform: 'none' }}
+                sx={{
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  fontSize: { xs: '0.78rem', sm: '0.85rem' },
+                  px: { xs: 1, sm: 1.5 }
+                }}
               >
-                Join Team
+                <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Join Team</Box>
+                <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Join</Box>
               </Button>
 
               <Tooltip title={`Switch to ${isDark ? 'Light' : 'Dark'} mode`}>
@@ -156,7 +171,13 @@ export default function Landing() {
                   color="primary"
                   size="small"
                   onClick={() => navigate('/dashboard')}
-                  sx={{ borderRadius: 2, px: 2, fontWeight: 700, textTransform: 'none' }}
+                  sx={{
+                    borderRadius: 2,
+                    px: { xs: 1.5, sm: 2 },
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    fontSize: { xs: '0.78rem', sm: '0.85rem' }
+                  }}
                 >
                   Dashboard
                 </Button>
@@ -166,8 +187,14 @@ export default function Landing() {
                   color="primary"
                   size="small"
                   onClick={() => navigate('/login')}
-                  startIcon={<LockIcon fontSize="small" />}
-                  sx={{ borderRadius: 2, px: 2, fontWeight: 700, textTransform: 'none' }}
+                  startIcon={<LockIcon fontSize="small" sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />}
+                  sx={{
+                    borderRadius: 2,
+                    px: { xs: 1.5, sm: 2 },
+                    fontWeight: 700,
+                    textTransform: 'none',
+                    fontSize: { xs: '0.78rem', sm: '0.85rem' }
+                  }}
                 >
                   Sign In
                 </Button>
@@ -178,17 +205,17 @@ export default function Landing() {
       </Box>
 
       {/* 2. Minimalist Hero & Tracking Section */}
-      <Box sx={{ pt: { xs: 7, md: 10 }, pb: { xs: 6, md: 8 } }}>
+      <Box sx={{ pt: { xs: 4, sm: 7, md: 10 }, pb: { xs: 4, sm: 6, md: 8 }, px: { xs: 2, sm: 3 } }}>
         <Container maxWidth="md">
-          <Box sx={{ textAlign: 'center', mb: 4 }}>
+          <Box sx={{ textAlign: 'center', mb: { xs: 3, sm: 4 } }}>
             <Typography
               variant="h3"
               fontWeight={800}
               letterSpacing="-0.8px"
               sx={{
-                fontSize: { xs: '2rem', sm: '2.8rem', md: '3.2rem' },
+                fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.2rem' },
                 lineHeight: 1.2,
-                mb: 2
+                mb: { xs: 1.5, sm: 2 }
               }}
             >
               Device Inventory & Supply Logistics
@@ -197,7 +224,7 @@ export default function Landing() {
               variant="body1"
               color="text.secondary"
               sx={{
-                fontSize: { xs: '0.95rem', md: '1.05rem' },
+                fontSize: { xs: '0.88rem', sm: '0.98rem', md: '1.05rem' },
                 maxWidth: 620,
                 mx: 'auto',
                 lineHeight: 1.6
@@ -213,10 +240,11 @@ export default function Landing() {
             onSubmit={handleTrackSubmit}
             variant="outlined"
             sx={{
-              p: 1,
+              p: { xs: 1, sm: 1 },
               borderRadius: 2.5,
               display: 'flex',
-              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { xs: 'stretch', sm: 'center' },
               gap: 1,
               bgcolor: isDark ? '#1E293B' : '#FFFFFF',
               borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
@@ -235,12 +263,12 @@ export default function Landing() {
               InputProps={{
                 disableUnderline: true,
                 startAdornment: (
-                  <InputAdornment position="start" sx={{ pl: 1.5 }}>
+                  <InputAdornment position="start" sx={{ pl: { xs: 0.5, sm: 1.5 } }}>
                     <SearchIcon color="action" fontSize="small" />
                   </InputAdornment>
                 )
               }}
-              sx={{ px: 1 }}
+              sx={{ px: 1, py: { xs: 0.5, sm: 0 } }}
             />
             <Button
               type="submit"
@@ -250,10 +278,11 @@ export default function Landing() {
               sx={{
                 borderRadius: 2,
                 px: 3,
-                py: 1,
+                py: { xs: 1.1, sm: 1 },
                 fontWeight: 700,
                 textTransform: 'none',
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                width: { xs: '100%', sm: 'auto' }
               }}
             >
               Track Order
@@ -263,19 +292,19 @@ export default function Landing() {
       </Box>
 
       {/* 3. Action Cards Grid */}
-      <Box sx={{ py: 6, flexGrow: 1 }}>
-        <Container maxWidth="lg">
+      <Box sx={{ py: { xs: 3, sm: 6 }, flexGrow: 1 }}>
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
             variant="overline"
             color="text.secondary"
             fontWeight={700}
             letterSpacing={1.2}
-            sx={{ display: 'block', textAlign: 'center', mb: 4 }}
+            sx={{ display: 'block', textAlign: 'center', mb: { xs: 2.5, sm: 4 }, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}
           >
             PORTAL ACCESS & OPERATIONS
           </Typography>
 
-          <Grid container spacing={3}>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
             {/* Card 1: Track Order */}
             <Grid item xs={12} sm={6} md={3}>
               <Card

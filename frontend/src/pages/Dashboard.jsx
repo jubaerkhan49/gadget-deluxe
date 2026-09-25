@@ -245,8 +245,8 @@ export default function Dashboard() {
         <Paper
           elevation={0}
           sx={{
-            p: 3,
-            mb: 3.5,
+            p: { xs: 2, sm: 3 },
+            mb: { xs: 2.5, sm: 3.5 },
             borderRadius: 3,
             border: 1,
             borderColor: 'divider',
@@ -254,26 +254,27 @@ export default function Dashboard() {
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.5, sm: 2 } }}>
               <Box
                 sx={{
-                  width: 48,
-                  height: 48,
+                  width: { xs: 40, sm: 48 },
+                  height: { xs: 40, sm: 48 },
                   borderRadius: 2.5,
                   bgcolor: 'primary.main',
                   color: '#fff',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}
               >
-                <AssignmentIndIcon fontSize="medium" />
+                <AssignmentIndIcon sx={{ fontSize: { xs: 22, sm: 28 } }} />
               </Box>
               <Box>
-                <Typography variant="h5" fontWeight={800}>
+                <Typography variant="h5" fontWeight={800} sx={{ fontSize: { xs: '1.15rem', sm: '1.5rem' } }}>
                   Staff Custody Dashboard
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', sm: '0.875rem' } }}>
                   Welcome, <strong>{user?.first_name || user?.username}</strong>. You are viewing devices assigned to your custody.
                 </Typography>
               </Box>
@@ -306,12 +307,12 @@ export default function Dashboard() {
         </Paper>
 
         {/* Employee Summary 5 KPIs */}
-        <Grid container spacing={2} sx={{ mb: 4 }}>
+        <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2.5, sm: 4 } }}>
           {employeeMetricCards.map((card, idx) => (
-            <Grid item xs={12} sm={6} md={4} lg={2.4} key={idx}>
+            <Grid item xs={idx === 4 ? 12 : 6} sm={6} md={4} lg={2.4} key={idx}>
               <Card
                 sx={{
-                  p: 2.2,
+                  p: { xs: 1.5, sm: 2.2 },
                   borderRadius: 3,
                   border: 1,
                   borderColor: 'divider',
@@ -328,7 +329,7 @@ export default function Dashboard() {
                   }
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
                   <Typography
                     variant="caption"
                     fontWeight={800}
@@ -336,7 +337,7 @@ export default function Dashboard() {
                     sx={{
                       textTransform: 'uppercase',
                       letterSpacing: 0.5,
-                      fontSize: '0.7rem'
+                      fontSize: { xs: '0.62rem', sm: '0.7rem' }
                     }}
                     noWrap
                   >
@@ -344,9 +345,9 @@ export default function Dashboard() {
                   </Typography>
                   <Box
                     sx={{
-                      width: 36,
-                      height: 36,
-                      minWidth: 36,
+                      width: { xs: 30, sm: 36 },
+                      height: { xs: 30, sm: 36 },
+                      minWidth: { xs: 30, sm: 36 },
                       borderRadius: 2,
                       bgcolor: card.bgLight,
                       color: card.color,
@@ -366,8 +367,8 @@ export default function Dashboard() {
                       size="small"
                       sx={{
                         fontWeight: 800,
-                        fontSize: '0.85rem',
-                        height: 28,
+                        fontSize: { xs: '0.78rem', sm: '0.85rem' },
+                        height: { xs: 26, sm: 28 },
                         px: 0.8,
                         bgcolor: card.bgLight,
                         color: card.color,
@@ -383,7 +384,10 @@ export default function Dashboard() {
                         fontFamily: card.isNumber ? '"JetBrains Mono", monospace' : 'inherit',
                         color: card.color,
                         lineHeight: 1.2,
-                        fontSize: card.isNumber ? '1.8rem' : '1.1rem'
+                        fontSize: {
+                          xs: card.isNumber ? '1.35rem' : '0.95rem',
+                          sm: card.isNumber ? '1.8rem' : '1.1rem'
+                        }
                       }}
                       noWrap
                     >
@@ -392,7 +396,12 @@ export default function Dashboard() {
                   )}
                 </Box>
 
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, fontSize: '0.72rem', display: 'block' }} noWrap>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mt: 0.8, fontSize: { xs: '0.66rem', sm: '0.72rem' }, display: 'block' }}
+                  noWrap
+                >
                   {card.subtitle}
                 </Typography>
               </Card>
@@ -400,11 +409,11 @@ export default function Dashboard() {
           ))}
         </Grid>
 
-        {/* Assigned Devices Table */}
-        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, bgcolor: 'background.paper' }}>
+        {/* Assigned Devices Section */}
+        <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 3, bgcolor: 'background.paper' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
             <Typography variant="subtitle1" fontWeight={800}>
-              Assigned Devices List ({myAssignedDevices.length})
+              Assigned Devices List ({filteredAssigned.length})
             </Typography>
             <Box sx={{ width: { xs: '100%', sm: 260 } }}>
               <TextField
@@ -424,7 +433,152 @@ export default function Dashboard() {
             </Box>
           </Box>
 
-          <TableContainer>
+          {/* 1. Mobile Cards View (xs & sm) */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
+            {filteredAssigned.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                <Typography variant="body2">No devices are currently assigned to your custody.</Typography>
+              </Box>
+            ) : (
+              filteredAssigned.map((dev) => (
+                <Card
+                  key={dev.id}
+                  variant="outlined"
+                  onClick={() => {
+                    setSelectedDevice(dev);
+                    setDrawerOpen(true);
+                  }}
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    cursor: 'pointer',
+                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      boxShadow: (theme) =>
+                        theme.palette.mode === 'dark'
+                          ? '0 4px 16px rgba(0,0,0,0.3)'
+                          : '0 4px 16px rgba(0,0,0,0.06)'
+                    }
+                  }}
+                >
+                  {/* Card Top: Model, Specs & Status */}
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1.2 }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2" fontWeight={800} noWrap>
+                        {dev.model}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+                        {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
+                      </Typography>
+                    </Box>
+                    <StatusBadge status={dev.current_status} />
+                  </Box>
+
+                  {/* Card Mid Row: IMEI + Variant */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      p: 1,
+                      mb: 1.2,
+                      borderRadius: 1.5,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <CopyableText text={dev.imei} />
+                    <VariantBadge variant={dev.variant} />
+                  </Box>
+
+                  {/* Card Bottom Specs: Battery Health + Cycle & Assigned Date */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      mb: 1.5,
+                      flexWrap: 'wrap',
+                      gap: 1
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                      <Typography variant="caption" fontWeight={700} color="text.secondary">
+                        Battery:
+                      </Typography>
+                      <Typography variant="caption" fontWeight={800}>
+                        {dev.battery_health ? `${dev.battery_health}%` : '—'}
+                      </Typography>
+                      {(dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ? (
+                        <Chip
+                          label={`CC ${dev.battery_cycle}`}
+                          size="small"
+                          sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                        />
+                      ) : (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '') ? (
+                        <Chip
+                          label={`CC ${dev.battery_cycles}`}
+                          size="small"
+                          sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                        />
+                      ) : null}
+                    </Box>
+
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDate(dev.assigned_date || dev.received_date_bd || dev.created_at)}
+                    </Typography>
+                  </Box>
+
+                  {/* Action Button: Mark as Sold or Pending Sale Chip */}
+                  <Box onClick={(e) => e.stopPropagation()}>
+                    {dev.current_status === 'IN_STOCK' ? (
+                      <Button
+                        fullWidth
+                        size="small"
+                        variant="contained"
+                        color="success"
+                        startIcon={<SaleIcon sx={{ fontSize: '16px !important' }} />}
+                        onClick={() => {
+                          setMarkSoldDevice(dev);
+                          setMarkSoldOpen(true);
+                        }}
+                        sx={{
+                          py: 0.8,
+                          fontWeight: 700,
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          fontSize: '0.8rem'
+                        }}
+                      >
+                        Mark as Sold
+                      </Button>
+                    ) : dev.current_status === 'PENDING_SALE' ? (
+                      <Box
+                        sx={{
+                          py: 0.7,
+                          px: 1.5,
+                          textAlign: 'center',
+                          borderRadius: 2,
+                          bgcolor: 'rgba(245, 158, 11, 0.12)',
+                          color: '#D97706',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          fontWeight: 800,
+                          fontSize: '0.78rem'
+                        }}
+                      >
+                        ⏳ Pending Sale — Awaiting Admin Confirmation
+                      </Box>
+                    ) : null}
+                  </Box>
+                </Card>
+              ))
+            )}
+          </Box>
+
+          {/* 2. Desktop Table View (md+) */}
+          <TableContainer sx={{ display: { xs: 'none', md: 'block' } }}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: 'action.hover' }}>
@@ -897,7 +1051,7 @@ export default function Dashboard() {
         <Paper
           variant="outlined"
           sx={{
-            p: 2.5,
+            p: { xs: 2, sm: 2.5 },
             mb: 4,
             borderRadius: 3,
             borderColor: 'primary.main',
@@ -917,20 +1071,21 @@ export default function Dashboard() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Box
                 sx={{
-                  width: 38,
-                  height: 38,
+                  width: { xs: 34, sm: 38 },
+                  height: { xs: 34, sm: 38 },
                   borderRadius: 2,
                   bgcolor: 'primary.main',
                   color: '#fff',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  flexShrink: 0
                 }}
               >
-                <AssignmentIndIcon fontSize="small" />
+                <AssignmentIndIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
               </Box>
               <Box>
-                <Typography variant="subtitle1" fontWeight={800}>
+                <Typography variant="subtitle1" fontWeight={800} sx={{ fontSize: { xs: '0.95rem', sm: '1.05rem' } }}>
                   My Assigned Devices in Physical Custody
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -957,7 +1112,117 @@ export default function Dashboard() {
             </Box>
           </Box>
 
-          <TableContainer>
+          {/* 1. Mobile Cards View for Admin Custody (xs & sm) */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
+            {myAssignedDevices.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 3, color: 'text.secondary' }}>
+                <Typography variant="body2">No devices are currently assigned to your custody.</Typography>
+              </Box>
+            ) : (
+              myAssignedDevices
+                .filter((d) => {
+                  if (!assignedSearch) return true;
+                  const q = assignedSearch.toLowerCase();
+                  return (
+                    d.model?.toLowerCase().includes(q) ||
+                    d.imei?.toLowerCase().includes(q) ||
+                    d.serial_number?.toLowerCase().includes(q) ||
+                    d.color?.toLowerCase().includes(q)
+                  );
+                })
+                .map((dev) => (
+                  <Card
+                    key={dev.id}
+                    variant="outlined"
+                    onClick={() => {
+                      setSelectedDevice(dev);
+                      setDrawerOpen(true);
+                    }}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2.5,
+                      cursor: 'pointer',
+                      transition: 'border-color 0.2s, box-shadow 0.2s',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        boxShadow: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? '0 4px 16px rgba(0,0,0,0.3)'
+                            : '0 4px 16px rgba(0,0,0,0.06)'
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1.2 }}>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography variant="subtitle2" fontWeight={800} noWrap>
+                          {dev.model}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+                          {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
+                        </Typography>
+                      </Box>
+                      <StatusBadge status={dev.current_status} />
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1,
+                        mb: 1.2,
+                        borderRadius: 1.5,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <CopyableText text={dev.imei} />
+                      <VariantBadge variant={dev.variant} />
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 1
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                        <Typography variant="caption" fontWeight={700} color="text.secondary">
+                          Battery:
+                        </Typography>
+                        <Typography variant="caption" fontWeight={800}>
+                          {dev.battery_health ? `${dev.battery_health}%` : '—'}
+                        </Typography>
+                        {(dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ? (
+                          <Chip
+                            label={`CC ${dev.battery_cycle}`}
+                            size="small"
+                            sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                          />
+                        ) : (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '') ? (
+                          <Chip
+                            label={`CC ${dev.battery_cycles}`}
+                            size="small"
+                            sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                          />
+                        ) : null}
+                      </Box>
+
+                      <Typography variant="caption" color="text.secondary">
+                        {dev.received_date_bd || formatDate(dev.created_at)}
+                      </Typography>
+                    </Box>
+                  </Card>
+                ))
+            )}
+          </Box>
+
+          {/* 2. Desktop Table View (md+) */}
+          <TableContainer sx={{ display: { xs: 'none', md: 'block' } }}>
             <Table size="small">
               <TableHead>
                 <TableRow sx={{ bgcolor: 'action.hover' }}>

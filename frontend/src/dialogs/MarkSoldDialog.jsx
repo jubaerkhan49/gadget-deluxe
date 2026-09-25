@@ -85,27 +85,28 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
         }
       }}
     >
-      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1, pt: 2, px: 3 }}>
+      <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1, pt: 2, px: { xs: 2, sm: 3 } }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: 40,
-              height: 40,
+              width: { xs: 34, sm: 40 },
+              height: { xs: 34, sm: 40 },
               borderRadius: 2,
               bgcolor: 'rgba(16, 185, 129, 0.15)',
               color: '#10B981',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              flexShrink: 0
             }}
           >
-            <PointOfSaleIcon fontSize="medium" />
+            <PointOfSaleIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
           </Box>
           <Box>
-            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px">
+            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: { xs: '1rem', sm: '1.25rem' } }}>
               Mark Device as Sold
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.68rem', sm: '0.75rem' } }}>
               Submit sale request for Administrator review & price confirmation
             </Typography>
           </Box>
@@ -116,7 +117,7 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
       </DialogTitle>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent sx={{ px: 3, py: 1.5 }}>
+        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 1.5 }}>
           {/* Device Summary Card */}
           <Paper
             variant="outlined"
@@ -228,8 +229,24 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
           </Grid>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 2.5, pt: 1, display: 'flex', justifyContent: 'flex-end', gap: 1.5 }}>
-          <Button variant="outlined" color="inherit" onClick={onClose} disabled={loading}>
+        <DialogActions
+          sx={{
+            px: { xs: 2, sm: 3 },
+            pb: 2.5,
+            pt: 1,
+            display: 'flex',
+            flexDirection: { xs: 'column-reverse', sm: 'row' },
+            justifyContent: 'flex-end',
+            gap: 1
+          }}
+        >
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={onClose}
+            disabled={loading}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
+          >
             Cancel
           </Button>
           <Button
@@ -238,7 +255,7 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
             color="success"
             disabled={loading}
             startIcon={loading ? <CircularProgress size={16} color="inherit" /> : <PointOfSaleIcon />}
-            sx={{ px: 2.5, fontWeight: 700 }}
+            sx={{ px: 2.5, fontWeight: 700, width: { xs: '100%', sm: 'auto' } }}
           >
             {loading ? 'Submitting...' : 'Submit Sale for Approval'}
           </Button>

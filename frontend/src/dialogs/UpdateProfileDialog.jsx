@@ -89,7 +89,7 @@ export default function UpdateProfileDialog({ open, onClose }) {
         }
       }}
     >
-      <Box sx={{ position: 'relative', pt: 3.5, pb: 1, px: 3, textAlign: 'center' }}>
+      <Box sx={{ position: 'relative', pt: 3.5, pb: 1, px: { xs: 2, sm: 3 }, textAlign: 'center' }}>
         <IconButton
           onClick={onClose}
           disabled={submitting}
@@ -113,7 +113,7 @@ export default function UpdateProfileDialog({ open, onClose }) {
             {firstName ? firstName.charAt(0).toUpperCase() : user?.username?.charAt(0).toUpperCase() || 'U'}
           </Avatar>
           <Box>
-            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px">
+            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: { xs: '1.05rem', sm: '1.25rem' } }}>
               Update Profile Info
             </Typography>
             <Typography variant="caption" color="text.secondary">
@@ -130,7 +130,7 @@ export default function UpdateProfileDialog({ open, onClose }) {
       </Box>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent sx={{ px: 3, py: 2.5 }}>
+        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
           <Stack spacing={2.2}>
             {user?.role === 'EMPLOYEE' && (
               <Alert
@@ -213,12 +213,22 @@ export default function UpdateProfileDialog({ open, onClose }) {
           </Stack>
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, pb: 3, pt: 1, justifyContent: 'space-between' }}>
+        <DialogActions
+          sx={{
+            px: { xs: 2, sm: 3 },
+            pb: 3,
+            pt: 1,
+            display: 'flex',
+            flexDirection: { xs: 'column-reverse', sm: 'row' },
+            justifyContent: 'space-between',
+            gap: 1
+          }}
+        >
           <Button
             onClick={onClose}
             disabled={submitting}
             color="inherit"
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, width: { xs: '100%', sm: 'auto' } }}
           >
             Cancel
           </Button>
@@ -232,7 +242,8 @@ export default function UpdateProfileDialog({ open, onClose }) {
               px: 3,
               fontWeight: 700,
               textTransform: 'none',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+              width: { xs: '100%', sm: 'auto' }
             }}
           >
             {submitting ? 'Saving...' : 'Save Changes'}
