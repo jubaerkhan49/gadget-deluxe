@@ -305,154 +305,154 @@ export default function DeviceDetailDrawer({
                 }
               }}
             >
-            <Tab
-              icon={<OverviewIcon sx={{ fontSize: 17 }} />}
-              iconPosition="start"
-              label="Overview"
-              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-            />
-            <Tab
-              icon={<AssignmentIcon sx={{ fontSize: 17 }} />}
-              iconPosition="start"
-              label={
-                <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                  Assignments
-                  {assignments.length > 0 && (
-                    <Box
-                      component="span"
-                      sx={{
-                        ml: 0.7,
-                        minWidth: 18,
-                        height: 18,
-                        px: 0.6,
-                        borderRadius: '9px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: currentTab === 1 ? 'primary.main' : 'rgba(59, 130, 246, 0.15)',
-                        color: currentTab === 1 ? '#ffffff' : 'primary.main',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        lineHeight: 1
-                      }}
-                    >
-                      {assignments.length}
-                    </Box>
-                  )}
-                </Box>
-              }
-              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-            />
-            <Tab
-              icon={<TimelineIcon sx={{ fontSize: 17 }} />}
-              iconPosition="start"
-              label={
-                <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                  Timeline
-                  {history.length > 0 && (
-                    <Box
-                      component="span"
-                      sx={{
-                        ml: 0.7,
-                        minWidth: 18,
-                        height: 18,
-                        px: 0.6,
-                        borderRadius: '9px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: currentTab === 2 ? '#8B5CF6' : 'rgba(139, 92, 246, 0.15)',
-                        color: currentTab === 2 ? '#ffffff' : '#8B5CF6',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        lineHeight: 1
-                      }}
-                    >
-                      {history.length}
-                    </Box>
-                  )}
-                </Box>
-              }
-              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-            />
-            <Tab
-              icon={<RepairIcon sx={{ fontSize: 17 }} />}
-              iconPosition="start"
-              label={
-                <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                  Repairs
-                  {repairs.length > 0 && (
-                    <Box
-                      component="span"
-                      sx={{
-                        ml: 0.7,
-                        minWidth: 18,
-                        height: 18,
-                        px: 0.6,
-                        borderRadius: '9px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: currentTab === 3 ? '#F59E0B' : 'rgba(245, 158, 11, 0.15)',
-                        color: currentTab === 3 ? '#ffffff' : '#D97706',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        lineHeight: 1
-                      }}
-                    >
-                      {repairs.length}
-                    </Box>
-                  )}
-                </Box>
-              }
-              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-            />
-            <Tab
-              icon={<SalesIcon sx={{ fontSize: 17 }} />}
-              iconPosition="start"
-              label={
-                <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                  Sales
-                  {sales.length > 0 && (
-                    <Box
-                      component="span"
-                      sx={{
-                        ml: 0.7,
-                        minWidth: 18,
-                        height: 18,
-                        px: 0.6,
-                        borderRadius: '9px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        bgcolor: currentTab === 4 ? '#10B981' : 'rgba(16, 185, 129, 0.15)',
-                        color: currentTab === 4 ? '#ffffff' : '#10B981',
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        lineHeight: 1
-                      }}
-                    >
-                      {sales.length}
-                    </Box>
-                  )}
-                </Box>
-              }
-              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-            />
-            <Tab
-              icon={<SickwIcon sx={{ fontSize: 17 }} />}
-              iconPosition="start"
-              label="Sickw Report"
-              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-            />
-            <Tab
-              icon={<NoteIcon sx={{ fontSize: 17 }} />}
-              iconPosition="start"
-              label="Notes"
-              sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-            />
-          </Tabs>
-        </Box>
+              <Tab
+                icon={<OverviewIcon sx={{ fontSize: 17 }} />}
+                iconPosition="start"
+                label="Overview"
+                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+              />
+              <Tab
+                icon={<AssignmentIcon sx={{ fontSize: 17 }} />}
+                iconPosition="start"
+                label={
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                    Assignments
+                    {assignments.length > 0 && (
+                      <Box
+                        component="span"
+                        sx={{
+                          ml: 0.7,
+                          minWidth: 18,
+                          height: 18,
+                          px: 0.6,
+                          borderRadius: '9px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: currentTab === 1 ? 'primary.main' : 'rgba(59, 130, 246, 0.15)',
+                          color: currentTab === 1 ? '#ffffff' : 'primary.main',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          lineHeight: 1
+                        }}
+                      >
+                        {assignments.length}
+                      </Box>
+                    )}
+                  </Box>
+                }
+                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+              />
+              <Tab
+                icon={<TimelineIcon sx={{ fontSize: 17 }} />}
+                iconPosition="start"
+                label={
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                    Timeline
+                    {history.length > 0 && (
+                      <Box
+                        component="span"
+                        sx={{
+                          ml: 0.7,
+                          minWidth: 18,
+                          height: 18,
+                          px: 0.6,
+                          borderRadius: '9px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: currentTab === 2 ? '#8B5CF6' : 'rgba(139, 92, 246, 0.15)',
+                          color: currentTab === 2 ? '#ffffff' : '#8B5CF6',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          lineHeight: 1
+                        }}
+                      >
+                        {history.length}
+                      </Box>
+                    )}
+                  </Box>
+                }
+                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+              />
+              <Tab
+                icon={<RepairIcon sx={{ fontSize: 17 }} />}
+                iconPosition="start"
+                label={
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                    Repairs
+                    {repairs.length > 0 && (
+                      <Box
+                        component="span"
+                        sx={{
+                          ml: 0.7,
+                          minWidth: 18,
+                          height: 18,
+                          px: 0.6,
+                          borderRadius: '9px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: currentTab === 3 ? '#F59E0B' : 'rgba(245, 158, 11, 0.15)',
+                          color: currentTab === 3 ? '#ffffff' : '#D97706',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          lineHeight: 1
+                        }}
+                      >
+                        {repairs.length}
+                      </Box>
+                    )}
+                  </Box>
+                }
+                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+              />
+              <Tab
+                icon={<SalesIcon sx={{ fontSize: 17 }} />}
+                iconPosition="start"
+                label={
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                    Sales
+                    {sales.length > 0 && (
+                      <Box
+                        component="span"
+                        sx={{
+                          ml: 0.7,
+                          minWidth: 18,
+                          height: 18,
+                          px: 0.6,
+                          borderRadius: '9px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: currentTab === 4 ? '#10B981' : 'rgba(16, 185, 129, 0.15)',
+                          color: currentTab === 4 ? '#ffffff' : '#10B981',
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          lineHeight: 1
+                        }}
+                      >
+                        {sales.length}
+                      </Box>
+                    )}
+                  </Box>
+                }
+                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+              />
+              <Tab
+                icon={<SickwIcon sx={{ fontSize: 17 }} />}
+                iconPosition="start"
+                label="Sickw Report"
+                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+              />
+              <Tab
+                icon={<NoteIcon sx={{ fontSize: 17 }} />}
+                iconPosition="start"
+                label="Notes"
+                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+              />
+            </Tabs>
+          </Box>
         )}
 
         {/* Tab Content Panes */}
@@ -624,7 +624,7 @@ export default function DeviceDetailDrawer({
                         boxShadow: 'none'
                       }}
                     >
-                      Mark as Sold (Submit for Approval)
+                      Mark as Sold
                     </Button>
                   )}
 
