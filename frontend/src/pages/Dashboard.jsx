@@ -518,19 +518,27 @@ export default function Dashboard() {
                       <Typography variant="caption" fontWeight={800}>
                         {dev.battery_health ? `${dev.battery_health}%` : '—'}
                       </Typography>
-                      {(dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ? (
+                      {((dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ||
+                        (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '')) && (
                         <Chip
-                          label={`CC ${dev.battery_cycle}`}
+                          label={`CC ${dev.battery_cycle || dev.battery_cycles}`}
                           size="small"
-                          sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                          sx={{
+                            height: 20,
+                            fontSize: '0.68rem',
+                            fontWeight: 800,
+                            fontFamily: '"JetBrains Mono", monospace',
+                            bgcolor: (theme) =>
+                              theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+                            color: (theme) =>
+                              theme.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8',
+                            border: '1px solid',
+                            borderColor: (theme) =>
+                              theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
+                            borderRadius: 1
+                          }}
                         />
-                      ) : (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '') ? (
-                        <Chip
-                          label={`CC ${dev.battery_cycles}`}
-                          size="small"
-                          sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
-                        />
-                      ) : null}
+                      )}
                     </Box>
 
                     <Typography variant="caption" color="text.secondary">
@@ -635,37 +643,27 @@ export default function Dashboard() {
                           <Typography variant="body2" fontWeight={700}>
                             {dev.battery_health ? `${dev.battery_health}%` : '—'}
                           </Typography>
-                          {(dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ? (
+                          {((dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ||
+                            (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '')) && (
                             <Chip
-                              label={`CC ${dev.battery_cycle}`}
+                              label={`CC ${dev.battery_cycle || dev.battery_cycles}`}
                               size="small"
                               sx={{
                                 height: 20,
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
+                                fontSize: '0.68rem',
+                                fontWeight: 800,
+                                fontFamily: '"JetBrains Mono", monospace',
                                 bgcolor: (theme) =>
-                                  theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#F1F5F9',
+                                  theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
                                 color: (theme) =>
-                                  theme.palette.mode === 'dark' ? '#CBD5E1' : '#475569',
+                                  theme.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8',
+                                border: '1px solid',
+                                borderColor: (theme) =>
+                                  theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
                                 borderRadius: 1
                               }}
                             />
-                          ) : (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '') ? (
-                            <Chip
-                              label={`CC ${dev.battery_cycles}`}
-                              size="small"
-                              sx={{
-                                height: 20,
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
-                                bgcolor: (theme) =>
-                                  theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#F1F5F9',
-                                color: (theme) =>
-                                  theme.palette.mode === 'dark' ? '#CBD5E1' : '#475569',
-                                borderRadius: 1
-                              }}
-                            />
-                          ) : null}
+                          )}
                         </Box>
                       </TableCell>
                       <TableCell>
@@ -1204,19 +1202,27 @@ export default function Dashboard() {
                         <Typography variant="caption" fontWeight={800}>
                           {dev.battery_health ? `${dev.battery_health}%` : '—'}
                         </Typography>
-                        {(dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ? (
+                        {((dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ||
+                          (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '')) && (
                           <Chip
-                            label={`CC ${dev.battery_cycle}`}
+                            label={`CC ${dev.battery_cycle || dev.battery_cycles}`}
                             size="small"
-                            sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
+                            sx={{
+                              height: 20,
+                              fontSize: '0.68rem',
+                              fontWeight: 800,
+                              fontFamily: '"JetBrains Mono", monospace',
+                              bgcolor: (theme) =>
+                                theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+                              color: (theme) =>
+                                theme.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8',
+                              border: '1px solid',
+                              borderColor: (theme) =>
+                                theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
+                              borderRadius: 1
+                            }}
                           />
-                        ) : (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '') ? (
-                          <Chip
-                            label={`CC ${dev.battery_cycles}`}
-                            size="small"
-                            sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700 }}
-                          />
-                        ) : null}
+                        )}
                       </Box>
 
                       <Typography variant="caption" color="text.secondary">
@@ -1289,37 +1295,27 @@ export default function Dashboard() {
                             <Typography variant="body2" fontWeight={700}>
                               {dev.battery_health ? `${dev.battery_health}%` : '—'}
                             </Typography>
-                            {(dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ? (
+                            {((dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '') ||
+                              (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '')) && (
                               <Chip
-                                label={`CC ${dev.battery_cycle}`}
+                                label={`CC ${dev.battery_cycle || dev.battery_cycles}`}
                                 size="small"
                                 sx={{
                                   height: 20,
-                                  fontSize: '0.7rem',
-                                  fontWeight: 700,
+                                  fontSize: '0.68rem',
+                                  fontWeight: 800,
+                                  fontFamily: '"JetBrains Mono", monospace',
                                   bgcolor: (theme) =>
-                                    theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#F1F5F9',
+                                    theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
                                   color: (theme) =>
-                                    theme.palette.mode === 'dark' ? '#CBD5E1' : '#475569',
+                                    theme.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8',
+                                  border: '1px solid',
+                                  borderColor: (theme) =>
+                                    theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
                                   borderRadius: 1
                                 }}
                               />
-                            ) : (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '') ? (
-                              <Chip
-                                label={`CC ${dev.battery_cycles}`}
-                                size="small"
-                                sx={{
-                                  height: 20,
-                                  fontSize: '0.7rem',
-                                  fontWeight: 700,
-                                  bgcolor: (theme) =>
-                                    theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#F1F5F9',
-                                  color: (theme) =>
-                                    theme.palette.mode === 'dark' ? '#CBD5E1' : '#475569',
-                                  borderRadius: 1
-                                }}
-                              />
-                            ) : null}
+                            )}
                           </Box>
                         </TableCell>
                         <TableCell>

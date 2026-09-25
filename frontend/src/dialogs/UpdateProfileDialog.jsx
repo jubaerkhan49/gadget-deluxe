@@ -83,12 +83,14 @@ export default function UpdateProfileDialog({ open, onClose }) {
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 2,
-          p: 0
+          borderRadius: 2.5,
+          p: 0,
+          bgcolor: 'background.paper',
+          backgroundImage: 'none'
         }
       }}
     >
-      <Box sx={{ position: 'relative', pt: 3, pb: 0.5, px: { xs: 2, sm: 3 }, textAlign: 'center' }}>
+      <Box sx={{ position: 'relative', pt: 3, pb: 1, px: 3, textAlign: 'center' }}>
         <IconButton
           onClick={onClose}
           disabled={submitting}
@@ -101,20 +103,21 @@ export default function UpdateProfileDialog({ open, onClose }) {
         <Stack alignItems="center" spacing={1}>
           <Avatar
             sx={{
-              width: 48,
-              height: 48,
+              width: 50,
+              height: 50,
               bgcolor: 'primary.main',
-              fontSize: '1.25rem',
-              fontWeight: 800
+              fontSize: '1.3rem',
+              fontWeight: 800,
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)'
             }}
           >
             {firstName ? firstName.charAt(0).toUpperCase() : user?.username?.charAt(0).toUpperCase() || 'U'}
           </Avatar>
           <Box>
-            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: { xs: '1.05rem', sm: '1.2rem' } }}>
+            <Typography variant="h6" fontWeight={800} letterSpacing="-0.3px" sx={{ fontSize: '1.15rem' }}>
               Update Profile Info
             </Typography>
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.78rem' }}>
               Manage your personal contact details & display name
             </Typography>
           </Box>
@@ -122,13 +125,13 @@ export default function UpdateProfileDialog({ open, onClose }) {
             label={`@${user?.username || 'user'} • ${user?.role || 'Employee'}`}
             size="small"
             variant="outlined"
-            sx={{ fontWeight: 600, fontSize: '0.72rem', height: 22 }}
+            sx={{ fontWeight: 600, fontSize: '0.72rem', height: 22, mt: 0.2 }}
           />
         </Stack>
       </Box>
 
       <form onSubmit={handleSubmit}>
-        <DialogContent sx={{ px: { xs: 2, sm: 3 }, py: 2 }}>
+        <DialogContent sx={{ px: 3, py: 1.5 }}>
           <Stack spacing={2}>
             {user?.role === 'EMPLOYEE' && (
               <Alert
@@ -137,7 +140,8 @@ export default function UpdateProfileDialog({ open, onClose }) {
                 sx={{
                   borderRadius: 1.5,
                   py: 0.5,
-                  fontSize: '0.78rem',
+                  fontSize: '0.76rem',
+                  lineHeight: 1.4,
                   '& .MuiAlert-message': { py: 0.2 }
                 }}
               >
@@ -145,36 +149,37 @@ export default function UpdateProfileDialog({ open, onClose }) {
               </Alert>
             )}
 
-            <Grid container spacing={1.5}>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="First Name"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="First name"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <PersonIcon color="action" fontSize="small" />
-                      </InputAdornment>
-                    )
-                  }}
-                />
-              </Grid>
+            <TextField
+              fullWidth
+              size="small"
+              label="First Name"
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+              placeholder="First name"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <PersonIcon color="action" fontSize="small" />
+                  </InputAdornment>
+                )
+              }}
+            />
 
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  size="small"
-                  label="Last Name"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Last name"
-                />
-              </Grid>
-            </Grid>
+            <TextField
+              fullWidth
+              size="small"
+              label="Last Name"
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+              placeholder="Last name"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <BadgeIcon color="action" fontSize="small" />
+                  </InputAdornment>
+                )
+              }}
+            />
 
             <TextField
               fullWidth
@@ -213,36 +218,47 @@ export default function UpdateProfileDialog({ open, onClose }) {
 
         <DialogActions
           sx={{
-            px: { xs: 2, sm: 3 },
-            pb: { xs: 2.5, sm: 2.5 },
+            px: 3,
+            pb: 2.5,
             pt: 1.5,
             display: 'flex',
             gap: 1.5,
             borderTop: 1,
-            borderColor: 'divider'
+            borderColor: 'divider',
+            bgcolor: (theme) =>
+              theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.015)'
           }}
         >
           <Button
-            fullWidth
             variant="outlined"
             color="inherit"
             onClick={onClose}
             disabled={submitting}
-            sx={{ borderRadius: 1.5, py: 0.9, textTransform: 'none', fontWeight: 600 }}
+            sx={{
+              flex: 1,
+              height: 40,
+              borderRadius: 1.75,
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.85rem'
+            }}
           >
             Cancel
           </Button>
           <Button
-            fullWidth
             type="submit"
             variant="contained"
+            color="primary"
             disabled={submitting}
-            startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+            startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <SaveIcon sx={{ fontSize: '18px !important' }} />}
             sx={{
-              borderRadius: 1.5,
-              py: 0.9,
+              flex: 1.3,
+              height: 40,
+              borderRadius: 1.75,
               fontWeight: 700,
               textTransform: 'none',
+              fontSize: '0.82rem',
+              whiteSpace: 'nowrap',
               boxShadow: 'none'
             }}
           >
