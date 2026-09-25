@@ -147,12 +147,15 @@ export default function Landing() {
                 color="inherit"
                 size="small"
                 onClick={() => setShowApplyDialog(true)}
-                startIcon={<JoinIcon fontSize="small" />}
+                startIcon={<JoinIcon sx={{ fontSize: { xs: 16, sm: 18 } }} />}
                 sx={{
                   fontWeight: 600,
                   textTransform: 'none',
-                  fontSize: { xs: '0.78rem', sm: '0.85rem' },
-                  px: { xs: 1, sm: 1.5 }
+                  fontSize: { xs: '0.75rem', sm: '0.85rem' },
+                  px: { xs: 0.8, sm: 1.5 },
+                  py: { xs: 0.4, sm: 0.6 },
+                  minWidth: 'auto',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Join Team</Box>
@@ -160,8 +163,8 @@ export default function Landing() {
               </Button>
 
               <Tooltip title={`Switch to ${isDark ? 'Light' : 'Dark'} mode`}>
-                <IconButton onClick={colorMode.toggleColorMode} color="inherit" size="small">
-                  {isDark ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+                <IconButton onClick={colorMode.toggleColorMode} color="inherit" size="small" sx={{ p: { xs: 0.6, sm: 1 } }}>
+                  {isDark ? <LightModeIcon sx={{ fontSize: { xs: 18, sm: 20 } }} /> : <DarkModeIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />}
                 </IconButton>
               </Tooltip>
 
@@ -173,10 +176,14 @@ export default function Landing() {
                   onClick={() => navigate('/dashboard')}
                   sx={{
                     borderRadius: 2,
-                    px: { xs: 1.5, sm: 2 },
+                    px: { xs: 1.3, sm: 2 },
+                    py: { xs: 0.5, sm: 0.7 },
                     fontWeight: 700,
                     textTransform: 'none',
-                    fontSize: { xs: '0.78rem', sm: '0.85rem' }
+                    fontSize: { xs: '0.78rem', sm: '0.85rem' },
+                    whiteSpace: 'nowrap',
+                    minWidth: 'auto',
+                    lineHeight: 1.3
                   }}
                 >
                   Dashboard
@@ -187,13 +194,17 @@ export default function Landing() {
                   color="primary"
                   size="small"
                   onClick={() => navigate('/login')}
-                  startIcon={<LockIcon fontSize="small" sx={{ display: { xs: 'none', sm: 'inline-flex' } }} />}
+                  startIcon={<LockIcon sx={{ fontSize: { xs: 16, sm: 18 }, display: { xs: 'none', sm: 'inline-flex' } }} />}
                   sx={{
                     borderRadius: 2,
-                    px: { xs: 1.5, sm: 2 },
+                    px: { xs: 1.3, sm: 2 },
+                    py: { xs: 0.5, sm: 0.7 },
                     fontWeight: 700,
                     textTransform: 'none',
-                    fontSize: { xs: '0.78rem', sm: '0.85rem' }
+                    fontSize: { xs: '0.78rem', sm: '0.85rem' },
+                    whiteSpace: 'nowrap',
+                    minWidth: 'auto',
+                    lineHeight: 1.3
                   }}
                 >
                   Sign In
@@ -205,17 +216,17 @@ export default function Landing() {
       </Box>
 
       {/* 2. Minimalist Hero & Tracking Section */}
-      <Box sx={{ pt: { xs: 4, sm: 7, md: 10 }, pb: { xs: 4, sm: 6, md: 8 }, px: { xs: 2, sm: 3 } }}>
+      <Box sx={{ pt: { xs: 3.5, sm: 6, md: 9 }, pb: { xs: 3.5, sm: 5, md: 7 }, px: { xs: 2, sm: 3 } }}>
         <Container maxWidth="md">
-          <Box sx={{ textAlign: 'center', mb: { xs: 3, sm: 4 } }}>
+          <Box sx={{ textAlign: 'center', mb: { xs: 2.5, sm: 3.5 } }}>
             <Typography
               variant="h3"
               fontWeight={800}
-              letterSpacing="-0.8px"
+              letterSpacing="-0.6px"
               sx={{
-                fontSize: { xs: '1.75rem', sm: '2.5rem', md: '3.2rem' },
+                fontSize: { xs: '1.6rem', sm: '2.4rem', md: '3.1rem' },
                 lineHeight: 1.2,
-                mb: { xs: 1.5, sm: 2 }
+                mb: { xs: 1, sm: 1.5 }
               }}
             >
               Device Inventory & Supply Logistics
@@ -224,10 +235,11 @@ export default function Landing() {
               variant="body1"
               color="text.secondary"
               sx={{
-                fontSize: { xs: '0.88rem', sm: '0.98rem', md: '1.05rem' },
-                maxWidth: 620,
+                fontSize: { xs: '0.84rem', sm: '0.96rem', md: '1.05rem' },
+                maxWidth: 600,
                 mx: 'auto',
-                lineHeight: 1.6
+                lineHeight: 1.55,
+                px: { xs: 1, sm: 0 }
               }}
             >
               Real-time device tracking, Cross-border shipment pipeline from China to Bangladesh, and wholesale consignment management.
@@ -240,66 +252,74 @@ export default function Landing() {
             onSubmit={handleTrackSubmit}
             variant="outlined"
             sx={{
-              p: { xs: 1, sm: 1 },
-              borderRadius: 2.5,
+              p: { xs: 0.6, sm: 0.8 },
+              borderRadius: 3,
               display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { xs: 'stretch', sm: 'center' },
-              gap: 1,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 0.8,
               bgcolor: isDark ? '#1E293B' : '#FFFFFF',
-              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)',
-              maxWidth: 680,
+              borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)',
+              maxWidth: 600,
               mx: 'auto',
-              boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.2)' : '0 4px 20px rgba(0,0,0,0.04)'
+              boxShadow: isDark ? '0 4px 20px rgba(0,0,0,0.25)' : '0 4px 20px rgba(0,0,0,0.05)'
             }}
           >
             <TextField
               fullWidth
               size="small"
-              placeholder="Enter Order ID or Phone Number"
+              placeholder="Order ID or Phone Number"
               value={orderQuery}
               onChange={(e) => setOrderQuery(e.target.value)}
               variant="standard"
               InputProps={{
                 disableUnderline: true,
                 startAdornment: (
-                  <InputAdornment position="start" sx={{ pl: { xs: 0.5, sm: 1.5 } }}>
-                    <SearchIcon color="action" fontSize="small" />
+                  <InputAdornment position="start" sx={{ pl: { xs: 1, sm: 1.5 } }}>
+                    <SearchIcon color="action" sx={{ fontSize: { xs: 18, sm: 20 } }} />
                   </InputAdornment>
                 )
               }}
-              sx={{ px: 1, py: { xs: 0.5, sm: 0 } }}
+              sx={{
+                px: { xs: 0.5, sm: 1 },
+                '& input': {
+                  fontSize: { xs: '0.82rem', sm: '0.92rem' },
+                  py: { xs: 0.6, sm: 0.8 }
+                }
+              }}
             />
             <Button
               type="submit"
               variant="contained"
               color="primary"
-              startIcon={<ShippingIcon fontSize="small" />}
+              startIcon={<ShippingIcon sx={{ fontSize: { xs: 16, sm: 18 }, display: { xs: 'none', sm: 'inline-flex' } }} />}
               sx={{
-                borderRadius: 2,
-                px: 3,
-                py: { xs: 1.1, sm: 1 },
+                borderRadius: 2.2,
+                px: { xs: 2, sm: 3 },
+                py: { xs: 0.75, sm: 1 },
                 fontWeight: 700,
                 textTransform: 'none',
                 whiteSpace: 'nowrap',
-                width: { xs: '100%', sm: 'auto' }
+                fontSize: { xs: '0.8rem', sm: '0.88rem' },
+                flexShrink: 0
               }}
             >
-              Track Order
+              <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Track Order</Box>
+              <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Track</Box>
             </Button>
           </Paper>
         </Container>
       </Box>
 
       {/* 3. Action Cards Grid */}
-      <Box sx={{ py: { xs: 3, sm: 6 }, flexGrow: 1 }}>
+      <Box sx={{ py: { xs: 2.5, sm: 5 }, flexGrow: 1 }}>
         <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
           <Typography
             variant="overline"
             color="text.secondary"
             fontWeight={700}
             letterSpacing={1.2}
-            sx={{ display: 'block', textAlign: 'center', mb: { xs: 2.5, sm: 4 }, fontSize: { xs: '0.75rem', sm: '0.85rem' } }}
+            sx={{ display: 'block', textAlign: 'center', mb: { xs: 2, sm: 3.5 }, fontSize: { xs: '0.72rem', sm: '0.82rem' } }}
           >
             PORTAL ACCESS & OPERATIONS
           </Typography>
@@ -316,32 +336,33 @@ export default function Landing() {
                   borderRadius: 2.5,
                   bgcolor: isDark ? '#1E293B' : '#FFFFFF',
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-                  transition: 'border-color 0.2s',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    borderColor: 'primary.main'
+                    borderColor: 'primary.main',
+                    boxShadow: isDark ? '0 4px 20px rgba(59, 130, 246, 0.15)' : '0 4px 20px rgba(59, 130, 246, 0.1)'
                   }
                 }}
               >
-                <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ p: { xs: 2.2, sm: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <Box
                     sx={{
-                      width: 44,
-                      height: 44,
+                      width: { xs: 38, sm: 42 },
+                      height: { xs: 38, sm: 42 },
                       borderRadius: 2,
                       bgcolor: 'primary.main',
                       color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      mb: 2
+                      mb: 1.8
                     }}
                   >
-                    <ShippingIcon fontSize="small" />
+                    <ShippingIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />
                   </Box>
-                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                  <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.05rem' } }} gutterBottom>
                     Track Custom Order
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, flex: 1, lineHeight: 1.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                     Check live product shipment status from China to Bangladesh.
                   </Typography>
                   <Button
@@ -350,8 +371,8 @@ export default function Landing() {
                     fullWidth
                     size="small"
                     onClick={() => navigate('/track')}
-                    endIcon={<ArrowForwardIcon fontSize="small" />}
-                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                    endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, py: 0.7, fontSize: { xs: '0.8rem', sm: '0.85rem' } }}
                   >
                     Track Order
                   </Button>
@@ -370,32 +391,33 @@ export default function Landing() {
                   borderRadius: 2.5,
                   bgcolor: isDark ? '#1E293B' : '#FFFFFF',
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-                  transition: 'border-color 0.2s',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    borderColor: 'info.main'
+                    borderColor: 'info.main',
+                    boxShadow: isDark ? '0 4px 20px rgba(6, 182, 212, 0.15)' : '0 4px 20px rgba(6, 182, 212, 0.1)'
                   }
                 }}
               >
-                <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ p: { xs: 2.2, sm: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <Box
                     sx={{
-                      width: 44,
-                      height: 44,
+                      width: { xs: 38, sm: 42 },
+                      height: { xs: 38, sm: 42 },
                       borderRadius: 2,
                       bgcolor: 'info.main',
                       color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      mb: 2
+                      mb: 1.8
                     }}
                   >
-                    <JoinIcon fontSize="small" />
+                    <JoinIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />
                   </Box>
-                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                  <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.05rem' } }} gutterBottom>
                     Join as Employee
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, flex: 1, lineHeight: 1.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                     Submit an application with your credentials and National ID to join our inventory.
                   </Typography>
                   <Button
@@ -404,8 +426,8 @@ export default function Landing() {
                     fullWidth
                     size="small"
                     onClick={() => setShowApplyDialog(true)}
-                    endIcon={<ArrowForwardIcon fontSize="small" />}
-                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                    endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, py: 0.7, fontSize: { xs: '0.8rem', sm: '0.85rem' } }}
                   >
                     Apply to Join
                   </Button>
@@ -424,32 +446,33 @@ export default function Landing() {
                   borderRadius: 2.5,
                   bgcolor: isDark ? '#1E293B' : '#FFFFFF',
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-                  transition: 'border-color 0.2s',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    borderColor: 'success.main'
+                    borderColor: 'success.main',
+                    boxShadow: isDark ? '0 4px 20px rgba(16, 185, 129, 0.15)' : '0 4px 20px rgba(16, 185, 129, 0.1)'
                   }
                 }}
               >
-                <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ p: { xs: 2.2, sm: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <Box
                     sx={{
-                      width: 44,
-                      height: 44,
+                      width: { xs: 38, sm: 42 },
+                      height: { xs: 38, sm: 42 },
                       borderRadius: 2,
                       bgcolor: 'success.main',
                       color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      mb: 2
+                      mb: 1.8
                     }}
                   >
-                    <EmployeeIcon fontSize="small" />
+                    <EmployeeIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />
                   </Box>
-                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                  <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.05rem' } }} gutterBottom>
                     Staff Portal
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, flex: 1, lineHeight: 1.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                     Staff workbench to check in incoming devices, record repair updates, and manage assigned custody.
                   </Typography>
                   <Button
@@ -458,8 +481,8 @@ export default function Landing() {
                     fullWidth
                     size="small"
                     onClick={() => navigate('/login?role=employee')}
-                    endIcon={<ArrowForwardIcon fontSize="small" />}
-                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                    endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, py: 0.7, fontSize: { xs: '0.8rem', sm: '0.85rem' } }}
                   >
                     Staff Login
                   </Button>
@@ -478,32 +501,33 @@ export default function Landing() {
                   borderRadius: 2.5,
                   bgcolor: isDark ? '#1E293B' : '#FFFFFF',
                   borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)',
-                  transition: 'border-color 0.2s',
+                  transition: 'all 0.2s ease',
                   '&:hover': {
-                    borderColor: 'secondary.main'
+                    borderColor: 'secondary.main',
+                    boxShadow: isDark ? '0 4px 20px rgba(139, 92, 246, 0.15)' : '0 4px 20px rgba(139, 92, 246, 0.1)'
                   }
                 }}
               >
-                <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ p: { xs: 2.2, sm: 3 }, flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <Box
                     sx={{
-                      width: 44,
-                      height: 44,
+                      width: { xs: 38, sm: 42 },
+                      height: { xs: 38, sm: 42 },
                       borderRadius: 2,
                       bgcolor: 'secondary.main',
                       color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      mb: 2
+                      mb: 1.8
                     }}
                   >
-                    <AdminIcon fontSize="small" />
+                    <AdminIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />
                   </Box>
-                  <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                  <Typography variant="subtitle1" fontWeight={700} sx={{ fontSize: { xs: '0.95rem', sm: '1.05rem' } }} gutterBottom>
                     Admin Workspace
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, flex: 1, lineHeight: 1.5 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5, flex: 1, lineHeight: 1.5, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                     Executive dashboard for capital auditing, B2B wholesale ledgers, and team recruitment approvals.
                   </Typography>
                   <Button
@@ -512,8 +536,8 @@ export default function Landing() {
                     fullWidth
                     size="small"
                     onClick={() => navigate('/login?role=admin')}
-                    endIcon={<ArrowForwardIcon fontSize="small" />}
-                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                    endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                    sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, py: 0.7, fontSize: { xs: '0.8rem', sm: '0.85rem' } }}
                   >
                     Admin Login
                   </Button>
@@ -525,17 +549,17 @@ export default function Landing() {
       </Box>
 
       {/* 4. Minimalist System Capabilities */}
-      <Box sx={{ py: 6, borderTop: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }}>
-        <Container maxWidth="lg">
-          <Grid container spacing={4}>
+      <Box sx={{ py: { xs: 4, sm: 6 }, borderTop: 1, borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }}>
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
+          <Grid container spacing={{ xs: 3, md: 4 }}>
             <Grid item xs={12} md={4}>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <DeviceIcon color="primary" sx={{ fontSize: 28, mt: 0.5 }} />
+              <Box sx={{ display: 'flex', gap: 1.8 }}>
+                <DeviceIcon color="primary" sx={{ fontSize: 26, mt: 0.3, flexShrink: 0 }} />
                 <Box>
-                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.9rem', sm: '0.95rem' } }} gutterBottom>
                     Device Information & Sales Auditing
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                     Track Device Information, Sell Records, and Sales Auditing.
                   </Typography>
                 </Box>
@@ -543,13 +567,13 @@ export default function Landing() {
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <TimelineIcon color="primary" sx={{ fontSize: 28, mt: 0.5 }} />
+              <Box sx={{ display: 'flex', gap: 1.8 }}>
+                <TimelineIcon color="primary" sx={{ fontSize: 26, mt: 0.3, flexShrink: 0 }} />
                 <Box>
-                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.9rem', sm: '0.95rem' } }} gutterBottom>
                     9-Stage Sourcing Pipeline
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                     China purchase to Bangladesh delivery with milestone logging and customer-facing order tracking.
                   </Typography>
                 </Box>
@@ -557,13 +581,13 @@ export default function Landing() {
             </Grid>
 
             <Grid item xs={12} md={4}>
-              <Box sx={{ display: 'flex', gap: 2 }}>
-                <B2BIcon color="primary" sx={{ fontSize: 28, mt: 0.5 }} />
+              <Box sx={{ display: 'flex', gap: 1.8 }}>
+                <B2BIcon color="primary" sx={{ fontSize: 26, mt: 0.3, flexShrink: 0 }} />
                 <Box>
-                  <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                  <Typography variant="subtitle2" fontWeight={700} sx={{ fontSize: { xs: '0.9rem', sm: '0.95rem' } }} gutterBottom>
                     B2B Wholesale Ledgers
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.55, fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                     Client-safe wholesale management that keeps client inventory lots separated from personal investment capital.
                   </Typography>
                 </Box>
@@ -577,34 +601,35 @@ export default function Landing() {
       <Box
         component="footer"
         sx={{
-          py: 4,
+          py: { xs: 3, sm: 4 },
           borderTop: 1,
           borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
           bgcolor: isDark ? '#0B0F19' : '#F1F5F9'
         }}
       >
-        <Container maxWidth="lg">
+        <Container maxWidth="lg" sx={{ px: { xs: 2, sm: 3 } }}>
           <Box
             sx={{
               display: 'flex',
               flexDirection: { xs: 'column', sm: 'row' },
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: 2
+              gap: 2,
+              textAlign: { xs: 'center', sm: 'left' }
             }}
           >
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', sm: '0.85rem' } }}>
               Gadget Deluxe — Cloud Phone Inventory & Sourcing Logistics
             </Typography>
 
-            <Stack direction="row" spacing={2.5}>
-              <Button size="small" color="inherit" onClick={() => navigate('/track')} sx={{ textTransform: 'none' }}>
+            <Stack direction="row" spacing={{ xs: 1.5, sm: 2.5 }}>
+              <Button size="small" color="inherit" onClick={() => navigate('/track')} sx={{ textTransform: 'none', fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
                 Track Order
               </Button>
-              <Button size="small" color="inherit" onClick={() => setShowApplyDialog(true)} sx={{ textTransform: 'none' }}>
+              <Button size="small" color="inherit" onClick={() => setShowApplyDialog(true)} sx={{ textTransform: 'none', fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
                 Join Team
               </Button>
-              <Button size="small" color="inherit" onClick={() => navigate('/login')} sx={{ textTransform: 'none' }}>
+              <Button size="small" color="inherit" onClick={() => navigate('/login')} sx={{ textTransform: 'none', fontSize: { xs: '0.75rem', sm: '0.85rem' } }}>
                 Portal Login
               </Button>
             </Stack>
