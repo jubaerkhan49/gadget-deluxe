@@ -49,6 +49,7 @@ import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import { formatNumber } from '../utils/formatters';
 import ConfirmSaleApprovalDialog from './ConfirmSaleApprovalDialog';
+import ErrorBoundary from '../components/common/ErrorBoundary';
 
 export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated, initialTab = 0 }) {
   const { enqueueSnackbar } = useSnackbar();
@@ -369,11 +370,12 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
       </Box>
 
       <DialogContent sx={{ p: 3 }}>
-        {loading && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress size={32} />
-          </Box>
-        )}
+        <ErrorBoundary>
+          {loading && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress size={32} />
+            </Box>
+          )}
 
         {/* Tab 0: Pending Applications */}
         {!loading && tabIndex === 0 && (
@@ -1210,6 +1212,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
             )}
           </Box>
         )}
+        </ErrorBoundary>
       </DialogContent>
 
       <DialogActions sx={{ px: 3, py: 2 }}>
@@ -1260,18 +1263,20 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
       </Dialog>
 
       {/* Admin Price Confirmation & Finalize Sale Dialog */}
-      <ConfirmSaleApprovalDialog
-        open={confirmSaleModalOpen}
-        onClose={() => {
-          setConfirmSaleModalOpen(false);
-          setSelectedSaleForApproval(null);
-        }}
-        saleRequest={selectedSaleForApproval}
-        onApproved={() => {
-          fetchSaleRequests();
-          if (onEmployeeUpdated) onEmployeeUpdated();
-        }}
-      />
+      {confirmSaleModalOpen && Boolean(selectedSaleForApproval) && (
+        <ConfirmSaleApprovalDialog
+          open={confirmSaleModalOpen}
+          onClose={() => {
+            setConfirmSaleModalOpen(false);
+            setSelectedSaleForApproval(null);
+          }}
+          saleRequest={selectedSaleForApproval}
+          onApproved={() => {
+            fetchSaleRequests();
+            if (onEmployeeUpdated) onEmployeeUpdated();
+          }}
+        />
+      )}
     </Dialog>
   );
 }
