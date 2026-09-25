@@ -78,7 +78,8 @@ export default function DeviceDetailDrawer({
   device,
   onDeviceUpdated,
   onEditRequested,
-  onDeviceDeleted
+  onDeviceDeleted,
+  onMarkSoldRequested
 }) {
   const { enqueueSnackbar } = useSnackbar();
   const { isAdmin, user: authUser } = useAuth();
@@ -580,9 +581,12 @@ export default function DeviceDetailDrawer({
                       theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC'
                   }}
                 >
-                  <Typography variant="subtitle2" color="primary" fontWeight={700} gutterBottom sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                    Custody & Assignment
-                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="subtitle2" color="primary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                      Custody & Assignment
+                    </Typography>
+                    <StatusBadge status={device.current_status} />
+                  </Box>
                   <Grid container spacing={2} sx={{ mt: 0.5 }}>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">Assigned To</Typography>
@@ -597,6 +601,28 @@ export default function DeviceDetailDrawer({
                       </Typography>
                     </Grid>
                   </Grid>
+
+                  {device.current_status === 'IN_STOCK' && (
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="success"
+                      startIcon={<SalesIcon />}
+                      onClick={() => {
+                        onClose();
+                        if (onMarkSoldRequested) onMarkSoldRequested(device);
+                      }}
+                      sx={{ mt: 2.5, fontWeight: 700, borderRadius: 2, py: 1 }}
+                    >
+                      Mark as Sold (Submit for Approval)
+                    </Button>
+                  )}
+
+                  {device.current_status === 'PENDING_SALE' && (
+                    <Alert severity="warning" sx={{ mt: 2, borderRadius: 2 }}>
+                      <strong>Pending Sale Approval:</strong> A sale request for this device is awaiting Admin pricing review and confirmation.
+                    </Alert>
+                  )}
                 </Paper>
               )}
 

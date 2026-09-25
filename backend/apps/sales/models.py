@@ -59,3 +59,44 @@ class Sale(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"Invoice {self.invoice_number} - Device: {self.device.imei} (BDT {self.selling_price})"
+
+
+class DeviceSaleRequest(TimeStampedModel):
+    """Stores device sale confirmation requests submitted by employees awaiting administrator review and pricing approval."""
+    class Status(models.TextChoices):
+        PENDING = 'PENDING', 'Pending'
+        APPROVED = 'APPROVED', 'Approved'
+        REJECTED = 'REJECTED', 'Rejected'
+
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='sale_requests')
+    employee = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='submitted_sale_requests')
+
+    customer_name = models.CharField(max_length=150, blank=True, null=True)
+    customer_phone = models.CharField(max_length=50, blank=True, null=True)
+    proposed_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True, help_text="Proposed or expected selling price in BDT")
+    payment_method = models.CharField(max_length=20, default='CASH')
+    notes = models.TextField(blank=True, null=True)
+
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        db_index=True
+    )
+    confirmed_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True, help_text="Admin confirmed selling price in BDT")
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_sale_requests'
+    )
+    sale = models.ForeignKey(Sale, on_delete=models.SET_NULL, null=True, blank=True, related_name='source_request')
+    review_notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        return f"Sale Request for {self.device.imei} by @{self.employee.username} ({self.get_status_display()})"
+

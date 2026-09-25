@@ -17,7 +17,7 @@ from apps.accounts.models import User, EmployeeApplication, EmployeeProfileUpdat
 from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory, DeviceAssignment
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
-from apps.sales.models import Sale
+from apps.sales.models import Sale, DeviceSaleRequest
 from apps.repairs.models import Repair, RepairStatus
 from apps.sickw.models import SickwReport
 from apps.sickw.parser import SickwParser
@@ -28,7 +28,7 @@ from .serializers import (
     UserSerializer, DeviceSerializer, ShipmentSerializer, SupplierSerializer,
     CustomerSerializer, SaleSerializer, RepairSerializer, SickwReportSerializer,
     OtherGoodsOrderSerializer, PublicOrderTrackingSerializer, EmployeeApplicationSerializer,
-    EmployeeProfileUpdateRequestSerializer
+    EmployeeProfileUpdateRequestSerializer, DeviceSaleRequestSerializer
 )
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -409,6 +409,145 @@ class EmployeeProfileUpdateRequestViewSet(viewsets.ModelViewSet):
         })
 
 
+class DeviceSaleRequestViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for managing employee device sale requests.
+    Employees see only their own requests.
+    Admins can view pending requests, confirm the sold amount, approve (creating Sale record & marking device SOLD), or reject.
+    """
+    serializer_class = DeviceSaleRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'device']
+    search_fields = ['device__imei', 'device__model', 'employee__username', 'customer_name', 'customer_phone']
+    ordering_fields = ['created_at', 'status']
+
+    def get_queryset(self):
+        user = self.request.user
+        is_admin = user.role in [User.Role.ADMIN, User.Role.MANAGER] or user.is_superuser or user.username.lower() in ['jubaer', 'admin']
+        if is_admin:
+            return DeviceSaleRequest.objects.all().select_related('device', 'employee', 'reviewed_by', 'sale').order_by('-created_at')
+        return DeviceSaleRequest.objects.filter(employee=user).select_related('device', 'employee', 'reviewed_by', 'sale').order_by('-created_at')
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """
+        Admin confirms the sold amount and approves the sale.
+        Creates official Sale record, marks device as SOLD, and closes device custody.
+        """
+        if not (request.user.role in [User.Role.ADMIN, User.Role.MANAGER] or request.user.is_superuser or request.user.username.lower() in ['jubaer', 'admin']):
+            return Response({"error": "Only administrators can approve device sale requests."}, status=status.HTTP_403_FORBIDDEN)
+
+        sale_req = self.get_object()
+        if sale_req.status == DeviceSaleRequest.Status.APPROVED:
+            return Response({"error": "This sale request has already been approved."}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data
+        selling_price_raw = data.get('selling_price') or data.get('confirmed_price') or sale_req.proposed_price
+        if not selling_price_raw:
+            return Response({"error": "Please enter the confirmed Sold Amount (Selling Price)."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            selling_price = Decimal(str(selling_price_raw))
+        except Exception:
+            return Response({"error": "Invalid sold amount format."}, status=status.HTTP_400_BAD_REQUEST)
+
+        customer_name = (data.get('customer_name') or sale_req.customer_name or '').strip()
+        customer_phone = (data.get('customer_phone') or sale_req.customer_phone or '').strip()
+        payment_method = data.get('payment_method') or sale_req.payment_method or 'CASH'
+        commission_amount = Decimal(str(data.get('commission_amount', '0.00') or '0.00'))
+        discount = Decimal(str(data.get('discount', '0.00') or '0.00'))
+        notes = data.get('notes') or sale_req.notes
+
+        customer = None
+        if customer_name or customer_phone:
+            if customer_phone:
+                customer, _ = Customer.objects.get_or_create(
+                    phone=customer_phone,
+                    defaults={'name': customer_name or f"Customer {customer_phone}"}
+                )
+            elif customer_name:
+                customer = Customer.objects.create(name=customer_name)
+
+        device = sale_req.device
+        invoice_number = f"INV-{uuid.uuid4().hex[:8].upper()}"
+
+        sale = Sale.objects.create(
+            device=device,
+            seller=sale_req.employee,
+            customer=customer,
+            buying_price=device.buying_price or Decimal('0.00'),
+            selling_price=selling_price,
+            discount=discount,
+            commission_amount=commission_amount,
+            payment_method=payment_method,
+            payment_status='PAID',
+            invoice_number=invoice_number,
+            notes=notes
+        )
+
+        # Update Device status to SOLD
+        device.current_status = DeviceStatus.SOLD
+        device.save()
+
+        # Update sale_req
+        sale_req.status = DeviceSaleRequest.Status.APPROVED
+        sale_req.confirmed_price = selling_price
+        sale_req.reviewed_by = request.user
+        sale_req.sale = sale
+        sale_req.review_notes = data.get('review_notes', 'Confirmed and approved by administrator.')
+        sale_req.save()
+
+        # Log history
+        DeviceHistory.objects.create(
+            device=device,
+            user=request.user,
+            action_type='STATUS_UPDATE',
+            old_state='Pending Sale',
+            new_state=f"Sale confirmed by @{request.user.username}. Sold by @{sale_req.employee.username} for BDT {selling_price} (Invoice #{invoice_number})."
+        )
+
+        return Response({
+            "success": True,
+            "message": f"Sale for {device.model} confirmed for BDT {selling_price}! Device is now marked as Sold.",
+            "sale": SaleSerializer(sale).data,
+            "sale_request": DeviceSaleRequestSerializer(sale_req).data
+        })
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """
+        Rejects sale request and returns device to IN_STOCK.
+        """
+        if not (request.user.role in [User.Role.ADMIN, User.Role.MANAGER] or request.user.is_superuser or request.user.username.lower() in ['jubaer', 'admin']):
+            return Response({"error": "Only administrators can reject device sale requests."}, status=status.HTTP_403_FORBIDDEN)
+
+        sale_req = self.get_object()
+        device = sale_req.device
+
+        sale_req.status = DeviceSaleRequest.Status.REJECTED
+        sale_req.reviewed_by = request.user
+        sale_req.review_notes = request.data.get('review_notes', 'Sale request rejected by administrator.')
+        sale_req.save()
+
+        device.current_status = DeviceStatus.IN_STOCK
+        device.save()
+
+        DeviceHistory.objects.create(
+            device=device,
+            user=request.user,
+            action_type='STATUS_UPDATE',
+            old_state='Pending Sale',
+            new_state=f"Sale request rejected by @{request.user.username}. Returned to In Stock."
+        )
+
+        return Response({
+            "success": True,
+            "message": f"Sale request for {device.imei} rejected. Device returned to In Stock.",
+            "sale_request": DeviceSaleRequestSerializer(sale_req).data
+        })
+
+
 class DeviceViewSet(viewsets.ModelViewSet):
     """
     API endpoint for managing device inventory.
@@ -448,6 +587,72 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(device)
         return Response({"found": True, "device": serializer.data})
+
+    @action(detail=True, methods=['post'], url_path='request-sale')
+    def request_sale(self, request, pk=None):
+        """
+        Allows currently assigned employee (or admin) to mark a device as sold and submit it for Admin price confirmation & approval.
+        """
+        device = self.get_object()
+        user = request.user
+
+        # Ensure non-admin user actually owns or is assigned this device
+        is_admin = user.role in [User.Role.ADMIN, User.Role.MANAGER] or user.is_superuser or user.username.lower() in ['jubaer', 'admin']
+        if not is_admin and device.current_owner != user:
+            return Response(
+                {"error": "You can only submit sale requests for devices currently in your assigned custody."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        if device.current_status == DeviceStatus.SOLD:
+            return Response(
+                {"error": "This device has already been marked as Sold."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if device.current_status == DeviceStatus.PENDING_SALE:
+            return Response(
+                {"error": "A sale approval request is already pending for this device."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        data = request.data
+        customer_name = data.get('customer_name', '').strip()
+        customer_phone = data.get('customer_phone', '').strip()
+        proposed_price = data.get('proposed_price')
+        payment_method = data.get('payment_method', 'CASH')
+        notes = data.get('notes', '').strip()
+
+        # Create DeviceSaleRequest
+        sale_req = DeviceSaleRequest.objects.create(
+            device=device,
+            employee=user,
+            customer_name=customer_name or None,
+            customer_phone=customer_phone or None,
+            proposed_price=Decimal(str(proposed_price)) if proposed_price else None,
+            payment_method=payment_method,
+            notes=notes or None,
+            status=DeviceSaleRequest.Status.PENDING
+        )
+
+        device.current_status = DeviceStatus.PENDING_SALE
+        device.save()
+
+        # Log history
+        DeviceHistory.objects.create(
+            device=device,
+            user=user,
+            action_type='STATUS_UPDATE',
+            old_state='In Stock',
+            new_state=f"Marked as sold by @{user.username}. Awaiting admin price confirmation and approval."
+        )
+
+        return Response({
+            "success": True,
+            "message": "Device marked as sold! Sent to Administrator for price confirmation and approval.",
+            "sale_request": DeviceSaleRequestSerializer(sale_req).data,
+            "device": DeviceSerializer(device, context={'request': request}).data
+        })
 
     def perform_create(self, serializer):
         device = serializer.save()
@@ -643,6 +848,70 @@ class DeviceViewSet(viewsets.ModelViewSet):
                             )
             except Exception:
                 pass
+
+    @action(detail=True, methods=['post'], url_path='request-sale')
+    def request_sale(self, request, pk=None):
+        """
+        Employee action: Marks device as PENDING_SALE and submits a sale request for Admin approval.
+        """
+        device = self.get_object()
+        user = request.user
+
+        # Validation: Check if device is in valid status to be sold
+        if device.current_status == DeviceStatus.SOLD:
+            return Response({"error": "Device is already marked as Sold."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if already pending sale
+        existing_pending = DeviceSaleRequest.objects.filter(device=device, status=DeviceSaleRequest.Status.PENDING).first()
+        if existing_pending:
+            return Response({"error": "A sale approval request is already pending for this device."}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = request.data
+        proposed_price_raw = data.get('proposed_price') or data.get('selling_price')
+        proposed_price = None
+        if proposed_price_raw is not None and str(proposed_price_raw).strip() != '':
+            try:
+                proposed_price = Decimal(str(proposed_price_raw))
+            except Exception:
+                proposed_price = None
+
+        customer_name = (data.get('customer_name') or '').strip()
+        customer_phone = (data.get('customer_phone') or '').strip()
+        payment_method = (data.get('payment_method') or 'CASH').upper()
+        notes = (data.get('notes') or '').strip()
+
+        # Update device current_status to PENDING_SALE
+        old_status = device.current_status
+        device.current_status = DeviceStatus.PENDING_SALE
+        device.save(update_fields=['current_status', 'updated_at'])
+
+        # Create DeviceSaleRequest
+        sale_req = DeviceSaleRequest.objects.create(
+            device=device,
+            employee=user,
+            customer_name=customer_name or None,
+            customer_phone=customer_phone or None,
+            proposed_price=proposed_price,
+            payment_method=payment_method,
+            notes=notes or None,
+            status=DeviceSaleRequest.Status.PENDING
+        )
+
+        price_str = f" (Proposed: BDT {proposed_price})" if proposed_price else ""
+        DeviceHistory.objects.create(
+            device=device,
+            user=user,
+            action_type='STATUS_UPDATE',
+            old_state=dict(DeviceStatus.choices).get(old_status, old_status),
+            new_state=f"Marked as Pending Sale by @{user.username}{price_str}. Awaiting Admin Approval."
+        )
+
+        return Response({
+            "success": True,
+            "message": "Sale approval request submitted! Device status updated to Pending Sale.",
+            "device": DeviceSerializer(device).data,
+            "sale_request": DeviceSaleRequestSerializer(sale_req).data
+        }, status=status.HTTP_201_CREATED)
 
 class ShipmentViewSet(viewsets.ModelViewSet):
     queryset = Shipment.objects.select_related('supplier').prefetch_related('devices').all()
@@ -1094,9 +1363,13 @@ class DashboardStatsAPIView(APIView):
             ).count()
 
         pending_applications_count = 0
+        pending_sale_requests_count = 0
         if request.user.is_authenticated and (request.user.role in [User.Role.ADMIN, User.Role.MANAGER] or request.user.is_superuser):
             pending_applications_count = EmployeeApplication.objects.filter(
                 status=EmployeeApplication.Status.PENDING
+            ).count()
+            pending_sale_requests_count = DeviceSaleRequest.objects.filter(
+                status=DeviceSaleRequest.Status.PENDING
             ).count()
 
         return Response({
@@ -1117,6 +1390,7 @@ class DashboardStatsAPIView(APIView):
             'others_owned': others_owned_count,
             'my_assigned_count': my_assigned_count,
             'pending_applications_count': pending_applications_count,
+            'pending_sale_requests_count': pending_sale_requests_count,
             'username': request.user.username if request.user.is_authenticated else ''
         })
 

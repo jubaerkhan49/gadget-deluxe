@@ -60,6 +60,14 @@ export const deviceApi = {
   delete: (id) => api.delete(`/api/devices/${id}/`),
   scan: (code) => api.get(`/api/devices/scan/`, { params: { code } }),
   exportCSV: (params) => api.get('/api/devices/export-csv/', { params, responseType: 'blob' }),
+  requestSale: (id, data) => api.post(`/api/devices/${id}/request-sale/`, data),
+};
+
+export const deviceSaleRequestApi = {
+  getAll: (params) => api.get('/api/device-sale-requests/', { params }),
+  getById: (id) => api.get(`/api/device-sale-requests/${id}/`),
+  approve: (id, data) => api.post(`/api/device-sale-requests/${id}/approve/`, data),
+  reject: (id, data) => api.post(`/api/device-sale-requests/${id}/reject/`, data),
 };
 
 export const shipmentApi = {

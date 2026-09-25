@@ -3,7 +3,7 @@ from apps.accounts.models import User, EmployeeApplication, EmployeeProfileUpdat
 from apps.inventory.models import Device, DeviceAssignment, DeviceHistory, Photo, Note, CarrierInformation, Warranty
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
-from apps.sales.models import Sale
+from apps.sales.models import Sale, DeviceSaleRequest
 from apps.repairs.models import Repair
 from apps.sickw.models import SickwReport
 from apps.orders.models import OtherGoodsOrder
@@ -98,6 +98,32 @@ class SaleSerializer(serializers.ModelSerializer):
 
     def get_final_price(self, obj):
         return float(obj.selling_price or 0)
+
+
+class DeviceSaleRequestSerializer(serializers.ModelSerializer):
+    device_imei = serializers.CharField(source='device.imei', read_only=True)
+    device_model = serializers.CharField(source='device.model', read_only=True)
+    device_capacity = serializers.CharField(source='device.capacity', read_only=True)
+    device_color = serializers.CharField(source='device.color', read_only=True)
+    device_variant = serializers.CharField(source='device.variant', read_only=True)
+    device_battery_health = serializers.IntegerField(source='device.battery_health', read_only=True)
+    device_battery_cycle = serializers.IntegerField(source='device.battery_cycle', read_only=True)
+    device_buying_price = serializers.DecimalField(source='device.buying_price', max_digits=12, decimal_places=2, read_only=True)
+    employee_username = serializers.CharField(source='employee.username', read_only=True)
+    employee_name = serializers.SerializerMethodField()
+    reviewed_by_username = serializers.CharField(source='reviewed_by.username', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+    class Meta:
+        model = DeviceSaleRequest
+        fields = '__all__'
+
+    def get_employee_name(self, obj):
+        if obj.employee:
+            full = f"{obj.employee.first_name} {obj.employee.last_name}".strip()
+            return full if full else obj.employee.username
+        return "Unknown"
+
 
 class RepairSerializer(serializers.ModelSerializer):
     device_imei = serializers.CharField(source='device.imei', read_only=True)

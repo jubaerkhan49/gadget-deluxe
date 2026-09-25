@@ -9,6 +9,7 @@ class DeviceStatus(models.TextChoices):
     IN_STOCK = 'IN_STOCK', 'In Stock'
     ASSIGNED = 'ASSIGNED', 'Assigned'
     UNDER_REPAIR = 'UNDER_REPAIR', 'Under Repair'
+    PENDING_SALE = 'PENDING_SALE', 'Pending Sale'
     SOLD = 'SOLD', 'Sold'
     RETURNED = 'RETURNED', 'Returned'
     LOST = 'LOST', 'Lost'

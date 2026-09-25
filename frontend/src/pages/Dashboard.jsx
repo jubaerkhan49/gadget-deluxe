@@ -57,6 +57,7 @@ import RecordSaleDialog from '../dialogs/RecordSaleDialog';
 import DeviceDetailDrawer from '../dialogs/DeviceDetailDrawer';
 import EditDeviceDialog from '../dialogs/EditDeviceDialog';
 import ManageEmployeesDialog from '../dialogs/ManageEmployeesDialog';
+import MarkSoldDialog from '../dialogs/MarkSoldDialog';
 import { formatNumber, formatDate } from '../utils/formatters';
 
 export default function Dashboard() {
@@ -80,6 +81,9 @@ export default function Dashboard() {
   const [editDevice, setEditDevice] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [manageEmployeesOpen, setManageEmployeesOpen] = useState(false);
+  const [manageEmployeesTab, setManageEmployeesTab] = useState(0);
+  const [markSoldOpen, setMarkSoldOpen] = useState(false);
+  const [markSoldDevice, setMarkSoldDevice] = useState(null);
 
   // Quick Scan/Search bar
   const [scanCode, setScanCode] = useState('');
@@ -183,8 +187,8 @@ export default function Dashboard() {
       performanceValue === 'Good'
         ? "You're doing great. Please keep it up!"
         : performanceValue === 'Average'
-        ? "Need to put in more effort"
-        : "Hey! Please wake up! Post ASAP"
+          ? "Need to put in more effort"
+          : "Hey! Please wake up! Post ASAP"
     );
 
     const employeeMetricCards = [
@@ -425,17 +429,18 @@ export default function Dashboard() {
               <TableHead>
                 <TableRow sx={{ bgcolor: 'action.hover' }}>
                   <TableCell sx={{ fontWeight: 700 }}>Model</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>IMEI Number</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Current Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Assigned Date</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Action</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {filteredAssigned.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4, color: 'text.secondary' }}>
+                    <TableCell colSpan={7} align="center" sx={{ py: 4, color: 'text.secondary' }}>
                       No devices are currently assigned to your custody.
                     </TableCell>
                   </TableRow>
@@ -510,6 +515,49 @@ export default function Dashboard() {
                           {formatDate(dev.assigned_date || dev.received_date_bd || dev.created_at)}
                         </Typography>
                       </TableCell>
+                      <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                        {dev.current_status === 'IN_STOCK' ? (
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            startIcon={<SaleIcon sx={{ fontSize: '15px !important' }} />}
+                            onClick={() => {
+                              setMarkSoldDevice(dev);
+                              setMarkSoldOpen(true);
+                            }}
+                            sx={{
+                              fontSize: '0.72rem',
+                              py: 0.4,
+                              px: 1.2,
+                              fontWeight: 700,
+                              borderRadius: 1.5,
+                              textTransform: 'none',
+                              boxShadow: 'none',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            Mark as Sold
+                          </Button>
+                        ) : dev.current_status === 'PENDING_SALE' ? (
+                          <Chip
+                            label="Pending Sale"
+                            size="small"
+                            sx={{
+                              height: 24,
+                              fontSize: '0.72rem',
+                              fontWeight: 800,
+                              bgcolor: 'rgba(245, 158, 11, 0.15)',
+                              color: '#D97706',
+                              border: '1px solid rgba(245, 158, 11, 0.3)'
+                            }}
+                          />
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            —
+                          </Typography>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -526,6 +574,20 @@ export default function Dashboard() {
           }}
           device={selectedDevice}
           onDeviceUpdated={() => fetchDashboardData()}
+          onMarkSoldRequested={(dev) => {
+            setMarkSoldDevice(dev);
+            setMarkSoldOpen(true);
+          }}
+        />
+
+        <MarkSoldDialog
+          open={markSoldOpen}
+          onClose={() => {
+            setMarkSoldOpen(false);
+            setMarkSoldDevice(null);
+          }}
+          device={markSoldDevice}
+          onSubmitted={() => fetchDashboardData()}
         />
       </Box>
     );
@@ -597,6 +659,45 @@ export default function Dashboard() {
 
   return (
     <Box sx={{ pb: 4 }}>
+      {/* Pending Sale Requests Alert Banner for Admins */}
+      {stats?.pending_sale_requests_count > 0 && (
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            mb: 2.5,
+            borderRadius: 2.5,
+            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.15)' : '#FFFBEB'),
+            borderColor: 'warning.main',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 2
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <SaleIcon sx={{ color: '#F59E0B' }} />
+            <Typography variant="body2" fontWeight={600}>
+              <strong>{stats.pending_sale_requests_count} device sale request(s)</strong> submitted by staff awaiting sold price confirmation & approval.
+            </Typography>
+          </Box>
+          <Button
+            variant="contained"
+            color="warning"
+            size="small"
+            startIcon={<SaleIcon />}
+            onClick={() => {
+              setManageEmployeesTab(2);
+              setManageEmployeesOpen(true);
+            }}
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2, bgcolor: '#F59E0B', color: '#FFF' }}
+          >
+            Review Sale Requests
+          </Button>
+        </Paper>
+      )}
+
       {/* Pending Applications Alert Banner for Admins */}
       {stats?.pending_applications_count > 0 && (
         <Paper
@@ -625,7 +726,10 @@ export default function Dashboard() {
             color="error"
             size="small"
             startIcon={<PeopleIcon />}
-            onClick={() => setManageEmployeesOpen(true)}
+            onClick={() => {
+              setManageEmployeesTab(0);
+              setManageEmployeesOpen(true);
+            }}
             sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
           >
             Review Applications
@@ -662,7 +766,7 @@ export default function Dashboard() {
           <TextField
             fullWidth
             size="small"
-            placeholder="Scan or Enter IMEI / Serial..."
+            placeholder="Scan or Enter IMEI Number..."
             value={scanCode}
             onChange={(e) => setScanCode(e.target.value)}
             InputProps={{
@@ -858,9 +962,9 @@ export default function Dashboard() {
               <TableHead>
                 <TableRow sx={{ bgcolor: 'action.hover' }}>
                   <TableCell sx={{ fontWeight: 700 }}>Model</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>IMEI Number</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Battery Health & CC</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Current Status</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Received Date</TableCell>
                 </TableRow>
@@ -1189,6 +1293,7 @@ export default function Dashboard() {
         open={manageEmployeesOpen}
         onClose={() => setManageEmployeesOpen(false)}
         onEmployeeUpdated={() => fetchDashboardData()}
+        initialTab={manageEmployeesTab}
       />
     </Box>
   );

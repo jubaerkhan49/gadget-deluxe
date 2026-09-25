@@ -3,6 +3,7 @@ import { Chip } from '@mui/material';
 
 const STATUS_CONFIG = {
   IN_STOCK: { label: 'In Stock', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' },
+  PENDING_SALE: { label: 'Pending Sale', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.18)' },
   WAITING_SHIPMENT: { label: 'Waiting Shipment', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
   UNDER_REPAIR: { label: 'Under Repair', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
   SOLD: { label: 'Sold', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)' },
