@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { apiCache } from '../utils/apiCache';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '';
 
@@ -21,9 +22,47 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: Handle 401 token refresh or logout
+// Response interceptor: Handle 401 token refresh or logout & auto-invalidate cache on mutations
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    const method = response.config?.method?.toLowerCase();
+    const url = response.config?.url || '';
+
+    // Automatically invalidate stale caches when any mutation succeeds
+    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+      if (url.includes('/api/devices') || url.includes('/api/device-sale-requests')) {
+        apiCache.invalidate('/api/devices');
+        apiCache.invalidate('/api/dashboard');
+        apiCache.invalidate('/api/analytics');
+        apiCache.invalidate('/api/b2b');
+      } else if (url.includes('/api/sales')) {
+        apiCache.invalidate('/api/sales');
+        apiCache.invalidate('/api/dashboard');
+        apiCache.invalidate('/api/analytics');
+        apiCache.invalidate('/api/devices');
+      } else if (url.includes('/api/shipments')) {
+        apiCache.invalidate('/api/shipments');
+        apiCache.invalidate('/api/devices');
+        apiCache.invalidate('/api/dashboard');
+        apiCache.invalidate('/api/analytics');
+      } else if (url.includes('/api/repairs')) {
+        apiCache.invalidate('/api/repairs');
+        apiCache.invalidate('/api/devices');
+        apiCache.invalidate('/api/dashboard');
+      } else if (url.includes('/api/other-goods')) {
+        apiCache.invalidate('/api/other-goods');
+        apiCache.invalidate('/api/dashboard');
+      } else if (url.includes('/api/b2b')) {
+        apiCache.invalidate('/api/b2b');
+        apiCache.invalidate('/api/devices');
+      } else if (url.includes('/api/users') || url.includes('/api/employee-applications')) {
+        apiCache.invalidate('/api/users');
+        apiCache.invalidate('/api/employee-applications');
+        apiCache.invalidate('/api/dashboard');
+      }
+    }
+    return response;
+  },
   async (error) => {
     const originalRequest = error.config;
     if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url?.includes('api/token/')) {

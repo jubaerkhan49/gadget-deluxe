@@ -34,6 +34,7 @@ import {
 import { formatNumber, formatDate } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
 import { saleApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import CopyableText from '../components/common/CopyableText';
 import VariantBadge from '../components/common/VariantBadge';
 import RecordSaleDialog from '../dialogs/RecordSaleDialog';
@@ -41,8 +42,10 @@ import RecordSaleDialog from '../dialogs/RecordSaleDialog';
 export default function Sales() {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [sales, setSales] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedSales = apiCache.get('/api/sales/');
+
+  const [sales, setSales] = useState(() => cachedSales?.results || cachedSales || []);
+  const [loading, setLoading] = useState(() => !cachedSales);
   const [searchQuery, setSearchQuery] = useState('');
   const [recordSaleOpen, setRecordSaleOpen] = useState(false);
 
@@ -51,17 +54,21 @@ export default function Sales() {
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
   useEffect(() => {
-    fetchSales();
+    fetchSales(Boolean(cachedSales));
   }, []);
 
-  const fetchSales = async () => {
+  const fetchSales = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await saleApi.getAll();
-      setSales(res.data.results || res.data || []);
+      const freshSales = res.data.results || res.data || [];
+      apiCache.set('/api/sales/', freshSales);
+      setSales(freshSales);
     } catch (err) {
       console.error(err);
-      enqueueSnackbar('Failed to load sales history', { variant: 'error' });
+      if (!silent) {
+        enqueueSnackbar('Failed to load sales history', { variant: 'error' });
+      }
     } finally {
       setLoading(false);
     }

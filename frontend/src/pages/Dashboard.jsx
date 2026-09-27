@@ -59,17 +59,53 @@ import EditDeviceDialog from '../dialogs/EditDeviceDialog';
 import ManageEmployeesDialog from '../dialogs/ManageEmployeesDialog';
 import MarkSoldDialog from '../dialogs/MarkSoldDialog';
 import { formatNumber, formatDate } from '../utils/formatters';
+import { apiCache } from '../utils/apiCache';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { enqueueSnackbar } = useSnackbar();
   const { user, isAdmin } = useAuth();
 
-  const [stats, setStats] = useState(null);
-  const [recentDevices, setRecentDevices] = useState([]);
-  const [myAssignedDevices, setMyAssignedDevices] = useState([]);
-  const [recentSales, setRecentSales] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedStats = apiCache.get('/api/dashboard/stats/');
+  const cachedDevices = apiCache.get('/api/devices/');
+  const cachedSales = apiCache.get('/api/sales/');
+
+  const [stats, setStats] = useState(() => cachedStats || null);
+  const [recentDevices, setRecentDevices] = useState(() => {
+    const all = cachedDevices?.results || cachedDevices || [];
+    return all.slice(0, 6);
+  });
+  const [myAssignedDevices, setMyAssignedDevices] = useState(() => {
+    const all = cachedDevices?.results || cachedDevices || [];
+    const active = all.filter((d) => d.current_status !== 'SOLD');
+    const my = active.filter((d) => {
+      if (!d.current_owner) return false;
+      if (typeof d.current_owner === 'object') {
+        return d.current_owner.id === user?.id || d.current_owner.username === user?.username;
+      }
+      return d.current_owner === user?.id || d.current_owner === user?.username;
+    });
+    const target = my.length > 0 ? my : active;
+    const getTs = (d) => {
+      const raw = d.received_date_bd || d.assigned_date || d.created_at;
+      if (!raw) return 0;
+      const t = new Date(raw).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+    return [...target].sort((a, b) => {
+      const diff = getTs(b) - getTs(a);
+      if (diff !== 0) return diff;
+      const createdA = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
+      if (createdB !== createdA) return createdB - createdA;
+      return (b.id || 0) - (a.id || 0);
+    });
+  });
+  const [recentSales, setRecentSales] = useState(() => {
+    const all = cachedSales?.results || cachedSales || [];
+    return all.slice(0, 5);
+  });
+  const [loading, setLoading] = useState(() => !cachedStats);
   const [assignedSearch, setAssignedSearch] = useState('');
 
   // Modals & Drawers state
@@ -90,23 +126,32 @@ export default function Dashboard() {
   const [scanning, setScanning] = useState(false);
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardData(Boolean(cachedStats));
   }, []);
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const [statsRes, devsRes, salesRes] = await Promise.all([
         dashboardApi.getStats(),
         deviceApi.getAll(),
         saleApi.getAll()
       ]);
-      setStats(statsRes.data);
-      const allDevs = devsRes.data.results || devsRes.data || [];
-      setRecentDevices(allDevs.slice(0, 6));
+
+      const freshStats = statsRes.data;
+      const freshDevs = devsRes.data.results || devsRes.data || [];
+      const freshSales = salesRes.data.results || salesRes.data || [];
+
+      // Save to cache
+      apiCache.set('/api/dashboard/stats/', freshStats);
+      apiCache.set('/api/devices/', freshDevs);
+      apiCache.set('/api/sales/', freshSales);
+
+      setStats(freshStats);
+      setRecentDevices(freshDevs.slice(0, 6));
 
       // Filter devices assigned to current user and exclude SOLD devices
-      const activeDevs = allDevs.filter((d) => d.current_status !== 'SOLD');
+      const activeDevs = freshDevs.filter((d) => d.current_status !== 'SOLD');
       const myDevs = activeDevs.filter((d) => {
         if (!d.current_owner) return false;
         if (typeof d.current_owner === 'object') {
@@ -134,12 +179,12 @@ export default function Dashboard() {
       });
 
       setMyAssignedDevices(sortedDevs);
-
-      const allSales = salesRes.data.results || salesRes.data || [];
-      setRecentSales(allSales.slice(0, 5));
+      setRecentSales(freshSales.slice(0, 5));
     } catch (err) {
       console.error(err);
-      enqueueSnackbar('Failed to load dashboard metrics', { variant: 'error' });
+      if (!silent) {
+        enqueueSnackbar('Failed to load dashboard metrics', { variant: 'error' });
+      }
     } finally {
       setLoading(false);
     }

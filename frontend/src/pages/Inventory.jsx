@@ -40,6 +40,7 @@ import {
 import { formatNumber, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
 import { deviceApi, userApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
@@ -68,9 +69,16 @@ const STATUS_CHOICES = [
 export default function Inventory() {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [devices, setDevices] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedDevices = apiCache.get('/api/devices/?is_b2b=false') || apiCache.get('/api/devices/');
+  const cachedUsers = apiCache.get('/api/users/');
+
+  const [devices, setDevices] = useState(() => {
+    if (!cachedDevices) return [];
+    const all = cachedDevices.results || cachedDevices || [];
+    return all.filter((d) => !d.is_b2b);
+  });
+  const [users, setUsers] = useState(() => cachedUsers?.results || cachedUsers || []);
+  const [loading, setLoading] = useState(() => !cachedDevices);
 
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
@@ -91,8 +99,8 @@ export default function Inventory() {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    fetchInventory();
-    fetchUsers();
+    fetchInventory(Boolean(cachedDevices));
+    fetchUsers(Boolean(cachedUsers));
 
     // Auto-sync every 5 seconds to seamlessly reflect mobile updates live
     const interval = setInterval(() => {
@@ -107,7 +115,10 @@ export default function Inventory() {
       if (!silent) setLoading(true);
       const res = await deviceApi.getAll({ is_b2b: false });
       const allDevs = res.data.results || res.data || [];
-      setDevices(allDevs.filter((d) => !d.is_b2b));
+      const nonB2b = allDevs.filter((d) => !d.is_b2b);
+      apiCache.set('/api/devices/?is_b2b=false', nonB2b);
+      apiCache.set('/api/devices/', allDevs);
+      setDevices(nonB2b);
     } catch (err) {
       console.error(err);
       if (!silent) {
@@ -121,7 +132,7 @@ export default function Inventory() {
   const handleManualRefresh = async () => {
     try {
       setRefreshing(true);
-      await Promise.all([fetchInventory(true), fetchUsers()]);
+      await Promise.all([fetchInventory(true), fetchUsers(true)]);
       enqueueSnackbar('Inventory synced live', { variant: 'success', autoHideDuration: 1500 });
     } catch (err) {
       enqueueSnackbar('Failed to sync data', { variant: 'error' });
@@ -130,10 +141,12 @@ export default function Inventory() {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (silent = false) => {
     try {
       const res = await userApi.getAll();
-      setUsers(res.data.results || res.data || []);
+      const userData = res.data.results || res.data || [];
+      apiCache.set('/api/users/', userData);
+      setUsers(userData);
     } catch (err) {
       console.error(err);
     }

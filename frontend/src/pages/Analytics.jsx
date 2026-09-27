@@ -50,6 +50,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { analyticsApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import { formatNumber, formatBDT } from '../utils/formatters';
 
 export default function Analytics() {
@@ -58,15 +59,28 @@ export default function Analytics() {
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
-  const [loading, setLoading] = useState(true);
+
+  const cacheKey = `/api/analytics/?year=${selectedYear}&month=${selectedMonth}`;
+  const cachedAnalytics = apiCache.get(cacheKey);
+
+  const [loading, setLoading] = useState(() => !cachedAnalytics);
   const [refreshing, setRefreshing] = useState(false);
-  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState(() => cachedAnalytics || null);
 
   useEffect(() => {
-    fetchAnalytics();
+    const currentKey = `/api/analytics/?year=${selectedYear}&month=${selectedMonth}`;
+    const cached = apiCache.get(currentKey);
+    if (cached) {
+      setAnalyticsData(cached);
+      setLoading(false);
+      fetchAnalytics(true);
+    } else {
+      fetchAnalytics(false);
+    }
   }, [selectedYear, selectedMonth]);
 
   const fetchAnalytics = async (silent = false) => {
+    const reqKey = `/api/analytics/?year=${selectedYear}&month=${selectedMonth}`;
     try {
       if (!silent) setLoading(true);
       else setRefreshing(true);
@@ -76,10 +90,14 @@ export default function Analytics() {
         month: selectedMonth
       });
 
-      setAnalyticsData(res.data || null);
+      const freshData = res.data || null;
+      apiCache.set(reqKey, freshData);
+      setAnalyticsData(freshData);
     } catch (err) {
       console.error('Failed to load analytics:', err);
-      enqueueSnackbar('Failed to load analytics data', { variant: 'error' });
+      if (!silent) {
+        enqueueSnackbar('Failed to load analytics data', { variant: 'error' });
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

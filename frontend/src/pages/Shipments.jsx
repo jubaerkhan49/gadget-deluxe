@@ -48,6 +48,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { shipmentApi, deviceApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
@@ -60,8 +61,10 @@ import DeviceDetailDrawer from '../dialogs/DeviceDetailDrawer';
 export default function Shipments() {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [shipments, setShipments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedShipments = apiCache.get('/api/shipments/');
+
+  const [shipments, setShipments] = useState(() => cachedShipments?.results || cachedShipments || []);
+  const [loading, setLoading] = useState(() => !cachedShipments);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState('NAME'); // 'NAME' | 'IMEI' | 'TRACKING'
   const [viewTab, setViewTab] = useState('ACTIVE'); // 'ACTIVE' | 'ARCHIVED'
@@ -86,7 +89,7 @@ export default function Shipments() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    fetchShipments();
+    fetchShipments(Boolean(cachedShipments));
 
     // Auto-sync polling every 6 seconds
     const interval = setInterval(() => {
@@ -158,7 +161,9 @@ export default function Shipments() {
     try {
       if (!silent) setLoading(true);
       const res = await shipmentApi.getAll();
-      setShipments(res.data.results || res.data || []);
+      const freshShipments = res.data.results || res.data || [];
+      apiCache.set('/api/shipments/', freshShipments);
+      setShipments(freshShipments);
     } catch (err) {
       console.error(err);
       if (!silent) {

@@ -35,6 +35,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { repairApi, deviceApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import { formatNumber } from '../utils/formatters';
 import CopyableText from '../components/common/CopyableText';
 import AddRepairDialog from '../dialogs/AddRepairDialog';
@@ -42,8 +43,10 @@ import AddRepairDialog from '../dialogs/AddRepairDialog';
 export default function Repairs() {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [repairs, setRepairs] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedRepairs = apiCache.get('/api/repairs/');
+
+  const [repairs, setRepairs] = useState(() => cachedRepairs?.results || cachedRepairs || []);
+  const [loading, setLoading] = useState(() => !cachedRepairs);
   const [searchQuery, setSearchQuery] = useState('');
   const [addRepairOpen, setAddRepairOpen] = useState(false);
 
@@ -52,17 +55,21 @@ export default function Repairs() {
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
   useEffect(() => {
-    fetchRepairs();
+    fetchRepairs(Boolean(cachedRepairs));
   }, []);
 
-  const fetchRepairs = async () => {
+  const fetchRepairs = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await repairApi.getAll();
-      setRepairs(res.data.results || res.data || []);
+      const freshRepairs = res.data.results || res.data || [];
+      apiCache.set('/api/repairs/', freshRepairs);
+      setRepairs(freshRepairs);
     } catch (err) {
       console.error(err);
-      enqueueSnackbar('Failed to load repairs', { variant: 'error' });
+      if (!silent) {
+        enqueueSnackbar('Failed to load repairs', { variant: 'error' });
+      }
     } finally {
       setLoading(false);
     }

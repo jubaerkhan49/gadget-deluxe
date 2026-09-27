@@ -48,14 +48,21 @@ import { deviceApi } from '../api/client';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
 import { formatNumber } from '../utils/formatters';
+import { apiCache } from '../utils/apiCache';
 import EditB2BDeviceDialog from '../dialogs/EditB2BDeviceDialog';
 import AddRepairDialog from '../dialogs/AddRepairDialog';
 
 export default function B2B() {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [devices, setDevices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedB2b = apiCache.get('/api/devices/?is_b2b=true');
+
+  const [devices, setDevices] = useState(() => {
+    if (!cachedB2b) return [];
+    const all = cachedB2b.results || cachedB2b || [];
+    return all.filter((d) => d.is_b2b);
+  });
+  const [loading, setLoading] = useState(() => !cachedB2b);
   const [refreshing, setRefreshing] = useState(false);
 
   // Filters
@@ -98,7 +105,7 @@ export default function B2B() {
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    fetchB2BDevices();
+    fetchB2BDevices(Boolean(cachedB2b));
     const interval = setInterval(() => {
       fetchB2BDevices(true);
     }, 5000);
@@ -110,7 +117,9 @@ export default function B2B() {
       if (!silent) setLoading(true);
       const res = await deviceApi.getAll({ is_b2b: true });
       const allDevs = res.data.results || res.data || [];
-      setDevices(allDevs.filter((d) => d.is_b2b));
+      const b2bOnly = allDevs.filter((d) => d.is_b2b);
+      apiCache.set('/api/devices/?is_b2b=true', b2bOnly);
+      setDevices(b2bOnly);
     } catch (err) {
       console.error(err);
       if (!silent) enqueueSnackbar('Failed to fetch B2B inventory', { variant: 'error' });

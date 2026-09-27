@@ -48,6 +48,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { otherGoodsApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import CreateOtherGoodsDialog from '../dialogs/CreateOtherGoodsDialog';
 import UpdateOrderTrackingDialog, { TRACKING_STAGES } from '../dialogs/UpdateOrderTrackingDialog';
 
@@ -77,8 +78,10 @@ const CATEGORIES = [
 export default function OtherGoods() {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedOrders = apiCache.get('/api/other-goods/');
+
+  const [orders, setOrders] = useState(() => cachedOrders?.results || cachedOrders || []);
+  const [loading, setLoading] = useState(() => !cachedOrders);
   const [refreshing, setRefreshing] = useState(false);
 
   // Filters
@@ -107,10 +110,13 @@ export default function OtherGoods() {
 
       const res = await otherGoodsApi.getAll();
       const data = res.data?.results || res.data || [];
+      apiCache.set('/api/other-goods/', data);
       setOrders(data);
     } catch (err) {
       console.error('Failed to fetch other goods orders:', err);
-      enqueueSnackbar('Failed to load orders dataset.', { variant: 'error' });
+      if (showLoadingSpinner) {
+        enqueueSnackbar('Failed to load orders dataset.', { variant: 'error' });
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -118,7 +124,7 @@ export default function OtherGoods() {
   };
 
   useEffect(() => {
-    fetchOrders(true);
+    fetchOrders(!cachedOrders);
   }, []);
 
   const handleCopyLink = (orderId, e) => {
