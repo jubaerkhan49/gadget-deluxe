@@ -61,7 +61,7 @@ export default function EditB2BDeviceDialog({ open, onClose, device, onUpdated }
     buying_price: '',
     b2b_selling_price: '',
     battery_health: '',
-    battery_cycles: '',
+    battery_cycle: '',
     b2b_shop_name: '',
     b2b_delivery_date: '',
     b2b_has_issues: false,
@@ -83,7 +83,9 @@ export default function EditB2BDeviceDialog({ open, onClose, device, onUpdated }
         buying_price: device.buying_price !== null && device.buying_price !== undefined ? device.buying_price : '',
         b2b_selling_price: device.b2b_selling_price !== null && device.b2b_selling_price !== undefined ? device.b2b_selling_price : '',
         battery_health: device.battery_health !== null && device.battery_health !== undefined ? device.battery_health : '',
-        battery_cycles: device.battery_cycles !== null && device.battery_cycles !== undefined ? device.battery_cycles : '',
+        battery_cycle: (device.battery_cycle !== null && device.battery_cycle !== undefined)
+          ? device.battery_cycle
+          : (device.battery_cycles !== null && device.battery_cycles !== undefined ? device.battery_cycles : ''),
         b2b_shop_name: device.b2b_shop_name || '',
         b2b_delivery_date: device.b2b_delivery_date || '',
         b2b_has_issues: Boolean(device.b2b_has_issues),
@@ -120,7 +122,7 @@ export default function EditB2BDeviceDialog({ open, onClose, device, onUpdated }
         buying_price: formData.buying_price !== '' ? Number(formData.buying_price) : null,
         b2b_selling_price: formData.b2b_selling_price !== '' ? Number(formData.b2b_selling_price) : null,
         battery_health: formData.battery_health !== '' ? parseInt(formData.battery_health, 10) : null,
-        battery_cycles: formData.battery_cycles !== '' ? parseInt(formData.battery_cycles, 10) : null,
+        battery_cycle: formData.battery_cycle !== '' ? parseInt(formData.battery_cycle, 10) : null,
         b2b_shop_name: formData.b2b_shop_name.trim(),
         b2b_delivery_date: formData.b2b_delivery_date || null,
         b2b_has_issues: formData.b2b_has_issues,
@@ -398,10 +400,10 @@ export default function EditB2BDeviceDialog({ open, onClose, device, onUpdated }
               <TextField
                 fullWidth
                 type="number"
-                label="Battery Cycles"
+                label="Battery Cycles (CC)"
                 placeholder="120"
-                value={formData.battery_cycles}
-                onChange={(e) => handleChange('battery_cycles', e.target.value)}
+                value={formData.battery_cycle}
+                onChange={(e) => handleChange('battery_cycle', e.target.value)}
               />
             </Grid>
             <Grid item xs={12} sm={6}>

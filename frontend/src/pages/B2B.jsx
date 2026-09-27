@@ -41,7 +41,9 @@ import {
   DeleteOutline as DeleteIcon,
   BatteryChargingFull as BatteryIcon,
   CalendarToday as DateIcon,
-  Clear as ClearIcon
+  Clear as ClearIcon,
+  Inventory2 as InventoryIcon,
+  Handyman as ServiceIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { deviceApi } from '../api/client';
@@ -99,6 +101,7 @@ export default function B2B() {
     received_date_bd: new Date().toISOString().split('T')[0],
     b2b_delivery_date: new Date().toISOString().split('T')[0],
     battery_health: '',
+    battery_cycle: '',
     b2b_has_issues: false,
     b2b_issue_notes: ''
   });
@@ -255,6 +258,7 @@ export default function B2B() {
         buying_price: newDevice.buying_price !== '' ? Number(newDevice.buying_price) : null,
         b2b_selling_price: newDevice.b2b_selling_price !== '' ? Number(newDevice.b2b_selling_price) : null,
         battery_health: newDevice.battery_health !== '' ? parseInt(newDevice.battery_health, 10) : null,
+        battery_cycle: newDevice.battery_cycle !== '' ? parseInt(newDevice.battery_cycle, 10) : null,
         b2b_shop_name: newDevice.b2b_shop_name.trim(),
         received_date_bd: newDevice.received_date_bd || new Date().toISOString().split('T')[0],
         b2b_delivery_date: newDevice.b2b_delivery_date || null,
@@ -280,6 +284,7 @@ export default function B2B() {
         received_date_bd: new Date().toISOString().split('T')[0],
         b2b_delivery_date: new Date().toISOString().split('T')[0],
         battery_health: '',
+        battery_cycle: '',
         b2b_has_issues: false,
         b2b_issue_notes: ''
       });
@@ -416,94 +421,198 @@ export default function B2B() {
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              p: 2,
+              p: 2.25,
               borderRadius: 3,
-              border: 1,
-              borderColor: 'divider',
-              background: (theme) => theme.palette.mode === 'dark' ? 'rgba(147, 51, 234, 0.05)' : '#FAF5FF'
+              border: '1px solid',
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(147, 51, 234, 0.25)' : 'rgba(147, 51, 234, 0.15)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(147, 51, 234, 0.1) 0%, rgba(147, 51, 234, 0.02) 100%)'
+                : 'linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%)',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 18px rgba(147, 51, 234, 0.12)'
+              }
             }}
           >
-            <Typography variant="caption" color="text.secondary" fontWeight={700}>
-              TOTAL B2B DEVICES
-            </Typography>
-            <Typography variant="h4" fontWeight={800} sx={{ color: '#9333EA', my: 0.5 }}>
-              {totalB2B}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Total registered equipment
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <Typography variant="caption" sx={{ color: '#9333EA', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  TOTAL B2B DEVICES
+                </Typography>
+                <Typography variant="h4" fontWeight={800} sx={{ color: 'text.primary', my: 0.5, fontFamily: 'monospace' }}>
+                  {totalB2B}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Total registered equipment
+                </Typography>
+              </div>
+              <Box
+                sx={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 2.5,
+                  bgcolor: 'rgba(147, 51, 234, 0.12)',
+                  color: '#9333EA',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <B2bIcon fontSize="small" />
+              </Box>
+            </Box>
           </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              p: 2,
+              p: 2.25,
               borderRadius: 3,
-              border: 1,
-              borderColor: 'divider',
-              background: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.05)' : '#EFF6FF'
+              border: '1px solid',
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.25)' : 'rgba(59, 130, 246, 0.15)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.02) 100%)'
+                : 'linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 100%)',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 18px rgba(59, 130, 246, 0.12)'
+              }
             }}
           >
-            <Typography variant="caption" color="text.secondary" fontWeight={700}>
-              READY / IN STOCK
-            </Typography>
-            <Typography variant="h4" fontWeight={800} color="primary.main" sx={{ my: 0.5 }}>
-              {inInventoryCount}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Awaiting delivery to shop
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <Typography variant="caption" sx={{ color: '#2563EB', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  READY / IN STOCK
+                </Typography>
+                <Typography variant="h4" fontWeight={800} sx={{ color: 'text.primary', my: 0.5, fontFamily: 'monospace' }}>
+                  {inInventoryCount}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Awaiting delivery to shop
+                </Typography>
+              </div>
+              <Box
+                sx={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 2.5,
+                  bgcolor: 'rgba(59, 130, 246, 0.12)',
+                  color: '#2563EB',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <InventoryIcon fontSize="small" />
+              </Box>
+            </Box>
           </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              p: 2,
+              p: 2.25,
               borderRadius: 3,
-              border: 1,
-              borderColor: 'divider',
-              background: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.05)' : '#FFFBEB'
+              border: '1px solid',
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.25)' : 'rgba(245, 158, 11, 0.15)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.02) 100%)'
+                : 'linear-gradient(135deg, #FFFBEB 0%, #FFFFFF 100%)',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 18px rgba(245, 158, 11, 0.12)'
+              }
             }}
           >
-            <Typography variant="caption" color="text.secondary" fontWeight={700}>
-              IN REPAIRS
-            </Typography>
-            <Typography variant="h4" fontWeight={800} sx={{ color: '#D97706', my: 0.5 }}>
-              {underRepairCount}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Shenzhen Lab / Under Service
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <Typography variant="caption" sx={{ color: '#D97706', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  IN REPAIRS
+                </Typography>
+                <Typography variant="h4" fontWeight={800} sx={{ color: 'text.primary', my: 0.5, fontFamily: 'monospace' }}>
+                  {underRepairCount}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Shenzhen Lab / Under Service
+                </Typography>
+              </div>
+              <Box
+                sx={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 2.5,
+                  bgcolor: 'rgba(245, 158, 11, 0.12)',
+                  color: '#D97706',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <ServiceIcon fontSize="small" />
+              </Box>
+            </Box>
           </Card>
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
           <Card
             sx={{
-              p: 2,
+              p: 2.25,
               borderRadius: 3,
-              border: 1,
-              borderColor: 'divider',
-              background: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.05)' : '#ECFDF5'
+              border: '1px solid',
+              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.15)',
+              background: (theme) => theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.02) 100%)'
+                : 'linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 100%)',
+              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.02)',
+              transition: 'all 0.2s ease-in-out',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 18px rgba(16, 185, 129, 0.12)'
+              }
             }}
           >
-            <Typography variant="caption" color="text.secondary" fontWeight={700}>
-              DELIVERED
-            </Typography>
-            <Typography variant="h4" fontWeight={800} sx={{ color: '#059669', my: 0.5 }}>
-              {deliveredCount}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Completed shop handovers
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <Typography variant="caption" sx={{ color: '#059669', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  DELIVERED
+                </Typography>
+                <Typography variant="h4" fontWeight={800} sx={{ color: 'text.primary', my: 0.5, fontFamily: 'monospace' }}>
+                  {deliveredCount}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Completed shop handovers
+                </Typography>
+              </div>
+              <Box
+                sx={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 2.5,
+                  bgcolor: 'rgba(16, 185, 129, 0.12)',
+                  color: '#059669',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <DeliveredIcon fontSize="small" />
+              </Box>
+            </Box>
           </Card>
         </Grid>
       </Grid>
 
       {/* Filter Bar */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3 }}>
+      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : '#FFFFFF' }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
             <TextField
@@ -524,7 +633,8 @@ export default function B2B() {
                       <ClearIcon fontSize="small" />
                     </IconButton>
                   </InputAdornment>
-                ) : null
+                ) : null,
+                sx: { borderRadius: 2 }
               }}
             />
           </Grid>
@@ -536,6 +646,7 @@ export default function B2B() {
                 value={selectedShop}
                 label="Client Shop"
                 onChange={(e) => setSelectedShop(e.target.value)}
+                sx={{ borderRadius: 2 }}
               >
                 <MenuItem value="ALL">All Shops ({distinctShops.length})</MenuItem>
                 {distinctShops.map((shop) => (
@@ -554,6 +665,7 @@ export default function B2B() {
                 value={selectedStatus}
                 label="Status"
                 onChange={(e) => setSelectedStatus(e.target.value)}
+                sx={{ borderRadius: 2 }}
               >
                 <MenuItem value="ALL">All Statuses</MenuItem>
                 <MenuItem value="IN_INVENTORY">In Inventory (Ready)</MenuItem>
@@ -570,16 +682,16 @@ export default function B2B() {
       <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
         <TableContainer>
           <Table size="medium">
-            <TableHead>
+            <TableHead sx={{ bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#F9FAFB' }}>
               <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Order ID</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Device Model</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Client Shop</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Battery & Cycles</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Receive Date (BD)</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Delivery Date</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', minWidth: 115 }}>Order ID</TableCell>
+                <TableCell sx={{ fontWeight: 700, minWidth: 200 }}>Device Model</TableCell>
+                <TableCell sx={{ fontWeight: 700, minWidth: 170 }}>IMEI / Serial</TableCell>
+                <TableCell sx={{ fontWeight: 700, minWidth: 150 }}>Client Shop</TableCell>
+                <TableCell sx={{ fontWeight: 700, minWidth: 160 }}>Battery & Cycles</TableCell>
+                <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', minWidth: 130 }}>Receive Date (BD)</TableCell>
+                <TableCell sx={{ fontWeight: 700, whiteSpace: 'nowrap', minWidth: 130 }}>Delivery Date</TableCell>
+                <TableCell sx={{ fontWeight: 700, minWidth: 140 }}>Status</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700, pr: 2.5, minWidth: 160 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -606,27 +718,35 @@ export default function B2B() {
                 </TableRow>
               ) : (
                 paginatedDevices.map((dev) => {
+                  const hasHealth = dev.battery_health !== null && dev.battery_health !== undefined && dev.battery_health !== '';
+                  const cc = (dev.battery_cycle !== null && dev.battery_cycle !== undefined && dev.battery_cycle !== '')
+                    ? dev.battery_cycle
+                    : (dev.battery_cycles !== null && dev.battery_cycles !== undefined && dev.battery_cycles !== '' ? dev.battery_cycles : null);
+                  const hasCC = cc !== null && cc !== undefined && cc !== '';
+
                   return (
                     <TableRow key={dev.id} hover>
-                      {/* Order ID */}
-                      <TableCell>
+                      {/* Order ID (Never wraps) */}
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
                         <Box
                           sx={{
                             display: 'inline-flex',
                             alignItems: 'center',
-                            px: 1,
-                            py: 0.4,
+                            whiteSpace: 'nowrap',
+                            px: 1.2,
+                            py: 0.45,
                             borderRadius: 1.5,
                             bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.06)' : '#F3F4F6',
                             fontFamily: 'monospace',
                             fontWeight: 700,
-                            fontSize: '0.8rem',
+                            fontSize: '0.82rem',
+                            letterSpacing: '0.02em',
                             color: 'text.primary',
                             border: '1px solid',
                             borderColor: 'divider'
                           }}
                         >
-                          #B2B-{dev.id.toString().padStart(4, '0')}
+                          #B2B-{String(dev.id).padStart(4, '0')}
                         </Box>
                       </TableCell>
 
@@ -635,7 +755,7 @@ export default function B2B() {
                         <Typography variant="body2" fontWeight={700}>
                           {dev.model}
                         </Typography>
-                        <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 0.4 }}>
+                        <Stack direction="row" spacing={0.8} alignItems="center" sx={{ mt: 0.4, flexWrap: 'wrap', gap: 0.5 }}>
                           <VariantBadge variant={dev.variant} />
                           <Typography variant="caption" color="text.secondary">
                             {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
@@ -647,7 +767,7 @@ export default function B2B() {
                       <TableCell>
                         <CopyableText text={dev.imei} />
                         {dev.serial_number && (
-                          <Typography variant="caption" color="text.secondary" display="block">
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ fontFamily: 'monospace', mt: 0.2 }}>
                             SN: {dev.serial_number}
                           </Typography>
                         )}
@@ -676,49 +796,63 @@ export default function B2B() {
                       </TableCell>
 
                       {/* Battery Health & Cycles */}
-                      <TableCell>
-                        {dev.battery_health !== null && dev.battery_health !== undefined ? (
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
-                            <Box
-                              sx={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: 0.4,
-                                px: 0.8,
-                                py: 0.2,
-                                borderRadius: 1,
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                bgcolor: dev.battery_health >= 85 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                                color: dev.battery_health >= 85 ? '#059669' : '#DC2626'
-                              }}
-                            >
-                              <BatteryIcon sx={{ fontSize: 14 }} />
-                              {dev.battery_health}%
-                            </Box>
-                            {dev.battery_cycles !== null && dev.battery_cycles !== undefined && (
-                              <Typography variant="caption" color="text.secondary">
-                                {dev.battery_cycles}c
-                              </Typography>
-                            )}
-                          </Box>
-                        ) : (
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        {!hasHealth && !hasCC ? (
                           <Typography variant="caption" color="text.secondary">
                             —
                           </Typography>
+                        ) : (
+                          <Stack direction="row" spacing={0.75} alignItems="center">
+                            {hasHealth && (
+                              <Chip
+                                size="small"
+                                icon={<BatteryIcon sx={{ fontSize: '0.85rem !important' }} />}
+                                label={`${dev.battery_health}%`}
+                                sx={{
+                                  height: 22,
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  bgcolor: dev.battery_health >= 85 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                                  color: dev.battery_health >= 85 ? '#059669' : '#DC2626',
+                                  border: `1px solid ${dev.battery_health >= 85 ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                                  borderRadius: 1,
+                                  '& .MuiChip-icon': {
+                                    color: 'inherit',
+                                    ml: '4px',
+                                    mr: '-2px'
+                                  }
+                                }}
+                              />
+                            )}
+                            {hasCC && (
+                              <Chip
+                                size="small"
+                                label={`CC ${cc}`}
+                                sx={{
+                                  height: 22,
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  bgcolor: 'rgba(59, 130, 246, 0.1)',
+                                  color: '#2563EB',
+                                  border: '1px solid rgba(59, 130, 246, 0.25)',
+                                  borderRadius: 1
+                                }}
+                              />
+                            )}
+                          </Stack>
                         )}
                       </TableCell>
 
                       {/* Receive Date (BD) */}
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace', fontSize: '0.82rem' }}>
                           {dev.received_date_bd || '—'}
                         </Typography>
                       </TableCell>
 
                       {/* Delivery Date */}
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
+                      <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                        <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace', fontSize: '0.82rem' }}>
                           {dev.b2b_delivery_date || '—'}
                         </Typography>
                       </TableCell>
@@ -766,7 +900,11 @@ export default function B2B() {
                             <IconButton
                               size="small"
                               onClick={() => handleEditDevice(dev)}
-                              sx={{ color: '#9333EA' }}
+                              sx={{
+                                color: '#9333EA',
+                                bgcolor: 'rgba(147, 51, 234, 0.08)',
+                                '&:hover': { bgcolor: 'rgba(147, 51, 234, 0.18)' }
+                              }}
                             >
                               <EditIcon fontSize="small" />
                             </IconButton>
@@ -777,7 +915,11 @@ export default function B2B() {
                             <IconButton
                               size="small"
                               onClick={() => handleDeletePrompt(dev)}
-                              sx={{ color: 'error.main' }}
+                              sx={{
+                                color: 'error.main',
+                                bgcolor: 'rgba(239, 68, 68, 0.08)',
+                                '&:hover': { bgcolor: 'rgba(239, 68, 68, 0.18)' }
+                              }}
                             >
                               <DeleteIcon fontSize="small" />
                             </IconButton>
@@ -985,6 +1127,17 @@ export default function B2B() {
                   placeholder="95"
                   value={newDevice.battery_health}
                   onChange={(e) => setNewDevice((p) => ({ ...p, battery_health: e.target.value }))}
+                />
+              </Grid>
+
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Battery Cycles (CC)"
+                  placeholder="120"
+                  value={newDevice.battery_cycle}
+                  onChange={(e) => setNewDevice((p) => ({ ...p, battery_cycle: e.target.value }))}
                 />
               </Grid>
             </Grid>
