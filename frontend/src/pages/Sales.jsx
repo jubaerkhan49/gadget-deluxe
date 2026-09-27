@@ -55,6 +55,13 @@ export default function Sales() {
 
   useEffect(() => {
     fetchSales(Boolean(cachedSales));
+
+    // Live auto-sync interval every 5 seconds
+    const interval = setInterval(() => {
+      fetchSales(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchSales = async (silent = false) => {

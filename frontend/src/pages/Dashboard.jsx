@@ -127,6 +127,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData(Boolean(cachedStats));
+
+    // Live auto-sync interval every 4 seconds to instantly reflect updates from mobile apps and other browsers
+    const interval = setInterval(() => {
+      fetchDashboardData(true);
+    }, 4000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchDashboardData = async (silent = false) => {

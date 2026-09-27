@@ -56,6 +56,13 @@ export default function Repairs() {
 
   useEffect(() => {
     fetchRepairs(Boolean(cachedRepairs));
+
+    // Live auto-sync interval every 5 seconds
+    const interval = setInterval(() => {
+      fetchRepairs(true);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchRepairs = async (silent = false) => {

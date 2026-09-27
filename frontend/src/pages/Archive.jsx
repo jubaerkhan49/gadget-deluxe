@@ -68,6 +68,13 @@ export default function Archive() {
 
   useEffect(() => {
     fetchArchivedData(Boolean(cachedDevices));
+
+    // Live auto-sync interval every 6 seconds
+    const interval = setInterval(() => {
+      fetchArchivedData(true);
+    }, 6000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchArchivedData = async (silent = false) => {

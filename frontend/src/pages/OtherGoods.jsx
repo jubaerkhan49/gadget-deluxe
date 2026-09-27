@@ -125,6 +125,13 @@ export default function OtherGoods() {
 
   useEffect(() => {
     fetchOrders(!cachedOrders);
+
+    // Live auto-sync interval every 5 seconds
+    const interval = setInterval(() => {
+      fetchOrders(false);
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleCopyLink = (orderId, e) => {
