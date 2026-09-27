@@ -114,7 +114,26 @@ export default function Dashboard() {
         }
         return d.current_owner === user?.id || d.current_owner === user?.username;
       });
-      setMyAssignedDevices(myDevs.length > 0 ? myDevs : activeDevs);
+      const targetDevs = myDevs.length > 0 ? myDevs : activeDevs;
+
+      // Sort by date (latest date first)
+      const getDeviceTimestamp = (d) => {
+        const raw = d.received_date_bd || d.assigned_date || d.created_at;
+        if (!raw) return 0;
+        const t = new Date(raw).getTime();
+        return isNaN(t) ? 0 : t;
+      };
+
+      const sortedDevs = [...targetDevs].sort((a, b) => {
+        const diff = getDeviceTimestamp(b) - getDeviceTimestamp(a);
+        if (diff !== 0) return diff;
+        const createdA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (createdB !== createdA) return createdB - createdA;
+        return (b.id || 0) - (a.id || 0);
+      });
+
+      setMyAssignedDevices(sortedDevs);
 
       const allSales = salesRes.data.results || salesRes.data || [];
       setRecentSales(allSales.slice(0, 5));
