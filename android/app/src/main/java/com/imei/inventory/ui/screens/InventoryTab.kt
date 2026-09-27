@@ -32,11 +32,12 @@ import com.imei.inventory.viewmodel.MainInventoryViewModel
 fun InventoryTab(
     token: String,
     viewModel: MainInventoryViewModel,
+    initialTab: Int = 0,
     onSelectDevice: (DeviceDto) -> Unit,
     onOpenAddDevice: () -> Unit
 ) {
-    // 0 = Active Inventory, 1 = Archive / Sold
-    var selectedTab by remember { mutableStateOf(0) }
+    // 0 = Active Inventory, 1 = B2B Wholesale, 2 = Archive / Sold
+    var selectedTab by remember(initialTab) { mutableStateOf(initialTab) }
 
     var searchQuery by remember { mutableStateOf("") }
     var selectedVariantFilter by remember { mutableStateOf<String?>(null) }
@@ -47,7 +48,10 @@ fun InventoryTab(
     val isLoading by viewModel.isLoading.collectAsState()
 
     val activeCount = remember(devices) {
-        devices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) }
+        devices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) && !it.isB2B }
+    }
+    val b2bCount = remember(devices) {
+        devices.count { it.isB2B }
     }
     val archiveCount = remember(devices) {
         devices.count { it.currentStatus.equals("SOLD", ignoreCase = true) }
@@ -95,12 +99,10 @@ fun InventoryTab(
         selectedStatusFilter,
         searchQuery
     ) {
-        val tabFiltered = if (selectedTab == 0) {
-            // Active Inventory: Exclude SOLD
-            devices.filter { !it.currentStatus.equals("SOLD", ignoreCase = true) }
-        } else {
-            // Archive: Only SOLD
-            devices.filter { it.currentStatus.equals("SOLD", ignoreCase = true) }
+        val tabFiltered = when (selectedTab) {
+            0 -> devices.filter { !it.currentStatus.equals("SOLD", ignoreCase = true) && !it.isB2B }
+            1 -> devices.filter { it.isB2B }
+            else -> devices.filter { it.currentStatus.equals("SOLD", ignoreCase = true) }
         }
 
         val filtered = tabFiltered.filter { dev ->
@@ -113,7 +115,8 @@ fun InventoryTab(
                     (dev.serialNumber?.contains(searchQuery, ignoreCase = true) == true) ||
                     (dev.capacity?.contains(searchQuery, ignoreCase = true) == true) ||
                     (dev.color?.contains(searchQuery, ignoreCase = true) == true) ||
-                    (dev.currentOwnerName?.contains(searchQuery, ignoreCase = true) == true)
+                    (dev.currentOwnerName?.contains(searchQuery, ignoreCase = true) == true) ||
+                    (dev.b2bShopName?.contains(searchQuery, ignoreCase = true) == true)
             matchesStatus && matchesVariant && matchesOwner && matchesQuery
         }
 
@@ -126,7 +129,7 @@ fun InventoryTab(
 
     Scaffold(
         floatingActionButton = {
-            if (selectedTab == 0) {
+            if (selectedTab == 0 || selectedTab == 1) {
                 FloatingActionButton(
                     onClick = onOpenAddDevice,
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -146,22 +149,22 @@ fun InventoryTab(
                 .fillMaxSize()
                 .padding(horizontal = 14.dp, vertical = 6.dp)
         ) {
-            // Top Segmented Pill Toggle: [ Active Inventory | Archive (Sold) ]
+            // Top Segmented Pill Toggle: [ Active | B2B | Archive ]
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .height(38.dp)
+                    .clip(RoundedCornerShape(10.dp))
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(3.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .padding(2.5.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 // Active Inventory Tab
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(9.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(
                             if (selectedTab == 0) MaterialTheme.colorScheme.primary
                             else Color.Transparent
@@ -172,32 +175,20 @@ fun InventoryTab(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PhoneAndroid,
-                            contentDescription = null,
-                            modifier = Modifier.size(15.dp),
-                            tint = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = "Active Inventory ($activeCount)",
-                            color = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
+                    Text(
+                        text = "Active ($activeCount)",
+                        color = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
+                    )
                 }
 
-                // Archive / Sold Tab
+                // B2B Wholesale Tab
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(9.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(
                             if (selectedTab == 1) Color(0xFF8B5CF6)
                             else Color.Transparent
@@ -208,24 +199,36 @@ fun InventoryTab(
                         },
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Inventory2,
-                            contentDescription = null,
-                            modifier = Modifier.size(15.dp),
-                            tint = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                    Text(
+                        text = "B2B ($b2bCount)",
+                        color = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium
+                    )
+                }
+
+                // Archive / Sold Tab
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(
+                            if (selectedTab == 2) Color(0xFFF59E0B)
+                            else Color.Transparent
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text(
-                            text = "Archive / Sold ($archiveCount)",
-                            color = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 12.sp,
-                            fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium
-                        )
-                    }
+                        .clickable {
+                            selectedTab = 2
+                            viewModel.setStatusFilter(null)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Archive ($archiveCount)",
+                        color = if (selectedTab == 2) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium
+                    )
                 }
             }
 
@@ -414,7 +417,11 @@ fun InventoryTab(
             } else if (filteredDevices.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(
-                        text = if (selectedTab == 0) "No active devices match filters" else "No archived sold devices found",
+                        text = when (selectedTab) {
+                            0 -> "No active devices match filters"
+                            1 -> "No B2B wholesale devices found"
+                            else -> "No archived sold devices found"
+                        },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     )
@@ -427,7 +434,7 @@ fun InventoryTab(
                     items(filteredDevices) { device ->
                         CompactDeviceCard(
                             device = device,
-                            isArchiveView = selectedTab == 1,
+                            isArchiveView = selectedTab == 2,
                             onClick = { onSelectDevice(device) },
                             onStatusChange = { newStatus ->
                                 viewModel.updateDevice(token, device.id, mapOf("current_status" to newStatus)) {}
@@ -546,25 +553,40 @@ fun CompactDeviceCard(
                         )
                     }
                 } else {
-                    val ownerName = if (!device.currentOwnerName.isNullOrBlank()) device.currentOwnerName else "Unassigned"
-                    val isUnassigned = device.currentOwnerName.isNullOrBlank()
+                    if (device.isB2B) {
+                        val shopName = if (!device.b2bShopName.isNullOrBlank()) device.b2bShopName else "B2B Shop Client"
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = "🏪 $shopName",
+                                color = Color(0xFF8B5CF6),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    } else {
+                        val ownerName = if (!device.currentOwnerName.isNullOrBlank()) device.currentOwnerName else "Unassigned"
+                        val isUnassigned = device.currentOwnerName.isNullOrBlank()
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(13.dp),
-                            tint = if (isUnassigned) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7)
-                        )
-                        Text(
-                            text = ownerName,
-                            color = if (isUnassigned) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.size(13.dp),
+                                tint = if (isUnassigned) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7)
+                            )
+                            Text(
+                                text = ownerName,
+                                color = if (isUnassigned) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
                     }
 
                     Box {

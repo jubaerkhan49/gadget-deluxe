@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Menu
@@ -68,6 +69,7 @@ class MainActivity : FragmentActivity() {
                 ) {
                     var userToken by remember { mutableStateOf<String?>(null) }
                     var selectedTab by remember { mutableStateOf(0) }
+                    var inventorySubTab by remember { mutableStateOf(0) }
                     var selectedDeviceForDetail by remember { mutableStateOf<DeviceDto?>(null) }
                     var selectedShipmentForDetail by remember { mutableStateOf<ShipmentDto?>(null) }
                     var selectedShipmentForEdit by remember { mutableStateOf<ShipmentDto?>(null) }
@@ -111,7 +113,9 @@ class MainActivity : FragmentActivity() {
                     } else {
                         val token = userToken!!
                         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-                        val activeCount = remember(devices) { devices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) } }
+                        val activeCount = remember(devices) { devices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) && !it.isB2B } }
+                        val b2bCount = remember(devices) { devices.count { it.isB2B } }
+                        val archiveCount = remember(devices) { devices.count { it.currentStatus.equals("SOLD", ignoreCase = true) } }
 
                         ModalNavigationDrawer(
                             drawerState = drawerState,
@@ -119,7 +123,7 @@ class MainActivity : FragmentActivity() {
                                 ModalDrawerSheet(
                                     drawerContainerColor = MaterialTheme.colorScheme.surface,
                                     drawerTonalElevation = 2.dp,
-                                    modifier = Modifier.width(290.dp)
+                                    modifier = Modifier.width(260.dp)
                                 ) {
                                     Column(
                                         modifier = Modifier
@@ -138,7 +142,7 @@ class MainActivity : FragmentActivity() {
                                                         )
                                                     )
                                                 )
-                                                .padding(horizontal = 16.dp, vertical = 14.dp)
+                                                .padding(horizontal = 14.dp, vertical = 10.dp)
                                         ) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
@@ -148,40 +152,40 @@ class MainActivity : FragmentActivity() {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     Surface(
                                                         color = MaterialTheme.colorScheme.primary,
-                                                        shape = RoundedCornerShape(10.dp),
-                                                        modifier = Modifier.size(34.dp)
+                                                        shape = RoundedCornerShape(8.dp),
+                                                        modifier = Modifier.size(30.dp)
                                                     ) {
                                                         Box(contentAlignment = Alignment.Center) {
                                                             Icon(
                                                                 imageVector = Icons.Default.PhoneAndroid,
                                                                 contentDescription = null,
                                                                 tint = Color.White,
-                                                                modifier = Modifier.size(18.dp)
+                                                                modifier = Modifier.size(16.dp)
                                                             )
                                                         }
                                                     }
-                                                    Spacer(modifier = Modifier.width(10.dp))
+                                                    Spacer(modifier = Modifier.width(9.dp))
                                                     Column {
                                                         Text(
                                                             text = "Gadget Deluxe",
                                                             fontWeight = FontWeight.Bold,
-                                                            fontSize = 15.sp,
+                                                            fontSize = 14.sp,
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                         Text(
-                                                            text = "Admin Enterprise",
-                                                            fontSize = 11.sp,
+                                                            text = "Enterprise Workspace",
+                                                            fontSize = 10.sp,
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                                         )
                                                     }
                                                 }
                                                 Surface(
                                                     color = Color(0xFF16A34A).copy(alpha = 0.12f),
-                                                    shape = RoundedCornerShape(12.dp)
+                                                    shape = RoundedCornerShape(10.dp)
                                                 ) {
                                                     Row(
                                                         verticalAlignment = Alignment.CenterVertically,
-                                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                                     ) {
                                                         Box(
                                                             modifier = Modifier
@@ -192,7 +196,7 @@ class MainActivity : FragmentActivity() {
                                                         Text(
                                                             text = "Live",
                                                             color = Color(0xFF16A34A),
-                                                            fontSize = 10.sp,
+                                                            fontSize = 9.5.sp,
                                                             fontWeight = FontWeight.Bold
                                                         )
                                                     }
@@ -200,18 +204,18 @@ class MainActivity : FragmentActivity() {
                                             }
                                         }
 
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
 
-                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Spacer(modifier = Modifier.height(3.dp))
 
                                         // Navigation Items Section
                                         Text(
                                             text = "WORKSPACE NAVIGATION",
-                                            fontSize = 10.sp,
+                                            fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                                             letterSpacing = 0.8.sp,
-                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp)
                                         )
 
                                         CompactDrawerItem(
@@ -227,11 +231,12 @@ class MainActivity : FragmentActivity() {
                                         CompactDrawerItem(
                                             icon = Icons.Default.PhoneAndroid,
                                             label = "Inventory",
-                                            selected = selectedTab == 1,
+                                            selected = selectedTab == 1 && inventorySubTab == 0,
                                             badgeText = if (activeCount > 0) "$activeCount" else null,
                                             badgeColor = MaterialTheme.colorScheme.primary,
                                             onClick = {
                                                 selectedTab = 1
+                                                inventorySubTab = 0
                                                 coroutineScope.launch { drawerState.close() }
                                             }
                                         )
@@ -258,18 +263,18 @@ class MainActivity : FragmentActivity() {
                                             }
                                         )
 
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
+                                        Spacer(modifier = Modifier.height(3.dp))
 
                                         // Operations & Quick Tools
                                         Text(
                                             text = "OPERATIONS & TOOLS",
-                                            fontSize = 10.sp,
+                                            fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
                                             letterSpacing = 0.8.sp,
-                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp)
                                         )
 
                                         CompactDrawerItem(
@@ -293,12 +298,30 @@ class MainActivity : FragmentActivity() {
                                         )
 
                                         CompactDrawerItem(
-                                            icon = Icons.Default.Bolt,
-                                            label = "Sickw IMEI Parser",
-                                            iconTint = Color(0xFFF59E0B),
+                                            icon = Icons.Default.PhoneAndroid,
+                                            label = "B2B Wholesale",
+                                            iconTint = Color(0xFF8B5CF6),
+                                            selected = selectedTab == 1 && inventorySubTab == 1,
+                                            badgeText = if (b2bCount > 0) "$b2bCount" else null,
+                                            badgeColor = Color(0xFF8B5CF6),
                                             onClick = {
+                                                selectedTab = 1
+                                                inventorySubTab = 1
                                                 coroutineScope.launch { drawerState.close() }
-                                                showSickwDialog = true
+                                            }
+                                        )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.Inventory2,
+                                            label = "Archive (Sold)",
+                                            iconTint = Color(0xFFF59E0B),
+                                            selected = selectedTab == 1 && inventorySubTab == 2,
+                                            badgeText = if (archiveCount > 0) "$archiveCount" else null,
+                                            badgeColor = Color(0xFFF59E0B),
+                                            onClick = {
+                                                selectedTab = 1
+                                                inventorySubTab = 2
+                                                coroutineScope.launch { drawerState.close() }
                                             }
                                         )
 
@@ -323,30 +346,11 @@ class MainActivity : FragmentActivity() {
                                             }
                                         )
 
-                                        Spacer(modifier = Modifier.height(6.dp))
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
-                                        Spacer(modifier = Modifier.height(6.dp))
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
+                                        Spacer(modifier = Modifier.height(3.dp))
 
                                         // Footer Actions
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.Sync,
-                                            label = "Sync Cloud Data",
-                                            iconTint = Color(0xFF10B981),
-                                            trailingContent = {
-                                                if (isLoading) {
-                                                    CircularProgressIndicator(
-                                                        modifier = Modifier.size(14.dp),
-                                                        strokeWidth = 2.dp,
-                                                        color = Color(0xFF10B981)
-                                                    )
-                                                }
-                                            },
-                                            onClick = {
-                                                coroutineScope.launch { drawerState.close() }
-                                                mainViewModel.loadAllData(token)
-                                            }
-                                        )
-
                                         CompactDrawerItem(
                                             icon = Icons.Default.Logout,
                                             label = "Logout",
@@ -360,14 +364,14 @@ class MainActivity : FragmentActivity() {
                                             }
                                         )
 
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = "Gadget Deluxe ERP • v1.2.0",
-                                            fontSize = 9.sp,
+                                            fontSize = 8.5.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
                                         )
-                                        Spacer(modifier = Modifier.height(12.dp))
+                                        Spacer(modifier = Modifier.height(6.dp))
                                     }
                                 }
                             }
@@ -565,6 +569,7 @@ class MainActivity : FragmentActivity() {
                                         1 -> InventoryTab(
                                             token = token,
                                             viewModel = mainViewModel,
+                                            initialTab = inventorySubTab,
                                             onSelectDevice = { dev -> selectedDeviceForDetail = dev },
                                             onOpenAddDevice = {
                                                 scannedImeiForAdd = null
@@ -846,42 +851,42 @@ private fun CompactDrawerItem(
 ) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(7.dp),
         color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 10.dp, vertical = 2.dp)
-            .heightIn(min = 38.dp)
+            .padding(horizontal = 6.dp, vertical = 1.dp)
+            .heightIn(min = 34.dp)
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = iconTint,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(16.dp)
             )
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(9.dp))
             Text(
                 text = label,
                 color = textColor,
-                fontSize = 13.sp,
+                fontSize = 12.5.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 modifier = Modifier.weight(1f)
             )
             if (badgeText != null) {
                 Surface(
-                    color = if (selected) badgeColor else badgeColor.copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(6.dp)
+                    color = if (selected) badgeColor else badgeColor.copy(alpha = 0.14f),
+                    shape = RoundedCornerShape(5.dp)
                 ) {
                     Text(
                         text = badgeText,
                         color = if (selected) Color.White else badgeColor,
-                        fontSize = 10.sp,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp)
                     )
                 }
             }
@@ -889,4 +894,5 @@ private fun CompactDrawerItem(
         }
     }
 }
+
 
