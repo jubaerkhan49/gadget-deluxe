@@ -6,8 +6,10 @@ import androidx.activity.viewModels
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
@@ -28,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -116,322 +119,256 @@ class MainActivity : FragmentActivity() {
                                 ModalDrawerSheet(
                                     drawerContainerColor = MaterialTheme.colorScheme.surface,
                                     drawerTonalElevation = 2.dp,
-                                    modifier = Modifier.width(305.dp)
+                                    modifier = Modifier.width(290.dp)
                                 ) {
-                                    // Minimalist Drawer Header
                                     Column(
                                         modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(
-                                                brush = androidx.compose.ui.graphics.Brush.linearGradient(
-                                                    colors = listOf(
-                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
-                                                        MaterialTheme.colorScheme.surface
+                                            .fillMaxSize()
+                                            .verticalScroll(rememberScrollState())
+                                    ) {
+                                        // Compact Minimalist Drawer Header
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                    brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                                                        colors = listOf(
+                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                                            MaterialTheme.colorScheme.surface
+                                                        )
                                                     )
                                                 )
-                                            )
-                                            .padding(20.dp)
-                                    ) {
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                            modifier = Modifier.fillMaxWidth()
+                                                .padding(horizontal = 16.dp, vertical = 14.dp)
                                         ) {
-                                            Surface(
-                                                color = MaterialTheme.colorScheme.primary,
-                                                shape = RoundedCornerShape(12.dp),
-                                                modifier = Modifier.size(42.dp)
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                modifier = Modifier.fillMaxWidth()
                                             ) {
-                                                Box(contentAlignment = Alignment.Center) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.PhoneAndroid,
-                                                        contentDescription = null,
-                                                        tint = Color.White,
-                                                        modifier = Modifier.size(22.dp)
-                                                    )
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Surface(
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        shape = RoundedCornerShape(10.dp),
+                                                        modifier = Modifier.size(34.dp)
+                                                    ) {
+                                                        Box(contentAlignment = Alignment.Center) {
+                                                            Icon(
+                                                                imageVector = Icons.Default.PhoneAndroid,
+                                                                contentDescription = null,
+                                                                tint = Color.White,
+                                                                modifier = Modifier.size(18.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                    Spacer(modifier = Modifier.width(10.dp))
+                                                    Column {
+                                                        Text(
+                                                            text = "Gadget Deluxe",
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 15.sp,
+                                                            color = MaterialTheme.colorScheme.onSurface
+                                                        )
+                                                        Text(
+                                                            text = "Admin Enterprise",
+                                                            fontSize = 11.sp,
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        )
+                                                    }
                                                 }
-                                            }
-                                            Surface(
-                                                color = Color(0xFF16A34A).copy(alpha = 0.12f),
-                                                shape = RoundedCornerShape(20.dp)
-                                            ) {
-                                                Row(
-                                                    verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                                Surface(
+                                                    color = Color(0xFF16A34A).copy(alpha = 0.12f),
+                                                    shape = RoundedCornerShape(12.dp)
                                                 ) {
-                                                    Box(
-                                                        modifier = Modifier
-                                                            .size(6.dp)
-                                                            .background(Color(0xFF16A34A), CircleShape)
-                                                    )
-                                                    Spacer(modifier = Modifier.width(5.dp))
-                                                    Text(
-                                                        text = "Live Sync",
-                                                        color = Color(0xFF16A34A),
-                                                        fontSize = 11.sp,
-                                                        fontWeight = FontWeight.Bold
-                                                    )
+                                                    Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                                                    ) {
+                                                        Box(
+                                                            modifier = Modifier
+                                                                .size(5.dp)
+                                                                .background(Color(0xFF16A34A), CircleShape)
+                                                        )
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Text(
+                                                            text = "Live",
+                                                            color = Color(0xFF16A34A),
+                                                            fontSize = 10.sp,
+                                                            fontWeight = FontWeight.Bold
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
-                                        Spacer(modifier = Modifier.height(14.dp))
+
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+
+                                        Spacer(modifier = Modifier.height(6.dp))
+
+                                        // Navigation Items Section
                                         Text(
-                                            text = "Gadget Deluxe",
-                                            fontWeight = FontWeight.ExtraBold,
-                                            fontSize = 18.sp,
-                                            color = MaterialTheme.colorScheme.onSurface
+                                            text = "WORKSPACE NAVIGATION",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                                            letterSpacing = 0.8.sp,
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                                         )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.Dashboard,
+                                            label = "Dashboard",
+                                            selected = selectedTab == 0,
+                                            onClick = {
+                                                selectedTab = 0
+                                                coroutineScope.launch { drawerState.close() }
+                                            }
+                                        )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.PhoneAndroid,
+                                            label = "Inventory",
+                                            selected = selectedTab == 1,
+                                            badgeText = if (activeCount > 0) "$activeCount" else null,
+                                            badgeColor = MaterialTheme.colorScheme.primary,
+                                            onClick = {
+                                                selectedTab = 1
+                                                coroutineScope.launch { drawerState.close() }
+                                            }
+                                        )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.LocalShipping,
+                                            label = "Shipments",
+                                            selected = selectedTab == 2,
+                                            badgeText = if (shipments.isNotEmpty()) "${shipments.size}" else null,
+                                            badgeColor = MaterialTheme.colorScheme.primary,
+                                            onClick = {
+                                                selectedTab = 2
+                                                coroutineScope.launch { drawerState.close() }
+                                            }
+                                        )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.Insights,
+                                            label = "Analytics",
+                                            selected = selectedTab == 3,
+                                            onClick = {
+                                                selectedTab = 3
+                                                coroutineScope.launch { drawerState.close() }
+                                            }
+                                        )
+
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                                        Spacer(modifier = Modifier.height(6.dp))
+
+                                        // Operations & Quick Tools
                                         Text(
-                                            text = "Admin Enterprise Workspace",
-                                            fontSize = 12.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            text = "OPERATIONS & TOOLS",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                                            letterSpacing = 0.8.sp,
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
                                         )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.QrCodeScanner,
+                                            label = "Scan Barcode / QR",
+                                            iconTint = MaterialTheme.colorScheme.primary,
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                showScannerDialog = true
+                                            }
+                                        )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.ReceiptLong,
+                                            label = "Commercial Sales",
+                                            iconTint = Color(0xFF10B981),
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                showSalesDialog = true
+                                            }
+                                        )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.Bolt,
+                                            label = "Sickw IMEI Parser",
+                                            iconTint = Color(0xFFF59E0B),
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                showSickwDialog = true
+                                            }
+                                        )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.Add,
+                                            label = "Add Single Device",
+                                            iconTint = Color(0xFF06B6D4),
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                scannedImeiForAdd = null
+                                                showAddDeviceDialog = true
+                                            }
+                                        )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.LocalShipping,
+                                            label = "New Shipment Batch",
+                                            iconTint = MaterialTheme.colorScheme.primary,
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                showAddShipmentDialog = true
+                                            }
+                                        )
+
+                                        Spacer(modifier = Modifier.height(6.dp))
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                                        Spacer(modifier = Modifier.height(6.dp))
+
+                                        // Footer Actions
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.Sync,
+                                            label = "Sync Cloud Data",
+                                            iconTint = Color(0xFF10B981),
+                                            trailingContent = {
+                                                if (isLoading) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(14.dp),
+                                                        strokeWidth = 2.dp,
+                                                        color = Color(0xFF10B981)
+                                                    )
+                                                }
+                                            },
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                mainViewModel.loadAllData(token)
+                                            }
+                                        )
+
+                                        CompactDrawerItem(
+                                            icon = Icons.Default.Logout,
+                                            label = "Logout",
+                                            iconTint = Color(0xFFEF4444),
+                                            textColor = Color(0xFFEF4444),
+                                            onClick = {
+                                                coroutineScope.launch { drawerState.close() }
+                                                authViewModel.logout()
+                                                mainViewModel.stopRealtimeSync()
+                                                userToken = null
+                                            }
+                                        )
+
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = "Gadget Deluxe ERP • v1.2.0",
+                                            fontSize = 9.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                                        )
+                                        Spacer(modifier = Modifier.height(12.dp))
                                     }
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    // Navigation Items Section
-                                    Text(
-                                        text = "WORKSPACE NAVIGATION",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                        letterSpacing = 1.sp,
-                                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.Dashboard, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                                        label = { Text("Dashboard", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium, fontSize = 14.sp) },
-                                        selected = selectedTab == 0,
-                                        onClick = {
-                                            selectedTab = 0
-                                            coroutineScope.launch { drawerState.close() }
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface
-                                        ),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.PhoneAndroid, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                                        label = { Text("Inventory", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium, fontSize = 14.sp) },
-                                        badge = {
-                                            if (activeCount > 0) {
-                                                Surface(
-                                                    color = if (selectedTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                                    shape = RoundedCornerShape(10.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "$activeCount",
-                                                        color = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        fontSize = 11.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        selected = selectedTab == 1,
-                                        onClick = {
-                                            selectedTab = 1
-                                            coroutineScope.launch { drawerState.close() }
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface
-                                        ),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                                        label = { Text("Shipments", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium, fontSize = 14.sp) },
-                                        badge = {
-                                            if (shipments.isNotEmpty()) {
-                                                Surface(
-                                                    color = if (selectedTab == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                                                    shape = RoundedCornerShape(10.dp)
-                                                ) {
-                                                    Text(
-                                                        text = "${shipments.size}",
-                                                        color = if (selectedTab == 2) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        fontSize = 11.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        selected = selectedTab == 2,
-                                        onClick = {
-                                            selectedTab = 2
-                                            coroutineScope.launch { drawerState.close() }
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface
-                                        ),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.Insights, contentDescription = null, modifier = Modifier.size(20.dp)) },
-                                        label = { Text("Analytics", fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Medium, fontSize = 14.sp) },
-                                        selected = selectedTab == 3,
-                                        onClick = {
-                                            selectedTab = 3
-                                            coroutineScope.launch { drawerState.close() }
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        colors = NavigationDrawerItemDefaults.colors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface
-                                        ),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                                    )
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    // Operations & Quick Tools
-                                    Text(
-                                        text = "OPERATIONS & TOOLS",
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                        letterSpacing = 1.sp,
-                                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) },
-                                        label = { Text("Scan Barcode / QR", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
-                                        selected = false,
-                                        onClick = {
-                                            coroutineScope.launch { drawerState.close() }
-                                            showScannerDialog = true
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp)) },
-                                        label = { Text("Commercial Sales", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
-                                        selected = false,
-                                        onClick = {
-                                            coroutineScope.launch { drawerState.close() }
-                                            showSalesDialog = true
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.Bolt, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp)) },
-                                        label = { Text("Sickw IMEI Parser", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
-                                        selected = false,
-                                        onClick = {
-                                            coroutineScope.launch { drawerState.close() }
-                                            showSickwDialog = true
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF06B6D4), modifier = Modifier.size(20.dp)) },
-                                        label = { Text("Add Single Device", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
-                                        selected = false,
-                                        onClick = {
-                                            coroutineScope.launch { drawerState.close() }
-                                            scannedImeiForAdd = null
-                                            showAddDeviceDialog = true
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.LocalShipping, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) },
-                                        label = { Text("New Shipment Batch", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
-                                        selected = false,
-                                        onClick = {
-                                            coroutineScope.launch { drawerState.close() }
-                                            showAddShipmentDialog = true
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
-                                    )
-
-                                    Spacer(modifier = Modifier.weight(1f))
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
-
-                                    // Footer Actions
-                                    NavigationDrawerItem(
-                                        icon = {
-                                            Icon(
-                                                imageVector = Icons.Default.Sync,
-                                                contentDescription = null,
-                                                tint = Color(0xFF10B981),
-                                                modifier = Modifier
-                                                    .size(20.dp)
-                                                    .rotate(if (isLoading) rotation else 0f)
-                                            )
-                                        },
-                                        label = { Text("Sync Cloud Data", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
-                                        selected = false,
-                                        onClick = {
-                                            coroutineScope.launch { drawerState.close() }
-                                            mainViewModel.loadAllData(token)
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
-                                    )
-
-                                    NavigationDrawerItem(
-                                        icon = { Icon(Icons.Default.Logout, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp)) },
-                                        label = { Text("Logout", color = Color(0xFFEF4444), fontSize = 13.sp, fontWeight = FontWeight.Bold) },
-                                        selected = false,
-                                        onClick = {
-                                            coroutineScope.launch { drawerState.close() }
-                                            authViewModel.logout()
-                                            mainViewModel.stopRealtimeSync()
-                                            userToken = null
-                                        },
-                                        shape = RoundedCornerShape(10.dp),
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
-                                    )
-
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = "Gadget Deluxe ERP • v1.2.0",
-                                        fontSize = 10.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                                    )
                                 }
                             }
                         ) {
@@ -894,3 +831,62 @@ class MainActivity : FragmentActivity() {
         }
     }
 }
+
+@Composable
+private fun CompactDrawerItem(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean = false,
+    iconTint: Color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+    textColor: Color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+    badgeText: String? = null,
+    badgeColor: Color = MaterialTheme.colorScheme.primary,
+    trailingContent: (@Composable () -> Unit)? = null,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(8.dp),
+        color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else Color.Transparent,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 10.dp, vertical = 2.dp)
+            .heightIn(min = 38.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = label,
+                color = textColor,
+                fontSize = 13.sp,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                modifier = Modifier.weight(1f)
+            )
+            if (badgeText != null) {
+                Surface(
+                    color = if (selected) badgeColor else badgeColor.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = badgeText,
+                        color = if (selected) Color.White else badgeColor,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+            trailingContent?.invoke()
+        }
+    }
+}
+
