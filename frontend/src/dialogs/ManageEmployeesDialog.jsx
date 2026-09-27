@@ -46,6 +46,7 @@ import PointOfSaleIcon from '@mui/icons-material/PointOfSale';
 import SmartphoneIcon from '@mui/icons-material/Smartphone';
 import { useSnackbar } from 'notistack';
 import api, { deviceSaleRequestApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import { formatNumber } from '../utils/formatters';
@@ -55,10 +56,16 @@ import ErrorBoundary from '../components/common/ErrorBoundary';
 export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated, initialTab = 0 }) {
   const { enqueueSnackbar } = useSnackbar();
   const [tabIndex, setTabIndex] = useState(initialTab);
-  const [applications, setApplications] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [profileUpdates, setProfileUpdates] = useState([]);
-  const [saleRequests, setSaleRequests] = useState([]);
+
+  const cachedApps = apiCache.get('/api/employee-applications/');
+  const cachedUsers = apiCache.get('/api/users/');
+  const cachedProfileUpdates = apiCache.get('/api/profile-update-requests/');
+  const cachedSaleReqs = apiCache.get('/api/device-sale-requests/');
+
+  const [applications, setApplications] = useState(() => cachedApps || []);
+  const [employees, setEmployees] = useState(() => cachedUsers || []);
+  const [profileUpdates, setProfileUpdates] = useState(() => cachedProfileUpdates || []);
+  const [saleRequests, setSaleRequests] = useState(() => cachedSaleReqs || []);
   const [loading, setLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -67,63 +74,72 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
   const [confirmSaleModalOpen, setConfirmSaleModalOpen] = useState(false);
   const [commissions, setCommissions] = useState({});
 
-  const fetchApplications = async () => {
+  const fetchApplications = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.get('/api/employee-applications/');
       const data = res.data?.results || res.data || [];
-      setApplications(Array.isArray(data) ? data : []);
+      const appList = Array.isArray(data) ? data : [];
+      apiCache.set('/api/employee-applications/', appList);
+      setApplications(appList);
     } catch (err) {
       console.error('Failed to load employee applications', err);
-      setApplications([]);
+      if (!silent) setApplications([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  const fetchEmployees = async () => {
+  const fetchEmployees = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await api.get('/api/users/');
       const data = res.data?.results || res.data || [];
-      setEmployees(Array.isArray(data) ? data : []);
+      const userList = Array.isArray(data) ? data : [];
+      apiCache.set('/api/users/', userList);
+      setEmployees(userList);
     } catch (err) {
       console.error('Failed to load employees', err);
-      setEmployees([]);
+      if (!silent) setEmployees([]);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
-  const fetchProfileUpdates = async () => {
+  const fetchProfileUpdates = async (silent = false) => {
     try {
       const res = await api.get('/api/profile-update-requests/');
       const data = res.data?.results || res.data || [];
-      setProfileUpdates(Array.isArray(data) ? data : []);
+      const updateList = Array.isArray(data) ? data : [];
+      apiCache.set('/api/profile-update-requests/', updateList);
+      setProfileUpdates(updateList);
     } catch (err) {
       console.error('Failed to load profile update requests', err);
-      setProfileUpdates([]);
+      if (!silent) setProfileUpdates([]);
     }
   };
 
-  const fetchSaleRequests = async () => {
+  const fetchSaleRequests = async (silent = false) => {
     try {
       const res = await deviceSaleRequestApi.getAll();
       const data = res.data?.results || res.data || [];
-      setSaleRequests(Array.isArray(data) ? data : []);
+      const reqList = Array.isArray(data) ? data : [];
+      apiCache.set('/api/device-sale-requests/', reqList);
+      setSaleRequests(reqList);
     } catch (err) {
       console.error('Failed to load sale requests', err);
-      setSaleRequests([]);
+      if (!silent) setSaleRequests([]);
     }
   };
 
   useEffect(() => {
     if (open) {
       setTabIndex(initialTab);
-      fetchApplications();
-      fetchEmployees();
-      fetchProfileUpdates();
-      fetchSaleRequests();
+      const hasAnyCache = Boolean(cachedApps || cachedUsers || cachedSaleReqs);
+      fetchApplications(hasAnyCache);
+      fetchEmployees(hasAnyCache);
+      fetchProfileUpdates(hasAnyCache);
+      fetchSaleRequests(hasAnyCache);
     }
   }, [open, initialTab]);
 

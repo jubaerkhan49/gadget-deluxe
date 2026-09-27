@@ -35,6 +35,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { formatNumber, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { deviceApi, saleApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import CopyableText from '../components/common/CopyableText';
 import VariantBadge from '../components/common/VariantBadge';
 import StatusBadge from '../components/common/StatusBadge';
@@ -44,9 +45,15 @@ import EditDeviceDialog from '../dialogs/EditDeviceDialog';
 export default function Archive() {
   const { enqueueSnackbar } = useSnackbar();
 
-  const [devices, setDevices] = useState([]);
-  const [sales, setSales] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedDevices = apiCache.get('/api/devices/');
+  const cachedSales = apiCache.get('/api/sales/');
+
+  const [devices, setDevices] = useState(() => {
+    const all = cachedDevices?.results || cachedDevices || [];
+    return all.filter((d) => d.current_status === 'SOLD');
+  });
+  const [sales, setSales] = useState(() => cachedSales?.results || cachedSales || []);
+  const [loading, setLoading] = useState(() => !cachedDevices);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Pagination
@@ -60,23 +67,30 @@ export default function Archive() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   useEffect(() => {
-    fetchArchivedData();
+    fetchArchivedData(Boolean(cachedDevices));
   }, []);
 
-  const fetchArchivedData = async () => {
+  const fetchArchivedData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const [devsRes, salesRes] = await Promise.all([
         deviceApi.getAll(),
         saleApi.getAll()
       ]);
       const allDevs = devsRes.data.results || devsRes.data || [];
+      const freshSales = salesRes.data.results || salesRes.data || [];
       const soldDevs = allDevs.filter((d) => d.current_status === 'SOLD');
+
+      apiCache.set('/api/devices/', allDevs);
+      apiCache.set('/api/sales/', freshSales);
+
       setDevices(soldDevs);
-      setSales(salesRes.data.results || salesRes.data || []);
+      setSales(freshSales);
     } catch (err) {
       console.error(err);
-      enqueueSnackbar('Failed to load archived sold devices', { variant: 'error' });
+      if (!silent) {
+        enqueueSnackbar('Failed to load archived sold devices', { variant: 'error' });
+      }
     } finally {
       setLoading(false);
     }
