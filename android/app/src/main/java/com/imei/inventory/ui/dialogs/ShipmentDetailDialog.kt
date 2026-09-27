@@ -87,12 +87,6 @@ fun ShipmentDetailDialog(
             ) {
                 // Shipment Metadata
                 val count = if (devicesInShipment.isNotEmpty()) devicesInShipment.size else shipment.devicesCount
-                val totalGrossCost = shipment.shippingCost?.toDoubleOrNull() ?: 0.0
-                val discountAmount = shipment.discount?.toDoubleOrNull() ?: 0.0
-                val netCost = shipment.netShippingCost?.toDoubleOrNull() ?: maxOf(totalGrossCost - discountAmount, 0.0)
-                val unitFee = shipment.unitShippingCost?.toDoubleOrNull() 
-                    ?: if (count > 0 && netCost > 0) (netCost / count) else 0.0
-                val totalBatchCost = devicesInShipment.sumOf { it.buyingPrice ?: 0.0 }
 
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -108,32 +102,6 @@ fun ShipmentDetailDialog(
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Shipping Agent:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         Text(shipment.shippingCompany ?: "Standard Freight", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                    }
-
-                    if (netCost > 0 || totalGrossCost > 0) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Net Shipment Bill:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                            Text("BDT ${String.format("%.2f", netCost)}", color = Color(0xFFD97706), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
-                        if (discountAmount > 0) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Agent Cashback:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                                Text("- BDT ${String.format("%.2f", discountAmount)}", color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                            }
-                        }
-                        if (count > 0 && unitFee > 0) {
-                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Net Freight / Unit:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                                Text("BDT ${String.format("%.2f", unitFee)} × $count units", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                            }
-                        }
-                    }
-
-                    if (totalBatchCost > 0) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total Batch Cost:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                            Text("BDT ${String.format("%.2f", totalBatchCost)}", color = Color(0xFF16A34A), fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                        }
                     }
 
                     shipment.createdAt?.let { date ->
@@ -401,14 +369,6 @@ fun ShipmentDeviceItem(
             Spacer(modifier = Modifier.height(4.dp))
 
             CopyableText(label = "IMEI", value = device.imei)
-
-            device.buyingPrice?.let { bp ->
-                Spacer(modifier = Modifier.height(3.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Cost (Item + Ship):", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
-                    Text("BDT ${String.format("%.2f", bp)}", color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                }
-            }
 
             if (!device.receivedDateBd.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(3.dp))
