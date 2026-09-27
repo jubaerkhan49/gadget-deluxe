@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material.icons.filled.Logout
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -106,314 +107,544 @@ class MainActivity : FragmentActivity() {
                         )
                     } else {
                         val token = userToken!!
+                        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+                        val activeCount = remember(devices) { devices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) } }
 
-                        Scaffold(
-                            topBar = {
-                                TopAppBar(
-                                    title = {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        ModalNavigationDrawer(
+                            drawerState = drawerState,
+                            drawerContent = {
+                                ModalDrawerSheet(
+                                    drawerContainerColor = MaterialTheme.colorScheme.surface,
+                                    drawerTonalElevation = 2.dp,
+                                    modifier = Modifier.width(305.dp)
+                                ) {
+                                    // Minimalist Drawer Header
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(
+                                                brush = androidx.compose.ui.graphics.Brush.linearGradient(
+                                                    colors = listOf(
+                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                                        MaterialTheme.colorScheme.surface
+                                                    )
+                                                )
+                                            )
+                                            .padding(20.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
                                             Surface(
-                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                                                shape = RoundedCornerShape(8.dp),
-                                                modifier = Modifier.size(34.dp)
+                                                color = MaterialTheme.colorScheme.primary,
+                                                shape = RoundedCornerShape(12.dp),
+                                                modifier = Modifier.size(42.dp)
                                             ) {
                                                 Box(contentAlignment = Alignment.Center) {
                                                     Icon(
                                                         imageVector = Icons.Default.PhoneAndroid,
                                                         contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.size(20.dp)
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(22.dp)
                                                     )
                                                 }
                                             }
-                                            Spacer(modifier = Modifier.width(10.dp))
-                                            Column {
-                                                Text(
-                                                    text = "Gadget Deluxe",
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 17.sp,
-                                                    color = MaterialTheme.colorScheme.onBackground
-                                                )
-                                                Text(
-                                                    text = "Cloud Sync Active",
-                                                    fontSize = 11.sp,
-                                                    color = Color(0xFF16A34A),
-                                                    fontWeight = FontWeight.Medium
-                                                )
+                                            Surface(
+                                                color = Color(0xFF16A34A).copy(alpha = 0.12f),
+                                                shape = RoundedCornerShape(20.dp)
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(6.dp)
+                                                            .background(Color(0xFF16A34A), CircleShape)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(5.dp))
+                                                    Text(
+                                                        text = "Live Sync",
+                                                        color = Color(0xFF16A34A),
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
                                             }
                                         }
-                                    },
-                                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
-                                    actions = {
-                                        // + Add Device Button (Beside Refresh Sync Icon)
-                                        IconButton(
-                                            onClick = {
-                                                scannedImeiForAdd = null
-                                                showAddDeviceDialog = true
-                                            },
-                                            modifier = Modifier
-                                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                                                .size(36.dp)
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Add,
-                                                contentDescription = "+ Add Device",
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
+                                        Spacer(modifier = Modifier.height(14.dp))
+                                        Text(
+                                            text = "Gadget Deluxe",
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 18.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = "Admin Enterprise Workspace",
+                                            fontSize = 12.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
 
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
 
-                                        // Sleek Material Sync Button
-                                        IconButton(
-                                            onClick = { mainViewModel.loadAllData(token) },
-                                            modifier = Modifier
-                                                .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                                                .size(36.dp)
-                                        ) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    // Navigation Items Section
+                                    Text(
+                                        text = "WORKSPACE NAVIGATION",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        letterSpacing = 1.sp,
+                                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                                    )
+
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.Dashboard, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                                        label = { Text("Dashboard", fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium, fontSize = 14.sp) },
+                                        selected = selectedTab == 0,
+                                        onClick = {
+                                            selectedTab = 0
+                                            coroutineScope.launch { drawerState.close() }
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                                    )
+
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.PhoneAndroid, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                                        label = { Text("Inventory", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium, fontSize = 14.sp) },
+                                        badge = {
+                                            if (activeCount > 0) {
+                                                Surface(
+                                                    color = if (selectedTab == 1) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                                    shape = RoundedCornerShape(10.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "$activeCount",
+                                                        color = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        selected = selectedTab == 1,
+                                        onClick = {
+                                            selectedTab = 1
+                                            coroutineScope.launch { drawerState.close() }
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                                    )
+
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.LocalShipping, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                                        label = { Text("Shipments", fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium, fontSize = 14.sp) },
+                                        badge = {
+                                            if (shipments.isNotEmpty()) {
+                                                Surface(
+                                                    color = if (selectedTab == 2) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                                    shape = RoundedCornerShape(10.dp)
+                                                ) {
+                                                    Text(
+                                                        text = "${shipments.size}",
+                                                        color = if (selectedTab == 2) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        fontSize = 11.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        selected = selectedTab == 2,
+                                        onClick = {
+                                            selectedTab = 2
+                                            coroutineScope.launch { drawerState.close() }
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                                    )
+
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.Insights, contentDescription = null, modifier = Modifier.size(20.dp)) },
+                                        label = { Text("Analytics", fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Medium, fontSize = 14.sp) },
+                                        selected = selectedTab == 3,
+                                        onClick = {
+                                            selectedTab = 3
+                                            coroutineScope.launch { drawerState.close() }
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        colors = NavigationDrawerItemDefaults.colors(
+                                            selectedContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                                            selectedTextColor = MaterialTheme.colorScheme.primary,
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurface
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    // Operations & Quick Tools
+                                    Text(
+                                        text = "OPERATIONS & TOOLS",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                        letterSpacing = 1.sp,
+                                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                                    )
+
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) },
+                                        label = { Text("Scan Barcode / QR", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                        selected = false,
+                                        onClick = {
+                                            coroutineScope.launch { drawerState.close() }
+                                            showScannerDialog = true
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
+                                    )
+
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(20.dp)) },
+                                        label = { Text("Commercial Sales", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                        selected = false,
+                                        onClick = {
+                                            coroutineScope.launch { drawerState.close() }
+                                            showSalesDialog = true
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
+                                    )
+
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.Bolt, contentDescription = null, tint = Color(0xFFF59E0B), modifier = Modifier.size(20.dp)) },
+                                        label = { Text("Sickw IMEI Parser", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                        selected = false,
+                                        onClick = {
+                                            coroutineScope.launch { drawerState.close() }
+                                            showSickwDialog = true
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
+                                    )
+
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.Add, contentDescription = null, tint = Color(0xFF06B6D4), modifier = Modifier.size(20.dp)) },
+                                        label = { Text("Add Single Device", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                        selected = false,
+                                        onClick = {
+                                            coroutineScope.launch { drawerState.close() }
+                                            scannedImeiForAdd = null
+                                            showAddDeviceDialog = true
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
+                                    )
+
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.LocalShipping, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp)) },
+                                        label = { Text("New Shipment Batch", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                        selected = false,
+                                        onClick = {
+                                            coroutineScope.launch { drawerState.close() }
+                                            showAddShipmentDialog = true
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
+                                    )
+
+                                    Spacer(modifier = Modifier.weight(1f))
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f))
+
+                                    // Footer Actions
+                                    NavigationDrawerItem(
+                                        icon = {
                                             Icon(
-                                                imageVector = Icons.Default.Refresh,
-                                                contentDescription = "Sync",
-                                                tint = MaterialTheme.colorScheme.primary,
+                                                imageVector = Icons.Default.Sync,
+                                                contentDescription = null,
+                                                tint = Color(0xFF10B981),
                                                 modifier = Modifier
                                                     .size(20.dp)
                                                     .rotate(if (isLoading) rotation else 0f)
                                             )
-                                        }
+                                        },
+                                        label = { Text("Sync Cloud Data", fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                        selected = false,
+                                        onClick = {
+                                            coroutineScope.launch { drawerState.close() }
+                                            mainViewModel.loadAllData(token)
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 1.dp)
+                                    )
 
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                    NavigationDrawerItem(
+                                        icon = { Icon(Icons.Default.Logout, contentDescription = null, tint = Color(0xFFEF4444), modifier = Modifier.size(20.dp)) },
+                                        label = { Text("Logout", color = Color(0xFFEF4444), fontSize = 13.sp, fontWeight = FontWeight.Bold) },
+                                        selected = false,
+                                        onClick = {
+                                            coroutineScope.launch { drawerState.close() }
+                                            authViewModel.logout()
+                                            mainViewModel.stopRealtimeSync()
+                                            userToken = null
+                                        },
+                                        shape = RoundedCornerShape(10.dp),
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
+                                    )
 
-                                        // Vertical 3-Dot Overflow Menu
-                                        Box {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Gadget Deluxe ERP • v1.2.0",
+                                        fontSize = 10.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                                    )
+                                }
+                            }
+                        ) {
+                            Scaffold(
+                                topBar = {
+                                    TopAppBar(
+                                        navigationIcon = {
                                             IconButton(
-                                                onClick = { showTopMenu = true },
+                                                onClick = {
+                                                    coroutineScope.launch { drawerState.open() }
+                                                },
                                                 modifier = Modifier
-                                                    .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                                                    .size(36.dp)
+                                                    .padding(start = 6.dp)
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
+                                                    .size(38.dp)
                                             ) {
                                                 Icon(
-                                                    imageVector = Icons.Default.MoreVert,
-                                                    contentDescription = "More Options",
+                                                    imageVector = Icons.Default.Menu,
+                                                    contentDescription = "Menu",
                                                     tint = MaterialTheme.colorScheme.onSurface,
                                                     modifier = Modifier.size(20.dp)
                                                 )
                                             }
-
-                                            DropdownMenu(
-                                                expanded = showTopMenu,
-                                                onDismissRequest = { showTopMenu = false }
+                                        },
+                                        title = {
+                                            Column(modifier = Modifier.padding(start = 4.dp)) {
+                                                Text(
+                                                    text = "Gadget Deluxe",
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 16.sp,
+                                                    color = MaterialTheme.colorScheme.onBackground
+                                                )
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(6.dp)
+                                                            .background(Color(0xFF16A34A), CircleShape)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text(
+                                                        text = when (selectedTab) {
+                                                            0 -> "Dashboard Overview"
+                                                            1 -> "Inventory Management"
+                                                            2 -> "Shipment Batches"
+                                                            3 -> "Business Analytics"
+                                                            else -> "Cloud Sync Active"
+                                                        },
+                                                        fontSize = 11.sp,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                }
+                                            }
+                                        },
+                                        colors = TopAppBarDefaults.topAppBarColors(
+                                            containerColor = MaterialTheme.colorScheme.surface,
+                                            titleContentColor = MaterialTheme.colorScheme.onSurface
+                                        ),
+                                        actions = {
+                                            // Scanner button
+                                            IconButton(
+                                                onClick = { showScannerDialog = true },
+                                                modifier = Modifier
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
+                                                    .size(36.dp)
                                             ) {
-                                                DropdownMenuItem(
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            imageVector = Icons.Default.QrCodeScanner,
-                                                            contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    },
-                                                    text = { Text("Scan QR / Barcode", fontWeight = FontWeight.Medium) },
-                                                    onClick = {
-                                                        showTopMenu = false
-                                                        showScannerDialog = true
-                                                    }
-                                                )
-                                                DropdownMenuItem(
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            imageVector = Icons.Default.ReceiptLong,
-                                                            contentDescription = null,
-                                                            tint = Color(0xFF10B981),
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    },
-                                                    text = { Text("Commercial Sales", fontWeight = FontWeight.Medium) },
-                                                    onClick = {
-                                                        showTopMenu = false
-                                                        showSalesDialog = true
-                                                    }
-                                                )
-                                                DropdownMenuItem(
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Bolt,
-                                                            contentDescription = null,
-                                                            tint = Color(0xFFF59E0B),
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    },
-                                                    text = { Text("Sickw IMEI Parser", fontWeight = FontWeight.Medium) },
-                                                    onClick = {
-                                                        showTopMenu = false
-                                                        showSickwDialog = true
-                                                    }
-                                                )
-                                                DropdownMenuItem(
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            imageVector = Icons.Default.LocalShipping,
-                                                            contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    },
-                                                    text = { Text("New Shipment Entry", fontWeight = FontWeight.Medium) },
-                                                    onClick = {
-                                                        showTopMenu = false
-                                                        showAddShipmentDialog = true
-                                                    }
-                                                )
-                                                DropdownMenuItem(
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            imageVector = Icons.Default.PhoneAndroid,
-                                                            contentDescription = null,
-                                                            tint = Color(0xFF06B6D4),
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    },
-                                                    text = { Text("Add Single Device", fontWeight = FontWeight.Medium) },
-                                                    onClick = {
-                                                        showTopMenu = false
-                                                        showAddDeviceDialog = true
-                                                    }
-                                                )
-                                                DropdownMenuItem(
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Sync,
-                                                            contentDescription = null,
-                                                            tint = Color(0xFF10B981),
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    },
-                                                    text = { Text("Sync Cloud Data", fontWeight = FontWeight.Medium) },
-                                                    onClick = {
-                                                        showTopMenu = false
-                                                        mainViewModel.loadAllData(token)
-                                                    }
-                                                )
-                                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                                                DropdownMenuItem(
-                                                    leadingIcon = {
-                                                        Icon(
-                                                            imageVector = Icons.Default.Logout,
-                                                            contentDescription = null,
-                                                            tint = Color(0xFFEF4444),
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    },
-                                                    text = { Text("Logout", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold) },
-                                                    onClick = {
-                                                        showTopMenu = false
-                                                        authViewModel.logout()
-                                                        mainViewModel.stopRealtimeSync()
-                                                        userToken = null
-                                                    }
+                                                Icon(
+                                                    imageVector = Icons.Default.QrCodeScanner,
+                                                    contentDescription = "Scan QR",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(18.dp)
                                                 )
                                             }
-                                        }
 
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                    }
-                                )
-                            },
-                            bottomBar = {
-                                NavigationBar(
-                                    containerColor = MaterialTheme.colorScheme.surface,
-                                    tonalElevation = 6.dp
-                                ) {
-                                    NavigationBarItem(
-                                        icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard", modifier = Modifier.size(22.dp)) },
-                                        label = { Text("Dashboard", fontSize = 10.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
-                                        selected = selectedTab == 0,
-                                        onClick = { selectedTab = 0 },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            indicatorColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
-                                    )
-                                    NavigationBarItem(
-                                        icon = { Icon(Icons.Default.PhoneAndroid, contentDescription = "Inventory", modifier = Modifier.size(22.dp)) },
-                                        label = { Text("Inventory", fontSize = 10.sp, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
-                                        selected = selectedTab == 1,
-                                        onClick = { selectedTab = 1 },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            indicatorColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
-                                    )
-                                    NavigationBarItem(
-                                        icon = { Icon(Icons.Default.LocalShipping, contentDescription = "Shipments", modifier = Modifier.size(22.dp)) },
-                                        label = { Text("Shipments", fontSize = 10.sp, fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
-                                        selected = selectedTab == 2,
-                                        onClick = { selectedTab = 2 },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            indicatorColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
-                                    )
-                                    NavigationBarItem(
-                                        icon = { Icon(Icons.Default.Insights, contentDescription = "Analytics", modifier = Modifier.size(22.dp)) },
-                                        label = { Text("Analytics", fontSize = 10.sp, fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
-                                        selected = selectedTab == 3,
-                                        onClick = { selectedTab = 3 },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = MaterialTheme.colorScheme.primary,
-                                            selectedTextColor = MaterialTheme.colorScheme.primary,
-                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            indicatorColor = MaterialTheme.colorScheme.surfaceVariant
-                                        )
-                                    )
-                                }
-                            },
-                            containerColor = MaterialTheme.colorScheme.background
-                        ) { padding ->
-                            Surface(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .padding(padding),
-                                color = MaterialTheme.colorScheme.background
-                            ) {
-                                when (selectedTab) {
-                                    0 -> DashboardTab(
-                                        token = token,
-                                        viewModel = mainViewModel,
-                                        onNavigateToTab = { tabIndex -> selectedTab = tabIndex },
-                                        onSelectDevice = { dev -> selectedDeviceForDetail = dev },
-                                        onOpenScanner = { showScannerDialog = true },
-                                        onOpenAddShipment = { showAddShipmentDialog = true }
-                                    )
-                                    1 -> InventoryTab(
-                                        token = token,
-                                        viewModel = mainViewModel,
-                                        onSelectDevice = { dev -> selectedDeviceForDetail = dev },
-                                        onOpenAddDevice = {
-                                            scannedImeiForAdd = null
-                                            showAddDeviceDialog = true
+                                            Spacer(modifier = Modifier.width(6.dp))
+
+                                            // + Add Device Quick Button
+                                            IconButton(
+                                                onClick = {
+                                                    scannedImeiForAdd = null
+                                                    showAddDeviceDialog = true
+                                                },
+                                                modifier = Modifier
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
+                                                    .size(36.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Add,
+                                                    contentDescription = "+ Add Device",
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.size(19.dp)
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.width(6.dp))
+
+                                            // Sync Button
+                                            IconButton(
+                                                onClick = { mainViewModel.loadAllData(token) },
+                                                modifier = Modifier
+                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
+                                                    .size(36.dp)
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Refresh,
+                                                    contentDescription = "Sync",
+                                                    tint = MaterialTheme.colorScheme.onSurface,
+                                                    modifier = Modifier
+                                                        .size(19.dp)
+                                                        .rotate(if (isLoading) rotation else 0f)
+                                                )
+                                            }
+
+                                            Spacer(modifier = Modifier.width(6.dp))
                                         }
                                     )
-                                    2 -> ShipmentsTab(
-                                        token = token,
-                                        viewModel = mainViewModel,
-                                        onSelectShipment = { shipment -> selectedShipmentForDetail = shipment },
-                                        onOpenAddShipment = { showAddShipmentDialog = true }
-                                    )
-                                    3 -> AnalyticsTab(
-                                        token = token,
-                                        viewModel = mainViewModel
-                                    )
+                                },
+                                bottomBar = {
+                                    NavigationBar(
+                                        containerColor = MaterialTheme.colorScheme.surface,
+                                        tonalElevation = 4.dp
+                                    ) {
+                                        NavigationBarItem(
+                                            icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard", modifier = Modifier.size(20.dp)) },
+                                            label = { Text("Dashboard", fontSize = 10.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
+                                            selected = selectedTab == 0,
+                                            onClick = { selectedTab = 0 },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            )
+                                        )
+                                        NavigationBarItem(
+                                            icon = { Icon(Icons.Default.PhoneAndroid, contentDescription = "Inventory", modifier = Modifier.size(20.dp)) },
+                                            label = { Text("Inventory", fontSize = 10.sp, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
+                                            selected = selectedTab == 1,
+                                            onClick = { selectedTab = 1 },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            )
+                                        )
+                                        NavigationBarItem(
+                                            icon = { Icon(Icons.Default.LocalShipping, contentDescription = "Shipments", modifier = Modifier.size(20.dp)) },
+                                            label = { Text("Shipments", fontSize = 10.sp, fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
+                                            selected = selectedTab == 2,
+                                            onClick = { selectedTab = 2 },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            )
+                                        )
+                                        NavigationBarItem(
+                                            icon = { Icon(Icons.Default.Insights, contentDescription = "Analytics", modifier = Modifier.size(20.dp)) },
+                                            label = { Text("Analytics", fontSize = 10.sp, fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
+                                            selected = selectedTab == 3,
+                                            onClick = { selectedTab = 3 },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            )
+                                        )
+                                    }
+                                },
+                                containerColor = MaterialTheme.colorScheme.background
+                            ) { padding ->
+                                Surface(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(padding),
+                                    color = MaterialTheme.colorScheme.background
+                                ) {
+                                    when (selectedTab) {
+                                        0 -> DashboardTab(
+                                            token = token,
+                                            viewModel = mainViewModel,
+                                            onNavigateToTab = { tabIndex -> selectedTab = tabIndex },
+                                            onSelectDevice = { dev -> selectedDeviceForDetail = dev },
+                                            onOpenScanner = { showScannerDialog = true },
+                                            onOpenAddShipment = { showAddShipmentDialog = true }
+                                        )
+                                        1 -> InventoryTab(
+                                            token = token,
+                                            viewModel = mainViewModel,
+                                            onSelectDevice = { dev -> selectedDeviceForDetail = dev },
+                                            onOpenAddDevice = {
+                                                scannedImeiForAdd = null
+                                                showAddDeviceDialog = true
+                                            }
+                                        )
+                                        2 -> ShipmentsTab(
+                                            token = token,
+                                            viewModel = mainViewModel,
+                                            onSelectShipment = { shipment -> selectedShipmentForDetail = shipment },
+                                            onOpenAddShipment = { showAddShipmentDialog = true }
+                                        )
+                                        3 -> AnalyticsTab(
+                                            token = token,
+                                            viewModel = mainViewModel
+                                        )
+                                    }
                                 }
                             }
                         }

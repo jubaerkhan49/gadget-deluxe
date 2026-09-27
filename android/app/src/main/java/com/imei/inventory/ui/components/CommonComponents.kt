@@ -1,6 +1,7 @@
 package com.imei.inventory.ui.components
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,26 +44,27 @@ fun VariantBadge(variant: String?) {
     if (variant.isNullOrBlank()) return
 
     val (bgColor, textColor) = when (variant.trim()) {
-        "Modified" -> Color(0x22F97316) to Color(0xFFEA580C)
-        "USA eSim" -> Color(0x2210B981) to Color(0xFF059669)
-        "Canada" -> Color(0x223B82F6) to Color(0xFF2563EB)
-        "Mexican" -> Color(0x2206B6D4) to Color(0xFF0891B2)
-        "Korea" -> Color(0x22A855F7) to Color(0xFF9333EA)
-        "Singapore" -> Color(0x22EF4444) to Color(0xFFDC2626)
-        "Bypass" -> Color(0x22F59E0B) to Color(0xFFD97706)
-        else -> Color(0x2264748B) to Color(0xFF475569)
+        "Modified" -> Color(0x1EF97316) to Color(0xFFEA580C)
+        "USA eSim" -> Color(0x1E10B981) to Color(0xFF059669)
+        "Canada" -> Color(0x1E3B82F6) to Color(0xFF2563EB)
+        "Mexican" -> Color(0x1E06B6D4) to Color(0xFF0891B2)
+        "Korea" -> Color(0x1EA855F7) to Color(0xFF9333EA)
+        "Singapore" -> Color(0x1EEF4444) to Color(0xFFDC2626)
+        "Bypass" -> Color(0x1EF59E0B) to Color(0xFFD97706)
+        else -> Color(0x1E64748B) to Color(0xFF475569)
     }
 
     Surface(
         color = bgColor,
-        shape = RoundedCornerShape(6.dp)
+        shape = RoundedCornerShape(7.dp),
+        border = BorderStroke(1.dp, textColor.copy(alpha = 0.25f))
     ) {
         Text(
             text = variant,
             color = textColor,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.5.dp)
         )
     }
 }
@@ -72,23 +74,24 @@ fun StatusBadge(status: String?, statusDisplay: String? = null) {
     if (status.isNullOrBlank()) return
 
     val (bgColor, textColor) = when (status) {
-        "IN_STOCK" -> Color(0x2222C55E) to Color(0xFF16A34A)
-        "SOLD" -> Color(0x223B82F6) to Color(0xFF2563EB)
-        "UNDER_REPAIR" -> Color(0x22EAB308) to Color(0xFFCA8A04)
-        "IN_TRANSIT" -> Color(0x228B5CF6) to Color(0xFF7C3AED)
-        else -> Color(0x2264748B) to Color(0xFF475569)
+        "IN_STOCK" -> Color(0x1E22C55E) to Color(0xFF16A34A)
+        "SOLD" -> Color(0x1E3B82F6) to Color(0xFF2563EB)
+        "UNDER_REPAIR" -> Color(0x1EEAB308) to Color(0xFFCA8A04)
+        "IN_TRANSIT" -> Color(0x1E8B5CF6) to Color(0xFF7C3AED)
+        else -> Color(0x1E64748B) to Color(0xFF475569)
     }
 
     Surface(
         color = bgColor,
-        shape = RoundedCornerShape(6.dp)
+        shape = RoundedCornerShape(7.dp),
+        border = BorderStroke(1.dp, textColor.copy(alpha = 0.25f))
     ) {
         Text(
             text = statusDisplay ?: status.replace("_", " "),
             color = textColor,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.5.dp)
         )
     }
 }
@@ -138,10 +141,11 @@ fun StatCard(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -150,8 +154,9 @@ fun StatCard(
                 Text(
                     text = title,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
                 )
                 Surface(
                     color = accentColor.copy(alpha = 0.12f),
@@ -163,17 +168,17 @@ fun StatCard(
                             imageVector = imageVector,
                             contentDescription = null,
                             tint = accentColor,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
                 color = accentColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 19.sp,
+                fontWeight = FontWeight.ExtraBold
             )
         }
     }
@@ -190,10 +195,11 @@ fun StatCard(
     Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -202,17 +208,18 @@ fun StatCard(
                 Text(
                     text = title,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
                 )
-                Text(text = icon, fontSize = 18.sp)
+                Text(text = icon, fontSize = 16.sp)
             }
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = value,
                 color = accentColor,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                fontSize = 19.sp,
+                fontWeight = FontWeight.ExtraBold
             )
         }
     }
