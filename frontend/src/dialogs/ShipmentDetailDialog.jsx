@@ -41,6 +41,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { deviceApi, shipmentApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import StatusBadge from '../components/common/StatusBadge';
 import { formatNumber } from '../utils/formatters';
 import VariantBadge from '../components/common/VariantBadge';
@@ -55,7 +56,15 @@ export default function ShipmentDetailDialog({
   onShipmentUpdated
 }) {
   const { enqueueSnackbar } = useSnackbar();
-  const [devices, setDevices] = useState([]);
+
+  const getCachedDevices = () => {
+    if (!shipment) return [];
+    const cached = apiCache.get('/api/devices/');
+    const all = cached?.results || cached || [];
+    return all.filter((d) => d.current_shipment === shipment.id);
+  };
+
+  const [devices, setDevices] = useState(getCachedDevices);
   const [loading, setLoading] = useState(false);
   const [receivingAll, setReceivingAll] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -75,22 +84,31 @@ export default function ShipmentDetailDialog({
 
   useEffect(() => {
     if (open && shipment) {
-      fetchDevices();
+      const initial = getCachedDevices();
+      if (initial.length > 0) {
+        setDevices(initial);
+        fetchDevices(true);
+      } else {
+        fetchDevices(false);
+      }
     }
-  }, [open, shipment]);
+  }, [open, shipment?.id]);
 
-  const fetchDevices = async () => {
+  const fetchDevices = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await deviceApi.getAll();
       const allDevices = res.data.results || res.data || [];
+      apiCache.set('/api/devices/', allDevices);
       const shipmentDevices = allDevices.filter((d) => d.current_shipment === shipment.id);
       setDevices(shipmentDevices);
     } catch (err) {
       console.error(err);
-      enqueueSnackbar('Failed to load shipment devices', { variant: 'error' });
+      if (!silent) {
+        enqueueSnackbar('Failed to load shipment devices', { variant: 'error' });
+      }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 

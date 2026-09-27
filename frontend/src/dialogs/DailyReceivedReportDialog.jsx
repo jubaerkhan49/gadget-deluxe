@@ -41,6 +41,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { deviceApi, shipmentApi } from '../api/client';
+import { apiCache } from '../utils/apiCache';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
@@ -56,30 +57,42 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
     return d.toISOString().split('T')[0];
   };
 
+  const cachedDevices = apiCache.get('/api/devices/');
+  const cachedShipments = apiCache.get('/api/shipments/');
+
   const [selectedDate, setSelectedDate] = useState(getTodayStr());
   const [dateType, setDateType] = useState('BD'); // 'BD' (received_date_bd) | 'CN' (shipment_receive_date_cn)
-  const [devices, setDevices] = useState([]);
-  const [shipments, setShipments] = useState([]);
+  const [devices, setDevices] = useState(() => cachedDevices?.results || cachedDevices || []);
+  const [shipments, setShipments] = useState(() => cachedShipments?.results || cachedShipments || []);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
-      fetchData();
+      const hasCache = Boolean(cachedDevices && cachedShipments);
+      fetchData(hasCache);
     }
   }, [open]);
 
-  const fetchData = async () => {
+  const fetchData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const [devRes, shipRes] = await Promise.all([
         deviceApi.getAll(),
         shipmentApi.getAll()
       ]);
-      setDevices(devRes.data?.results || devRes.data || []);
-      setShipments(shipRes.data?.results || shipRes.data || []);
+      const freshDevs = devRes.data?.results || devRes.data || [];
+      const freshShips = shipRes.data?.results || shipRes.data || [];
+
+      apiCache.set('/api/devices/', freshDevs);
+      apiCache.set('/api/shipments/', freshShips);
+
+      setDevices(freshDevs);
+      setShipments(freshShips);
     } catch (err) {
       console.error(err);
-      enqueueSnackbar('Failed to load reception data', { variant: 'error' });
+      if (!silent) {
+        enqueueSnackbar('Failed to load reception data', { variant: 'error' });
+      }
     } finally {
       setLoading(false);
     }

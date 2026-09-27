@@ -48,6 +48,7 @@ import {
 import { useSnackbar } from 'notistack';
 import api, { shipmentApi, deviceApi } from '../api/client';
 import { formatNumber } from '../utils/formatters';
+import { apiCache } from '../utils/apiCache';
 import VariantBadge from '../components/common/VariantBadge';
 import StatusBadge from '../components/common/StatusBadge';
 import CopyableText from '../components/common/CopyableText';
@@ -86,11 +87,20 @@ export default function EditShipmentDialog({ open, onClose, shipment, onShipment
     append_item_price: ''
   });
 
+  const getCachedShipmentDevices = () => {
+    if (!shipment) return [];
+    const cached = apiCache.get('/api/devices/');
+    const all = cached?.results || cached || [];
+    return all.filter((d) => d.current_shipment === shipment.id);
+  };
+
+  const cachedUsers = apiCache.get('/api/users/');
+
   // Shipment devices state for Tab 1
-  const [shipmentDevices, setShipmentDevices] = useState([]);
+  const [shipmentDevices, setShipmentDevices] = useState(getCachedShipmentDevices);
   const [devicesLoading, setDevicesLoading] = useState(false);
   const [deviceSearchQuery, setDeviceSearchQuery] = useState('');
-  const [users, setUsers] = useState([]);
+  const [users, setUsers] = useState(() => cachedUsers?.results || cachedUsers || []);
 
   // Sub-dialogs for editing & deleting individual equipment
   const [editingDevice, setEditingDevice] = useState(null);
@@ -117,33 +127,41 @@ export default function EditShipmentDialog({ open, onClose, shipment, onShipment
         append_item_price: ''
       });
       setDeviceSearchQuery('');
-      fetchShipmentDevices();
-      fetchUsers();
+      const initialDevs = getCachedShipmentDevices();
+      if (initialDevs.length > 0) {
+        setShipmentDevices(initialDevs);
+        fetchShipmentDevices(true);
+      } else {
+        fetchShipmentDevices(false);
+      }
+      fetchUsers(Boolean(cachedUsers));
     }
-  }, [open, shipment]);
+  }, [open, shipment?.id]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (silent = false) => {
     try {
       const res = await api.get('/api/users/');
-      setUsers(res.data?.results || res.data || []);
+      const uData = res.data?.results || res.data || [];
+      apiCache.set('/api/users/', uData);
+      setUsers(uData);
     } catch (e) {
       // ignore
     }
   };
 
-  const fetchShipmentDevices = async () => {
+  const fetchShipmentDevices = async (silent = false) => {
     if (!shipment) return;
     try {
-      setDevicesLoading(true);
+      if (!silent) setDevicesLoading(true);
       const res = await deviceApi.getAll({ current_shipment: shipment.id });
       const all = res.data?.results || res.data || [];
-      // Secondary filter just in case backend query parameter was ignored
+      apiCache.set('/api/devices/', all);
       const filtered = all.filter((d) => d.current_shipment === shipment.id || !d.current_shipment);
-      setShipmentDevices(all.length > 0 ? (all.some(d => d.current_shipment === shipment.id) ? all.filter(d => d.current_shipment === shipment.id) : filtered) : []);
+      setShipmentDevices(all.length > 0 ? (all.some((d) => d.current_shipment === shipment.id) ? all.filter((d) => d.current_shipment === shipment.id) : filtered) : []);
     } catch (err) {
       console.error('Error loading shipment devices:', err);
     } finally {
-      setDevicesLoading(false);
+      if (!silent) setDevicesLoading(false);
     }
   };
 
