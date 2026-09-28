@@ -37,7 +37,7 @@ import {
   MoreVert as MoreVertIcon,
   Refresh as RefreshIcon
 } from '@mui/icons-material';
-import { formatNumber, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
+import { formatNumber, formatDate, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
 import { deviceApi, userApi } from '../api/client';
 import { apiCache } from '../utils/apiCache';
@@ -234,9 +234,9 @@ export default function Inventory() {
     return dateB - dateA;
   });
 
-  const calculateDaysAssigned = (dev) => {
+  const getAssignedDate = (dev) => {
     if (!dev.current_owner && !dev.current_owner_name) {
-      return '—';
+      return null;
     }
 
     // Look for all assignments matching current owner
@@ -244,28 +244,21 @@ export default function Inventory() {
       (a) => String(a.employee) === String(dev.current_owner) || a.employee_username === dev.current_owner_name
     );
 
-    let assignDateStr = null;
+    let assignDateStr = dev.assigned_date || null;
 
     if (matchingAssignments.length > 0) {
-      // Find the earliest assigned date for this continuous owner
-      const earliest = matchingAssignments.reduce((prev, curr) => {
+      const latest = matchingAssignments.reduce((prev, curr) => {
         const timeP = new Date(prev.assigned_date || prev.created_at).getTime();
         const timeC = new Date(curr.assigned_date || curr.created_at).getTime();
-        return timeC < timeP ? curr : prev;
+        return timeC > timeP ? curr : prev;
       }, matchingAssignments[0]);
-      assignDateStr = earliest.assigned_date || earliest.created_at;
-    } else {
+      assignDateStr = latest.assigned_date || latest.created_at || assignDateStr;
+    } else if (!assignDateStr) {
       const anyActive = (dev.assignments || []).find((a) => a.is_active);
       assignDateStr = anyActive?.assigned_date || anyActive?.created_at || dev.created_at;
     }
 
-    if (!assignDateStr) return '0';
-
-    const assignDate = new Date(assignDateStr);
-    const now = new Date();
-    const diffTime = now.getTime() - assignDate.getTime();
-    const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)));
-    return diffDays;
+    return assignDateStr;
   };
 
   const paginatedDevices = sortedDevices.slice(
@@ -562,7 +555,7 @@ export default function Inventory() {
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Battery</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Assigned To</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Days Assigned</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Assigned Date</TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -669,11 +662,11 @@ export default function Inventory() {
                       )}
                     </TableCell>
 
-                    {/* Days Assigned */}
+                    {/* Assigned Date */}
                     <TableCell>
                       {dev.current_owner_name ? (
-                        <Typography variant="body2" fontWeight={700}>
-                          {calculateDaysAssigned(dev)}
+                        <Typography variant="body2" fontWeight={600} color="text.primary">
+                          {formatDate(getAssignedDate(dev))}
                         </Typography>
                       ) : (
                         <Typography variant="caption" color="text.secondary">
