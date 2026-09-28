@@ -35,7 +35,8 @@ import {
   Visibility as ViewIcon,
   Clear as ClearIcon,
   MoreVert as MoreVertIcon,
-  Refresh as RefreshIcon
+  Refresh as RefreshIcon,
+  SwapVert as SortIcon
 } from '@mui/icons-material';
 import { formatNumber, formatDate, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
@@ -554,11 +555,16 @@ export default function Inventory() {
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700 }}>Device Model</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>IMEI Number</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Battery</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Assigned To</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Assigned Date</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>
+                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                    Assigned Date
+                    <SortIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} />
+                  </Box>
+                </TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
               </TableRow>
             </TableHead>
