@@ -1306,9 +1306,9 @@ class DashboardStatsAPIView(APIView):
                 'performance': performance,
                 'performance_desc': performance_desc,
                 'performance_rank': rank,
-                'total_devices': my_devices.count(),
-                'in_stock': my_devices.filter(current_status=DeviceStatus.IN_STOCK).count(),
-                'under_repair': my_devices.filter(current_status=DeviceStatus.UNDER_REPAIR).count(),
+                'total_devices': my_devices.filter(is_b2b=False).count(),
+                'in_stock': my_devices.filter(is_b2b=False, current_status=DeviceStatus.IN_STOCK).count(),
+                'under_repair': my_devices.filter(is_b2b=False, current_status=DeviceStatus.UNDER_REPAIR).count(),
                 'sold': Sale.objects.filter(seller=user).count(),
                 'waiting_shipment': 0,
                 'returned': 0,
@@ -1325,28 +1325,44 @@ class DashboardStatsAPIView(APIView):
         local_today = timezone.localdate()
         month_start = local_today.replace(day=1)
 
-        total_devices = Device.objects.count()
-        in_stock_count = Device.objects.filter(current_status=DeviceStatus.IN_STOCK).count()
-        sold_count = Device.objects.filter(current_status=DeviceStatus.SOLD).count()
-        waiting_shipment_count = Device.objects.filter(current_status=DeviceStatus.WAITING_SHIPMENT).count()
-        repair_count = Device.objects.filter(current_status=DeviceStatus.UNDER_REPAIR).count()
-        returned_count = Device.objects.filter(current_status=DeviceStatus.RETURNED).count()
+        # Regular Store/Personal Inventory (B2B client devices are excluded from personal inventory counts & assets)
+        regular_devices = Device.objects.filter(is_b2b=False)
+        total_devices = regular_devices.count()
+        in_stock_count = regular_devices.filter(current_status=DeviceStatus.IN_STOCK).count()
+        sold_count = regular_devices.filter(current_status=DeviceStatus.SOLD).count()
+        waiting_shipment_count = regular_devices.filter(current_status=DeviceStatus.WAITING_SHIPMENT).count()
+        repair_count = regular_devices.filter(current_status=DeviceStatus.UNDER_REPAIR).count()
+        returned_count = regular_devices.filter(current_status=DeviceStatus.RETURNED).count()
 
-        total_assets = Device.objects.exclude(current_status=DeviceStatus.SOLD).aggregate(total=models.Sum('buying_price'))['total'] or Decimal('0.00')
+        total_assets = regular_devices.exclude(current_status=DeviceStatus.SOLD).aggregate(total=models.Sum('buying_price'))['total'] or Decimal('0.00')
 
+        # Retail Sales & Profit
         total_sales_qs = Sale.objects.all()
-        total_sales = total_sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
-        total_profit = total_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
+        retail_total_sales = total_sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
+        retail_total_profit = total_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
 
         today_sales_qs = Sale.objects.filter(sale_date__date=local_today)
-        today_sales = today_sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
-        today_profit = today_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
+        retail_today_sales = today_sales_qs.aggregate(total=models.Sum('selling_price'))['total'] or Decimal('0.00')
+        retail_today_profit = today_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
 
         monthly_sales_qs = Sale.objects.filter(sale_date__date__gte=month_start)
-        monthly_profit = monthly_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
+        retail_monthly_profit = monthly_sales_qs.aggregate(total=models.Sum('profit'))['total'] or Decimal('0.00')
 
-        # Devices currently held by other team owners (excluding store owner jubaer and admin)
+        # Realized B2B Delivered Profits (Profit = selling price - buying cost - repair cost)
+        b2b_delivered_qs = Device.objects.filter(is_b2b=True, b2b_status='DELIVERED')
+        b2b_total_profit = sum([d.b2b_profit for d in b2b_delivered_qs if d.b2b_profit is not None]) or Decimal('0.00')
+        b2b_today_profit = sum([d.b2b_profit for d in b2b_delivered_qs.filter(b2b_delivery_date=local_today) if d.b2b_profit is not None]) or Decimal('0.00')
+        b2b_monthly_profit = sum([d.b2b_profit for d in b2b_delivered_qs.filter(b2b_delivery_date__gte=month_start) if d.b2b_profit is not None]) or Decimal('0.00')
+
+        total_sales = retail_total_sales
+        today_sales = retail_today_sales
+        total_profit = retail_total_profit + Decimal(str(round(float(b2b_total_profit), 2)))
+        today_profit = retail_today_profit + Decimal(str(round(float(b2b_today_profit), 2)))
+        monthly_profit = retail_monthly_profit + Decimal(str(round(float(b2b_monthly_profit), 2)))
+
+        # Devices currently held by other team owners (excluding store owner jubaer and admin, and excluding B2B)
         others_owned_count = Device.objects.filter(
+            is_b2b=False,
             current_owner__isnull=False
         ).exclude(
             current_owner__username__in=['jubaer', 'admin']
@@ -1357,6 +1373,7 @@ class DashboardStatsAPIView(APIView):
         my_assigned_count = 0
         if request.user.is_authenticated:
             my_assigned_count = Device.objects.filter(
+                is_b2b=False,
                 current_owner=request.user
             ).exclude(
                 current_status=DeviceStatus.SOLD
@@ -1445,7 +1462,7 @@ class AnalyticsStatsAPIView(APIView):
         b2b_delivered_count = b2b_qs.filter(b2b_status='DELIVERED').count()
         b2b_pending_count = b2b_qs.filter(b2b_status='PENDING_DELIVERY').count()
         b2b_repair_count = b2b_qs.filter(b2b_status='UNDER_REPAIR').count()
-        b2b_total_profit = sum([float(d.b2b_profit) for d in b2b_qs if d.b2b_profit is not None])
+        b2b_total_profit = sum([float(d.b2b_profit) for d in b2b_qs.filter(b2b_status='DELIVERED') if d.b2b_profit is not None])
         b2b_profit_dec = Decimal(str(round(b2b_total_profit, 2)))
 
         # Silently add B2B trade profits into overall business Total Profit

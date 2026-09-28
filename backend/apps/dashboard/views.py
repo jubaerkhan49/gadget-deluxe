@@ -17,22 +17,31 @@ class DashboardIndexView(LoginRequiredMixin, View):
         today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-        # Inventory Stats
-        total_devices = Device.objects.count()
-        in_stock_count = Device.objects.filter(current_status=DeviceStatus.IN_STOCK).count()
-        sold_count = Device.objects.filter(current_status=DeviceStatus.SOLD).count()
-        waiting_shipment_count = Device.objects.filter(current_status=DeviceStatus.WAITING_SHIPMENT).count()
-        repair_count = Device.objects.filter(current_status=DeviceStatus.UNDER_REPAIR).count()
-        returned_count = Device.objects.filter(current_status=DeviceStatus.RETURNED).count()
+        # Inventory Stats (B2B client devices are excluded from personal inventory counts & assets)
+        regular_devices = Device.objects.filter(is_b2b=False)
+        total_devices = regular_devices.count()
+        in_stock_count = regular_devices.filter(current_status=DeviceStatus.IN_STOCK).count()
+        sold_count = regular_devices.filter(current_status=DeviceStatus.SOLD).count()
+        waiting_shipment_count = regular_devices.filter(current_status=DeviceStatus.WAITING_SHIPMENT).count()
+        repair_count = regular_devices.filter(current_status=DeviceStatus.UNDER_REPAIR).count()
+        returned_count = regular_devices.filter(current_status=DeviceStatus.RETURNED).count()
 
         # Financial & Asset Metrics
-        total_assets = Device.objects.exclude(current_status=DeviceStatus.SOLD).aggregate(total=Sum('buying_price'))['total'] or Decimal('0.00')
+        total_assets = regular_devices.exclude(current_status=DeviceStatus.SOLD).aggregate(total=Sum('buying_price'))['total'] or Decimal('0.00')
         today_sales_qs = Sale.objects.filter(sale_date__gte=today_start)
         today_sales = today_sales_qs.aggregate(total=Sum('selling_price'))['total'] or Decimal('0.00')
-        today_profit = today_sales_qs.aggregate(total=Sum('profit'))['total'] or Decimal('0.00')
+        retail_today_profit = today_sales_qs.aggregate(total=Sum('profit'))['total'] or Decimal('0.00')
 
         monthly_sales_qs = Sale.objects.filter(sale_date__gte=month_start)
-        monthly_profit = monthly_sales_qs.aggregate(total=Sum('profit'))['total'] or Decimal('0.00')
+        retail_monthly_profit = monthly_sales_qs.aggregate(total=Sum('profit'))['total'] or Decimal('0.00')
+
+        # Realized B2B Delivered Profits (selling_price - buying_cost - repair_cost)
+        b2b_delivered_qs = Device.objects.filter(is_b2b=True, b2b_status='DELIVERED')
+        b2b_today_profit = sum([d.b2b_profit for d in b2b_delivered_qs.filter(b2b_delivery_date=now.date()) if d.b2b_profit is not None]) or Decimal('0.00')
+        b2b_monthly_profit = sum([d.b2b_profit for d in b2b_delivered_qs.filter(b2b_delivery_date__gte=month_start.date()) if d.b2b_profit is not None]) or Decimal('0.00')
+
+        today_profit = retail_today_profit + Decimal(str(round(float(b2b_today_profit), 2)))
+        monthly_profit = retail_monthly_profit + Decimal(str(round(float(b2b_monthly_profit), 2)))
 
         # Top Seller
         top_seller_data = Sale.objects.filter(sale_date__gte=month_start)\
