@@ -12,7 +12,7 @@ const VARIANT_CONFIG = {
   'Bypass': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
 };
 
-const VariantBadge = ({ variant, size = 'small' }) => {
+const VariantBadge = ({ variant, size = 'small', sx = {} }) => {
   if (!variant) return null;
 
   const displayVariant = variant === 'Bypass' ? 'WIFI' : variant;
@@ -29,8 +29,14 @@ const VariantBadge = ({ variant, size = 'small' }) => {
         color: config.color,
         backgroundColor: config.bg,
         fontWeight: 600,
-        fontSize: size === 'small' ? '0.72rem' : '0.8rem',
+        fontSize: size === 'small' ? '0.7rem' : '0.78rem',
+        height: size === 'small' ? 20 : 24,
+        '& .MuiChip-label': {
+          px: 0.8,
+          py: 0
+        },
         border: `1px solid ${config.color}33`,
+        ...sx,
       }}
     />
   );

@@ -554,7 +554,6 @@ export default function Inventory() {
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700 }}>Device Model</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Battery</TableCell>
@@ -566,41 +565,51 @@ export default function Inventory() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                     <CircularProgress size={32} />
                   </TableCell>
                 </TableRow>
               ) : filteredDevices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary' }}>
                     No devices match your current filters.
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedDevices.map((dev) => (
-                  <TableRow
-                    key={dev.id}
-                    hover
-                    sx={{ cursor: 'pointer' }}
-                    onClick={() => {
-                      setSelectedDevice(dev);
-                      setDrawerOpen(true);
-                    }}
-                  >
-                    {/* Device Model & Specs */}
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={700}>
-                        {dev.model}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
-                      </Typography>
-                    </TableCell>
+                paginatedDevices.map((dev) => {
+                  const cleanCap = dev.capacity ? String(dev.capacity).replace(/gb/gi, '').trim() : '';
+                  const cleanCol = dev.color ? String(dev.color).trim().split(/\s+/)[0] : '';
+                  const specs = [cleanCap, cleanCol].filter(Boolean).join(' • ');
 
-                    {/* Variant Badge */}
-                    <TableCell>
-                      <VariantBadge variant={dev.variant} />
-                    </TableCell>
+                  return (
+                    <TableRow
+                      key={dev.id}
+                      hover
+                      sx={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        setSelectedDevice(dev);
+                        setDrawerOpen(true);
+                      }}
+                    >
+                      {/* Device Model & Specs with Inline Variant Chip */}
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={700}>
+                          {dev.model}
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.3 }}>
+                          {specs && (
+                            <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                              {specs}
+                            </Typography>
+                          )}
+                          {specs && dev.variant && (
+                            <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.5 }}>
+                              •
+                            </Typography>
+                          )}
+                          {dev.variant && <VariantBadge variant={dev.variant} size="small" />}
+                        </Box>
+                      </TableCell>
 
                     {/* IMEI / Serial */}
                     <TableCell onClick={(e) => e.stopPropagation()}>
@@ -708,8 +717,9 @@ export default function Inventory() {
                       </Stack>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
+                );
+              })
+            )}
             </TableBody>
           </Table>
         </TableContainer>

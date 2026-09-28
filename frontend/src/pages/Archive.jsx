@@ -370,7 +370,6 @@ export default function Archive() {
             <TableHead>
               <TableRow>
                 <TableCell sx={{ fontWeight: 700 }}>Device Model</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Customer / Invoice</TableCell>
@@ -382,13 +381,13 @@ export default function Archive() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                     <CircularProgress size={32} />
                   </TableCell>
                 </TableRow>
               ) : filteredDevices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary' }}>
                     No archived sold devices found.
                   </TableCell>
                 </TableRow>
@@ -396,6 +395,9 @@ export default function Archive() {
                 paginatedDevices.map((dev) => {
                   const sale = salesMap[dev.id];
                   const sellPrice = sale?.selling_price || dev.selling_price || null;
+                  const cleanCap = dev.capacity ? String(dev.capacity).replace(/gb/gi, '').trim() : '';
+                  const cleanCol = dev.color ? String(dev.color).trim().split(/\s+/)[0] : '';
+                  const specs = [cleanCap, cleanCol].filter(Boolean).join(' • ');
 
                   return (
                     <TableRow key={dev.id} hover>
@@ -403,13 +405,19 @@ export default function Archive() {
                         <Typography variant="body2" fontWeight={700}>
                           {dev.model}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {dev.capacity ? `${dev.capacity} • ` : ''}{dev.color || 'Standard'}
-                        </Typography>
-                      </TableCell>
-
-                      <TableCell>
-                        <VariantBadge variant={dev.variant} />
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.3 }}>
+                          {specs && (
+                            <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                              {specs}
+                            </Typography>
+                          )}
+                          {specs && dev.variant && (
+                            <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.5 }}>
+                              •
+                            </Typography>
+                          )}
+                          {dev.variant && <VariantBadge variant={dev.variant} size="small" />}
+                        </Box>
                       </TableCell>
 
                       <TableCell>
