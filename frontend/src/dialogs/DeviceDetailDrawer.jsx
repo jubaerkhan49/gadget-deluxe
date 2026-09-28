@@ -225,7 +225,7 @@ export default function DeviceDetailDrawer({
         onClose={onClose}
         PaperProps={{
           sx: {
-            width: { xs: '100%', sm: 680, md: 800, lg: 900 },
+            width: { xs: '100%', sm: 720, md: 860, lg: 960 },
             p: 0,
             display: 'flex',
             flexDirection: 'column',
@@ -237,8 +237,8 @@ export default function DeviceDetailDrawer({
         {/* Header */}
         <Box
           sx={{
-            p: 3,
-            pb: 1.5,
+            p: { xs: 2, sm: 2.25 },
+            pb: 1.25,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -456,27 +456,27 @@ export default function DeviceDetailDrawer({
         )}
 
         {/* Tab Content Panes */}
-        <Box sx={{ p: 3, flex: 1, overflowY: 'auto' }}>
+        <Box sx={{ p: { xs: 1.5, sm: 2 }, flex: 1, overflowY: 'auto' }}>
 
           {/* TAB 0: OVERVIEW */}
           {currentTab === 0 && (
-            <Stack spacing={3}>
+            <Stack spacing={1.5}>
               {/* Quick Management Actions (Admin Only) */}
               {isAdmin ? (
                 <Paper
                   variant="outlined"
                   sx={{
-                    p: 2.5,
+                    p: 1.5,
                     borderRadius: 2,
                     backgroundColor: (theme) =>
                       theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC'
                   }}
                 >
-                  <Typography variant="subtitle2" color="primary" fontWeight={700} gutterBottom sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                  <Typography variant="caption" color="primary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8, display: 'block', mb: 1 }}>
                     Quick Status & Assignment
                   </Typography>
-                  <Grid container spacing={2} sx={{ mt: 0.5 }}>
-                    <Grid item xs={12} sm={status === 'SOLD' ? 4 : 8}>
+                  <Grid container spacing={1.5} alignItems="center">
+                    <Grid item xs={12} sm={status === 'SOLD' ? 3.5 : 4.5}>
                       <FormControl fullWidth size="small">
                         <InputLabel>Status</InputLabel>
                         <Select
@@ -500,7 +500,7 @@ export default function DeviceDetailDrawer({
                     </Grid>
 
                     {status === 'SOLD' && (
-                      <Grid item xs={12} sm={4}>
+                      <Grid item xs={12} sm={3}>
                         <TextField
                           fullWidth
                           size="small"
@@ -513,16 +513,19 @@ export default function DeviceDetailDrawer({
                       </Grid>
                     )}
 
-                    <Grid item xs={12} sm={4}>
+                    <Grid item xs={12} sm={status === 'SOLD' ? 2 : 2.5}>
                       <Button
                         fullWidth
                         variant="contained"
                         disabled={savingStatus || (status === device.current_status && (!sellingPrice || sellingPrice === String(device.selling_price || '')))}
                         onClick={handleStatusChange}
-                        startIcon={savingStatus ? <CircularProgress size={16} color="inherit" /> : <CheckIcon sx={{ color: '#ffffff !important' }} />}
+                        startIcon={savingStatus ? <CircularProgress size={15} color="inherit" /> : <CheckIcon sx={{ color: '#ffffff !important', fontSize: 18 }} />}
                         sx={{
+                          height: 40,
                           color: '#ffffff !important',
                           fontWeight: 600,
+                          fontSize: '0.82rem',
+                          textTransform: 'none',
                           '&.Mui-disabled': {
                             color: 'rgba(255, 255, 255, 0.7) !important',
                             bgcolor: 'primary.main',
@@ -530,11 +533,11 @@ export default function DeviceDetailDrawer({
                           }
                         }}
                       >
-                        Update Status
+                        Update
                       </Button>
                     </Grid>
 
-                    <Grid item xs={12} sm={8}>
+                    <Grid item xs={12} sm={status === 'SOLD' ? 2.3 : 3.5}>
                       <FormControl fullWidth size="small" disabled={loadingUsers}>
                         <InputLabel>Assigned To</InputLabel>
                         <Select
@@ -559,13 +562,14 @@ export default function DeviceDetailDrawer({
                       </FormControl>
                     </Grid>
 
-                    <Grid item xs={12} sm={4}>
+                    <Grid item xs={12} sm={status === 'SOLD' ? 1.2 : 1.5}>
                       <Button
                         fullWidth
                         variant="outlined"
                         disabled={savingOwner || owner === (device.current_owner || '')}
                         onClick={handleOwnerChange}
-                        startIcon={savingOwner ? <CircularProgress size={16} color="inherit" /> : <PersonIcon />}
+                        startIcon={savingOwner ? <CircularProgress size={15} color="inherit" /> : <PersonIcon sx={{ fontSize: 18 }} />}
+                        sx={{ height: 40, fontWeight: 600, fontSize: '0.82rem', textTransform: 'none' }}
                       >
                         Assign
                       </Button>
@@ -577,19 +581,19 @@ export default function DeviceDetailDrawer({
                 <Paper
                   variant="outlined"
                   sx={{
-                    p: 2.5,
+                    p: 1.5,
                     borderRadius: 2,
                     backgroundColor: (theme) =>
                       theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC'
                   }}
                 >
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="subtitle2" color="primary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
+                    <Typography variant="caption" color="primary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
                       Custody & Assignment
                     </Typography>
                     <StatusBadge status={device.current_status} />
                   </Box>
-                  <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                  <Grid container spacing={1.5} sx={{ mt: 0.2 }}>
                     <Grid item xs={6}>
                       <Typography variant="caption" color="text.secondary">Assigned To</Typography>
                       <Typography variant="body2" fontWeight={700}>
@@ -615,12 +619,12 @@ export default function DeviceDetailDrawer({
                         if (onMarkSoldRequested) onMarkSoldRequested(device);
                       }}
                       sx={{
-                        mt: 2,
+                        mt: 1.5,
                         fontWeight: 700,
                         borderRadius: 1.75,
-                        height: 42,
+                        height: 38,
                         textTransform: 'none',
-                        fontSize: '0.88rem',
+                        fontSize: '0.84rem',
                         boxShadow: 'none'
                       }}
                     >
@@ -629,119 +633,257 @@ export default function DeviceDetailDrawer({
                   )}
 
                   {device.current_status === 'PENDING_SALE' && (
-                    <Alert severity="warning" sx={{ mt: 2, borderRadius: 2 }}>
+                    <Alert severity="warning" sx={{ mt: 1.5, py: 0.5, borderRadius: 2 }}>
                       <strong>Pending Sale Approval:</strong> A sale request for this device is awaiting Admin pricing review and confirmation.
                     </Alert>
                   )}
                 </Paper>
               )}
 
-              {/* Hardware & Identifiers */}
-              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                  <PhoneIcon color="action" fontSize="small" />
-                  <Typography variant="subtitle2" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                    Hardware Specs & Identifiers
-                  </Typography>
-                </Box>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" color="text.secondary">IMEI</Typography>
-                    <Box sx={{ mt: 0.3 }}>
-                      <CopyableText text={device.imei} />
+              {/* Side-by-Side Main Info (Hardware Specs on Left, Pricing & Logistics on Right) */}
+              <Grid container spacing={1.5}>
+                {/* Left Column: Hardware Specs */}
+                <Grid item xs={12} md={isAdmin ? 6 : 12}>
+                  <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25 }}>
+                      <PhoneIcon color="action" sx={{ fontSize: 18 }} />
+                      <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8, color: 'text.secondary' }}>
+                        Hardware Specs & Identifiers
+                      </Typography>
                     </Box>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="caption" color="text.secondary">Serial Number</Typography>
-                    <Box sx={{ mt: 0.3 }}>
-                      <CopyableText text={device.serial_number} />
-                    </Box>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Capacity</Typography>
-                    <Typography variant="body2" fontWeight={600} sx={{ mt: 0.3 }}>{device.capacity || '—'}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Color</Typography>
-                    <Typography variant="body2" fontWeight={600} sx={{ mt: 0.3 }}>{device.color || '—'}</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Battery Health</Typography>
-                    <Typography variant="body2" fontWeight={700} color={device.battery_health ? 'success.main' : 'text.primary'} sx={{ mt: 0.3 }}>
-                      {device.battery_health ? `${device.battery_health}%` : '—'}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="text.secondary">Cycle Count</Typography>
-                    <Typography variant="body2" fontWeight={600} sx={{ mt: 0.3 }}>
-                      {device.battery_cycle ? `${device.battery_cycle} cycles` : '—'}
-                    </Typography>
-                  </Grid>
+                    <Grid container spacing={1.25} sx={{ flex: 1 }}>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" color="text.secondary">IMEI</Typography>
+                        <Box sx={{ mt: 0.2 }}>
+                          <CopyableText text={device.imei} />
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="caption" color="text.secondary">Serial Number</Typography>
+                        <Box sx={{ mt: 0.2 }}>
+                          <CopyableText text={device.serial_number} />
+                        </Box>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary">Capacity</Typography>
+                        <Typography variant="body2" fontWeight={600} sx={{ mt: 0.2 }}>{device.capacity || '—'}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary">Color</Typography>
+                        <Typography variant="body2" fontWeight={600} sx={{ mt: 0.2 }}>{device.color || '—'}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary">Battery Health</Typography>
+                        <Typography variant="body2" fontWeight={700} color={device.battery_health ? 'success.main' : 'text.primary'} sx={{ mt: 0.2 }}>
+                          {device.battery_health ? `${device.battery_health}%` : '—'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary">Cycle Count</Typography>
+                        <Typography variant="body2" fontWeight={600} sx={{ mt: 0.2 }}>
+                          {device.battery_cycle ? `${device.battery_cycle} cycles` : '—'}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
                 </Grid>
-              </Paper>
 
-              {/* Financial & Logistics (Admin Only) */}
-              {isAdmin && (
-                <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    <ShippingIcon color="action" fontSize="small" />
-                    <Typography variant="subtitle2" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
-                      Financial & Logistics
-                    </Typography>
-                  </Box>
-                  <Grid container spacing={2}>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Buying Cost</Typography>
-                      <Typography variant="body2" fontWeight={700} color="primary.main">
-                        {buyingCostFormatted !== '—' ? `${buyingCostFormatted} BDT` : '—'}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Selling Price</Typography>
-                      <Typography variant="body2" fontWeight={700} color="success.main">
-                        {sellingPriceFormatted !== '—' ? `${sellingPriceFormatted} BDT` : '—'}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Supplier</Typography>
-                      <Typography variant="body2" fontWeight={600}>{device.shipment_supplier || '—'}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Shipping Agent</Typography>
-                      <Typography variant="body2" fontWeight={600}>{device.shipment_agent || '—'}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Received Date (CN)</Typography>
-                      <Typography variant="body2" fontWeight={600}>{device.shipment_receive_date_cn || '—'}</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Received Date (BD)</Typography>
-                      <TextField
-                        type="date"
-                        size="small"
-                        value={receivedDateBd}
-                        onChange={(e) => handleReceivedDateBdUpdate(e.target.value)}
-                        InputLabelProps={{ shrink: true }}
+                {/* Right Column: Financial & Pricing & Logistics (Admin Only) */}
+                {isAdmin && (
+                  <Grid item xs={12} md={6}>
+                    <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.25 }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <MoneyIcon color="action" sx={{ fontSize: 18 }} />
+                          <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8, color: 'text.secondary' }}>
+                            Selling Info & Logistics
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      {/* Pricing Highlights Ribbon */}
+                      <Box
                         sx={{
-                          mt: 0.5,
-                          width: '100%',
-                          maxWidth: 170,
-                          display: 'block',
-                          '& .MuiOutlinedInput-root': {
-                            height: 32,
-                            borderRadius: 1.5,
-                            fontSize: '0.8rem'
-                          },
-                          '& .MuiInputBase-input': {
-                            py: 0.5,
-                            px: 1
-                          }
+                          p: 1.25,
+                          mb: 1.25,
+                          borderRadius: 1.5,
+                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.06)',
+                          border: '1px solid',
+                          borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.2)'
                         }}
-                      />
-                    </Grid>
+                      >
+                        <Grid container spacing={1} alignItems="center">
+                          <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600}>Selling Price</Typography>
+                            <Typography variant="subtitle1" fontWeight={800} color="success.main" sx={{ lineHeight: 1.2 }}>
+                              {sellingPriceFormatted !== '—' ? `${sellingPriceFormatted} BDT` : '—'}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={6}>
+                            <Typography variant="caption" color="text.secondary" fontWeight={600}>Buying Cost</Typography>
+                            <Typography variant="subtitle1" fontWeight={800} color="primary.main" sx={{ lineHeight: 1.2 }}>
+                              {buyingCostFormatted !== '—' ? `${buyingCostFormatted} BDT` : '—'}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Box>
+
+                      {/* Logistics Grid */}
+                      <Grid container spacing={1.25} sx={{ flex: 1 }}>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Supplier</Typography>
+                          <Typography variant="body2" fontWeight={600} noWrap sx={{ mt: 0.2 }}>{device.shipment_supplier || '—'}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Shipping Agent</Typography>
+                          <Typography variant="body2" fontWeight={600} noWrap sx={{ mt: 0.2 }}>{device.shipment_agent || '—'}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Received (CN)</Typography>
+                          <Typography variant="body2" fontWeight={600} sx={{ mt: 0.2 }}>{device.shipment_receive_date_cn || '—'}</Typography>
+                        </Grid>
+                        <Grid item xs={6}>
+                          <Typography variant="caption" color="text.secondary">Received (BD)</Typography>
+                          <TextField
+                            type="date"
+                            size="small"
+                            value={receivedDateBd}
+                            onChange={(e) => handleReceivedDateBdUpdate(e.target.value)}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                              mt: 0.2,
+                              width: '100%',
+                              '& .MuiOutlinedInput-root': {
+                                height: 28,
+                                borderRadius: 1.2,
+                                fontSize: '0.78rem'
+                              },
+                              '& .MuiInputBase-input': {
+                                py: 0.2,
+                                px: 0.8
+                              }
+                            }}
+                          />
+                        </Grid>
+                      </Grid>
+                    </Paper>
                   </Grid>
-                </Paper>
-              )}
+                )}
+              </Grid>
+
+              {/* Notes & Remarks Card (Directly on Overview Page) */}
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2,
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.3)' : 'rgba(241, 245, 249, 0.6)'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <NoteIcon color="action" sx={{ fontSize: 18 }} />
+                    <Typography variant="caption" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8, color: 'text.secondary' }}>
+                      Notes & Remarks
+                    </Typography>
+                    {(device.notes || notes.length > 0 || device.b2b_issue_notes) && (
+                      <Chip
+                        size="small"
+                        label={`${(device.notes ? 1 : 0) + notes.length + (device.b2b_issue_notes ? 1 : 0)} notes`}
+                        sx={{ height: 18, fontSize: '0.7rem', fontWeight: 600, bgcolor: 'rgba(59, 130, 246, 0.1)', color: 'primary.main' }}
+                      />
+                    )}
+                  </Box>
+                  {isAdmin && (
+                    <Button
+                      size="small"
+                      onClick={() => setCurrentTab(6)}
+                      sx={{ fontSize: '0.75rem', py: 0.2, px: 1, minHeight: 0, textTransform: 'none' }}
+                    >
+                      Manage Notes
+                    </Button>
+                  )}
+                </Box>
+
+                {!(device.notes || notes.length > 0 || device.b2b_issue_notes) ? (
+                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', fontSize: '0.82rem', py: 0.5 }}>
+                    No internal notes or remarks recorded for this unit.
+                  </Typography>
+                ) : (
+                  <Stack spacing={1}>
+                    {device.notes && (
+                      <Box
+                        sx={{
+                          p: 1.2,
+                          borderRadius: 1.5,
+                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : '#ffffff',
+                          border: '1px solid',
+                          borderColor: 'divider'
+                        }}
+                      >
+                        <Typography variant="caption" fontWeight={700} color="primary" sx={{ display: 'block', mb: 0.3 }}>
+                          General Remarks
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.82rem', whiteSpace: 'pre-wrap' }}>
+                          {device.notes}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {device.b2b_issue_notes && (
+                      <Box
+                        sx={{
+                          p: 1.2,
+                          borderRadius: 1.5,
+                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : '#ffffff',
+                          border: '1px solid',
+                          borderColor: 'warning.light'
+                        }}
+                      >
+                        <Typography variant="caption" fontWeight={700} color="warning.main" sx={{ display: 'block', mb: 0.3 }}>
+                          B2B Remarks
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontSize: '0.82rem', whiteSpace: 'pre-wrap' }}>
+                          {device.b2b_issue_notes}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {notes.slice(0, 3).map((n) => (
+                      <Box
+                        key={n.id}
+                        sx={{
+                          p: 1,
+                          borderRadius: 1.5,
+                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : '#ffffff',
+                          border: '1px solid',
+                          borderColor: 'divider'
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.2 }}>
+                          <Typography variant="caption" fontWeight={700} color="text.secondary">
+                            {n.author_name || 'Admin'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
+                            {n.created_at ? new Date(n.created_at).toLocaleDateString() : '—'}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontSize: '0.82rem' }}>{n.content}</Typography>
+                      </Box>
+                    ))}
+                    {notes.length > 3 && (
+                      <Button
+                        size="small"
+                        onClick={() => setCurrentTab(6)}
+                        sx={{ fontSize: '0.75rem', py: 0.2, textTransform: 'none', alignSelf: 'flex-start' }}
+                      >
+                        + View all {notes.length} notes in Notes Tab
+                      </Button>
+                    )}
+                  </Stack>
+                )}
+              </Paper>
             </Stack>
           )}
 
