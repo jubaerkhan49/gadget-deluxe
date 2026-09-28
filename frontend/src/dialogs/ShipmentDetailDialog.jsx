@@ -238,8 +238,8 @@ export default function ShipmentDetailDialog({
   if (!shipment) return null;
 
   const totalDeviceCount = devices.length || shipment.devices_count || 0;
-  const inStockCount = devices.filter((d) => d.current_status === 'IN_STOCK').length;
-  const waitingCount = devices.filter((d) => d.current_status === 'WAITING_SHIPMENT').length;
+  const inBdCount = devices.filter((d) => d.current_status !== 'WAITING_SHIPMENT' || Boolean(d.received_date_bd)).length;
+  const waitingCount = devices.filter((d) => d.current_status === 'WAITING_SHIPMENT' && !d.received_date_bd).length;
 
   const totalBuyingValue = devices.reduce((sum, d) => sum + (Number(d.buying_price) || 0), 0);
   const avgUnitCost = totalDeviceCount > 0 ? (totalBuyingValue / totalDeviceCount) : 0;
@@ -254,8 +254,8 @@ export default function ShipmentDetailDialog({
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'space-between',
-            p: 3,
-            pb: 2,
+            p: { xs: 2, sm: 2.5 },
+            pb: 1.5,
             borderBottom: 1,
             borderColor: 'divider',
             gap: 2
@@ -265,9 +265,9 @@ export default function ShipmentDetailDialog({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
               <Box
                 sx={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 2,
+                  width: 34,
+                  height: 34,
+                  borderRadius: 1.75,
                   bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF',
                   color: 'primary.main',
                   display: 'flex',
@@ -285,25 +285,25 @@ export default function ShipmentDetailDialog({
             </Box>
 
             {/* Focused Supplier & Agent Tags */}
-            <Stack direction="row" spacing={1} sx={{ mt: 1.2, flexWrap: 'wrap', gap: 1 }}>
+            <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.75 }}>
               <Box
                 sx={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 0.8,
-                  px: 1.2,
-                  py: 0.4,
+                  gap: 0.7,
+                  px: 1.1,
+                  py: 0.35,
                   borderRadius: 1.5,
                   bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF',
                   border: '1px solid',
                   borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.3)' : '#C7D2FE'
                 }}
               >
-                <SupplierIcon sx={{ fontSize: 16, color: '#6366F1' }} />
+                <SupplierIcon sx={{ fontSize: 15, color: '#6366F1' }} />
                 <Typography component="span" variant="caption" color="text.secondary" fontWeight={600}>
                   Supplier:
                 </Typography>
-                <Typography component="span" variant="caption" fontWeight={800} sx={{ color: '#4F46E5', fontSize: '0.82rem' }}>
+                <Typography component="span" variant="caption" fontWeight={800} sx={{ color: '#4F46E5', fontSize: '0.8rem' }}>
                   {shipment.supplier_name || 'Unknown'}
                 </Typography>
               </Box>
@@ -312,27 +312,27 @@ export default function ShipmentDetailDialog({
                 sx={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: 0.8,
-                  px: 1.2,
-                  py: 0.4,
+                  gap: 0.7,
+                  px: 1.1,
+                  py: 0.35,
                   borderRadius: 1.5,
                   bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : '#ECFDF5',
                   border: '1px solid',
                   borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.3)' : '#A7F3D0'
                 }}
               >
-                <AgentIcon sx={{ fontSize: 16, color: '#10B981' }} />
+                <AgentIcon sx={{ fontSize: 15, color: '#10B981' }} />
                 <Typography component="span" variant="caption" color="text.secondary" fontWeight={600}>
                   Agent:
                 </Typography>
-                <Typography component="span" variant="caption" fontWeight={800} sx={{ color: '#059669', fontSize: '0.82rem' }}>
+                <Typography component="span" variant="caption" fontWeight={800} sx={{ color: '#059669', fontSize: '0.8rem' }}>
                   {shipment.shipping_company || 'None'}
                 </Typography>
               </Box>
             </Stack>
           </Box>
 
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ pt: 0.5 }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ pt: 0.25 }}>
             <Button
               variant="outlined"
               color="primary"
@@ -342,6 +342,7 @@ export default function ShipmentDetailDialog({
                 onClose();
                 onEditShipment(shipment);
               }}
+              sx={{ textTransform: 'none', fontWeight: 600, height: 32, fontSize: '0.8rem' }}
             >
               Edit Shipment
             </Button>
@@ -351,38 +352,39 @@ export default function ShipmentDetailDialog({
               size="small"
               startIcon={<DeleteIcon />}
               onClick={() => setDeleteConfirmOpen(true)}
+              sx={{ textTransform: 'none', fontWeight: 600, height: 32, fontSize: '0.8rem' }}
             >
               Delete
             </Button>
-            <IconButton onClick={onClose} size="small" sx={{ ml: 1 }}>
+            <IconButton onClick={onClose} size="small" sx={{ ml: 0.5 }}>
               <CloseIcon />
             </IconButton>
           </Stack>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3 }}>
+        <DialogContent sx={{ p: { xs: 2, sm: 2.5 } }}>
           {/* Shipment Key Metrics */}
-          <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid container spacing={1.5} sx={{ mb: 2.5 }}>
             <Grid item xs={12} sm={3}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 2, height: '100%' }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ letterSpacing: 0.5 }}>
                   TOTAL DEVICES
                 </Typography>
-                <Typography variant="h5" fontWeight={800}>
+                <Typography variant="h5" fontWeight={800} sx={{ my: 0.25 }}>
                   {totalDeviceCount}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {inStockCount} In Stock • {waitingCount} Waiting
+                  {inBdCount} in BD • {waitingCount} Waiting
                 </Typography>
               </Paper>
             </Grid>
 
             <Grid item xs={12} sm={3}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 2, height: '100%' }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ letterSpacing: 0.5 }}>
                   TOTAL VALUE (BDT)
                 </Typography>
-                <Typography variant="h5" fontWeight={800} color="primary.main">
+                <Typography variant="h5" fontWeight={800} color="primary.main" sx={{ my: 0.25 }}>
                   {formatNumber(totalBuyingValue)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -392,11 +394,11 @@ export default function ShipmentDetailDialog({
             </Grid>
 
             <Grid item xs={12} sm={3}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 2, height: '100%' }}>
+                <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ letterSpacing: 0.5 }}>
                   SHIPPING COST (BDT)
                 </Typography>
-                <Typography variant="h5" fontWeight={800}>
+                <Typography variant="h5" fontWeight={800} sx={{ my: 0.25 }}>
                   {formatNumber(shippingCost)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -406,35 +408,53 @@ export default function ShipmentDetailDialog({
             </Grid>
 
             <Grid item xs={12} sm={3}>
-              <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={600}>
-                  STATUS
-                </Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  {waitingCount === 0 && totalDeviceCount > 0 ? (
-                    <Chip size="small" label="In Stock in BD" color="success" sx={{ fontWeight: 700 }} />
-                  ) : inStockCount === 0 && totalDeviceCount > 0 ? (
-                    <Chip size="small" label="Waiting Shipment" color="warning" sx={{ fontWeight: 700 }} />
-                  ) : inStockCount > 0 && waitingCount > 0 ? (
-                    <Chip size="small" label={`Partial (${inStockCount}/${totalDeviceCount} in BD)`} color="info" sx={{ fontWeight: 700 }} />
-                  ) : (
-                    <StatusBadge status={shipment.status || 'WAITING_SHIPMENT'} />
-                  )}
-                </Box>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                  Receive (CN): {shipment.receive_date || 'N/A'}
-                </Typography>
+              <Paper variant="outlined" sx={{ p: 1.75, borderRadius: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ letterSpacing: 0.5 }}>
+                    STATUS
+                  </Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    {waitingCount === 0 && totalDeviceCount > 0 ? (
+                      <Chip size="small" label="All Received in BD" color="success" sx={{ fontWeight: 700, height: 24, fontSize: '0.75rem' }} />
+                    ) : inBdCount === 0 && totalDeviceCount > 0 ? (
+                      <Chip size="small" label="Waiting Shipment" color="warning" sx={{ fontWeight: 700, height: 24, fontSize: '0.75rem' }} />
+                    ) : inBdCount > 0 ? (
+                      <Chip size="small" label={`Partial (${inBdCount}/${totalDeviceCount} in BD)`} color="info" sx={{ fontWeight: 700, height: 24, fontSize: '0.75rem' }} />
+                    ) : (
+                      <StatusBadge status={shipment.status || 'WAITING_SHIPMENT'} />
+                    )}
+                  </Box>
+                </div>
+                {shipment.receive_date && (
+                  <Chip
+                    size="small"
+                    icon={<DateIcon sx={{ fontSize: '13px !important' }} />}
+                    label={`Receive (CN): ${shipment.receive_date}`}
+                    sx={{
+                      mt: 1,
+                      height: 22,
+                      fontWeight: 600,
+                      fontSize: '0.72rem',
+                      alignSelf: 'flex-start',
+                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.18)' : 'rgba(99, 102, 241, 0.1)',
+                      color: 'primary.main',
+                      border: '1px solid',
+                      borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(99, 102, 241, 0.35)' : 'rgba(99, 102, 241, 0.25)',
+                      '& .MuiChip-label': { px: 0.7 }
+                    }}
+                  />
+                )}
               </Paper>
             </Grid>
           </Grid>
 
           {/* Batch Devices Header */}
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
             <Box>
-              <Typography variant="subtitle1" fontWeight={800}>
+              <Typography variant="subtitle2" fontWeight={800} sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>
                 Batch Devices ({devices.length})
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="caption" color="text.secondary">
                 Track status and assign incoming devices directly to regular stock or client B2B orders.
               </Typography>
             </Box>
@@ -444,12 +464,17 @@ export default function ShipmentDetailDialog({
                 variant="contained"
                 color="success"
                 size="small"
-                startIcon={receivingAll ? <CircularProgress size={16} color="inherit" /> : <StockIcon />}
+                startIcon={receivingAll ? <CircularProgress size={15} color="inherit" /> : <StockIcon sx={{ fontSize: 16 }} />}
                 onClick={handleReceiveAllToStock}
                 disabled={receivingAll}
                 sx={{
                   background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                  fontWeight: 700
+                  fontWeight: 700,
+                  fontSize: '0.8rem',
+                  textTransform: 'none',
+                  height: 32,
+                  px: 1.5,
+                  boxShadow: 'none'
                 }}
               >
                 Receive All to BD Stock ({waitingCount})
@@ -474,114 +499,148 @@ export default function ShipmentDetailDialog({
                 <TableHead>
                   <TableRow>
                     <TableCell sx={{ fontWeight: 700 }}>Device Model</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>IMEI Number</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Buying Cost</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Receive Date (BD)</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 700, minWidth: 200 }}>Actions</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, minWidth: 180 }}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {devices.map((dev) => (
-                    <TableRow key={dev.id} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
-                          {dev.model}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <VariantBadge variant={dev.variant} />
-                      </TableCell>
-                      <TableCell>
-                        <CopyableText text={dev.imei} />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
-                          {dev.buying_price !== null && dev.buying_price !== undefined
-                            ? formatNumber(dev.buying_price)
-                            : '—'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge status={dev.current_status} />
-                      </TableCell>
-                      <TableCell>
-                        <TextField
-                          size="small"
-                          type="date"
-                          value={dev.received_date_bd || ''}
-                          onChange={(e) => handleDeviceBdDateChange(dev.id, e.target.value)}
-                          InputLabelProps={{ shrink: true }}
-                          sx={{ width: 140 }}
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        {dev.is_b2b ? (
-                          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
-                            <Chip
-                              size="small"
-                              label={`B2B: ${dev.b2b_shop_name || 'Client'}`}
-                              sx={{
-                                bgcolor: 'rgba(147, 51, 234, 0.12)',
-                                color: '#9333EA',
-                                fontWeight: 700,
-                                fontSize: '0.75rem'
-                              }}
-                            />
-                            <Button
-                              size="small"
-                              variant="text"
-                              onClick={() => handleOpenMoveToB2b(dev)}
-                              sx={{ color: '#9333EA', fontWeight: 600, textTransform: 'none', px: 1, minWidth: 0 }}
-                            >
-                              Edit B2B
-                            </Button>
+                  {devices.map((dev) => {
+                    const cleanCap = dev.capacity ? String(dev.capacity).replace(/gb/gi, '').trim() : '';
+                    const cleanCol = dev.color ? String(dev.color).trim().split(/\s+/)[0] : '';
+                    const specs = [cleanCap, cleanCol].filter(Boolean).join(' • ');
+
+                    return (
+                      <TableRow key={dev.id} hover>
+                        {/* Device Model & Specs with Inline Variant Chip */}
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={700}>
+                            {dev.model}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.25 }}>
+                            {specs && (
+                              <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                                {specs}
+                              </Typography>
+                            )}
+                            {specs && dev.variant && (
+                              <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.5 }}>
+                                •
+                              </Typography>
+                            )}
+                            {dev.variant && <VariantBadge variant={dev.variant} size="small" />}
                           </Box>
-                        ) : (
-                          <Stack direction="row" spacing={1} justifyContent="flex-end" alignItems="center">
-                            {dev.current_status === 'WAITING_SHIPMENT' ? (
-                              <Tooltip title="Mark Received in BD (Regular Stock)">
+                        </TableCell>
+
+                        <TableCell>
+                          <CopyableText text={dev.imei} />
+                        </TableCell>
+
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {dev.buying_price !== null && dev.buying_price !== undefined
+                              ? formatNumber(dev.buying_price)
+                              : '—'}
+                          </Typography>
+                        </TableCell>
+
+                        <TableCell>
+                          <StatusBadge status={dev.current_status} />
+                        </TableCell>
+
+                        <TableCell>
+                          <TextField
+                            size="small"
+                            type="date"
+                            value={dev.received_date_bd || ''}
+                            onChange={(e) => handleDeviceBdDateChange(dev.id, e.target.value)}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                              width: 135,
+                              '& .MuiOutlinedInput-root': {
+                                height: 30,
+                                fontSize: '0.78rem',
+                                borderRadius: 1.5
+                              },
+                              '& .MuiInputBase-input': {
+                                py: 0.25,
+                                px: 0.75
+                              }
+                            }}
+                          />
+                        </TableCell>
+
+                        <TableCell align="right">
+                          {dev.is_b2b ? (
+                            <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.75 }}>
+                              <Chip
+                                size="small"
+                                label={`B2B: ${dev.b2b_shop_name || 'Client'}`}
+                                sx={{
+                                  height: 24,
+                                  bgcolor: 'rgba(147, 51, 234, 0.12)',
+                                  color: '#9333EA',
+                                  fontWeight: 700,
+                                  fontSize: '0.72rem'
+                                }}
+                              />
+                              <Button
+                                size="small"
+                                variant="text"
+                                onClick={() => handleOpenMoveToB2b(dev)}
+                                sx={{ color: '#9333EA', fontWeight: 600, fontSize: '0.75rem', textTransform: 'none', px: 0.8, minWidth: 0 }}
+                              >
+                                Edit
+                              </Button>
+                            </Box>
+                          ) : (
+                            <Stack direction="row" spacing={0.75} justifyContent="flex-end" alignItems="center">
+                              {dev.current_status === 'WAITING_SHIPMENT' && !dev.received_date_bd ? (
+                                <Tooltip title="Mark Received in BD (Regular Stock)">
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    color="success"
+                                    onClick={() => handleMoveToInStock(dev.id)}
+                                    sx={{ height: 28, fontSize: '0.75rem', textTransform: 'none', fontWeight: 700, px: 1.2, boxShadow: 'none' }}
+                                  >
+                                    Receive BD
+                                  </Button>
+                                </Tooltip>
+                              ) : (
+                                <Chip size="small" label="In BD" color="success" variant="outlined" sx={{ height: 24, fontWeight: 700, fontSize: '0.72rem' }} />
+                              )}
+                              <Tooltip title="Assign to B2B Client Order">
                                 <Button
                                   size="small"
                                   variant="outlined"
-                                  color="success"
-                                  onClick={() => handleMoveToInStock(dev.id)}
+                                  startIcon={<B2bIcon sx={{ fontSize: '0.9rem !important' }} />}
+                                  onClick={() => handleOpenMoveToB2b(dev)}
+                                  sx={{
+                                    height: 28,
+                                    color: '#9333EA',
+                                    borderColor: 'rgba(147, 51, 234, 0.4)',
+                                    fontWeight: 600,
+                                    fontSize: '0.75rem',
+                                    textTransform: 'none',
+                                    px: 1,
+                                    '&:hover': {
+                                      borderColor: '#9333EA',
+                                      backgroundColor: 'rgba(147, 51, 234, 0.06)'
+                                    }
+                                  }}
                                 >
-                                  Receive BD
+                                  Move to B2B
                                 </Button>
                               </Tooltip>
-                            ) : (
-                              <Chip size="small" label="In BD" color="success" variant="outlined" />
-                            )}
-                            <Tooltip title="Assign to B2B Client Order">
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                startIcon={<B2bIcon sx={{ fontSize: '1rem !important' }} />}
-                                onClick={() => handleOpenMoveToB2b(dev)}
-                                sx={{
-                                  color: '#9333EA',
-                                  borderColor: 'rgba(147, 51, 234, 0.5)',
-                                  fontWeight: 600,
-                                  textTransform: 'none',
-                                  '&:hover': {
-                                    borderColor: '#9333EA',
-                                    bgcolor: 'rgba(147, 51, 234, 0.08)'
-                                  }
-                                }}
-                              >
-                                Move to B2B
-                              </Button>
-                            </Tooltip>
-                          </Stack>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            </Stack>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </TableContainer>

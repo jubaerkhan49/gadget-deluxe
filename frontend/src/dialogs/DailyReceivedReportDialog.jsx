@@ -435,14 +435,13 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
                 <TableContainer sx={{ maxHeight: 380 }}>
                   <Table size="small" stickyHeader sx={{ tableLayout: 'auto' }}>
                     <TableHead>
-                      <TableRow sx={{ '& th': { bgcolor: (theme) => theme.palette.mode === 'dark' ? '#1E293B' : '#F8FAFC', fontWeight: 700, py: 1.5, px: 2 } }}>
-                        <TableCell sx={{ minWidth: 200 }}>Device Model</TableCell>
-                        <TableCell sx={{ minWidth: 110 }}>Variant</TableCell>
-                        <TableCell sx={{ minWidth: 170 }}>IMEI / Serial</TableCell>
-                        <TableCell sx={{ minWidth: 150 }}>Supplier</TableCell>
-                        <TableCell sx={{ minWidth: 130 }}>Agent</TableCell>
-                        <TableCell sx={{ minWidth: 140 }}>Tracking #</TableCell>
-                        <TableCell align="right" sx={{ minWidth: 100 }}>Status</TableCell>
+                      <TableRow sx={{ '& th': { bgcolor: (theme) => theme.palette.mode === 'dark' ? '#1E293B' : '#F8FAFC', fontWeight: 700, py: 1.2, px: 1.5 } }}>
+                        <TableCell sx={{ minWidth: 190 }}>Device Model</TableCell>
+                        <TableCell sx={{ minWidth: 160 }}>IMEI Number</TableCell>
+                        <TableCell sx={{ minWidth: 140 }}>Supplier</TableCell>
+                        <TableCell sx={{ minWidth: 120 }}>Agent</TableCell>
+                        <TableCell sx={{ minWidth: 130 }}>Tracking #</TableCell>
+                        <TableCell align="right" sx={{ minWidth: 90 }}>Status</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -452,19 +451,30 @@ export default function DailyReceivedReportDialog({ open, onClose }) {
                         const agentName = dev.shipment_agent || s?.shipping_company || '—';
                         const trackingNum = dev.shipment_tracking || s?.tracking_number || '—';
 
+                        const cleanCap = dev.capacity ? String(dev.capacity).replace(/gb/gi, '').trim() : '';
+                        const cleanCol = dev.color ? String(dev.color).trim().split(/\s+/)[0] : '';
+                        const specs = [cleanCap, cleanCol].filter(Boolean).join(' • ');
+
                         return (
-                          <TableRow key={dev.id} hover sx={{ '& td': { py: 1.25, px: 2, whiteSpace: 'nowrap' } }}>
+                          <TableRow key={dev.id} hover sx={{ '& td': { py: 1, px: 1.5, whiteSpace: 'nowrap' } }}>
+                            {/* Device Model & Specs with Inline Variant Chip */}
                             <TableCell>
                               <Typography variant="body2" fontWeight={700} sx={{ lineHeight: 1.2 }}>
                                 {dev.model}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
-                                {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
-                              </Typography>
-                            </TableCell>
-
-                            <TableCell>
-                              <VariantBadge variant={dev.variant} />
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.25 }}>
+                                {specs && (
+                                  <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                                    {specs}
+                                  </Typography>
+                                )}
+                                {specs && dev.variant && (
+                                  <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.5 }}>
+                                    •
+                                  </Typography>
+                                )}
+                                {dev.variant && <VariantBadge variant={dev.variant} size="small" />}
+                              </Box>
                             </TableCell>
 
                             <TableCell>
