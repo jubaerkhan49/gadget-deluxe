@@ -21,7 +21,7 @@ class DeviceVariant(models.TextChoices):
     MEXICAN = 'Mexican', 'Mexican'
     KOREA = 'Korea', 'Korea'
     SINGAPORE = 'Singapore', 'Singapore'
-    BYPASS = 'Bypass', 'Bypass'
+    WIFI = 'WIFI', 'WIFI'
 
 class Device(TimeStampedModel):
     """Central Device entity representing a unique mobile phone in inventory."""

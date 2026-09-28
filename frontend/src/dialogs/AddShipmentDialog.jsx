@@ -31,7 +31,7 @@ const VARIANTS = [
   'Mexican',
   'Korea',
   'Singapore',
-  'Bypass'
+  'WIFI'
 ];
 
 export default function AddShipmentDialog({ open, onClose, onShipmentCreated }) {

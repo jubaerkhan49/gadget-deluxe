@@ -8,13 +8,15 @@ const VARIANT_CONFIG = {
   'Mexican': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
   'Korea': { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)' },
   'Singapore': { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
+  'WIFI': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
   'Bypass': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
 };
 
 const VariantBadge = ({ variant, size = 'small' }) => {
   if (!variant) return null;
 
-  const config = VARIANT_CONFIG[variant] || {
+  const displayVariant = variant === 'Bypass' ? 'WIFI' : variant;
+  const config = VARIANT_CONFIG[displayVariant] || VARIANT_CONFIG[variant] || {
     color: '#3b82f6',
     bg: 'rgba(59, 130, 246, 0.15)',
   };
@@ -22,7 +24,7 @@ const VariantBadge = ({ variant, size = 'small' }) => {
   return (
     <Chip
       size={size}
-      label={variant}
+      label={displayVariant}
       sx={{
         color: config.color,
         backgroundColor: config.bg,

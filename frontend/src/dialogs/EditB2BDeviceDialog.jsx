@@ -35,7 +35,7 @@ const VARIANTS = [
   'Mexican',
   'Korea',
   'Singapore',
-  'Bypass',
+  'WIFI',
   'Other'
 ];
 

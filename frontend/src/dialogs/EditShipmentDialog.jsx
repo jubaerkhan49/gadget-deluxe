@@ -53,7 +53,7 @@ import VariantBadge from '../components/common/VariantBadge';
 import StatusBadge from '../components/common/StatusBadge';
 import CopyableText from '../components/common/CopyableText';
 
-const VARIANTS = ['Modified', 'USA eSim', 'Canada', 'Mexican', 'Korea', 'Singapore', 'Bypass'];
+const VARIANTS = ['Modified', 'USA eSim', 'Canada', 'Mexican', 'Korea', 'Singapore', 'WIFI'];
 
 const STATUS_CHOICES = [
   { value: 'WAITING_SHIPMENT', label: 'Waiting Shipment' },

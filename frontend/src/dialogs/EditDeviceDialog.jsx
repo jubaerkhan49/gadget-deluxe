@@ -22,7 +22,7 @@ import {
 } from '@mui/icons-material';
 import api from '../api/client';
 
-const VARIANTS = ['Modified', 'USA eSim', 'Canada', 'Mexican', 'Korea', 'Singapore', 'Bypass'];
+const VARIANTS = ['Modified', 'USA eSim', 'Canada', 'Mexican', 'Korea', 'Singapore', 'WIFI'];
 
 export default function EditDeviceDialog({ open, device, onClose, onDeviceUpdated, onSuccess }) {
   const [formData, setFormData] = useState({

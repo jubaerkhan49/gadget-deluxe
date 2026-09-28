@@ -56,7 +56,7 @@ const VARIANTS = [
   'Mexican',
   'Korea',
   'Singapore',
-  'Bypass'
+  'WIFI'
 ];
 
 const STATUS_CHOICES = [
@@ -205,8 +205,12 @@ export default function Inventory() {
     }
 
     // Variant Filter
-    if (selectedVariant !== 'ALL' && dev.variant !== selectedVariant) {
-      return false;
+    if (selectedVariant !== 'ALL') {
+      if (selectedVariant === 'WIFI' && dev.variant !== 'WIFI' && dev.variant !== 'Bypass') {
+        return false;
+      } else if (selectedVariant !== 'WIFI' && dev.variant !== selectedVariant) {
+        return false;
+      }
     }
 
     // Status Filter
