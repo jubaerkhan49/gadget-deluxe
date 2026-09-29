@@ -741,9 +741,26 @@ export default function Analytics() {
                           {/* Units Sold */}
                           <TableCell align="center">
                             <Chip
-                              label={`${s.units_sold} Units`}
+                              label={`${s.units_sold} ${s.units_sold === 1 ? 'Unit' : 'Units'}`}
                               size="small"
-                              sx={{ fontWeight: 700, borderRadius: '6px' }}
+                              sx={{
+                                fontWeight: 800,
+                                borderRadius: '8px',
+                                px: 0.75,
+                                height: 26,
+                                fontSize: '0.78rem',
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === 'dark'
+                                    ? 'rgba(59, 130, 246, 0.2)'
+                                    : '#EFF6FF',
+                                color: (theme) =>
+                                  theme.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8',
+                                border: '1px solid',
+                                borderColor: (theme) =>
+                                  theme.palette.mode === 'dark'
+                                    ? 'rgba(59, 130, 246, 0.4)'
+                                    : '#BFDBFE'
+                              }}
                             />
                           </TableCell>
 
@@ -846,7 +863,24 @@ export default function Analytics() {
                           <Chip
                             label={`${m.units_sold} Sold`}
                             size="small"
-                            sx={{ fontWeight: 700, borderRadius: '6px' }}
+                            sx={{
+                              fontWeight: 800,
+                              borderRadius: '8px',
+                              px: 0.5,
+                              height: 24,
+                              fontSize: '0.75rem',
+                              bgcolor: (theme) =>
+                                theme.palette.mode === 'dark'
+                                  ? 'rgba(59, 130, 246, 0.18)'
+                                  : '#EFF6FF',
+                              color: (theme) =>
+                                theme.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8',
+                              border: '1px solid',
+                              borderColor: (theme) =>
+                                theme.palette.mode === 'dark'
+                                  ? 'rgba(59, 130, 246, 0.35)'
+                                  : '#BFDBFE'
+                            }}
                           />
                           <Typography variant="body2" fontWeight={800} color="#16A34A">
                             {formatBDT(m.total_profit)}
