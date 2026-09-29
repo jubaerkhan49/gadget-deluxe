@@ -1024,7 +1024,6 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                           <TableRow sx={{ bgcolor: 'action.hover' }}>
                             <TableCell sx={{ fontWeight: 700 }}>Device</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Sold By</TableCell>
-                            <TableCell sx={{ fontWeight: 700 }}>Customer</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Confirmed Price</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                             <TableCell sx={{ fontWeight: 700 }}>Reviewed By</TableCell>
@@ -1049,10 +1048,6 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                                 <Typography variant="caption" color="text.secondary">
                                   @{s.employee_username}
                                 </Typography>
-                              </TableCell>
-                              <TableCell>
-                                <Typography variant="body2">{s.customer_name || 'Walk-in'}</Typography>
-                                <Typography variant="caption" color="text.secondary">{s.customer_phone || '—'}</Typography>
                               </TableCell>
                               <TableCell>
                                 <Typography variant="body2" fontWeight={700} color={s.status === 'APPROVED' ? 'success.main' : 'text.secondary'}>
