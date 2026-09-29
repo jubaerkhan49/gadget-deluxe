@@ -36,7 +36,9 @@ import {
   Clear as ClearIcon,
   MoreVert as MoreVertIcon,
   Refresh as RefreshIcon,
-  SwapVert as SortIcon
+  SwapVert as SortIcon,
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowUpward as ArrowUpwardIcon
 } from '@mui/icons-material';
 import { formatNumber, formatDate, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
@@ -81,11 +83,12 @@ export default function Inventory() {
   const [users, setUsers] = useState(() => cachedUsers?.results || cachedUsers || []);
   const [loading, setLoading] = useState(() => !cachedDevices);
 
-  // Filters state
+  // Filters & Sort state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVariant, setSelectedVariant] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [selectedOwner, setSelectedOwner] = useState('ALL');
+  const [assignedDateSort, setAssignedDateSort] = useState(null); // null | 'desc' | 'asc'
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -227,17 +230,14 @@ export default function Inventory() {
     return true;
   });
 
-  // Sort devices: IN_STOCK first, followed by UNDER_REPAIR, and WAITING_SHIPMENT
-  const sortedDevices = [...filteredDevices].sort((a, b) => {
-    const pA = STATUS_PRIORITY[a.current_status] || 99;
-    const pB = STATUS_PRIORITY[b.current_status] || 99;
-    if (pA !== pB) {
-      return pA - pB;
-    }
-    const dateA = new Date(a.created_at || 0).getTime();
-    const dateB = new Date(b.created_at || 0).getTime();
-    return dateB - dateA;
-  });
+  const handleToggleAssignedDateSort = () => {
+    setPage(0);
+    setAssignedDateSort((prev) => {
+      if (prev === null) return 'desc';
+      if (prev === 'desc') return 'asc';
+      return null;
+    });
+  };
 
   const getAssignedDate = (dev) => {
     if (!dev.current_owner && !dev.current_owner_name) {
@@ -265,6 +265,33 @@ export default function Inventory() {
 
     return assignDateStr;
   };
+
+  // Sort devices: if assignedDateSort is active, sort by assigned date; otherwise default status priority
+  const sortedDevices = [...filteredDevices].sort((a, b) => {
+    if (assignedDateSort) {
+      const dateStrA = getAssignedDate(a);
+      const dateStrB = getAssignedDate(b);
+
+      if (dateStrA && !dateStrB) return -1;
+      if (!dateStrA && dateStrB) return 1;
+      if (dateStrA && dateStrB) {
+        const timeA = new Date(dateStrA).getTime();
+        const timeB = new Date(dateStrB).getTime();
+        if (timeA !== timeB) {
+          return assignedDateSort === 'desc' ? timeB - timeA : timeA - timeB;
+        }
+      }
+    }
+
+    const pA = STATUS_PRIORITY[a.current_status] || 99;
+    const pB = STATUS_PRIORITY[b.current_status] || 99;
+    if (pA !== pB) {
+      return pA - pB;
+    }
+    const dateA = new Date(a.created_at || 0).getTime();
+    const dateB = new Date(b.created_at || 0).getTime();
+    return dateB - dateA;
+  });
 
   const paginatedDevices = sortedDevices.slice(
     page * rowsPerPage,
@@ -560,10 +587,53 @@ export default function Inventory() {
                 <TableCell sx={{ fontWeight: 700 }}>Battery</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Assigned To</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-                    Assigned Date
-                    <SortIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} />
-                  </Box>
+                  <Tooltip
+                    title={
+                      assignedDateSort === 'desc'
+                        ? 'Sorted by Assigned Date (Descending - Newest first). Click to sort Ascending.'
+                        : assignedDateSort === 'asc'
+                        ? 'Sorted by Assigned Date (Ascending - Oldest first). Click to reset.'
+                        : 'Click to sort by Assigned Date (Descending order)'
+                    }
+                  >
+                    <Box
+                      component="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleAssignedDateSort();
+                      }}
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 0.5,
+                        cursor: 'pointer',
+                        background: assignedDateSort ? 'rgba(59, 130, 246, 0.08)' : 'none',
+                        border: 'none',
+                        p: 0,
+                        font: 'inherit',
+                        color: assignedDateSort ? 'primary.main' : 'inherit',
+                        fontWeight: 700,
+                        borderRadius: 1.5,
+                        px: 0.75,
+                        py: 0.4,
+                        transition: 'all 0.15s ease-in-out',
+                        '&:hover': {
+                          bgcolor: (theme) =>
+                            theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                          color: 'primary.main'
+                        }
+                      }}
+                    >
+                      <span>Assigned Date</span>
+                      {assignedDateSort === 'desc' ? (
+                        <ArrowDownwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                      ) : assignedDateSort === 'asc' ? (
+                        <ArrowUpwardIcon sx={{ fontSize: 16, color: 'primary.main' }} />
+                      ) : (
+                        <SortIcon sx={{ fontSize: 16, color: 'text.secondary', opacity: 0.7 }} />
+                      )}
+                    </Box>
+                  </Tooltip>
                 </TableCell>
                 <TableCell align="right" sx={{ fontWeight: 700 }}>Actions</TableCell>
               </TableRow>
