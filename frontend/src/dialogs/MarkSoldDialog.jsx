@@ -28,8 +28,6 @@ import VariantBadge from '../components/common/VariantBadge';
 export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
   const { enqueueSnackbar } = useSnackbar();
   const [proposedPrice, setProposedPrice] = useState('');
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('CASH');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,8 +35,6 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
   useEffect(() => {
     if (open && device) {
       setProposedPrice(device.selling_price ? String(device.selling_price) : '');
-      setCustomerName('');
-      setCustomerPhone('');
       setPaymentMethod('CASH');
       setNotes('');
     }
@@ -52,8 +48,6 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
       setLoading(true);
       const payload = {
         proposed_price: proposedPrice ? parseFloat(proposedPrice) : null,
-        customer_name: customerName.trim() || null,
-        customer_phone: customerPhone.trim() || null,
         payment_method: paymentMethod,
         notes: notes.trim() || null
       };
@@ -183,24 +177,6 @@ export default function MarkSoldDialog({ open, onClose, device, onSubmitted }) {
               onChange={(e) => setProposedPrice(e.target.value)}
               helperText="Admin will verify and confirm final sold price"
               inputProps={{ min: 0, step: 'any' }}
-            />
-
-            <TextField
-              fullWidth
-              size="small"
-              label="Customer Name (Optional)"
-              placeholder="Buyer's full name"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-            />
-
-            <TextField
-              fullWidth
-              size="small"
-              label="Customer Phone (Optional)"
-              placeholder="01XXXXXXXXX"
-              value={customerPhone}
-              onChange={(e) => setCustomerPhone(e.target.value)}
             />
 
             <TextField
