@@ -79,8 +79,7 @@ class PreferencesManager(context: Context) {
             id = userId,
             username = username,
             role = role,
-            firstName = firstName,
-            displayName = firstName ?: username
+            firstName = firstName
         )
     }
 
