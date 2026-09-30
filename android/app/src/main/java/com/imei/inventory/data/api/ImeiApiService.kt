@@ -133,4 +133,26 @@ interface ImeiApiService {
         @Query("year") year: Int? = null,
         @Query("month") month: Int? = null
     ): Response<AnalyticsResponseDto>
+
+    // Device Sale Approval Requests Endpoint (Admin)
+    @GET("api/device-sale-requests/")
+    suspend fun getDeviceSaleRequests(
+        @Header("Authorization") token: String,
+        @Query("status") status: String? = null,
+        @Query("page_size") pageSize: Int? = 100
+    ): Response<PaginatedResponse<DeviceSaleRequestDto>>
+
+    @POST("api/device-sale-requests/{id}/confirm/")
+    suspend fun confirmDeviceSaleRequest(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body payload: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any>>
+
+    @POST("api/device-sale-requests/{id}/reject/")
+    suspend fun rejectDeviceSaleRequest(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body payload: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any>>
 }

@@ -70,6 +70,13 @@ class MainInventoryViewModel : ViewModel() {
     private val _repairs = MutableStateFlow<List<RepairDto>>(emptyList())
     val repairs: StateFlow<List<RepairDto>> = _repairs
 
+    // Pending Sale Requests State (Admin)
+    private val _pendingSaleRequests = MutableStateFlow<List<DeviceSaleRequestDto>>(emptyList())
+    val pendingSaleRequests: StateFlow<List<DeviceSaleRequestDto>> = _pendingSaleRequests
+
+    private val seenSaleRequestIds = mutableSetOf<Int>()
+    private var isFirstSyncCompleted = false
+
     // Users / Owners State
     private val _users = MutableStateFlow<List<UserDto>>(emptyList())
     val users: StateFlow<List<UserDto>> = _users
@@ -84,7 +91,7 @@ class MainInventoryViewModel : ViewModel() {
 
     private var realtimeJob: kotlinx.coroutines.Job? = null
 
-    fun loadAllData(token: String) {
+    fun loadAllData(token: String, context: android.content.Context? = null) {
         fetchDashboardStats(token)
         fetchUsers(token)
         fetchDevices(token)
@@ -92,43 +99,38 @@ class MainInventoryViewModel : ViewModel() {
         fetchSales(token)
         fetchRepairs(token)
         fetchAnalytics(token)
-        startRealtimeSync(token)
+        if (_currentUser.value?.isAdmin == true) {
+            fetchPendingSaleRequests(token)
+        }
+        startRealtimeSync(token, context)
     }
 
-    fun fetchDashboardStats(token: String) {
+    fun fetchPendingSaleRequests(token: String) {
         viewModelScope.launch {
             try {
                 val bearer = "Bearer $token"
-                val res = ApiClient.apiService.getDashboardStats(bearer)
+                val res = ApiClient.apiService.getDeviceSaleRequests(bearer, status = "PENDING", pageSize = 100)
                 if (res.isSuccessful && res.body() != null) {
-                    val s = res.body()!!
-                    val localSalesSum = _sales.value.sumOf { it.displayPrice }
-                    val localProfitSum = _sales.value.sumOf { it.profit ?: 0.0 }
-                    _stats.value = DashboardStats(
-                        totalDevices = s.totalDevices,
-                        inStock = s.inStock,
-                        sold = s.sold,
-                        underRepair = s.underRepair,
-                        todaySalesAmount = s.todaySales,
-                        totalSalesAmount = if (s.totalSales > 0) s.totalSales else localSalesSum,
-                        todayProfit = s.todayProfit,
-                        totalProfit = if (s.totalProfit > 0) s.totalProfit else localProfitSum,
-                        totalAssets = s.totalAssets
-                    )
+                    val list = res.body()!!.results
+                    _pendingSaleRequests.value = list
+                    if (!isFirstSyncCompleted) {
+                        list.forEach { seenSaleRequestIds.add(it.id) }
+                    }
                 }
             } catch (e: Exception) {
-                // fallback
+                // ignore
             }
         }
     }
 
-    fun startRealtimeSync(token: String) {
+    fun startRealtimeSync(token: String, context: android.content.Context? = null) {
         realtimeJob?.cancel()
         realtimeJob = viewModelScope.launch {
             while (true) {
                 kotlinx.coroutines.delay(4000) // Poll sync every 4 seconds quietly in background
                 try {
                     val bearer = "Bearer $token"
+                    val isAdminUser = _currentUser.value?.isAdmin == true
                     
                     // 1. Fetch real-time dashboard analytics
                     val statsRes = ApiClient.apiService.getDashboardStats(bearer)
@@ -155,13 +157,34 @@ class MainInventoryViewModel : ViewModel() {
                         _devices.value = devRes.body()!!.results
                     }
 
-                    // 3. Fetch shipments
+                    // 3. For Admin: Check for new pending sale approval requests and notify
+                    if (isAdminUser) {
+                        val reqRes = ApiClient.apiService.getDeviceSaleRequests(bearer, status = "PENDING", pageSize = 100)
+                        if (reqRes.isSuccessful && reqRes.body() != null) {
+                            val requests = reqRes.body()!!.results
+                            _pendingSaleRequests.value = requests
+
+                            if (isFirstSyncCompleted && context != null) {
+                                for (req in requests) {
+                                    if (!seenSaleRequestIds.contains(req.id)) {
+                                        seenSaleRequestIds.add(req.id)
+                                        com.imei.inventory.util.NotificationHelper.showSaleApprovalNotification(context, req)
+                                    }
+                                }
+                            } else {
+                                requests.forEach { seenSaleRequestIds.add(it.id) }
+                                isFirstSyncCompleted = true
+                            }
+                        }
+                    }
+
+                    // 4. Fetch shipments
                     val shipRes = ApiClient.apiService.getShipments(bearer)
                     if (shipRes.isSuccessful && shipRes.body() != null) {
                         _shipments.value = shipRes.body()!!.results
                     }
 
-                    // 4. Fetch sales
+                    // 5. Fetch sales
                     val salesRes = ApiClient.apiService.getSales(bearer)
                     if (salesRes.isSuccessful && salesRes.body() != null) {
                         _sales.value = salesRes.body()!!.results
@@ -482,6 +505,62 @@ class MainInventoryViewModel : ViewModel() {
                     onSuccess()
                 } else {
                     onError("Failed to update password (${res.code()})")
+                }
+            } catch (e: Exception) {
+                onError("Network error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun confirmSaleRequest(
+        token: String,
+        requestId: Int,
+        confirmedPrice: Double,
+        paymentMethod: String,
+        notes: String?,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            try {
+                val bearer = "Bearer $token"
+                val payload = mutableMapOf<String, Any?>(
+                    "confirmed_price" to confirmedPrice,
+                    "payment_method" to paymentMethod,
+                    "notes" to notes
+                )
+                val res = ApiClient.apiService.confirmDeviceSaleRequest(bearer, requestId, payload)
+                if (res.isSuccessful) {
+                    loadAllData(token)
+                    onSuccess()
+                } else {
+                    onError("Failed to confirm sale request (${res.code()})")
+                }
+            } catch (e: Exception) {
+                onError("Network error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun rejectSaleRequest(
+        token: String,
+        requestId: Int,
+        notes: String?,
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
+    ) {
+        viewModelScope.launch {
+            try {
+                val bearer = "Bearer $token"
+                val payload = mutableMapOf<String, Any?>(
+                    "notes" to notes
+                )
+                val res = ApiClient.apiService.rejectDeviceSaleRequest(bearer, requestId, payload)
+                if (res.isSuccessful) {
+                    loadAllData(token)
+                    onSuccess()
+                } else {
+                    onError("Failed to reject sale request (${res.code()})")
                 }
             } catch (e: Exception) {
                 onError("Network error: ${e.localizedMessage}")

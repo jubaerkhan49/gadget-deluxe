@@ -56,13 +56,21 @@ import com.imei.inventory.viewmodel.AuthViewModel
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 import kotlinx.coroutines.launch
 
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Shield
+import com.imei.inventory.data.model.DeviceSaleRequestDto
 import com.imei.inventory.data.model.UserDto
+import com.imei.inventory.ui.dialogs.AdminSaleApprovalDialog
 import com.imei.inventory.ui.dialogs.ChangePasswordDialog
 import com.imei.inventory.ui.dialogs.MarkSoldDialog
+import com.imei.inventory.util.NotificationHelper
 
 class MainActivity : FragmentActivity() {
     private val authViewModel: AuthViewModel by viewModels()
@@ -85,6 +93,7 @@ class MainActivity : FragmentActivity() {
                     var selectedShipmentForDetail by remember { mutableStateOf<ShipmentDto?>(null) }
                     var selectedShipmentForEdit by remember { mutableStateOf<ShipmentDto?>(null) }
                     var deviceForMarkSold by remember { mutableStateOf<DeviceDto?>(null) }
+                    var selectedSaleRequestForApproval by remember { mutableStateOf<DeviceSaleRequestDto?>(null) }
                     var showChangePasswordDialog by remember { mutableStateOf(false) }
                     var showAddDeviceDialog by remember { mutableStateOf(false) }
                     var showAddShipmentDialog by remember { mutableStateOf(false) }
@@ -103,6 +112,30 @@ class MainActivity : FragmentActivity() {
                     val devices by mainViewModel.devices.collectAsState()
                     val shipments by mainViewModel.shipments.collectAsState()
                     val users by mainViewModel.users.collectAsState()
+                    val pendingSaleRequests by mainViewModel.pendingSaleRequests.collectAsState()
+
+                    // Notification permission launcher for Android 13+ (API 33)
+                    val permissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { /* granted handled silently */ }
+
+                    LaunchedEffect(Unit) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+
+                    // Handle system notification click Intent
+                    LaunchedEffect(intent, pendingSaleRequests) {
+                        val reqId = intent?.getIntExtra(NotificationHelper.EXTRA_SALE_REQ_ID, 0) ?: 0
+                        if (reqId > 0 && pendingSaleRequests.isNotEmpty()) {
+                            val targetReq = pendingSaleRequests.find { it.id == reqId }
+                            if (targetReq != null) {
+                                selectedSaleRequestForApproval = targetReq
+                                intent?.removeExtra(NotificationHelper.EXTRA_SALE_REQ_ID)
+                            }
+                        }
+                    }
 
                     // Dynamic role check
                     val isAdmin = currentUser?.isAdmin ?: (authViewModel.currentUser.value?.isAdmin ?: true)
@@ -126,7 +159,7 @@ class MainActivity : FragmentActivity() {
                                 userToken = token
                                 currentUser = user
                                 mainViewModel.setCurrentUser(user)
-                                mainViewModel.loadAllData(token)
+                                mainViewModel.loadAllData(token, context)
                             }
                         )
                     } else {
@@ -501,6 +534,52 @@ class MainActivity : FragmentActivity() {
                                             titleContentColor = MaterialTheme.colorScheme.onSurface
                                         ),
                                         actions = {
+                                            if (isAdmin) {
+                                                // Sale Approval Notification Bell with Badge
+                                                IconButton(
+                                                    onClick = {
+                                                        if (pendingSaleRequests.isNotEmpty()) {
+                                                            selectedSaleRequestForApproval = pendingSaleRequests.first()
+                                                        } else {
+                                                            Toast.makeText(context, "No pending sale approval requests", Toast.LENGTH_SHORT).show()
+                                                        }
+                                                    },
+                                                    modifier = Modifier
+                                                        .background(
+                                                            if (pendingSaleRequests.isNotEmpty()) Color(0xFFF59E0B).copy(alpha = 0.18f)
+                                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                                            CircleShape
+                                                        )
+                                                        .size(36.dp)
+                                                ) {
+                                                    BadgedBox(
+                                                        badge = {
+                                                            if (pendingSaleRequests.isNotEmpty()) {
+                                                                Badge(
+                                                                    containerColor = Color(0xFFEF4444),
+                                                                    contentColor = Color.White
+                                                                ) {
+                                                                    Text(
+                                                                        text = "${pendingSaleRequests.size}",
+                                                                        fontSize = 9.sp,
+                                                                        fontWeight = FontWeight.Bold
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = if (pendingSaleRequests.isNotEmpty()) Icons.Default.NotificationsActive else Icons.Default.Notifications,
+                                                            contentDescription = "Sale Approvals",
+                                                            tint = if (pendingSaleRequests.isNotEmpty()) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            modifier = Modifier.size(19.dp)
+                                                        )
+                                                    }
+                                                }
+
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                            }
+
                                             // Scanner button
                                             IconButton(
                                                 onClick = { showScannerDialog = true },
@@ -559,7 +638,7 @@ class MainActivity : FragmentActivity() {
 
                                             // Sync Button
                                             IconButton(
-                                                onClick = { mainViewModel.loadAllData(token) },
+                                                onClick = { mainViewModel.loadAllData(token, context) },
                                                 modifier = Modifier
                                                     .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
                                                     .size(36.dp)
@@ -656,7 +735,8 @@ class MainActivity : FragmentActivity() {
                                                     onNavigateToTab = { tabIndex -> selectedTab = tabIndex },
                                                     onSelectDevice = { dev -> selectedDeviceForDetail = dev },
                                                     onOpenScanner = { showScannerDialog = true },
-                                                    onOpenAddShipment = { showAddShipmentDialog = true }
+                                                    onOpenAddShipment = { showAddShipmentDialog = true },
+                                                    onOpenSaleApproval = { req -> selectedSaleRequestForApproval = req }
                                                 )
                                             } else {
                                                 StaffDashboardTab(
@@ -860,6 +940,45 @@ class MainActivity : FragmentActivity() {
                                         notes = notes,
                                         onSuccess = {
                                             deviceForMarkSold = null
+                                            Toast.makeText(context, "Sale request submitted to Admin for approval", Toast.LENGTH_LONG).show()
+                                        }
+                                    )
+                                }
+                            )
+                        }
+
+                        // Admin Sale Approval Dialog
+                        selectedSaleRequestForApproval?.let { saleReq ->
+                            AdminSaleApprovalDialog(
+                                saleRequest = saleReq,
+                                onDismiss = { selectedSaleRequestForApproval = null },
+                                onApprove = { reqId, confirmedPrice, paymentMethod, notes ->
+                                    mainViewModel.confirmSaleRequest(
+                                        token = token,
+                                        requestId = reqId,
+                                        confirmedPrice = confirmedPrice,
+                                        paymentMethod = paymentMethod,
+                                        notes = notes,
+                                        onSuccess = {
+                                            selectedSaleRequestForApproval = null
+                                            Toast.makeText(context, "Sale approved & device marked as Sold!", Toast.LENGTH_SHORT).show()
+                                        },
+                                        onError = { err ->
+                                            Toast.makeText(context, err, Toast.LENGTH_LONG).show()
+                                        }
+                                    )
+                                },
+                                onReject = { reqId, notes ->
+                                    mainViewModel.rejectSaleRequest(
+                                        token = token,
+                                        requestId = reqId,
+                                        notes = notes,
+                                        onSuccess = {
+                                            selectedSaleRequestForApproval = null
+                                            Toast.makeText(context, "Sale request rejected.", Toast.LENGTH_SHORT).show()
+                                        },
+                                        onError = { err ->
+                                            Toast.makeText(context, err, Toast.LENGTH_LONG).show()
                                         }
                                     )
                                 }

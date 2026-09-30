@@ -147,3 +147,30 @@ data class DeviceScanResult(
     val device: DeviceDto? = null,
     val message: String? = null
 )
+
+data class DeviceSaleRequestDto(
+    val id: Int = 0,
+    val device: Int = 0,
+    @SerializedName("device_imei") val deviceImei: String? = null,
+    @SerializedName("device_model") val deviceModel: String? = null,
+    @SerializedName("device_capacity") val deviceCapacity: String? = null,
+    @SerializedName("device_color") val deviceColor: String? = null,
+    @SerializedName("device_variant") val deviceVariant: String? = null,
+    @SerializedName("device_battery_health") val deviceBatteryHealth: Int? = null,
+    @SerializedName("device_battery_cycle") val deviceBatteryCycle: Int? = null,
+    @SerializedName("device_buying_price") val deviceBuyingPrice: Double? = null,
+    val employee: Int? = null,
+    @SerializedName("employee_username") val employeeUsername: String? = null,
+    @SerializedName("employee_name") val employeeName: String? = null,
+    @SerializedName("proposed_price") val proposedPrice: Double = 0.0,
+    @SerializedName("confirmed_price") val confirmedPrice: Double? = null,
+    @SerializedName("payment_method") val paymentMethod: String? = "CASH",
+    @SerializedName("customer_name") val customerName: String? = null,
+    @SerializedName("customer_phone") val customerPhone: String? = null,
+    val notes: String? = null,
+    val status: String = "PENDING",
+    @SerializedName("status_display") val statusDisplay: String? = null,
+    @SerializedName("review_notes") val reviewNotes: String? = null,
+    @SerializedName("reviewed_by_username") val reviewedByUsername: String? = null,
+    @SerializedName("created_at") val createdAt: String? = null
+)
