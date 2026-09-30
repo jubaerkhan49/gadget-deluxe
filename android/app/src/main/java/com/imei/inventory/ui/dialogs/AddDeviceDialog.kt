@@ -16,11 +16,11 @@ import com.imei.inventory.data.model.DeviceDto
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddDeviceDialog(
-    initialImei: String = "",
+    initialImei: String? = null,
     onDismiss: () -> Unit,
     onSave: (DeviceDto) -> Unit
 ) {
-    var imei by remember(initialImei) { mutableStateOf(initialImei) }
+    var imei by remember(initialImei) { mutableStateOf(initialImei ?: "") }
     var model by remember { mutableStateOf("") }
     var capacity by remember { mutableStateOf("128GB") }
     var color by remember { mutableStateOf("") }

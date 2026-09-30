@@ -439,8 +439,8 @@ class MainInventoryViewModel : ViewModel() {
         proposedPrice: Double,
         paymentMethod: String,
         notes: String?,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
     ) {
         viewModelScope.launch {
             try {
@@ -467,8 +467,8 @@ class MainInventoryViewModel : ViewModel() {
         token: String,
         oldPass: String,
         newPass: String,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit
+        onSuccess: () -> Unit = {},
+        onError: (String) -> Unit = {}
     ) {
         viewModelScope.launch {
             try {

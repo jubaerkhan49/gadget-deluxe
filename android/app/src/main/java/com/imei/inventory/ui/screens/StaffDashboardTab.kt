@@ -33,11 +33,11 @@ import com.imei.inventory.viewmodel.MainInventoryViewModel
 @Composable
 fun StaffDashboardTab(
     token: String,
-    currentUser: UserDto,
     viewModel: MainInventoryViewModel,
-    onSelectDevice: (DeviceDto) -> Unit,
-    onOpenMarkSold: (DeviceDto) -> Unit,
-    onOpenScanner: () -> Unit
+    currentUser: UserDto? = null,
+    onOpenScanner: () -> Unit = {},
+    onSelectDevice: (DeviceDto) -> Unit = {},
+    onOpenMarkSold: (DeviceDto) -> Unit = {}
 ) {
     val devices by viewModel.devices.collectAsState()
     val sales by viewModel.sales.collectAsState()
@@ -49,10 +49,10 @@ fun StaffDashboardTab(
     // Filter devices assigned to this staff member
     val myDevices = remember(devices, currentUser) {
         devices.filter { dev ->
-            val matchId = dev.currentOwner != null && dev.currentOwner == currentUser.id
+            val matchId = dev.currentOwner != null && currentUser?.id != null && dev.currentOwner == currentUser.id
             val matchName = !dev.currentOwnerName.isNullOrBlank() && (
-                dev.currentOwnerName.equals(currentUser.username, ignoreCase = true) ||
-                dev.currentOwnerName.equals(currentUser.displayName, ignoreCase = true)
+                (currentUser?.username != null && dev.currentOwnerName.equals(currentUser.username, ignoreCase = true)) ||
+                (currentUser?.displayName != null && dev.currentOwnerName.equals(currentUser.displayName, ignoreCase = true))
             )
             (matchId || matchName) && !dev.isB2B
         }
@@ -74,9 +74,9 @@ fun StaffDashboardTab(
     // Latest sale by this user
     val mySales = remember(sales, currentUser) {
         sales.filter { sale ->
-            sale.soldBy?.equals(currentUser.username, ignoreCase = true) == true ||
-            sale.sellerName?.equals(currentUser.username, ignoreCase = true) == true ||
-            sale.sellerName?.equals(currentUser.displayName, ignoreCase = true) == true
+            (currentUser?.username != null && sale.soldBy?.equals(currentUser.username, ignoreCase = true) == true) ||
+            (currentUser?.username != null && sale.sellerName?.equals(currentUser.username, ignoreCase = true) == true) ||
+            (currentUser?.displayName != null && sale.sellerName?.equals(currentUser.displayName, ignoreCase = true) == true)
         }
     }
 
@@ -158,7 +158,7 @@ fun StaffDashboardTab(
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
-                                        text = (currentUser.firstName?.firstOrNull() ?: currentUser.username.firstOrNull() ?: 'S').uppercase(),
+                                        text = (currentUser?.firstName?.firstOrNull() ?: currentUser?.username?.firstOrNull() ?: 'S').uppercase(),
                                         color = Color.White,
                                         fontWeight = FontWeight.ExtraBold,
                                         fontSize = 20.sp
@@ -168,13 +168,13 @@ fun StaffDashboardTab(
                             Spacer(modifier = Modifier.width(14.dp))
                             Column {
                                 Text(
-                                    text = "Welcome, ${currentUser.firstName ?: currentUser.username} 👋",
+                                    text = "Welcome, ${currentUser?.firstName ?: (currentUser?.username ?: "Staff")} 👋",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 18.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
-                                    text = "Staff Custody Portal • @${currentUser.username}",
+                                    text = "Staff Custody Portal • @${currentUser?.username ?: "employee"}",
                                     fontSize = 12.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )

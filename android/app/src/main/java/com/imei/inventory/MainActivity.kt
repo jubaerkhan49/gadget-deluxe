@@ -935,13 +935,13 @@ class MainActivity : FragmentActivity() {
                             MarkSoldDialog(
                                 device = dev,
                                 onDismiss = { deviceForMarkSold = null },
-                                onSubmitSale = { sellingPrice, paymentMethod, saleNotes ->
+                                onSubmit = { proposedPrice, paymentMethod, notes ->
                                     mainViewModel.requestDeviceSale(
                                         token = token,
                                         deviceId = dev.id,
-                                        sellingPrice = sellingPrice,
+                                        proposedPrice = proposedPrice,
                                         paymentMethod = paymentMethod,
-                                        saleNotes = saleNotes,
+                                        notes = notes,
                                         onSuccess = {
                                             deviceForMarkSold = null
                                         }
@@ -954,11 +954,11 @@ class MainActivity : FragmentActivity() {
                         if (showChangePasswordDialog) {
                             ChangePasswordDialog(
                                 onDismiss = { showChangePasswordDialog = false },
-                                onChangePassword = { oldPassword, newPassword ->
+                                onSubmit = { oldPass, newPass ->
                                     mainViewModel.changePassword(
                                         token = token,
-                                        oldPassword = oldPassword,
-                                        newPassword = newPassword,
+                                        oldPass = oldPass,
+                                        newPass = newPass,
                                         onSuccess = {
                                             showChangePasswordDialog = false
                                         }
@@ -1085,12 +1085,6 @@ class MainActivity : FragmentActivity() {
                                 }
                             )
                         }
-                    }
-                }
-            }
-        }
-    }
-} }
                     }
                 }
             }
