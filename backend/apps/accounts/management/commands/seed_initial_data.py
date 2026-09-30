@@ -22,14 +22,14 @@ class Command(BaseCommand):
                 username=username,
                 defaults=emp_data
             )
-            if username == admin_username:
-                user.set_password(admin_password)
-                user.first_name = 'Administrator'
-                user.last_name = ''
-            else:
-                user.set_password('Employee123!')
-            user.save()
             if created:
+                if username == admin_username:
+                    user.set_password(admin_password)
+                    user.first_name = 'Administrator'
+                    user.last_name = ''
+                else:
+                    user.set_password('Employee123!')
+                user.save()
                 self.stdout.write(self.style.SUCCESS(f"Created user: {username} ({user.get_role_display()})"))
             else:
                 self.stdout.write(self.style.NOTICE(f"User {username} already exists."))

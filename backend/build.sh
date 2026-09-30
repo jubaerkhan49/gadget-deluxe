@@ -54,11 +54,14 @@ for username, (password, first_name) in employees.items():
         username=username,
         defaults={'role': 'EMPLOYEE', 'first_name': first_name, 'is_active': True}
     )
-    emp.set_password(password)
-    emp.role = 'EMPLOYEE'
-    emp.first_name = first_name
-    emp.is_active = True
-    emp.save()
-    print(f'Employee {username} configured with password')
+    if created:
+        emp.set_password(password)
+        emp.role = 'EMPLOYEE'
+        emp.first_name = first_name
+        emp.is_active = True
+        emp.save()
+        print(f'Employee {username} created with initial password')
+    else:
+        print(f'Employee {username} already exists; preserving existing credentials')
 " || true
 

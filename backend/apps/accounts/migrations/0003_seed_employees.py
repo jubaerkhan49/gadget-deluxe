@@ -30,12 +30,6 @@ def seed_employees(apps, schema_editor):
                 'password': make_password(raw_pwd)
             }
         )
-        if not created:
-            user.password = make_password(raw_pwd)
-            user.role = 'EMPLOYEE'
-            user.first_name = first_name
-            user.is_active = True
-            user.save()
 
 class Migration(migrations.Migration):
 
