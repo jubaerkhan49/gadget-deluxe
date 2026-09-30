@@ -145,6 +145,7 @@ fun MarkSoldDialog(
                             .padding(12.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
+                        // Top row: Model + StatusBadge
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -164,39 +165,54 @@ fun MarkSoldDialog(
                                 Text(
                                     text = device.model,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    fontSize = 14.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1
                                 )
                             }
+                            Spacer(modifier = Modifier.width(6.dp))
                             StatusBadge(device.currentStatus, device.statusDisplay)
                         }
 
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Text(
-                                text = "IMEI: ${device.imei}",
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            VariantBadge(device.variant)
-                            if (!device.capacity.isNullOrBlank()) {
-                                Text(
-                                    text = "• ${device.capacity}",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            if (!device.color.isNullOrBlank()) {
-                                Text(
-                                    text = "• ${device.color}",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                        // IMEI
+                        Text(
+                            text = "IMEI: ${device.imei}",
+                            fontSize = 11.5.sp,
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        // Specs Row: Variant, Storage, Color chips
+                        val specsList = listOfNotNull(
+                            device.variant?.takeIf { it.isNotBlank() },
+                            device.capacity?.replace("gb", "", ignoreCase = true)?.trim()?.let { "${it}GB" },
+                            device.color?.trim()?.split(" ")?.firstOrNull()
+                        )
+                        if (specsList.isNotEmpty()) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                specsList.forEach { spec ->
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.surface,
+                                        shape = RoundedCornerShape(6.dp),
+                                        border = androidx.compose.foundation.BorderStroke(
+                                            0.5.dp,
+                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                        )
+                                    ) {
+                                        Text(
+                                            text = spec,
+                                            fontSize = 10.5.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

@@ -44,7 +44,6 @@ fun StaffDashboardTab(
     val isLoading by viewModel.isLoading.collectAsState()
 
     var searchQuery by remember { mutableStateOf("") }
-    var selectedStatusFilter by remember { mutableStateOf<String?>(null) }
 
     // Filter devices assigned to this staff member
     val myDevices = remember(devices, currentUser) {
@@ -60,15 +59,6 @@ fun StaffDashboardTab(
 
     val inCustodyCount = remember(myDevices) {
         myDevices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) }
-    }
-    val inStockCount = remember(myDevices) {
-        myDevices.count { it.currentStatus.equals("IN_STOCK", ignoreCase = true) }
-    }
-    val repairCount = remember(myDevices) {
-        myDevices.count { it.currentStatus.equals("UNDER_REPAIR", ignoreCase = true) || it.currentStatus.equals("REPAIR", ignoreCase = true) }
-    }
-    val pendingSaleCount = remember(myDevices) {
-        myDevices.count { it.currentStatus.equals("PENDING_SALE", ignoreCase = true) }
     }
 
     // Latest sale by this user
@@ -88,49 +78,37 @@ fun StaffDashboardTab(
         myDevices.mapNotNull { it.receivedDateBd ?: it.createdAt?.take(10) }.maxOrNull() ?: "Recent"
     }
 
-    // Filtered list for display
-    val filteredAssigned = remember(myDevices, searchQuery, selectedStatusFilter) {
-        myDevices.filter { dev ->
-            // Status filter
-            if (selectedStatusFilter != null && !dev.currentStatus.equals(selectedStatusFilter, ignoreCase = true)) {
-                return@filter false
+    // Filtered list for display by search query only (status filter chips removed)
+    val filteredAssigned = remember(myDevices, searchQuery) {
+        if (searchQuery.isBlank()) {
+            myDevices
+        } else {
+            val q = searchQuery.trim().lowercase()
+            myDevices.filter { dev ->
+                dev.model.lowercase().contains(q) ||
+                dev.imei.lowercase().contains(q) ||
+                dev.imei2?.lowercase()?.contains(q) == true ||
+                dev.serialNumber?.lowercase()?.contains(q) == true ||
+                dev.color?.lowercase()?.contains(q) == true ||
+                dev.capacity?.lowercase()?.contains(q) == true
             }
-            // Search filter
-            if (searchQuery.isNotBlank()) {
-                val q = searchQuery.trim().lowercase()
-                val matchModel = dev.model.lowercase().contains(q)
-                val matchImei = dev.imei.lowercase().contains(q)
-                val matchSerial = dev.serialNumber?.lowercase()?.contains(q) == true
-                val matchColor = dev.color?.lowercase()?.contains(q) == true
-                if (!matchModel && !matchImei && !matchSerial && !matchColor) {
-                    return@filter false
-                }
-            }
-            true
         }
     }
-
-    val statusTabs = listOf(
-        null to "All (${myDevices.size})",
-        "IN_STOCK" to "In Stock ($inStockCount)",
-        "UNDER_REPAIR" to "Under Repair ($repairCount)",
-        "PENDING_SALE" to "Pending Sale ($pendingSaleCount)"
-    )
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        // 1. Staff Hero Card
+        // 1. Staff Hero Card with non-squished horizontal badge
         item {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 2.dp,
-                shadowElevation = 4.dp
+                shadowElevation = 3.dp
             ) {
                 Box(
                     modifier = Modifier
@@ -138,56 +116,63 @@ fun StaffDashboardTab(
                         .background(
                             brush = Brush.linearGradient(
                                 colors = listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                     MaterialTheme.colorScheme.surface
                                 )
                             )
                         )
-                        .padding(18.dp)
+                        .padding(16.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) {
                             Surface(
                                 color = MaterialTheme.colorScheme.primary,
                                 shape = CircleShape,
-                                modifier = Modifier.size(46.dp)
+                                modifier = Modifier.size(44.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         text = (currentUser?.firstName?.firstOrNull() ?: currentUser?.username?.firstOrNull() ?: 'S').uppercase(),
                                         color = Color.White,
                                         fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 20.sp
+                                        fontSize = 19.sp
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.width(14.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
                             Column {
                                 Text(
                                     text = "Welcome, ${currentUser?.firstName ?: (currentUser?.username ?: "Staff")} 👋",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 18.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    fontSize = 17.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1
                                 )
                                 Text(
                                     text = "Staff Custody Portal • @${currentUser?.username ?: "employee"}",
-                                    fontSize = 12.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    fontSize = 11.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
                                 )
                             }
                         }
 
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Surface(
                             color = Color(0xFF16A34A).copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(12.dp)
+                            shape = RoundedCornerShape(20.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
@@ -199,7 +184,9 @@ fun StaffDashboardTab(
                                     text = "In Custody",
                                     color = Color(0xFF16A34A),
                                     fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -277,7 +264,7 @@ fun StaffDashboardTab(
                         }
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface
@@ -287,8 +274,8 @@ fun StaffDashboardTab(
 
                 FilledTonalIconButton(
                     onClick = onOpenScanner,
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.size(52.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.size(50.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.QrCodeScanner,
@@ -300,31 +287,7 @@ fun StaffDashboardTab(
             }
         }
 
-        // 4. Status Filter Pills
-        item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                statusTabs.forEach { (status, label) ->
-                    val isSelected = selectedStatusFilter == status
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { selectedStatusFilter = if (isSelected) null else status },
-                        label = { Text(label, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium) },
-                        shape = RoundedCornerShape(10.dp),
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = Color.White
-                        )
-                    )
-                }
-            }
-        }
-
-        // 5. Section Header
+        // 4. Section Header
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -340,7 +303,7 @@ fun StaffDashboardTab(
             }
         }
 
-        // 6. Device Cards List
+        // 5. Device Cards List
         if (filteredAssigned.isEmpty()) {
             item {
                 Surface(
@@ -359,12 +322,12 @@ fun StaffDashboardTab(
                             imageVector = Icons.Default.PhoneAndroid,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            modifier = Modifier.size(42.dp)
+                            modifier = Modifier.size(40.dp)
                         )
                         Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = if (searchQuery.isNotBlank() || selectedStatusFilter != null)
-                                "No assigned devices match your filters."
+                            text = if (searchQuery.isNotBlank())
+                                "No assigned devices match '$searchQuery'."
                             else
                                 "No devices are currently in your custody.",
                             fontSize = 13.sp,
@@ -413,56 +376,73 @@ fun StaffDeviceCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+            verticalArrangement = Arrangement.spacedBy(9.dp)
         ) {
-            // Top Row: Model & Status
+            // Top Row: Model & Status Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = device.model,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                    val specs = listOfNotNull(
-                        device.capacity?.replace("gb", "", ignoreCase = true)?.trim()?.let { "${it}GB" },
-                        device.color?.trim()?.split(" ")?.firstOrNull()
-                    ).joinToString(" • ")
-
-                    if (specs.isNotBlank()) {
-                        Text(
-                            text = specs,
-                            fontSize = 12.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                Text(
+                    text = device.model,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.5.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f, fill = false),
+                    maxLines = 1
+                )
+                Spacer(modifier = Modifier.width(8.dp))
                 StatusBadge(device.currentStatus, device.statusDisplay)
             }
 
-            // Middle Row: Copyable IMEI + Variant Badge
+            // Specs row (Chips for Variant, Storage, Color)
+            val specsList = listOfNotNull(
+                device.capacity?.replace("gb", "", ignoreCase = true)?.trim()?.let { "${it}GB" },
+                device.color?.trim()?.split(" ")?.firstOrNull(),
+                device.variant?.takeIf { it.isNotBlank() }
+            )
+            if (specsList.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    specsList.forEach { spec ->
+                        Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = spec,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            // IMEI Row
             Surface(
                 shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     CopyableText(label = "IMEI", value = device.imei)
-                    VariantBadge(device.variant)
                 }
             }
 
-            // Specs Row: Battery Health + Assigned Date
+            // Battery Health + Assigned Date Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -482,6 +462,13 @@ fun StaffDeviceCard(
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    if (device.batteryCycle != null) {
+                        Text(
+                            text = " (${device.batteryCycle} cyc)",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -511,7 +498,7 @@ fun StaffDeviceCard(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp, horizontal = 12.dp),
+                            .padding(vertical = 9.dp, horizontal = 12.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -529,7 +516,7 @@ fun StaffDeviceCard(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(vertical = 10.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.PointOfSale,
@@ -542,7 +529,7 @@ fun StaffDeviceCard(
                         text = "Mark as Sold",
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 12.5.sp
+                        fontSize = 13.sp
                     )
                 }
             }

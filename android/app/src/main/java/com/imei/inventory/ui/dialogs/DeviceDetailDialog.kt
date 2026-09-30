@@ -66,6 +66,7 @@ fun DeviceDetailDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val isSold = device.currentStatus == "SOLD"
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -228,7 +229,6 @@ fun DeviceDetailDialog(
                     // Quick Status Changer with dynamic active color feedback
                     val isStock = device.currentStatus == "IN_STOCK"
                     val isRepair = device.currentStatus in listOf("UNDER_REPAIR", "REPAIR")
-                    val isSold = device.currentStatus == "SOLD"
 
                     Text("Update Device Status:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     Row(

@@ -372,50 +372,13 @@ class MainActivity : FragmentActivity() {
                                                 }
                                             )
                                         } else {
-                                            // Staff items
+                                            // Staff items: only Custody Dashboard
                                             CompactDrawerItem(
                                                 icon = Icons.Default.Dashboard,
                                                 label = "Custody Dashboard",
-                                                selected = selectedTab == 0,
+                                                selected = true,
                                                 onClick = {
                                                     selectedTab = 0
-                                                    coroutineScope.launch { drawerState.close() }
-                                                }
-                                            )
-
-                                            CompactDrawerItem(
-                                                icon = Icons.Default.PhoneAndroid,
-                                                label = "Assigned Devices",
-                                                selected = selectedTab == 1 && inventorySubTab == 0,
-                                                badgeText = if (activeCount > 0) "$activeCount" else null,
-                                                badgeColor = Color(0xFF10B981),
-                                                onClick = {
-                                                    selectedTab = 1
-                                                    inventorySubTab = 0
-                                                    coroutineScope.launch { drawerState.close() }
-                                                }
-                                            )
-
-                                            CompactDrawerItem(
-                                                icon = Icons.Default.QrCodeScanner,
-                                                label = "Scan Barcode / QR",
-                                                iconTint = MaterialTheme.colorScheme.primary,
-                                                onClick = {
-                                                    coroutineScope.launch { drawerState.close() }
-                                                    showScannerDialog = true
-                                                }
-                                            )
-
-                                            CompactDrawerItem(
-                                                icon = Icons.Default.Inventory2,
-                                                label = "Archive (Sold)",
-                                                iconTint = Color(0xFFF59E0B),
-                                                selected = selectedTab == 1 && inventorySubTab == 2,
-                                                badgeText = if (archiveCount > 0) "$archiveCount" else null,
-                                                badgeColor = Color(0xFFF59E0B),
-                                                onClick = {
-                                                    selectedTab = 1
-                                                    inventorySubTab = 2
                                                     coroutineScope.launch { drawerState.close() }
                                                 }
                                             )
@@ -499,7 +462,8 @@ class MainActivity : FragmentActivity() {
                                                     text = if (isAdmin) "Gadget Deluxe" else "Staff Custody",
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 16.sp,
-                                                    color = MaterialTheme.colorScheme.onBackground
+                                                    color = MaterialTheme.colorScheme.onBackground,
+                                                    maxLines = 1
                                                 )
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     Box(
@@ -518,15 +482,13 @@ class MainActivity : FragmentActivity() {
                                                                 else -> "Cloud Sync Active"
                                                             }
                                                         } else {
-                                                            when (selectedTab) {
-                                                                0 -> "Custody Overview • ${currentUser?.displayName ?: "Staff"}"
-                                                                1 -> "Assigned Device Portfolio"
-                                                                else -> "Active Staff Session"
-                                                            }
+                                                            "Custody Overview • ${currentUser?.displayName ?: (currentUser?.username ?: "Staff")}"
                                                         },
                                                         fontSize = 11.sp,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        fontWeight = FontWeight.Medium
+                                                        fontWeight = FontWeight.Medium,
+                                                        maxLines = 1,
+                                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                                                     )
                                                 }
                                             }
@@ -614,11 +576,11 @@ class MainActivity : FragmentActivity() {
                                     )
                                 },
                                 bottomBar = {
-                                    NavigationBar(
-                                        containerColor = MaterialTheme.colorScheme.surface,
-                                        tonalElevation = 4.dp
-                                    ) {
-                                        if (isAdmin) {
+                                    if (isAdmin) {
+                                        NavigationBar(
+                                            containerColor = MaterialTheme.colorScheme.surface,
+                                            tonalElevation = 4.dp
+                                        ) {
                                             NavigationBarItem(
                                                 icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard", modifier = Modifier.size(20.dp)) },
                                                 label = { Text("Dashboard", fontSize = 10.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
@@ -669,66 +631,6 @@ class MainActivity : FragmentActivity() {
                                                     unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                                )
-                                            )
-                                        } else {
-                                            // Staff bottom bar
-                                            NavigationBarItem(
-                                                icon = { Icon(Icons.Default.Dashboard, contentDescription = "Custody", modifier = Modifier.size(20.dp)) },
-                                                label = { Text("Custody", fontSize = 10.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
-                                                selected = selectedTab == 0,
-                                                onClick = { selectedTab = 0 },
-                                                colors = NavigationBarItemDefaults.colors(
-                                                    selectedIconColor = Color(0xFF10B981),
-                                                    selectedTextColor = Color(0xFF10B981),
-                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    indicatorColor = Color(0xFF10B981).copy(alpha = 0.12f)
-                                                )
-                                            )
-                                            NavigationBarItem(
-                                                icon = { Icon(Icons.Default.PhoneAndroid, contentDescription = "My Devices", modifier = Modifier.size(20.dp)) },
-                                                label = { Text("My Devices", fontSize = 10.sp, fontWeight = if (selectedTab == 1 && inventorySubTab == 0) FontWeight.Bold else FontWeight.Normal) },
-                                                selected = selectedTab == 1 && inventorySubTab == 0,
-                                                onClick = {
-                                                    selectedTab = 1
-                                                    inventorySubTab = 0
-                                                },
-                                                colors = NavigationBarItemDefaults.colors(
-                                                    selectedIconColor = Color(0xFF10B981),
-                                                    selectedTextColor = Color(0xFF10B981),
-                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    indicatorColor = Color(0xFF10B981).copy(alpha = 0.12f)
-                                                )
-                                            )
-                                            NavigationBarItem(
-                                                icon = { Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR", modifier = Modifier.size(20.dp)) },
-                                                label = { Text("Scan QR", fontSize = 10.sp, fontWeight = FontWeight.Normal) },
-                                                selected = false,
-                                                onClick = { showScannerDialog = true },
-                                                colors = NavigationBarItemDefaults.colors(
-                                                    selectedIconColor = MaterialTheme.colorScheme.primary,
-                                                    selectedTextColor = MaterialTheme.colorScheme.primary,
-                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                                )
-                                            )
-                                            NavigationBarItem(
-                                                icon = { Icon(Icons.Default.Inventory2, contentDescription = "Archive", modifier = Modifier.size(20.dp)) },
-                                                label = { Text("Archive", fontSize = 10.sp, fontWeight = if (selectedTab == 1 && inventorySubTab == 2) FontWeight.Bold else FontWeight.Normal) },
-                                                selected = selectedTab == 1 && inventorySubTab == 2,
-                                                onClick = {
-                                                    selectedTab = 1
-                                                    inventorySubTab = 2
-                                                },
-                                                colors = NavigationBarItemDefaults.colors(
-                                                    selectedIconColor = Color(0xFFF59E0B),
-                                                    selectedTextColor = Color(0xFFF59E0B),
-                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    indicatorColor = Color(0xFFF59E0B).copy(alpha = 0.12f)
                                                 )
                                             )
                                         }
