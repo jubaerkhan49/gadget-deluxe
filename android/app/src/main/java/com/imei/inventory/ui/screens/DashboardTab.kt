@@ -12,11 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.DeviceSaleRequestDto
+import com.imei.inventory.data.model.UserDto
 import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.ui.components.StatCard
 import com.imei.inventory.ui.components.StatusBadge
@@ -28,6 +30,7 @@ import com.imei.inventory.viewmodel.MainInventoryViewModel
 fun DashboardTab(
     token: String,
     viewModel: MainInventoryViewModel,
+    currentUser: UserDto? = null,
     onNavigateToTab: (Int) -> Unit,
     onSelectDevice: (DeviceDto) -> Unit,
     onOpenScanner: () -> Unit,
@@ -38,6 +41,38 @@ fun DashboardTab(
     val devices by viewModel.devices.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val pendingSaleRequests by viewModel.pendingSaleRequests.collectAsState()
+    val vmUser by viewModel.currentUser.collectAsState()
+    val effectiveUser = currentUser ?: vmUser
+
+    var assignedSearchQuery by remember { mutableStateOf("") }
+
+    // Filter devices in current user's physical custody (not B2B, not SOLD)
+    val myAssignedDevices = remember(devices, effectiveUser) {
+        devices.filter { dev ->
+            val matchId = dev.currentOwner != null && effectiveUser?.id != null && dev.currentOwner == effectiveUser.id
+            val matchName = !dev.currentOwnerName.isNullOrBlank() && (
+                (effectiveUser?.username != null && dev.currentOwnerName.equals(effectiveUser.username, ignoreCase = true)) ||
+                (effectiveUser?.displayName != null && dev.currentOwnerName.equals(effectiveUser.displayName, ignoreCase = true))
+            )
+            (matchId || matchName) && !dev.isB2B && !dev.currentStatus.equals("SOLD", ignoreCase = true)
+        }
+    }
+
+    val filteredAssignedDevices = remember(myAssignedDevices, assignedSearchQuery) {
+        if (assignedSearchQuery.isBlank()) {
+            myAssignedDevices
+        } else {
+            val q = assignedSearchQuery.trim().lowercase()
+            myAssignedDevices.filter { dev ->
+                dev.model.lowercase().contains(q) ||
+                dev.imei.lowercase().contains(q) ||
+                (dev.serialNumber?.lowercase()?.contains(q) == true) ||
+                (dev.color?.lowercase()?.contains(q) == true) ||
+                (dev.capacity?.lowercase()?.contains(q) == true) ||
+                (dev.variant?.lowercase()?.contains(q) == true)
+            }
+        }
+    }
 
     LazyColumn(
         modifier = Modifier
@@ -265,65 +300,309 @@ fun DashboardTab(
             }
         }
 
-        // Recent Devices List
+        // My Assigned Devices in Physical Custody Header & Filter
         item {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(14.dp),
+                modifier = Modifier.fillMaxWidth(),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Surface(
+                            color = MaterialTheme.colorScheme.primary,
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.size(38.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Badge,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "My Assigned Devices in Physical Custody",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.5.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "${myAssignedDevices.size} device${if (myAssignedDevices.size == 1) "" else "s"} currently assigned to your account",
+                                fontSize = 11.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    // Filter Search Input
+                    OutlinedTextField(
+                        value = assignedSearchQuery,
+                        onValueChange = { assignedSearchQuery = it },
+                        placeholder = {
+                            Text(
+                                "Filter assigned devices...",
+                                fontSize = 12.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search",
+                                modifier = Modifier.size(17.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        trailingIcon = {
+                            if (assignedSearchQuery.isNotEmpty()) {
+                                IconButton(
+                                    onClick = { assignedSearchQuery = "" },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Clear",
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                }
+                            }
+                        },
+                        singleLine = true,
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+                        )
+                    )
+                }
+            }
+        }
+
+        // List of Assigned Devices
+        if (myAssignedDevices.isEmpty()) {
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        if (isLoading) {
+                            CircularProgressIndicator(
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(28.dp)
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Loading assigned inventory...",
+                                fontSize = 12.5.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.PhoneAndroid,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                modifier = Modifier.size(36.dp)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "No devices are currently assigned to your custody.",
+                                fontSize = 12.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        } else if (filteredAssignedDevices.isEmpty()) {
+            item {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No assigned devices match \"$assignedSearchQuery\"",
+                            fontSize = 12.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        } else {
+            items(filteredAssignedDevices, key = { it.id }) { device ->
+                AdminAssignedDeviceCard(
+                    device = device,
+                    onClick = { onSelectDevice(device) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun AdminAssignedDeviceCard(
+    device: DeviceDto,
+    onClick: () -> Unit
+) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(13.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Row 1: Model & Specs (Left) + StatusBadge (Right)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(modifier = Modifier.weight(1f, fill = false)) {
+                    Text(
+                        text = device.model,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.5.sp,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1
+                    )
+                    val specParts = listOfNotNull(
+                        device.capacity?.takeIf { it.isNotBlank() }?.let { cap ->
+                            cap.replace("gb", "", ignoreCase = true).trim() + "GB"
+                        },
+                        device.color?.takeIf { it.isNotBlank() }?.trim()
+                    )
+                    if (specParts.isNotEmpty()) {
+                        Text(
+                            text = specParts.joinToString(" • "),
+                            fontSize = 11.5.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                StatusBadge(device.currentStatus, device.statusDisplay)
+            }
+
+            // Row 2: Monospace Copyable IMEI + Variant Badge
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 5.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CopyableText(label = "IMEI", value = device.imei)
+                    VariantBadge(device.variant)
+                }
+            }
+
+            // Row 3: Battery Health & Cycle Count (Left) + Received Date (Right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Recent Inventory",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                TextButton(onClick = { onNavigateToTab(1) }) {
-                    Text("View All (${devices.size}) →", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
-
-        if (devices.isEmpty()) {
-            item {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                // Battery Health + CC
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
-                    Box(modifier = Modifier.padding(24.dp).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        if (isLoading) {
-                            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                        } else {
-                            Text("No devices found in inventory", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = "Battery:",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = device.batteryHealth?.let { "$it%" } ?: "—",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    device.batteryCycle?.let { cc ->
+                        Surface(
+                            color = Color(0xFF3B82F6).copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(4.dp),
+                            border = androidx.compose.foundation.BorderStroke(0.8.dp, Color(0xFF3B82F6).copy(alpha = 0.3f))
+                        ) {
+                            Text(
+                                text = "CC $cc",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontFamily = FontFamily.Monospace,
+                                color = Color(0xFF2563EB),
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                            )
                         }
                     }
                 }
-            }
-        } else {
-            items(devices.take(6)) { device ->
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectDevice(device) },
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(device.model, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 15.sp)
-                            StatusBadge(device.currentStatus, device.statusDisplay)
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            CopyableText(label = "IMEI", value = device.imei)
-                            VariantBadge(device.variant)
-                        }
+
+                // Received Date
+                val recDate = device.receivedDateBd ?: device.createdAt?.take(10)
+                if (!recDate.isNullOrBlank()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.CalendarToday,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.size(11.dp)
+                        )
+                        Spacer(modifier = Modifier.width(3.dp))
+                        Text(
+                            text = recDate,
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }

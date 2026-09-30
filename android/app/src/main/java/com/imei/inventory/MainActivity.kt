@@ -866,6 +866,7 @@ class MainActivity : FragmentActivity() {
                                                 DashboardTab(
                                                     token = token,
                                                     viewModel = mainViewModel,
+                                                    currentUser = currentUser,
                                                     onNavigateToTab = { tabIndex -> selectedTab = tabIndex },
                                                     onSelectDevice = { dev -> selectedDeviceForDetail = dev },
                                                     onOpenScanner = { showScannerDialog = true },
