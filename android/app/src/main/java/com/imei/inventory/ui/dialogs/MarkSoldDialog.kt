@@ -194,7 +194,8 @@ fun MarkSoldDialog(
                                 SummaryChip(text = cleanCap, color = MaterialTheme.colorScheme.primary)
                             }
                             device.color?.takeIf { it.isNotBlank() }?.let { col ->
-                                SummaryChip(text = col.trim(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                val firstColorWord = col.trim().split(Regex("[ /,-]")).firstOrNull { it.isNotBlank() } ?: col.trim()
+                                SummaryChip(text = firstColorWord, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }

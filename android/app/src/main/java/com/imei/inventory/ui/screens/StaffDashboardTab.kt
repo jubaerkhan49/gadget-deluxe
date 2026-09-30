@@ -203,7 +203,7 @@ fun StaffDashboardTab(
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
-                        title = "SALES PERFORMANCE",
+                        title = "PERFORMANCE",
                         value = if (mySales.size >= 5) "Top Seller" else if (mySales.isNotEmpty()) "Good" else "Active",
                         imageVector = Icons.Default.EmojiEvents,
                         accentColor = Color(0xFFF59E0B),
@@ -343,7 +343,8 @@ fun StaffDeviceCard(
                     SpecPill(text = cleanCap, color = MaterialTheme.colorScheme.primary)
                 }
                 device.color?.takeIf { it.isNotBlank() }?.let { col ->
-                    SpecPill(text = col.trim(), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    val firstColorWord = col.trim().split(Regex("[ /,-]")).firstOrNull { it.isNotBlank() } ?: col.trim()
+                    SpecPill(text = firstColorWord, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 device.variant?.takeIf { it.isNotBlank() }?.let { v ->
                     SpecPill(text = v.trim(), color = Color(0xFF8B5CF6))

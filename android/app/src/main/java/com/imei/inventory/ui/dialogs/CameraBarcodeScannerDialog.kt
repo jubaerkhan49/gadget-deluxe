@@ -373,7 +373,7 @@ fun CameraBarcodeScannerDialog(
                                     )
                                 } else {
                                     Text(
-                                        text = "Align Primary IMEI in frame (1-2s)",
+                                        text = "Align Primary IMEI in frame",
                                         color = Color(0xFF94A3B8),
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.Medium

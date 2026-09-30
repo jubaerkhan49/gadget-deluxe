@@ -1,6 +1,7 @@
 package com.imei.inventory
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.core.*
@@ -32,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -96,6 +98,7 @@ class MainActivity : FragmentActivity() {
                     var scannedImeiForAdd by remember { mutableStateOf<String?>(null) }
 
                     val coroutineScope = rememberCoroutineScope()
+                    val context = LocalContext.current
                     val isLoading by mainViewModel.isLoading.collectAsState()
                     val devices by mainViewModel.devices.collectAsState()
                     val shipments by mainViewModel.shipments.collectAsState()
@@ -721,15 +724,10 @@ class MainActivity : FragmentActivity() {
                                         ))
                                     }
 
-                                    if (matchedDevice != null) {
-                                        // FOUND -> Open Check-In Dialog (Admin) or Detail Dialog (Staff)
-                                        if (isAdmin) {
+                                    if (isAdmin) {
+                                        if (matchedDevice != null) {
                                             scannedDeviceForCheckIn = matchedDevice
                                         } else {
-                                            selectedDeviceForDetail = matchedDevice
-                                        }
-                                    } else {
-                                        if (isAdmin) {
                                             // Query backend scan API in case it was created recently
                                             coroutineScope.launch {
                                                 try {
@@ -746,6 +744,21 @@ class MainActivity : FragmentActivity() {
                                                     showAddDeviceDialog = true
                                                 }
                                             }
+                                        }
+                                    } else {
+                                        // Staff mode: check if device is in current staff member's assigned custody
+                                        val isAssignedToMe = matchedDevice != null && !matchedDevice.isB2B && (
+                                            (matchedDevice.currentOwner != null && currentUser?.id != null && matchedDevice.currentOwner == currentUser.id) ||
+                                            (!matchedDevice.currentOwnerName.isNullOrBlank() && (
+                                                (currentUser?.username != null && matchedDevice.currentOwnerName.equals(currentUser.username, ignoreCase = true)) ||
+                                                (currentUser?.displayName != null && matchedDevice.currentOwnerName.equals(currentUser.displayName, ignoreCase = true))
+                                            ))
+                                        )
+
+                                        if (isAssignedToMe && matchedDevice != null) {
+                                            selectedDeviceForDetail = matchedDevice
+                                        } else {
+                                            Toast.makeText(context, "Device not found in your assigned custody: $cleanImei", Toast.LENGTH_LONG).show()
                                         }
                                     }
                                 }
