@@ -2,6 +2,7 @@ package com.imei.inventory
 
 import android.os.Bundle
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.compose.animation.core.*
@@ -245,6 +246,16 @@ class MainActivity : FragmentActivity() {
                                 val targetAlert = if (curMonthSales < 15) 1 else 0
 
                                 staleCount + inactivityAlert + targetAlert
+                            }
+                        }
+
+                        // Intercept Back button: Close drawer or return to Dashboard (tab 0)
+                        BackHandler(enabled = drawerState.isOpen || selectedTab != 0) {
+                            if (drawerState.isOpen) {
+                                coroutineScope.launch { drawerState.close() }
+                            } else if (selectedTab != 0) {
+                                selectedTab = 0
+                                inventorySubTab = 0
                             }
                         }
 
