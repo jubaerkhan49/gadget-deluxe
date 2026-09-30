@@ -85,8 +85,13 @@ class MainActivity : FragmentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    var userToken by remember { mutableStateOf<String?>(null) }
-                    var currentUser by remember { mutableStateOf<UserDto?>(null) }
+                    val coroutineScope = rememberCoroutineScope()
+                    val context = LocalContext.current
+                    val prefsManager = remember { com.imei.inventory.util.PreferencesManager(context) }
+
+                    // Persistent Session: Initialize directly from saved preferences if available
+                    var userToken by remember { mutableStateOf<String?>(prefsManager.getSavedToken()) }
+                    var currentUser by remember { mutableStateOf<UserDto?>(prefsManager.getSavedUser()) }
                     var selectedTab by remember { mutableStateOf(0) }
                     var inventorySubTab by remember { mutableStateOf(0) }
                     var selectedDeviceForDetail by remember { mutableStateOf<DeviceDto?>(null) }
@@ -106,13 +111,32 @@ class MainActivity : FragmentActivity() {
                     var scannedDeviceForCheckIn by remember { mutableStateOf<DeviceDto?>(null) }
                     var scannedImeiForAdd by remember { mutableStateOf<String?>(null) }
 
-                    val coroutineScope = rememberCoroutineScope()
-                    val context = LocalContext.current
                     val isLoading by mainViewModel.isLoading.collectAsState()
                     val devices by mainViewModel.devices.collectAsState()
                     val shipments by mainViewModel.shipments.collectAsState()
                     val users by mainViewModel.users.collectAsState()
                     val pendingSaleRequests by mainViewModel.pendingSaleRequests.collectAsState()
+
+                    // Auto-restore & verify session on app startup
+                    LaunchedEffect(Unit) {
+                        val savedToken = prefsManager.getSavedToken()
+                        val savedUser = prefsManager.getSavedUser()
+                        if (!savedToken.isNullOrBlank() && savedUser != null) {
+                            userToken = savedToken
+                            currentUser = savedUser
+                            mainViewModel.setCurrentUser(savedUser)
+                            mainViewModel.loadAllData(savedToken, context)
+                            authViewModel.setCurrentUser(savedUser)
+
+                            authViewModel.verifyOrRefreshSession(context) { validToken, refreshedUser ->
+                                if (validToken != null && refreshedUser != null) {
+                                    userToken = validToken
+                                    currentUser = refreshedUser
+                                    mainViewModel.setCurrentUser(refreshedUser)
+                                }
+                            }
+                        }
+                    }
 
                     // Notification permission launcher for Android 13+ (API 33)
                     val permissionLauncher = rememberLauncherForActivityResult(
@@ -452,6 +476,7 @@ class MainActivity : FragmentActivity() {
                                             textColor = Color(0xFFEF4444),
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
+                                                prefsManager.clearCredentials()
                                                 authViewModel.logout()
                                                 mainViewModel.stopRealtimeSync()
                                                 userToken = null

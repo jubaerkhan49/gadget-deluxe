@@ -2,6 +2,7 @@ package com.imei.inventory.util
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.imei.inventory.data.model.UserDto
 
 class PreferencesManager(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("gadget_deluxe_prefs", Context.MODE_PRIVATE)
@@ -69,7 +70,23 @@ class PreferencesManager(context: Context) {
 
     fun getSavedUserId(): Int = prefs.getInt(KEY_SAVED_USER_ID, 0)
 
-    fun isBiometricEnabled(): Boolean = prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false) && !getSavedUsername().isNullOrBlank()
+    fun getSavedUser(): UserDto? {
+        val username = getSavedUsername() ?: return null
+        val role = getSavedRole() ?: if (username.equals("jubaer", ignoreCase = true) || username.equals("admin", ignoreCase = true)) "ADMIN" else "EMPLOYEE"
+        val firstName = getSavedFirstName()
+        val userId = getSavedUserId()
+        return UserDto(
+            id = userId,
+            username = username,
+            role = role,
+            firstName = firstName,
+            displayName = firstName ?: username
+        )
+    }
+
+    fun hasValidSession(): Boolean {
+        return !getSavedToken().isNullOrBlank() && !getSavedUsername().isNullOrBlank()
+    }
 
     fun clearCredentials() {
         prefs.edit().apply {

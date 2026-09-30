@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 import com.imei.inventory.data.model.UserDto
+import com.imei.inventory.util.PreferencesManager
 
 sealed class AuthState {
     object Idle : AuthState()
@@ -70,6 +71,75 @@ class AuthViewModel : ViewModel() {
             } catch (e: Exception) {
                 _authState.value = AuthState.Error("Connection failed: ${e.localizedMessage}")
             }
+        }
+    }
+
+    fun verifyOrRefreshSession(
+        context: android.content.Context,
+        onResult: (token: String?, user: UserDto?) -> Unit
+    ) {
+        val prefs = PreferencesManager(context)
+        val token = prefs.getSavedToken()
+        val savedUser = prefs.getSavedUser()
+        val savedPass = prefs.getSavedPassword()
+
+        if (token.isNullOrBlank() || savedUser == null) {
+            onResult(null, null)
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                val bearer = "Bearer $token"
+                val profileRes = ApiClient.apiService.getCurrentUser(bearer)
+                if (profileRes.isSuccessful && profileRes.body() != null) {
+                    val userDto = profileRes.body()!!
+                    _currentUser.value = userDto
+                    _authState.value = AuthState.Success(token, userDto)
+                    prefs.saveCredentials(
+                        username = userDto.username,
+                        password = savedPass ?: "",
+                        token = token,
+                        role = userDto.role,
+                        firstName = userDto.firstName,
+                        userId = userDto.id
+                    )
+                    onResult(token, userDto)
+                    return@launch
+                }
+            } catch (e: Exception) {
+                // Keep existing session on transient network error
+            }
+
+            // If token expired, try silent re-login with saved credentials
+            if (!savedPass.isNullOrBlank() && !savedUser.username.isNullOrBlank()) {
+                try {
+                    val loginRes = ApiClient.apiService.login(LoginRequest(savedUser.username.trim(), savedPass.trim()))
+                    if (loginRes.isSuccessful && loginRes.body() != null) {
+                        val newToken = loginRes.body()!!.access
+                        val newBearer = "Bearer $newToken"
+                        val profileRes = ApiClient.apiService.getCurrentUser(newBearer)
+                        val userDto = profileRes.body() ?: savedUser
+                        _currentUser.value = userDto
+                        _authState.value = AuthState.Success(newToken, userDto)
+                        prefs.saveCredentials(
+                            username = userDto.username,
+                            password = savedPass,
+                            token = newToken,
+                            role = userDto.role,
+                            firstName = userDto.firstName,
+                            userId = userDto.id
+                        )
+                        onResult(newToken, userDto)
+                        return@launch
+                    }
+                } catch (e: Exception) {
+                    onResult(token, savedUser)
+                    return@launch
+                }
+            }
+
+            onResult(token, savedUser)
         }
     }
 
