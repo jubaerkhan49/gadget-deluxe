@@ -47,6 +47,21 @@ data class DeviceDto(
     @SerializedName("b2b_status") val b2bStatus: String? = null,
     @SerializedName("b2b_repair_cost") val b2bRepairCost: Double? = null,
     @SerializedName("b2b_profit") val b2bProfit: Double? = null,
+    @SerializedName("assigned_date") val assignedDate: String? = null,
+    val assignments: List<DeviceAssignmentDto>? = null,
+    @SerializedName("created_at") val createdAt: String? = null
+)
+
+data class DeviceAssignmentDto(
+    val id: Int = 0,
+    val device: Int = 0,
+    val employee: Int = 0,
+    @SerializedName("employee_username") val employeeUsername: String? = null,
+    @SerializedName("employee_name") val employeeName: String? = null,
+    @SerializedName("assigned_date") val assignedDate: String? = null,
+    @SerializedName("returned_date") val returnedDate: String? = null,
+    val notes: String? = null,
+    @SerializedName("is_active") val isActive: Boolean = true,
     @SerializedName("created_at") val createdAt: String? = null
 )
 

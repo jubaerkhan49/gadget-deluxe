@@ -219,7 +219,7 @@ class MainActivity : FragmentActivity() {
                                     (matchId || matchName) && !dev.isB2B && !dev.currentStatus.equals("SOLD", ignoreCase = true)
                                 }
                                 val staleCount = myDevs.count { dev ->
-                                    (calculateDaysAgo(dev.receivedDateBd ?: dev.createdAt) ?: 0L) >= 7L
+                                    (calculateDaysAgo(getDeviceAssignedDateStr(dev, user)) ?: 0L) >= 7L
                                 }
                                 val mySales = sales.filter { sale ->
                                     (user?.username != null && sale.soldBy?.equals(user.username, ignoreCase = true) == true) ||
@@ -228,7 +228,7 @@ class MainActivity : FragmentActivity() {
                                 }
                                 val latestSale = mySales.maxByOrNull { it.createdAt ?: "" }
                                 val daysSinceLastSale = calculateDaysAgo(latestSale?.createdAt)
-                                val inactivityAlert = if (daysSinceLastSale != null && daysSinceLastSale >= 3L) 1 else if (mySales.isEmpty() && myDevs.isNotEmpty() && (myDevs.mapNotNull { calculateDaysAgo(it.receivedDateBd ?: it.createdAt) }.maxOrNull() ?: 0L) >= 3L) 1 else 0
+                                val inactivityAlert = if (daysSinceLastSale != null && daysSinceLastSale >= 3L) 1 else if (mySales.isEmpty() && myDevs.isNotEmpty() && (myDevs.mapNotNull { calculateDaysAgo(getDeviceAssignedDateStr(it, user)) }.maxOrNull() ?: 0L) >= 3L) 1 else 0
 
                                 val cal = Calendar.getInstance()
                                 val curYr = cal.get(Calendar.YEAR)

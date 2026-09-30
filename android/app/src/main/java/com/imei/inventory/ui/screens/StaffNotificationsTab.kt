@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -64,6 +63,21 @@ fun formatReadableDate(dateStr: String?): String {
     return dateStr
 }
 
+fun getDeviceAssignedDateStr(dev: DeviceDto, currentUser: UserDto?): String? {
+    val userAssignment = dev.assignments?.firstOrNull { assign ->
+        (currentUser?.id != null && assign.employee == currentUser.id) ||
+        (currentUser?.username != null && assign.employeeUsername.equals(currentUser.username, ignoreCase = true)) ||
+        (currentUser?.displayName != null && assign.employeeName.equals(currentUser.displayName, ignoreCase = true))
+    }
+    if (!userAssignment?.assignedDate.isNullOrBlank()) {
+        return userAssignment?.assignedDate
+    }
+    if (!dev.assignedDate.isNullOrBlank()) {
+        return dev.assignedDate
+    }
+    return dev.receivedDateBd ?: dev.createdAt
+}
+
 @Composable
 fun StaffNotificationsTab(
     token: String,
@@ -97,10 +111,11 @@ fun StaffNotificationsTab(
         }
     }
 
-    // Rule 1: Devices held for 7 days or more
-    val staleCustodyDevices = remember(myCustodyDevices) {
+    // Rule 1: Devices held for 7 days or more from assignment date
+    val staleCustodyDevices = remember(myCustodyDevices, currentUser) {
         myCustodyDevices.mapNotNull { dev ->
-            val days = calculateDaysAgo(dev.receivedDateBd ?: dev.createdAt) ?: 0L
+            val assignDate = getDeviceAssignedDateStr(dev, currentUser)
+            val days = calculateDaysAgo(assignDate) ?: 0L
             if (days >= 7L) Pair(dev, days) else null
         }.sortedByDescending { it.second }
     }
@@ -112,11 +127,13 @@ fun StaffNotificationsTab(
     val daysSinceLastSale = remember(latestSale) {
         calculateDaysAgo(latestSale?.createdAt)
     }
-    val showInactivityAlert = remember(daysSinceLastSale, myCustodyDevices, mySales) {
+    val showInactivityAlert = remember(daysSinceLastSale, myCustodyDevices, mySales, currentUser) {
         if (daysSinceLastSale != null && daysSinceLastSale >= 3L) {
             true
         } else if (mySales.isEmpty() && myCustodyDevices.isNotEmpty()) {
-            val oldestCustody = myCustodyDevices.mapNotNull { calculateDaysAgo(it.receivedDateBd ?: it.createdAt) }.maxOrNull() ?: 0L
+            val oldestCustody = myCustodyDevices.mapNotNull {
+                calculateDaysAgo(getDeviceAssignedDateStr(it, currentUser))
+            }.maxOrNull() ?: 0L
             oldestCustody >= 3L
         } else {
             false
@@ -150,108 +167,12 @@ fun StaffNotificationsTab(
     val remainingForTarget = maxOf(0, monthlyTarget - currentMonthSalesCount)
     val targetProgress = (currentMonthSalesCount.toFloat() / monthlyTarget.toFloat()).coerceIn(0f, 1f)
 
-    val totalAlerts = staleCustodyDevices.size + (if (showInactivityAlert) 1 else 0) + (if (remainingForTarget > 0) 1 else 0)
-
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Compact Top Header Banner
-        item {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 1.dp,
-                shadowElevation = 1.dp
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Color(0xFF6366F1).copy(alpha = 0.10f),
-                                    MaterialTheme.colorScheme.surface
-                                )
-                            )
-                        )
-                        .padding(horizontal = 13.dp, vertical = 10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f, fill = false)
-                        ) {
-                            Surface(
-                                color = Color(0xFF6366F1),
-                                shape = CircleShape,
-                                modifier = Modifier.size(32.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.NotificationsActive,
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.width(9.dp))
-                            Column {
-                                Text(
-                                    text = "Automated Staff Alerts",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1
-                                )
-                                Text(
-                                    text = "Smart custody rules & selling targets",
-                                    fontSize = 10.5.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Surface(
-                            color = if (totalAlerts > 0) Color(0xFFEF4444).copy(alpha = 0.12f) else Color(0xFF10B981).copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.5.dp)
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(5.dp)
-                                        .background(if (totalAlerts > 0) Color(0xFFEF4444) else Color(0xFF10B981), CircleShape)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = if (totalAlerts > 0) "$totalAlerts Alert${if (totalAlerts > 1) "s" else ""}" else "All Good",
-                                    color = if (totalAlerts > 0) Color(0xFFEF4444) else Color(0xFF10B981),
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    maxLines = 1,
-                                    softWrap = false
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         // Rule 3: Monthly Target Card (Compact)
         item {
             Surface(
@@ -323,7 +244,7 @@ fun StaffNotificationsTab(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
-                                text = "$daysLeftInMonth days left in month",
+                                text = "$daysLeftInMonth day${if (daysLeftInMonth > 1) "s" else ""} left in month",
                                 fontSize = 9.5.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -514,6 +435,7 @@ fun StaffNotificationsTab(
                 StaleDeviceNotificationCard(
                     device = device,
                     daysInCustody = days,
+                    currentUser = currentUser,
                     onClick = { onSelectDevice(device) },
                     onMarkSold = { onOpenMarkSold(device) }
                 )
@@ -526,12 +448,16 @@ fun StaffNotificationsTab(
 fun StaleDeviceNotificationCard(
     device: DeviceDto,
     daysInCustody: Long,
+    currentUser: UserDto? = null,
     onClick: () -> Unit,
     onMarkSold: () -> Unit
 ) {
     val isPendingSale = device.currentStatus.equals("PENDING_SALE", ignoreCase = true)
-    val readableDate = remember(device.receivedDateBd, device.createdAt) {
-        formatReadableDate(device.receivedDateBd ?: device.createdAt)
+    val assignedDateStr = remember(device, currentUser) {
+        getDeviceAssignedDateStr(device, currentUser)
+    }
+    val readableDate = remember(assignedDateStr) {
+        formatReadableDate(assignedDateStr)
     }
 
     Surface(
@@ -682,14 +608,14 @@ fun StaleDeviceNotificationCard(
                 }
             }
 
-            // Row 5: Formatted Received Date (e.g., "9 September, 2026") + Action Button
+            // Row 5: Formatted Assigned Date (e.g., "Assigned: 9 September, 2026") + Action Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Received: $readableDate",
+                    text = "Assigned: $readableDate",
                     fontSize = 10.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
