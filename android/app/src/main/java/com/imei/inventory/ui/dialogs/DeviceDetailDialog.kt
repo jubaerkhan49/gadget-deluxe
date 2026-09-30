@@ -28,11 +28,13 @@ import com.imei.inventory.ui.components.VariantBadge
 fun DeviceDetailDialog(
     device: DeviceDto,
     users: List<UserDto> = emptyList(),
+    isAdmin: Boolean = true,
     onDismiss: () -> Unit,
-    onStatusChange: (String) -> Unit,
+    onStatusChange: (String) -> Unit = {},
     onOwnerChange: (newOwnerId: Int?, newOwnerName: String?) -> Unit = { _, _ -> },
     onUpdateSpecs: (Map<String, Any?>) -> Unit = {},
-    onDelete: () -> Unit
+    onDelete: () -> Unit = {},
+    onOpenMarkSold: ((DeviceDto) -> Unit)? = null
 ) {
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showOwnerDropdown by remember { mutableStateOf(false) }
@@ -121,7 +123,7 @@ fun DeviceDetailDialog(
                     }
                 }
 
-                // Interactive Assigned to Row with Dropdown Picker
+                // Interactive Assigned to Row with Dropdown Picker (Admin only) or Read-only (Staff)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -129,147 +131,158 @@ fun DeviceDetailDialog(
                 ) {
                     Text("Assigned to:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     
-                    Box {
-                        Surface(
-                            onClick = { showOwnerDropdown = true },
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    if (isAdmin) {
+                        Box {
+                            Surface(
+                                onClick = { showOwnerDropdown = true },
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                shape = RoundedCornerShape(8.dp)
                             ) {
-                                Text(
-                                    text = device.currentOwnerName ?: "Unassigned",
-                                    color = if (device.currentOwnerName != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 13.sp
-                                )
-                                Text(
-                                    text = "▾",
-                                    color = MaterialTheme.colorScheme.primary,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-
-                        DropdownMenu(
-                            expanded = showOwnerDropdown,
-                            onDismissRequest = { showOwnerDropdown = false },
-                            modifier = Modifier.background(MaterialTheme.colorScheme.surface)
-                        ) {
-                            DropdownMenuItem(
-                                text = {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
                                     Text(
-                                        text = "-- Unassigned (None) --",
-                                        color = Color(0xFFDC2626),
-                                        fontWeight = if (device.currentOwnerName == null) FontWeight.Bold else FontWeight.Normal
+                                        text = device.currentOwnerName ?: "Unassigned",
+                                        color = if (device.currentOwnerName != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 13.sp
                                     )
-                                },
-                                onClick = {
-                                    showOwnerDropdown = false
-                                    onOwnerChange(null, null)
-                                }
-                            )
-
-                            val filteredUsers = users.filter { !it.username.equals("admin", ignoreCase = true) }
-                            if (filteredUsers.isNotEmpty()) {
-                                HorizontalDivider()
-                                filteredUsers.forEach { user ->
-                                    DropdownMenuItem(
-                                        text = {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Text(
-                                                    text = user.username,
-                                                    color = if (user.username == device.currentOwnerName) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                                    fontWeight = if (user.username == device.currentOwnerName) FontWeight.Bold else FontWeight.Medium
-                                                )
-                                                user.role?.let { role ->
-                                                    Text(
-                                                        text = role.lowercase().replaceFirstChar { it.uppercase() },
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        fontSize = 11.sp,
-                                                        modifier = Modifier.padding(start = 8.dp)
-                                                    )
-                                                }
-                                            }
-                                        },
-                                        onClick = {
-                                            showOwnerDropdown = false
-                                            onOwnerChange(user.id, user.username)
-                                        }
+                                    Text(
+                                        text = "▾",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
+
+                            DropdownMenu(
+                                expanded = showOwnerDropdown,
+                                onDismissRequest = { showOwnerDropdown = false },
+                                modifier = Modifier.background(MaterialTheme.colorScheme.surface)
+                            ) {
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(
+                                            text = "-- Unassigned (None) --",
+                                            color = Color(0xFFDC2626),
+                                            fontWeight = if (device.currentOwnerName == null) FontWeight.Bold else FontWeight.Normal
+                                        )
+                                    },
+                                    onClick = {
+                                        showOwnerDropdown = false
+                                        onOwnerChange(null, null)
+                                    }
+                                )
+
+                                val filteredUsers = users.filter { !it.username.equals("admin", ignoreCase = true) }
+                                if (filteredUsers.isNotEmpty()) {
+                                    HorizontalDivider()
+                                    filteredUsers.forEach { user ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = user.username,
+                                                        color = if (user.username == device.currentOwnerName) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                                        fontWeight = if (user.username == device.currentOwnerName) FontWeight.Bold else FontWeight.Medium
+                                                    )
+                                                    user.role?.let { role ->
+                                                        Text(
+                                                            text = role.lowercase().replaceFirstChar { it.uppercase() },
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            fontSize = 11.sp,
+                                                            modifier = Modifier.padding(start = 8.dp)
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            onClick = {
+                                                showOwnerDropdown = false
+                                                onOwnerChange(user.id, user.username)
+                                            }
+                                        )
+                                    }
+                                }
+                            }
                         }
+                    } else {
+                        Text(
+                            text = device.currentOwnerName ?: "Unassigned",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp
+                        )
                     }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                if (isAdmin) {
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
 
-                // Quick Status Changer with dynamic active color feedback
-                val isStock = device.currentStatus == "IN_STOCK"
-                val isRepair = device.currentStatus in listOf("UNDER_REPAIR", "REPAIR")
-                val isSold = device.currentStatus == "SOLD"
+                    // Quick Status Changer with dynamic active color feedback
+                    val isStock = device.currentStatus == "IN_STOCK"
+                    val isRepair = device.currentStatus in listOf("UNDER_REPAIR", "REPAIR")
+                    val isSold = device.currentStatus == "SOLD"
 
-                Text("Update Device Status:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Button(
-                        onClick = { onStatusChange("IN_STOCK") },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isStock) Color(0xFF16A34A) else Color(0x1822C55E)
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                    Text("Update Device Status:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        Text(
-                            text = if (isStock) "✓ In Stock" else "In Stock",
-                            color = if (isStock) Color.White else Color(0xFF16A34A),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Button(
-                        onClick = { onStatusChange("UNDER_REPAIR") },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isRepair) Color(0xFFD97706) else Color(0x18EAB308)
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = if (isRepair) "✓ Repair" else "Repair",
-                            color = if (isRepair) Color.White else Color(0xFFCA8A04),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Button(
-                        onClick = { onStatusChange("SOLD") },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isSold) Color(0xFF2563EB) else Color(0x183B82F6)
-                        ),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = if (isSold) "✓ Sold" else "Sold",
-                            color = if (isSold) Color.White else Color(0xFF2563EB),
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                        Button(
+                            onClick = { onStatusChange("IN_STOCK") },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isStock) Color(0xFF16A34A) else Color(0x1822C55E)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = if (isStock) "✓ In Stock" else "In Stock",
+                                color = if (isStock) Color.White else Color(0xFF16A34A),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Button(
+                            onClick = { onStatusChange("UNDER_REPAIR") },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isRepair) Color(0xFFD97706) else Color(0x18EAB308)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = if (isRepair) "✓ Repair" else "Repair",
+                                color = if (isRepair) Color.White else Color(0xFFCA8A04),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Button(
+                            onClick = { onStatusChange("SOLD") },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isSold) Color(0xFF2563EB) else Color(0x183B82F6)
+                            ),
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.weight(1f),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = if (isSold) "✓ Sold" else "Sold",
+                                color = if (isSold) Color.White else Color(0xFF2563EB),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
@@ -380,55 +393,98 @@ fun DeviceDetailDialog(
         confirmButton = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = if (isAdmin) Arrangement.SpaceBetween else Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = { showDeleteConfirm = true }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Device",
-                        tint = Color(0xFFDC2626)
-                    )
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedButton(
-                        onClick = { showEditSpecsDialog = true },
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                if (isAdmin) {
+                    IconButton(
+                        onClick = { showDeleteConfirm = true }
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "Edit",
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Device",
+                            tint = Color(0xFFDC2626)
                         )
                     }
 
-                    Button(
-                        onClick = onDismiss,
-                        shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
-                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Done",
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
-                        )
+                        OutlinedButton(
+                            onClick = { showEditSpecsDialog = true },
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Edit",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            )
+                        }
+
+                        Button(
+                            onClick = onDismiss,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
+                            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "Done",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
+                    }
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (!device.currentStatus.equals("SOLD", ignoreCase = true) &&
+                            !device.currentStatus.equals("PENDING_SALE", ignoreCase = true) &&
+                            onOpenMarkSold != null
+                        ) {
+                            Button(
+                                onClick = {
+                                    onDismiss()
+                                    onOpenMarkSold(device)
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "Mark as Sold",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.5.sp
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = onDismiss,
+                            shape = RoundedCornerShape(8.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = "Close",
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        }
                     }
                 }
             }

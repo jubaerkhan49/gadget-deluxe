@@ -54,6 +54,14 @@ import com.imei.inventory.viewmodel.AuthViewModel
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 import kotlinx.coroutines.launch
 
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Shield
+import com.imei.inventory.data.model.UserDto
+import com.imei.inventory.ui.dialogs.ChangePasswordDialog
+import com.imei.inventory.ui.dialogs.MarkSoldDialog
+
 class MainActivity : FragmentActivity() {
     private val authViewModel: AuthViewModel by viewModels()
     private val mainViewModel: MainInventoryViewModel by viewModels()
@@ -68,11 +76,14 @@ class MainActivity : FragmentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     var userToken by remember { mutableStateOf<String?>(null) }
+                    var currentUser by remember { mutableStateOf<UserDto?>(null) }
                     var selectedTab by remember { mutableStateOf(0) }
                     var inventorySubTab by remember { mutableStateOf(0) }
                     var selectedDeviceForDetail by remember { mutableStateOf<DeviceDto?>(null) }
                     var selectedShipmentForDetail by remember { mutableStateOf<ShipmentDto?>(null) }
                     var selectedShipmentForEdit by remember { mutableStateOf<ShipmentDto?>(null) }
+                    var deviceForMarkSold by remember { mutableStateOf<DeviceDto?>(null) }
+                    var showChangePasswordDialog by remember { mutableStateOf(false) }
                     var showAddDeviceDialog by remember { mutableStateOf(false) }
                     var showAddShipmentDialog by remember { mutableStateOf(false) }
                     var showSickwDialog by remember { mutableStateOf(false) }
@@ -90,6 +101,9 @@ class MainActivity : FragmentActivity() {
                     val shipments by mainViewModel.shipments.collectAsState()
                     val users by mainViewModel.users.collectAsState()
 
+                    // Dynamic role check
+                    val isAdmin = currentUser?.isAdmin ?: (authViewModel.currentUser.value?.isAdmin ?: true)
+
                     // Rotation animation for sync button
                     val infiniteTransition = rememberInfiniteTransition(label = "sync_spin")
                     val rotation by infiniteTransition.animateFloat(
@@ -105,17 +119,28 @@ class MainActivity : FragmentActivity() {
                     if (userToken == null) {
                         LoginScreen(
                             authViewModel = authViewModel,
-                            onLoginSuccess = { token ->
+                            onLoginSuccess = { token, user ->
                                 userToken = token
+                                currentUser = user
+                                mainViewModel.setCurrentUser(user)
                                 mainViewModel.loadAllData(token)
                             }
                         )
                     } else {
                         val token = userToken!!
                         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-                        val activeCount = remember(devices) { devices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) && !it.isB2B } }
+                        
+                        // For staff, filter custody devices
+                        val myCustodyDevices = remember(devices, currentUser) {
+                            if (isAdmin) devices else devices.filter { dev ->
+                                dev.currentOwner == currentUser?.id ||
+                                dev.currentOwnerName.equals(currentUser?.username, ignoreCase = true) ||
+                                (currentUser?.displayName?.isNotBlank() == true && dev.currentOwnerName.equals(currentUser?.displayName, ignoreCase = true))
+                            }
+                        }
+                        val activeCount = remember(myCustodyDevices) { myCustodyDevices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) && !it.isB2B } }
                         val b2bCount = remember(devices) { devices.count { it.isB2B } }
-                        val archiveCount = remember(devices) { devices.count { it.currentStatus.equals("SOLD", ignoreCase = true) } }
+                        val archiveCount = remember(myCustodyDevices) { myCustodyDevices.count { it.currentStatus.equals("SOLD", ignoreCase = true) } }
 
                         ModalNavigationDrawer(
                             drawerState = drawerState,
@@ -123,7 +148,7 @@ class MainActivity : FragmentActivity() {
                                 ModalDrawerSheet(
                                     drawerContainerColor = MaterialTheme.colorScheme.surface,
                                     drawerTonalElevation = 2.dp,
-                                    modifier = Modifier.width(260.dp)
+                                    modifier = Modifier.width(270.dp)
                                 ) {
                                     Column(
                                         modifier = Modifier
@@ -137,12 +162,12 @@ class MainActivity : FragmentActivity() {
                                                 .background(
                                                     brush = androidx.compose.ui.graphics.Brush.linearGradient(
                                                         colors = listOf(
-                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                                            if (isAdmin) MaterialTheme.colorScheme.primary.copy(alpha = 0.14f) else Color(0xFF10B981).copy(alpha = 0.14f),
                                                             MaterialTheme.colorScheme.surface
                                                         )
                                                     )
                                                 )
-                                                .padding(horizontal = 14.dp, vertical = 10.dp)
+                                                .padding(horizontal = 14.dp, vertical = 12.dp)
                                         ) {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
@@ -151,36 +176,36 @@ class MainActivity : FragmentActivity() {
                                             ) {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                                     Surface(
-                                                        color = MaterialTheme.colorScheme.primary,
+                                                        color = if (isAdmin) MaterialTheme.colorScheme.primary else Color(0xFF10B981),
                                                         shape = RoundedCornerShape(8.dp),
-                                                        modifier = Modifier.size(30.dp)
+                                                        modifier = Modifier.size(32.dp)
                                                     ) {
                                                         Box(contentAlignment = Alignment.Center) {
                                                             Icon(
-                                                                imageVector = Icons.Default.PhoneAndroid,
+                                                                imageVector = if (isAdmin) Icons.Default.Shield else Icons.Default.Badge,
                                                                 contentDescription = null,
                                                                 tint = Color.White,
-                                                                modifier = Modifier.size(16.dp)
+                                                                modifier = Modifier.size(17.dp)
                                                             )
                                                         }
                                                     }
                                                     Spacer(modifier = Modifier.width(9.dp))
                                                     Column {
                                                         Text(
-                                                            text = "Gadget Deluxe",
+                                                            text = if (isAdmin) "Gadget Deluxe" else (currentUser?.displayName ?: "Staff Member"),
                                                             fontWeight = FontWeight.Bold,
                                                             fontSize = 14.sp,
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                         Text(
-                                                            text = "Enterprise Workspace",
+                                                            text = if (isAdmin) "Enterprise Workspace" else "Staff Custody Portal",
                                                             fontSize = 10.sp,
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                                         )
                                                     }
                                                 }
                                                 Surface(
-                                                    color = Color(0xFF16A34A).copy(alpha = 0.12f),
+                                                    color = (if (isAdmin) Color(0xFF16A34A) else Color(0xFF10B981)).copy(alpha = 0.12f),
                                                     shape = RoundedCornerShape(10.dp)
                                                 ) {
                                                     Row(
@@ -190,12 +215,12 @@ class MainActivity : FragmentActivity() {
                                                         Box(
                                                             modifier = Modifier
                                                                 .size(5.dp)
-                                                                .background(Color(0xFF16A34A), CircleShape)
+                                                                .background(if (isAdmin) Color(0xFF16A34A) else Color(0xFF10B981), CircleShape)
                                                         )
                                                         Spacer(modifier = Modifier.width(4.dp))
                                                         Text(
-                                                            text = "Live",
-                                                            color = Color(0xFF16A34A),
+                                                            text = if (isAdmin) "Admin" else "Staff",
+                                                            color = if (isAdmin) Color(0xFF16A34A) else Color(0xFF10B981),
                                                             fontSize = 9.5.sp,
                                                             fontWeight = FontWeight.Bold
                                                         )
@@ -206,11 +231,11 @@ class MainActivity : FragmentActivity() {
 
                                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
 
-                                        Spacer(modifier = Modifier.height(3.dp))
+                                        Spacer(modifier = Modifier.height(4.dp))
 
                                         // Navigation Items Section
                                         Text(
-                                            text = "WORKSPACE NAVIGATION",
+                                            text = if (isAdmin) "WORKSPACE NAVIGATION" else "CUSTODY WORKSPACE",
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
@@ -218,58 +243,191 @@ class MainActivity : FragmentActivity() {
                                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp)
                                         )
 
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.Dashboard,
-                                            label = "Dashboard",
-                                            selected = selectedTab == 0,
-                                            onClick = {
-                                                selectedTab = 0
-                                                coroutineScope.launch { drawerState.close() }
-                                            }
-                                        )
+                                        if (isAdmin) {
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.Dashboard,
+                                                label = "Dashboard",
+                                                selected = selectedTab == 0,
+                                                onClick = {
+                                                    selectedTab = 0
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
 
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.PhoneAndroid,
-                                            label = "Inventory",
-                                            selected = selectedTab == 1 && inventorySubTab == 0,
-                                            badgeText = if (activeCount > 0) "$activeCount" else null,
-                                            badgeColor = MaterialTheme.colorScheme.primary,
-                                            onClick = {
-                                                selectedTab = 1
-                                                inventorySubTab = 0
-                                                coroutineScope.launch { drawerState.close() }
-                                            }
-                                        )
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.PhoneAndroid,
+                                                label = "Inventory",
+                                                selected = selectedTab == 1 && inventorySubTab == 0,
+                                                badgeText = if (activeCount > 0) "$activeCount" else null,
+                                                badgeColor = MaterialTheme.colorScheme.primary,
+                                                onClick = {
+                                                    selectedTab = 1
+                                                    inventorySubTab = 0
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
 
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.LocalShipping,
-                                            label = "Shipments",
-                                            selected = selectedTab == 2,
-                                            badgeText = if (shipments.isNotEmpty()) "${shipments.size}" else null,
-                                            badgeColor = MaterialTheme.colorScheme.primary,
-                                            onClick = {
-                                                selectedTab = 2
-                                                coroutineScope.launch { drawerState.close() }
-                                            }
-                                        )
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.LocalShipping,
+                                                label = "Shipments",
+                                                selected = selectedTab == 2,
+                                                badgeText = if (shipments.isNotEmpty()) "${shipments.size}" else null,
+                                                badgeColor = MaterialTheme.colorScheme.primary,
+                                                onClick = {
+                                                    selectedTab = 2
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
 
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.Insights,
-                                            label = "Analytics",
-                                            selected = selectedTab == 3,
-                                            onClick = {
-                                                selectedTab = 3
-                                                coroutineScope.launch { drawerState.close() }
-                                            }
-                                        )
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.Insights,
+                                                label = "Analytics",
+                                                selected = selectedTab == 3,
+                                                onClick = {
+                                                    selectedTab = 3
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
+
+                                            Spacer(modifier = Modifier.height(3.dp))
+                                            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
+                                            Spacer(modifier = Modifier.height(3.dp))
+
+                                            // Operations & Quick Tools
+                                            Text(
+                                                text = "OPERATIONS & TOOLS",
+                                                fontSize = 9.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                                                letterSpacing = 0.8.sp,
+                                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 2.dp)
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.QrCodeScanner,
+                                                label = "Scan Barcode / QR",
+                                                iconTint = MaterialTheme.colorScheme.primary,
+                                                onClick = {
+                                                    coroutineScope.launch { drawerState.close() }
+                                                    showScannerDialog = true
+                                                }
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.ReceiptLong,
+                                                label = "Commercial Sales",
+                                                iconTint = Color(0xFF10B981),
+                                                onClick = {
+                                                    coroutineScope.launch { drawerState.close() }
+                                                    showSalesDialog = true
+                                                }
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.PhoneAndroid,
+                                                label = "B2B Wholesale",
+                                                iconTint = Color(0xFF8B5CF6),
+                                                selected = selectedTab == 1 && inventorySubTab == 1,
+                                                badgeText = if (b2bCount > 0) "$b2bCount" else null,
+                                                badgeColor = Color(0xFF8B5CF6),
+                                                onClick = {
+                                                    selectedTab = 1
+                                                    inventorySubTab = 1
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.Inventory2,
+                                                label = "Archive (Sold)",
+                                                iconTint = Color(0xFFF59E0B),
+                                                selected = selectedTab == 1 && inventorySubTab == 2,
+                                                badgeText = if (archiveCount > 0) "$archiveCount" else null,
+                                                badgeColor = Color(0xFFF59E0B),
+                                                onClick = {
+                                                    selectedTab = 1
+                                                    inventorySubTab = 2
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.Add,
+                                                label = "Add Single Device",
+                                                iconTint = Color(0xFF06B6D4),
+                                                onClick = {
+                                                    coroutineScope.launch { drawerState.close() }
+                                                    scannedImeiForAdd = null
+                                                    showAddDeviceDialog = true
+                                                }
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.LocalShipping,
+                                                label = "New Shipment Batch",
+                                                iconTint = MaterialTheme.colorScheme.primary,
+                                                onClick = {
+                                                    coroutineScope.launch { drawerState.close() }
+                                                    showAddShipmentDialog = true
+                                                }
+                                            )
+                                        } else {
+                                            // Staff items
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.Dashboard,
+                                                label = "Custody Dashboard",
+                                                selected = selectedTab == 0,
+                                                onClick = {
+                                                    selectedTab = 0
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.PhoneAndroid,
+                                                label = "Assigned Devices",
+                                                selected = selectedTab == 1 && inventorySubTab == 0,
+                                                badgeText = if (activeCount > 0) "$activeCount" else null,
+                                                badgeColor = Color(0xFF10B981),
+                                                onClick = {
+                                                    selectedTab = 1
+                                                    inventorySubTab = 0
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.QrCodeScanner,
+                                                label = "Scan Barcode / QR",
+                                                iconTint = MaterialTheme.colorScheme.primary,
+                                                onClick = {
+                                                    coroutineScope.launch { drawerState.close() }
+                                                    showScannerDialog = true
+                                                }
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.Inventory2,
+                                                label = "Archive (Sold)",
+                                                iconTint = Color(0xFFF59E0B),
+                                                selected = selectedTab == 1 && inventorySubTab == 2,
+                                                badgeText = if (archiveCount > 0) "$archiveCount" else null,
+                                                badgeColor = Color(0xFFF59E0B),
+                                                onClick = {
+                                                    selectedTab = 1
+                                                    inventorySubTab = 2
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
+                                        }
 
                                         Spacer(modifier = Modifier.height(3.dp))
                                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
                                         Spacer(modifier = Modifier.height(3.dp))
 
-                                        // Operations & Quick Tools
+                                        // Account Security
                                         Text(
-                                            text = "OPERATIONS & TOOLS",
+                                            text = "SECURITY & SETTINGS",
                                             fontSize = 9.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
@@ -278,77 +436,14 @@ class MainActivity : FragmentActivity() {
                                         )
 
                                         CompactDrawerItem(
-                                            icon = Icons.Default.QrCodeScanner,
-                                            label = "Scan Barcode / QR",
-                                            iconTint = MaterialTheme.colorScheme.primary,
+                                            icon = Icons.Default.Lock,
+                                            label = "Change Password",
+                                            iconTint = Color(0xFF3B82F6),
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
-                                                showScannerDialog = true
+                                                showChangePasswordDialog = true
                                             }
                                         )
-
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.ReceiptLong,
-                                            label = "Commercial Sales",
-                                            iconTint = Color(0xFF10B981),
-                                            onClick = {
-                                                coroutineScope.launch { drawerState.close() }
-                                                showSalesDialog = true
-                                            }
-                                        )
-
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.PhoneAndroid,
-                                            label = "B2B Wholesale",
-                                            iconTint = Color(0xFF8B5CF6),
-                                            selected = selectedTab == 1 && inventorySubTab == 1,
-                                            badgeText = if (b2bCount > 0) "$b2bCount" else null,
-                                            badgeColor = Color(0xFF8B5CF6),
-                                            onClick = {
-                                                selectedTab = 1
-                                                inventorySubTab = 1
-                                                coroutineScope.launch { drawerState.close() }
-                                            }
-                                        )
-
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.Inventory2,
-                                            label = "Archive (Sold)",
-                                            iconTint = Color(0xFFF59E0B),
-                                            selected = selectedTab == 1 && inventorySubTab == 2,
-                                            badgeText = if (archiveCount > 0) "$archiveCount" else null,
-                                            badgeColor = Color(0xFFF59E0B),
-                                            onClick = {
-                                                selectedTab = 1
-                                                inventorySubTab = 2
-                                                coroutineScope.launch { drawerState.close() }
-                                            }
-                                        )
-
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.Add,
-                                            label = "Add Single Device",
-                                            iconTint = Color(0xFF06B6D4),
-                                            onClick = {
-                                                coroutineScope.launch { drawerState.close() }
-                                                scannedImeiForAdd = null
-                                                showAddDeviceDialog = true
-                                            }
-                                        )
-
-                                        CompactDrawerItem(
-                                            icon = Icons.Default.LocalShipping,
-                                            label = "New Shipment Batch",
-                                            iconTint = MaterialTheme.colorScheme.primary,
-                                            onClick = {
-                                                coroutineScope.launch { drawerState.close() }
-                                                showAddShipmentDialog = true
-                                            }
-                                        )
-
-                                        Spacer(modifier = Modifier.height(3.dp))
-                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
-                                        Spacer(modifier = Modifier.height(3.dp))
 
                                         // Footer Actions
                                         CompactDrawerItem(
@@ -361,12 +456,13 @@ class MainActivity : FragmentActivity() {
                                                 authViewModel.logout()
                                                 mainViewModel.stopRealtimeSync()
                                                 userToken = null
+                                                currentUser = null
                                             }
                                         )
 
                                         Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                            text = "Gadget Deluxe ERP • v1.2.0",
+                                            text = if (isAdmin) "Gadget Deluxe ERP • Admin v1.2.0" else "Gadget Deluxe • Staff Portal v1.2.0",
                                             fontSize = 8.5.sp,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
                                             modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
@@ -400,7 +496,7 @@ class MainActivity : FragmentActivity() {
                                         title = {
                                             Column(modifier = Modifier.padding(start = 4.dp)) {
                                                 Text(
-                                                    text = "Gadget Deluxe",
+                                                    text = if (isAdmin) "Gadget Deluxe" else "Staff Custody",
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 16.sp,
                                                     color = MaterialTheme.colorScheme.onBackground
@@ -409,16 +505,24 @@ class MainActivity : FragmentActivity() {
                                                     Box(
                                                         modifier = Modifier
                                                             .size(6.dp)
-                                                            .background(Color(0xFF16A34A), CircleShape)
+                                                            .background(if (isAdmin) Color(0xFF16A34A) else Color(0xFF10B981), CircleShape)
                                                     )
                                                     Spacer(modifier = Modifier.width(4.dp))
                                                     Text(
-                                                        text = when (selectedTab) {
-                                                            0 -> "Dashboard Overview"
-                                                            1 -> "Inventory Management"
-                                                            2 -> "Shipment Batches"
-                                                            3 -> "Business Analytics"
-                                                            else -> "Cloud Sync Active"
+                                                        text = if (isAdmin) {
+                                                            when (selectedTab) {
+                                                                0 -> "Dashboard Overview"
+                                                                1 -> "Inventory Management"
+                                                                2 -> "Shipment Batches"
+                                                                3 -> "Business Analytics"
+                                                                else -> "Cloud Sync Active"
+                                                            }
+                                                        } else {
+                                                            when (selectedTab) {
+                                                                0 -> "Custody Overview • ${currentUser?.displayName ?: "Staff"}"
+                                                                1 -> "Assigned Device Portfolio"
+                                                                else -> "Active Staff Session"
+                                                            }
                                                         },
                                                         fontSize = 11.sp,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -447,24 +551,43 @@ class MainActivity : FragmentActivity() {
                                                 )
                                             }
 
-                                            Spacer(modifier = Modifier.width(6.dp))
+                                            if (isAdmin) {
+                                                Spacer(modifier = Modifier.width(6.dp))
 
-                                            // + Add Device Quick Button
-                                            IconButton(
-                                                onClick = {
-                                                    scannedImeiForAdd = null
-                                                    showAddDeviceDialog = true
-                                                },
-                                                modifier = Modifier
-                                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
-                                                    .size(36.dp)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Add,
-                                                    contentDescription = "+ Add Device",
-                                                    tint = MaterialTheme.colorScheme.primary,
-                                                    modifier = Modifier.size(19.dp)
-                                                )
+                                                // + Add Device Quick Button (Admin only)
+                                                IconButton(
+                                                    onClick = {
+                                                        scannedImeiForAdd = null
+                                                        showAddDeviceDialog = true
+                                                    },
+                                                    modifier = Modifier
+                                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
+                                                        .size(36.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Add,
+                                                        contentDescription = "+ Add Device",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(19.dp)
+                                                    )
+                                                }
+                                            } else {
+                                                Spacer(modifier = Modifier.width(6.dp))
+
+                                                // Change Password Button (Staff quick access)
+                                                IconButton(
+                                                    onClick = { showChangePasswordDialog = true },
+                                                    modifier = Modifier
+                                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
+                                                        .size(36.dp)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Lock,
+                                                        contentDescription = "Change Password",
+                                                        tint = Color(0xFF3B82F6),
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
                                             }
 
                                             Spacer(modifier = Modifier.width(6.dp))
@@ -495,58 +618,120 @@ class MainActivity : FragmentActivity() {
                                         containerColor = MaterialTheme.colorScheme.surface,
                                         tonalElevation = 4.dp
                                     ) {
-                                        NavigationBarItem(
-                                            icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard", modifier = Modifier.size(20.dp)) },
-                                            label = { Text("Dashboard", fontSize = 10.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
-                                            selected = selectedTab == 0,
-                                            onClick = { selectedTab = 0 },
-                                            colors = NavigationBarItemDefaults.colors(
-                                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                        if (isAdmin) {
+                                            NavigationBarItem(
+                                                icon = { Icon(Icons.Default.Dashboard, contentDescription = "Dashboard", modifier = Modifier.size(20.dp)) },
+                                                label = { Text("Dashboard", fontSize = 10.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
+                                                selected = selectedTab == 0,
+                                                onClick = { selectedTab = 0 },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                )
                                             )
-                                        )
-                                        NavigationBarItem(
-                                            icon = { Icon(Icons.Default.PhoneAndroid, contentDescription = "Inventory", modifier = Modifier.size(20.dp)) },
-                                            label = { Text("Inventory", fontSize = 10.sp, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
-                                            selected = selectedTab == 1,
-                                            onClick = { selectedTab = 1 },
-                                            colors = NavigationBarItemDefaults.colors(
-                                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            NavigationBarItem(
+                                                icon = { Icon(Icons.Default.PhoneAndroid, contentDescription = "Inventory", modifier = Modifier.size(20.dp)) },
+                                                label = { Text("Inventory", fontSize = 10.sp, fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal) },
+                                                selected = selectedTab == 1,
+                                                onClick = { selectedTab = 1 },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                )
                                             )
-                                        )
-                                        NavigationBarItem(
-                                            icon = { Icon(Icons.Default.LocalShipping, contentDescription = "Shipments", modifier = Modifier.size(20.dp)) },
-                                            label = { Text("Shipments", fontSize = 10.sp, fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
-                                            selected = selectedTab == 2,
-                                            onClick = { selectedTab = 2 },
-                                            colors = NavigationBarItemDefaults.colors(
-                                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            NavigationBarItem(
+                                                icon = { Icon(Icons.Default.LocalShipping, contentDescription = "Shipments", modifier = Modifier.size(20.dp)) },
+                                                label = { Text("Shipments", fontSize = 10.sp, fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Normal) },
+                                                selected = selectedTab == 2,
+                                                onClick = { selectedTab = 2 },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                )
                                             )
-                                        )
-                                        NavigationBarItem(
-                                            icon = { Icon(Icons.Default.Insights, contentDescription = "Analytics", modifier = Modifier.size(20.dp)) },
-                                            label = { Text("Analytics", fontSize = 10.sp, fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
-                                            selected = selectedTab == 3,
-                                            onClick = { selectedTab = 3 },
-                                            colors = NavigationBarItemDefaults.colors(
-                                                selectedIconColor = MaterialTheme.colorScheme.primary,
-                                                selectedTextColor = MaterialTheme.colorScheme.primary,
-                                                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            NavigationBarItem(
+                                                icon = { Icon(Icons.Default.Insights, contentDescription = "Analytics", modifier = Modifier.size(20.dp)) },
+                                                label = { Text("Analytics", fontSize = 10.sp, fontWeight = if (selectedTab == 3) FontWeight.Bold else FontWeight.Normal) },
+                                                selected = selectedTab == 3,
+                                                onClick = { selectedTab = 3 },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                )
                                             )
-                                        )
+                                        } else {
+                                            // Staff bottom bar
+                                            NavigationBarItem(
+                                                icon = { Icon(Icons.Default.Dashboard, contentDescription = "Custody", modifier = Modifier.size(20.dp)) },
+                                                label = { Text("Custody", fontSize = 10.sp, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal) },
+                                                selected = selectedTab == 0,
+                                                onClick = { selectedTab = 0 },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = Color(0xFF10B981),
+                                                    selectedTextColor = Color(0xFF10B981),
+                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    indicatorColor = Color(0xFF10B981).copy(alpha = 0.12f)
+                                                )
+                                            )
+                                            NavigationBarItem(
+                                                icon = { Icon(Icons.Default.PhoneAndroid, contentDescription = "My Devices", modifier = Modifier.size(20.dp)) },
+                                                label = { Text("My Devices", fontSize = 10.sp, fontWeight = if (selectedTab == 1 && inventorySubTab == 0) FontWeight.Bold else FontWeight.Normal) },
+                                                selected = selectedTab == 1 && inventorySubTab == 0,
+                                                onClick = {
+                                                    selectedTab = 1
+                                                    inventorySubTab = 0
+                                                },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = Color(0xFF10B981),
+                                                    selectedTextColor = Color(0xFF10B981),
+                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    indicatorColor = Color(0xFF10B981).copy(alpha = 0.12f)
+                                                )
+                                            )
+                                            NavigationBarItem(
+                                                icon = { Icon(Icons.Default.QrCodeScanner, contentDescription = "Scan QR", modifier = Modifier.size(20.dp)) },
+                                                label = { Text("Scan QR", fontSize = 10.sp, fontWeight = FontWeight.Normal) },
+                                                selected = false,
+                                                onClick = { showScannerDialog = true },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = MaterialTheme.colorScheme.primary,
+                                                    selectedTextColor = MaterialTheme.colorScheme.primary,
+                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                )
+                                            )
+                                            NavigationBarItem(
+                                                icon = { Icon(Icons.Default.Inventory2, contentDescription = "Archive", modifier = Modifier.size(20.dp)) },
+                                                label = { Text("Archive", fontSize = 10.sp, fontWeight = if (selectedTab == 1 && inventorySubTab == 2) FontWeight.Bold else FontWeight.Normal) },
+                                                selected = selectedTab == 1 && inventorySubTab == 2,
+                                                onClick = {
+                                                    selectedTab = 1
+                                                    inventorySubTab = 2
+                                                },
+                                                colors = NavigationBarItemDefaults.colors(
+                                                    selectedIconColor = Color(0xFFF59E0B),
+                                                    selectedTextColor = Color(0xFFF59E0B),
+                                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                    indicatorColor = Color(0xFFF59E0B).copy(alpha = 0.12f)
+                                                )
+                                            )
+                                        }
                                     }
                                 },
                                 containerColor = MaterialTheme.colorScheme.background
@@ -558,34 +743,57 @@ class MainActivity : FragmentActivity() {
                                     color = MaterialTheme.colorScheme.background
                                 ) {
                                     when (selectedTab) {
-                                        0 -> DashboardTab(
-                                            token = token,
-                                            viewModel = mainViewModel,
-                                            onNavigateToTab = { tabIndex -> selectedTab = tabIndex },
-                                            onSelectDevice = { dev -> selectedDeviceForDetail = dev },
-                                            onOpenScanner = { showScannerDialog = true },
-                                            onOpenAddShipment = { showAddShipmentDialog = true }
-                                        )
+                                        0 -> {
+                                            if (isAdmin) {
+                                                DashboardTab(
+                                                    token = token,
+                                                    viewModel = mainViewModel,
+                                                    onNavigateToTab = { tabIndex -> selectedTab = tabIndex },
+                                                    onSelectDevice = { dev -> selectedDeviceForDetail = dev },
+                                                    onOpenScanner = { showScannerDialog = true },
+                                                    onOpenAddShipment = { showAddShipmentDialog = true }
+                                                )
+                                            } else {
+                                                StaffDashboardTab(
+                                                    token = token,
+                                                    viewModel = mainViewModel,
+                                                    currentUser = currentUser,
+                                                    onOpenScanner = { showScannerDialog = true },
+                                                    onSelectDevice = { dev -> selectedDeviceForDetail = dev },
+                                                    onOpenMarkSold = { dev -> deviceForMarkSold = dev }
+                                                )
+                                            }
+                                        }
                                         1 -> InventoryTab(
                                             token = token,
                                             viewModel = mainViewModel,
                                             initialTab = inventorySubTab,
                                             onSelectDevice = { dev -> selectedDeviceForDetail = dev },
                                             onOpenAddDevice = {
-                                                scannedImeiForAdd = null
-                                                showAddDeviceDialog = true
+                                                if (isAdmin) {
+                                                    scannedImeiForAdd = null
+                                                    showAddDeviceDialog = true
+                                                }
                                             }
                                         )
-                                        2 -> ShipmentsTab(
-                                            token = token,
-                                            viewModel = mainViewModel,
-                                            onSelectShipment = { shipment -> selectedShipmentForDetail = shipment },
-                                            onOpenAddShipment = { showAddShipmentDialog = true }
-                                        )
-                                        3 -> AnalyticsTab(
-                                            token = token,
-                                            viewModel = mainViewModel
-                                        )
+                                        2 -> {
+                                            if (isAdmin) {
+                                                ShipmentsTab(
+                                                    token = token,
+                                                    viewModel = mainViewModel,
+                                                    onSelectShipment = { shipment -> selectedShipmentForDetail = shipment },
+                                                    onOpenAddShipment = { showAddShipmentDialog = true }
+                                                )
+                                            }
+                                        }
+                                        3 -> {
+                                            if (isAdmin) {
+                                                AnalyticsTab(
+                                                    token = token,
+                                                    viewModel = mainViewModel
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -599,36 +807,42 @@ class MainActivity : FragmentActivity() {
                                     showScannerDialog = false
                                     val cleanImei = result.primaryImei.trim()
 
-                                     // Search in local devices (supports primary IMEI, IMEI2, Serial, or MEID)
-                                     val matchedDevice = devices.find { dev ->
-                                         dev.imei.equals(cleanImei, ignoreCase = true) ||
-                                         dev.imei2?.equals(cleanImei, ignoreCase = true) == true ||
-                                         dev.serialNumber?.equals(cleanImei, ignoreCase = true) == true ||
-                                         dev.meid?.equals(cleanImei, ignoreCase = true) == true ||
-                                         (result.secondaryImei != null && (
-                                             dev.imei.equals(result.secondaryImei, ignoreCase = true) ||
-                                             dev.imei2?.equals(result.secondaryImei, ignoreCase = true) == true
-                                         ))
-                                     }
+                                    // Search in local devices (supports primary IMEI, IMEI2, Serial, or MEID)
+                                    val matchedDevice = devices.find { dev ->
+                                        dev.imei.equals(cleanImei, ignoreCase = true) ||
+                                        dev.imei2?.equals(cleanImei, ignoreCase = true) == true ||
+                                        dev.serialNumber?.equals(cleanImei, ignoreCase = true) == true ||
+                                        dev.meid?.equals(cleanImei, ignoreCase = true) == true ||
+                                        (result.secondaryImei != null && (
+                                            dev.imei.equals(result.secondaryImei, ignoreCase = true) ||
+                                            dev.imei2?.equals(result.secondaryImei, ignoreCase = true) == true
+                                        ))
+                                    }
 
                                     if (matchedDevice != null) {
-                                        // FOUND -> Open Check-In Dialog
-                                        scannedDeviceForCheckIn = matchedDevice
+                                        // FOUND -> Open Check-In Dialog (Admin) or Detail Dialog (Staff)
+                                        if (isAdmin) {
+                                            scannedDeviceForCheckIn = matchedDevice
+                                        } else {
+                                            selectedDeviceForDetail = matchedDevice
+                                        }
                                     } else {
-                                        // Query backend scan API in case it was created recently
-                                        coroutineScope.launch {
-                                            try {
-                                                val res = ApiClient.apiService.scanCode("Bearer $token", cleanImei)
-                                                if (res.isSuccessful && res.body()?.found == true && res.body()?.device != null) {
-                                                    scannedDeviceForCheckIn = res.body()?.device
-                                                } else {
-                                                    // NOT FOUND -> Open Add Device with pre-populated IMEI
+                                        if (isAdmin) {
+                                            // Query backend scan API in case it was created recently
+                                            coroutineScope.launch {
+                                                try {
+                                                    val res = ApiClient.apiService.scanCode("Bearer $token", cleanImei)
+                                                    if (res.isSuccessful && res.body()?.found == true && res.body()?.device != null) {
+                                                        scannedDeviceForCheckIn = res.body()?.device
+                                                    } else {
+                                                        // NOT FOUND -> Open Add Device with pre-populated IMEI
+                                                        scannedImeiForAdd = cleanImei
+                                                        showAddDeviceDialog = true
+                                                    }
+                                                } catch (e: Exception) {
                                                     scannedImeiForAdd = cleanImei
                                                     showAddDeviceDialog = true
                                                 }
-                                            } catch (e: Exception) {
-                                                scannedImeiForAdd = cleanImei
-                                                showAddDeviceDialog = true
                                             }
                                         }
                                     }
@@ -696,7 +910,7 @@ class MainActivity : FragmentActivity() {
                         // Add Device Modal (Supports prefilled IMEI from scanner)
                         if (showAddDeviceDialog) {
                             AddDeviceDialog(
-                                initialImei = scannedImeiForAdd ?: "",
+                                initialImei = scannedImeiForAdd,
                                 onDismiss = {
                                     showAddDeviceDialog = false
                                     scannedImeiForAdd = null
@@ -711,6 +925,43 @@ class MainActivity : FragmentActivity() {
                                             mainViewModel.loadAllData(token)
                                         },
                                         onError = { /* show error */ }
+                                    )
+                                }
+                            )
+                        }
+
+                        // Mark Device as Sold Dialog (Staff flow)
+                        deviceForMarkSold?.let { dev ->
+                            MarkSoldDialog(
+                                device = dev,
+                                onDismiss = { deviceForMarkSold = null },
+                                onSubmitSale = { sellingPrice, paymentMethod, saleNotes ->
+                                    mainViewModel.requestDeviceSale(
+                                        token = token,
+                                        deviceId = dev.id,
+                                        sellingPrice = sellingPrice,
+                                        paymentMethod = paymentMethod,
+                                        saleNotes = saleNotes,
+                                        onSuccess = {
+                                            deviceForMarkSold = null
+                                        }
+                                    )
+                                }
+                            )
+                        }
+
+                        // Change Password Dialog
+                        if (showChangePasswordDialog) {
+                            ChangePasswordDialog(
+                                onDismiss = { showChangePasswordDialog = false },
+                                onChangePassword = { oldPassword, newPassword ->
+                                    mainViewModel.changePassword(
+                                        token = token,
+                                        oldPassword = oldPassword,
+                                        newPassword = newPassword,
+                                        onSuccess = {
+                                            showChangePasswordDialog = false
+                                        }
                                     )
                                 }
                             )
@@ -781,6 +1032,7 @@ class MainActivity : FragmentActivity() {
                             DeviceDetailDialog(
                                 device = device,
                                 users = users,
+                                isAdmin = isAdmin,
                                 onDismiss = { selectedDeviceForDetail = null },
                                 onStatusChange = { newStatus ->
                                     mainViewModel.updateDevice(
@@ -827,9 +1079,18 @@ class MainActivity : FragmentActivity() {
                                     mainViewModel.deleteDevice(token, device.id) {
                                         selectedDeviceForDetail = null
                                     }
+                                },
+                                onOpenMarkSold = { dev ->
+                                    deviceForMarkSold = dev
                                 }
                             )
                         }
+                    }
+                }
+            }
+        }
+    }
+} }
                     }
                 }
             }

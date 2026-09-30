@@ -23,6 +23,14 @@ data class DashboardStats(
 
 class MainInventoryViewModel : ViewModel() {
 
+    // Current User / Role
+    private val _currentUser = MutableStateFlow<UserDto?>(null)
+    val currentUser: StateFlow<UserDto?> = _currentUser
+
+    fun setCurrentUser(user: UserDto?) {
+        _currentUser.value = user
+    }
+
     // Devices State
     private val _devices = MutableStateFlow<List<DeviceDto>>(emptyList())
     val devices: StateFlow<List<DeviceDto>> = _devices
@@ -423,5 +431,61 @@ class MainInventoryViewModel : ViewModel() {
             totalProfit = totalProfit,
             totalAssets = totalAssets
         )
+    }
+
+    fun requestDeviceSale(
+        token: String,
+        deviceId: Int,
+        proposedPrice: Double,
+        paymentMethod: String,
+        notes: String?,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val bearer = "Bearer $token"
+                val payload = mutableMapOf<String, Any?>(
+                    "proposed_price" to proposedPrice,
+                    "payment_method" to paymentMethod,
+                    "notes" to notes
+                )
+                val res = ApiClient.apiService.requestDeviceSale(bearer, deviceId, payload)
+                if (res.isSuccessful) {
+                    fetchDevices(token)
+                    onSuccess()
+                } else {
+                    onError("Failed to submit sale request (${res.code()})")
+                }
+            } catch (e: Exception) {
+                onError("Network error: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun changePassword(
+        token: String,
+        oldPass: String,
+        newPass: String,
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val bearer = "Bearer $token"
+                val payload = mapOf(
+                    "old_password" to oldPass,
+                    "new_password" to newPass
+                )
+                val res = ApiClient.apiService.changePassword(bearer, payload)
+                if (res.isSuccessful) {
+                    onSuccess()
+                } else {
+                    onError("Failed to update password (${res.code()})")
+                }
+            } catch (e: Exception) {
+                onError("Network error: ${e.localizedMessage}")
+            }
+        }
     }
 }

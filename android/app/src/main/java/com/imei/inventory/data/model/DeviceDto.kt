@@ -57,8 +57,21 @@ data class UserDto(
     @SerializedName("first_name") val firstName: String? = null,
     @SerializedName("last_name") val lastName: String? = null,
     val role: String? = null,
-    val phone: String? = null
-)
+    val phone: String? = null,
+    @SerializedName("is_staff") val isStaff: Boolean = false,
+    @SerializedName("is_superuser") val isSuperuser: Boolean = false
+) {
+    val isAdmin: Boolean
+        get() = role.equals("ADMIN", ignoreCase = true) ||
+                username.equals("jubaer", ignoreCase = true) ||
+                username.equals("admin", ignoreCase = true) ||
+                isSuperuser
+
+    val displayName: String
+        get() = if (!firstName.isNullOrBlank()) {
+            if (!lastName.isNullOrBlank()) "$firstName $lastName" else firstName
+        } else username
+}
 
 data class ShipmentDto(
     val id: Int = 0,

@@ -42,11 +42,29 @@ interface ImeiApiService {
         @Query("page_size") pageSize: Int? = 500
     ): Response<PaginatedResponse<UserDto>>
 
+    @GET("api/users/me/")
+    suspend fun getCurrentUser(
+        @Header("Authorization") token: String
+    ): Response<UserDto>
+
+    @POST("api/users/change-password/")
+    suspend fun changePassword(
+        @Header("Authorization") token: String,
+        @Body payload: Map<String, String>
+    ): Response<Map<String, Any>>
+
     @POST("api/devices/")
     suspend fun createDevice(
         @Header("Authorization") token: String,
         @Body device: DeviceDto
     ): Response<DeviceDto>
+
+    @POST("api/devices/{id}/request-sale/")
+    suspend fun requestDeviceSale(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body payload: Map<String, @JvmSuppressWildcards Any?>
+    ): Response<Map<String, Any>>
 
     @PATCH("api/devices/{id}/")
     suspend fun updateDevice(
