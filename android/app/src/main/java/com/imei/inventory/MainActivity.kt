@@ -747,11 +747,12 @@ class MainActivity : FragmentActivity() {
                                         }
                                     } else {
                                         // Staff mode: check if device is in current staff member's assigned custody
+                                        val user = currentUser
                                         val isAssignedToMe = matchedDevice != null && !matchedDevice.isB2B && (
-                                            (matchedDevice.currentOwner != null && currentUser?.id != null && matchedDevice.currentOwner == currentUser.id) ||
+                                            (matchedDevice.currentOwner != null && user?.id != null && matchedDevice.currentOwner == user.id) ||
                                             (!matchedDevice.currentOwnerName.isNullOrBlank() && (
-                                                (currentUser?.username != null && matchedDevice.currentOwnerName.equals(currentUser.username, ignoreCase = true)) ||
-                                                (currentUser?.displayName != null && matchedDevice.currentOwnerName.equals(currentUser.displayName, ignoreCase = true))
+                                                (user?.username != null && matchedDevice.currentOwnerName.equals(user.username, ignoreCase = true)) ||
+                                                (user?.displayName != null && matchedDevice.currentOwnerName.equals(user.displayName, ignoreCase = true))
                                             ))
                                         )
 

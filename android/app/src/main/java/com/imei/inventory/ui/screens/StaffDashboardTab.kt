@@ -287,21 +287,21 @@ fun StaffDeviceCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
         shadowElevation = 1.dp,
         border = BorderStroke(
             1.dp,
             if (isPendingSale) Color(0xFFF59E0B).copy(alpha = 0.35f)
-            else MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+            else MaterialTheme.colorScheme.outline.copy(alpha = 0.10f)
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 12.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             // Row 1: Model Name + Status Badge
             Row(
@@ -317,25 +317,25 @@ fun StaffDeviceCard(
                         imageVector = Icons.Default.PhoneAndroid,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = device.model,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
+                        fontSize = 14.5.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 StatusBadge(device.currentStatus, device.statusDisplay)
             }
 
             // Row 2: Specs Pill Chips
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 device.capacity?.takeIf { it.isNotBlank() }?.let { cap ->
@@ -357,78 +357,74 @@ fun StaffDeviceCard(
                 }
             }
 
-            // Row 3: IMEI Container
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CopyableText(label = "IMEI", value = device.imei)
-                }
-            }
-
-            // Row 4: Footer - Received Date & Action Button
+            // Row 3: IMEI & Date (Left) + Action Button (Right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false)
+                ) {
+                    CopyableText(label = "IMEI", value = device.imei)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "•",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Default.CalendarToday,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.size(12.dp)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(11.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
                     Text(
                         text = device.receivedDateBd ?: device.createdAt?.take(10) ?: "Assigned",
-                        fontSize = 11.sp,
+                        fontSize = 10.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
+                Spacer(modifier = Modifier.width(6.dp))
+
                 if (isPendingSale) {
                     Surface(
-                        shape = RoundedCornerShape(7.dp),
+                        shape = RoundedCornerShape(6.dp),
                         color = Color(0xFFF59E0B).copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f))
+                        border = BorderStroke(0.8.dp, Color(0xFFF59E0B).copy(alpha = 0.3f))
                     ) {
                         Text(
                             text = "⏳ Pending Approval",
                             color = Color(0xFFD97706),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.5.dp)
+                            fontSize = 10.5.sp,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                         )
                     }
                 } else if (!isSold) {
                     Button(
                         onClick = onMarkSold,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier.height(30.dp)
+                        shape = RoundedCornerShape(7.dp),
+                        contentPadding = PaddingValues(horizontal = 9.dp, vertical = 2.dp),
+                        modifier = Modifier.height(28.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.PointOfSale,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(13.dp)
+                            modifier = Modifier.size(12.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "Mark as Sold",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -445,16 +441,16 @@ private fun SpecPill(
     color: Color
 ) {
     Surface(
-        color = color.copy(alpha = 0.09f),
-        shape = RoundedCornerShape(6.dp),
-        border = BorderStroke(0.7.dp, color.copy(alpha = 0.2f))
+        color = color.copy(alpha = 0.08f),
+        shape = RoundedCornerShape(5.dp),
+        border = BorderStroke(0.6.dp, color.copy(alpha = 0.18f))
     ) {
         Text(
             text = text,
-            fontSize = 10.5.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             color = color,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp),
             maxLines = 1,
             softWrap = false
         )
