@@ -536,7 +536,10 @@ class MainActivity : FragmentActivity() {
                                         actions = {
                                             if (isAdmin) {
                                                 // Sale Approval Notification Bell with Badge
-                                                Box(contentAlignment = Alignment.TopEnd) {
+                                                Box(
+                                                    modifier = Modifier.size(36.dp),
+                                                    contentAlignment = Alignment.TopEnd
+                                                ) {
                                                     IconButton(
                                                         onClick = {
                                                             if (pendingSaleRequests.isNotEmpty()) {
@@ -546,8 +549,8 @@ class MainActivity : FragmentActivity() {
                                                             }
                                                         },
                                                         modifier = Modifier
+                                                            .fillMaxSize()
                                                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
-                                                            .size(36.dp)
                                                     ) {
                                                         Icon(
                                                             imageVector = if (pendingSaleRequests.isNotEmpty()) Icons.Default.NotificationsActive else Icons.Default.Notifications,
@@ -560,16 +563,19 @@ class MainActivity : FragmentActivity() {
                                                         Surface(
                                                             shape = CircleShape,
                                                             color = Color(0xFFEF4444),
-                                                            modifier = Modifier
-                                                                .size(15.dp)
-                                                                .offset(x = 1.dp, y = (-1).dp)
+                                                            modifier = Modifier.size(16.dp)
                                                         ) {
-                                                            Box(contentAlignment = Alignment.Center) {
+                                                            Box(
+                                                                contentAlignment = Alignment.Center,
+                                                                modifier = Modifier.fillMaxSize()
+                                                            ) {
                                                                 Text(
                                                                     text = "${pendingSaleRequests.size}",
                                                                     color = Color.White,
-                                                                    fontSize = 8.5.sp,
-                                                                    fontWeight = FontWeight.Bold
+                                                                    fontSize = 9.sp,
+                                                                    fontWeight = FontWeight.ExtraBold,
+                                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                                    lineHeight = 9.sp
                                                                 )
                                                             }
                                                         }
@@ -951,13 +957,14 @@ class MainActivity : FragmentActivity() {
                             AdminSaleApprovalDialog(
                                 saleRequest = saleReq,
                                 onDismiss = { selectedSaleRequestForApproval = null },
-                                onApprove = { reqId, confirmedPrice, paymentMethod, notes ->
+                                onApprove = { reqId, confirmedPrice, commissionAmount, paymentMethod, notes ->
                                     mainViewModel.confirmSaleRequest(
                                         token = token,
                                         requestId = reqId,
                                         confirmedPrice = confirmedPrice,
                                         paymentMethod = paymentMethod,
                                         notes = notes,
+                                        commissionAmount = commissionAmount,
                                         onSuccess = {
                                             selectedSaleRequestForApproval = null
                                             Toast.makeText(context, "Sale approved & device marked as Sold!", Toast.LENGTH_SHORT).show()

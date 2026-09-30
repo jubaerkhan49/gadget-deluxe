@@ -545,6 +545,7 @@ class MainInventoryViewModel : ViewModel() {
         confirmedPrice: Double,
         paymentMethod: String,
         notes: String?,
+        commissionAmount: Double = 0.0,
         onSuccess: () -> Unit = {},
         onError: (String) -> Unit = {}
     ) {
@@ -553,6 +554,8 @@ class MainInventoryViewModel : ViewModel() {
                 val bearer = "Bearer $token"
                 val payload = mutableMapOf<String, Any?>(
                     "confirmed_price" to confirmedPrice,
+                    "selling_price" to confirmedPrice,
+                    "commission_amount" to commissionAmount,
                     "payment_method" to paymentMethod,
                     "notes" to notes
                 )

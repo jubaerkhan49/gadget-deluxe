@@ -24,27 +24,33 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.imei.inventory.data.model.DeviceSaleRequestDto
+import com.imei.inventory.ui.components.formatIndianNumber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminSaleApprovalDialog(
     saleRequest: DeviceSaleRequestDto,
     onDismiss: () -> Unit,
-    onApprove: (requestId: Int, confirmedPrice: Double, paymentMethod: String, notes: String?) -> Unit,
+    onApprove: (requestId: Int, confirmedPrice: Double, commissionAmount: Double, paymentMethod: String, notes: String?) -> Unit,
     onReject: (requestId: Int, notes: String?) -> Unit
 ) {
     val context = LocalContext.current
-    var confirmedPrice by remember {
+    var employeePriceText by remember {
         mutableStateOf(
             if (saleRequest.proposedPrice % 1.0 == 0.0) saleRequest.proposedPrice.toLong().toString()
             else saleRequest.proposedPrice.toString()
         )
     }
+    var commissionText by remember { mutableStateOf("0") }
     var paymentMethod by remember { mutableStateOf(saleRequest.paymentMethod ?: "CASH") }
     var notes by remember { mutableStateOf(saleRequest.notes ?: "") }
     var isSubmitting by remember { mutableStateOf(false) }
     var paymentDropdownExpanded by remember { mutableStateOf(false) }
-    var showRejectConfirm by remember { mutableStateOf(false) }
+
+    // Computed Final Selling Amount = Employee Price - Commission
+    val employeePrice = employeePriceText.toDoubleOrNull() ?: 0.0
+    val commissionVal = commissionText.toDoubleOrNull() ?: 0.0
+    val finalSellingAmount = (employeePrice - commissionVal).coerceAtLeast(0.0)
 
     val paymentOptions = listOf(
         "CASH" to "Cash Payment",
@@ -61,8 +67,8 @@ fun AdminSaleApprovalDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight()
-                .padding(vertical = 12.dp),
-            shape = RoundedCornerShape(20.dp),
+                .padding(vertical = 10.dp),
+            shape = RoundedCornerShape(18.dp),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 6.dp,
             shadowElevation = 12.dp
@@ -71,10 +77,10 @@ fun AdminSaleApprovalDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(11.dp)
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
-                // Header
+                // Header (Ultra Compact)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -83,29 +89,29 @@ fun AdminSaleApprovalDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
                             color = Color(0xFFF59E0B).copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.size(36.dp)
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.size(28.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.Verified,
                                     contentDescription = null,
                                     tint = Color(0xFFD97706),
-                                    modifier = Modifier.size(20.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
                                 text = "Approve Sale Request",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
+                                fontSize = 14.5.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
-                                text = "Review & confirm employee sale",
-                                fontSize = 11.sp,
+                                text = "Review, set commission & confirm",
+                                fontSize = 10.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -113,118 +119,85 @@ fun AdminSaleApprovalDialog(
                     IconButton(
                         onClick = onDismiss,
                         enabled = !isSubmitting,
-                        modifier = Modifier.size(30.dp)
+                        modifier = Modifier.size(26.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(17.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.10f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
 
-                // Employee Submitter Banner
+                // Submitter & Device Card (Compact Combined)
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.20f))
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                text = "Submitted by ${saleRequest.employeeName ?: (saleRequest.employeeUsername ?: "Employee")}",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 12.5.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "Username: @${saleRequest.employeeUsername ?: "staff"} • ${saleRequest.createdAt?.take(16)?.replace("T", " ") ?: "Recent"}",
-                                fontSize = 10.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                // Device Summary Box
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                    border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        // Submitter Line
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.weight(1f, fill = false)
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Default.PhoneAndroid,
+                                    imageVector = Icons.Default.Person,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(15.dp)
+                                    modifier = Modifier.size(13.dp)
                                 )
-                                Spacer(modifier = Modifier.width(5.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = saleRequest.deviceModel ?: "Device",
+                                    text = "${saleRequest.employeeName ?: (saleRequest.employeeUsername ?: "Staff")} (@${saleRequest.employeeUsername ?: "staff"})",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1
+                                    fontSize = 11.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFF59E0B).copy(alpha = 0.15f),
-                                border = BorderStroke(0.8.dp, Color(0xFFF59E0B).copy(alpha = 0.35f))
-                            ) {
-                                Text(
-                                    text = "Pending Approval",
-                                    color = Color(0xFFD97706),
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-
-                        saleRequest.deviceImei?.let {
                             Text(
-                                text = "IMEI: $it",
-                                fontSize = 11.sp,
-                                fontFamily = FontFamily.Monospace,
-                                fontWeight = FontWeight.SemiBold,
+                                text = saleRequest.createdAt?.take(16)?.replace("T", " ") ?: "",
+                                fontSize = 9.5.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
 
+                        // Device Specs Line
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = saleRequest.deviceModel ?: "Device",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                            saleRequest.deviceImei?.let {
+                                Text(
+                                    text = "IMEI: $it",
+                                    fontSize = 10.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        // Badges Row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             saleRequest.deviceVariant?.takeIf { it.isNotBlank() }?.let { v ->
@@ -245,37 +218,71 @@ fun AdminSaleApprovalDialog(
                     }
                 }
 
-                // Final Sale Price (Confirmed by Admin)
-                OutlinedTextField(
-                    value = confirmedPrice,
-                    onValueChange = { confirmedPrice = it },
-                    label = { Text("Final Selling Amount *", fontSize = 12.sp) },
-                    placeholder = { Text("55000", fontSize = 12.sp) },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Payments,
-                            contentDescription = null,
-                            tint = Color(0xFF10B981),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    prefix = {
-                        Text(
-                            text = "BDT ",
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            color = Color(0xFF10B981)
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFF10B981),
-                        focusedLabelColor = Color(0xFF10B981)
-                    ),
+                // Price & Commission Inputs (Side by Side Row)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Employee Selling Price
+                    OutlinedTextField(
+                        value = employeePriceText,
+                        onValueChange = { employeePriceText = it },
+                        label = { Text("Sold Price *", fontSize = 10.5.sp) },
+                        prefix = { Text("৳", fontWeight = FontWeight.Bold, color = Color(0xFF059669), fontSize = 11.5.sp) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    // Commission Input (Default 0)
+                    OutlinedTextField(
+                        value = commissionText,
+                        onValueChange = { commissionText = it },
+                        label = { Text("Commission", fontSize = 10.5.sp) },
+                        prefix = { Text("৳", fontWeight = FontWeight.Bold, color = Color(0xFFD97706), fontSize = 11.5.sp) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // Auto-computed Final Net Amount Banner
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = Color(0xFF10B981).copy(alpha = 0.10f),
+                    border = BorderStroke(0.8.dp, Color(0xFF10B981).copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth()
-                )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 7.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Final Selling Amount (Net)",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color(0xFF065F46)
+                            )
+                            Text(
+                                text = "৳${formatIndianNumber(employeePrice)} - ৳${formatIndianNumber(commissionVal)}",
+                                fontSize = 9.5.sp,
+                                color = Color(0xFF047857)
+                            )
+                        }
+                        Text(
+                            text = "BDT ${formatIndianNumber(finalSellingAmount)}",
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 14.5.sp,
+                            color = Color(0xFF059669)
+                        )
+                    }
+                }
 
                 // Payment Method Dropdown
                 ExposedDropdownMenuBox(
@@ -286,17 +293,17 @@ fun AdminSaleApprovalDialog(
                         value = paymentOptions.find { it.first == paymentMethod }?.second ?: "Cash Payment",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Payment Method", fontSize = 12.sp) },
+                        label = { Text("Payment Method", fontSize = 11.sp) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.AccountBalanceWallet,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentDropdownExpanded) },
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(8.dp),
                         modifier = Modifier
                             .menuAnchor()
                             .fillMaxWidth()
@@ -307,7 +314,7 @@ fun AdminSaleApprovalDialog(
                     ) {
                         paymentOptions.forEach { (code, label) ->
                             DropdownMenuItem(
-                                text = { Text(label, fontSize = 12.5.sp) },
+                                text = { Text(label, fontSize = 12.sp) },
                                 onClick = {
                                     paymentMethod = code
                                     paymentDropdownExpanded = false
@@ -317,30 +324,30 @@ fun AdminSaleApprovalDialog(
                     }
                 }
 
-                // Sale Notes
+                // Admin Review Notes
                 OutlinedTextField(
                     value = notes,
                     onValueChange = { notes = it },
-                    label = { Text("Admin Review Notes (Optional)", fontSize = 12.sp) },
-                    placeholder = { Text("e.g. Verified by Admin", fontSize = 12.sp) },
+                    label = { Text("Review Notes (Optional)", fontSize = 11.sp) },
+                    placeholder = { Text("e.g. Approved", fontSize = 11.sp) },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Notes,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     },
                     singleLine = true,
-                    shape = RoundedCornerShape(10.dp),
+                    shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
-
                 // Actions: Reject vs Approve
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
@@ -351,58 +358,57 @@ fun AdminSaleApprovalDialog(
                         enabled = !isSubmitting,
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
                         border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f)),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                         modifier = Modifier
                             .weight(1f)
-                            .height(42.dp)
+                            .height(38.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Cancel,
                             contentDescription = null,
                             tint = Color(0xFFEF4444),
-                            modifier = Modifier.size(15.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Reject", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                        Text("Reject", fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
                     }
 
                     Button(
                         onClick = {
-                            val priceVal = confirmedPrice.toDoubleOrNull()
-                            if (priceVal == null || priceVal <= 0.0) {
-                                Toast.makeText(context, "Please enter a valid Final Selling Amount", Toast.LENGTH_SHORT).show()
+                            if (finalSellingAmount <= 0.0) {
+                                Toast.makeText(context, "Final Selling Amount must be greater than 0", Toast.LENGTH_SHORT).show()
                                 return@Button
                             }
                             isSubmitting = true
-                            onApprove(saleRequest.id, priceVal, paymentMethod, notes.ifEmpty { null })
+                            onApprove(saleRequest.id, finalSellingAmount, commissionVal, paymentMethod, notes.ifEmpty { null })
                         },
                         enabled = !isSubmitting,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                         modifier = Modifier
-                            .weight(1.5f)
-                            .height(42.dp)
+                            .weight(1.6f)
+                            .height(38.dp)
                     ) {
                         if (isSubmitting) {
                             CircularProgressIndicator(
                                 color = Color.White,
                                 strokeWidth = 2.dp,
-                                modifier = Modifier.size(16.dp)
+                                modifier = Modifier.size(15.dp)
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(15.dp)
+                                modifier = Modifier.size(14.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "Approve & Sell",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
+                                fontSize = 11.5.sp,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -418,15 +424,15 @@ fun AdminSaleApprovalDialog(
 private fun SummaryBadge(text: String, color: Color) {
     Surface(
         color = color.copy(alpha = 0.08f),
-        shape = RoundedCornerShape(5.dp),
+        shape = RoundedCornerShape(4.dp),
         border = BorderStroke(0.6.dp, color.copy(alpha = 0.2f))
     ) {
         Text(
             text = text,
-            fontSize = 10.sp,
+            fontSize = 9.5.sp,
             fontWeight = FontWeight.SemiBold,
             color = color,
-            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
             maxLines = 1,
             softWrap = false
         )
