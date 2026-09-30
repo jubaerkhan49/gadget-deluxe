@@ -556,7 +556,7 @@ class MainActivity : FragmentActivity() {
                                                             imageVector = if (pendingSaleRequests.isNotEmpty()) Icons.Default.NotificationsActive else Icons.Default.Notifications,
                                                             contentDescription = "Sale Approvals",
                                                             tint = if (pendingSaleRequests.isNotEmpty()) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            modifier = Modifier.size(19.dp)
+                                                            modifier = Modifier.size(17.5.dp)
                                                         )
                                                     }
                                                     if (pendingSaleRequests.isNotEmpty()) {
@@ -600,27 +600,7 @@ class MainActivity : FragmentActivity() {
                                                 )
                                             }
 
-                                            if (isAdmin) {
-                                                Spacer(modifier = Modifier.width(6.dp))
-
-                                                // + Add Device Quick Button (Admin only)
-                                                IconButton(
-                                                    onClick = {
-                                                        scannedImeiForAdd = null
-                                                        showAddDeviceDialog = true
-                                                    },
-                                                    modifier = Modifier
-                                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
-                                                        .size(36.dp)
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Add,
-                                                        contentDescription = "+ Add Device",
-                                                        tint = MaterialTheme.colorScheme.primary,
-                                                        modifier = Modifier.size(19.dp)
-                                                    )
-                                                }
-                                            } else {
+                                            if (!isAdmin) {
                                                 Spacer(modifier = Modifier.width(6.dp))
 
                                                 // Change Password Button (Staff quick access)
