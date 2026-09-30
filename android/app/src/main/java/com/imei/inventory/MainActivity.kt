@@ -536,37 +536,22 @@ class MainActivity : FragmentActivity() {
                                         actions = {
                                             if (isAdmin) {
                                                 // Sale Approval Notification Bell with Badge
-                                                IconButton(
-                                                    onClick = {
-                                                        if (pendingSaleRequests.isNotEmpty()) {
-                                                            selectedSaleRequestForApproval = pendingSaleRequests.first()
-                                                        } else {
-                                                            Toast.makeText(context, "No pending sale approval requests", Toast.LENGTH_SHORT).show()
-                                                        }
-                                                    },
-                                                    modifier = Modifier
-                                                        .background(
-                                                            if (pendingSaleRequests.isNotEmpty()) Color(0xFFF59E0B).copy(alpha = 0.18f)
-                                                            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                                            CircleShape
-                                                        )
-                                                        .size(36.dp)
-                                                ) {
-                                                    BadgedBox(
-                                                        badge = {
+                                                Box(contentAlignment = Alignment.TopEnd) {
+                                                    IconButton(
+                                                        onClick = {
                                                             if (pendingSaleRequests.isNotEmpty()) {
-                                                                Badge(
-                                                                    containerColor = Color(0xFFEF4444),
-                                                                    contentColor = Color.White
-                                                                ) {
-                                                                    Text(
-                                                                        text = "${pendingSaleRequests.size}",
-                                                                        fontSize = 9.sp,
-                                                                        fontWeight = FontWeight.Bold
-                                                                    )
-                                                                }
+                                                                selectedSaleRequestForApproval = pendingSaleRequests.first()
+                                                            } else {
+                                                                Toast.makeText(context, "No pending sale approval requests", Toast.LENGTH_SHORT).show()
                                                             }
-                                                        }
+                                                        },
+                                                        modifier = Modifier
+                                                            .background(
+                                                                if (pendingSaleRequests.isNotEmpty()) Color(0xFFF59E0B).copy(alpha = 0.15f)
+                                                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                                                CircleShape
+                                                            )
+                                                            .size(36.dp)
                                                     ) {
                                                         Icon(
                                                             imageVector = if (pendingSaleRequests.isNotEmpty()) Icons.Default.NotificationsActive else Icons.Default.Notifications,
@@ -574,6 +559,24 @@ class MainActivity : FragmentActivity() {
                                                             tint = if (pendingSaleRequests.isNotEmpty()) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant,
                                                             modifier = Modifier.size(19.dp)
                                                         )
+                                                    }
+                                                    if (pendingSaleRequests.isNotEmpty()) {
+                                                        Surface(
+                                                            shape = CircleShape,
+                                                            color = Color(0xFFEF4444),
+                                                            modifier = Modifier
+                                                                .size(15.dp)
+                                                                .offset(x = 1.dp, y = (-1).dp)
+                                                        ) {
+                                                            Box(contentAlignment = Alignment.Center) {
+                                                                Text(
+                                                                    text = "${pendingSaleRequests.size}",
+                                                                    color = Color.White,
+                                                                    fontSize = 8.5.sp,
+                                                                    fontWeight = FontWeight.Bold
+                                                                )
+                                                            }
+                                                        }
                                                     }
                                                 }
 

@@ -105,6 +105,33 @@ class MainInventoryViewModel : ViewModel() {
         startRealtimeSync(token, context)
     }
 
+    fun fetchDashboardStats(token: String) {
+        viewModelScope.launch {
+            try {
+                val bearer = "Bearer $token"
+                val statsRes = ApiClient.apiService.getDashboardStats(bearer)
+                if (statsRes.isSuccessful && statsRes.body() != null) {
+                    val s = statsRes.body()!!
+                    val localSalesSum = _sales.value.sumOf { it.displayPrice }
+                    val localProfitSum = _sales.value.sumOf { it.profit ?: 0.0 }
+                    _stats.value = DashboardStats(
+                        totalDevices = s.totalDevices,
+                        inStock = s.inStock,
+                        sold = s.sold,
+                        underRepair = s.underRepair,
+                        todaySalesAmount = s.todaySales,
+                        totalSalesAmount = if (s.totalSales > 0) s.totalSales else localSalesSum,
+                        todayProfit = s.todayProfit,
+                        totalProfit = if (s.totalProfit > 0) s.totalProfit else localProfitSum,
+                        totalAssets = s.totalAssets
+                    )
+                }
+            } catch (e: Exception) {
+                // ignore
+            }
+        }
+    }
+
     fun fetchPendingSaleRequests(token: String) {
         viewModelScope.launch {
             try {
