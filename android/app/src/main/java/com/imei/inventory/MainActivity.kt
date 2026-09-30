@@ -647,14 +647,14 @@ class MainActivity : FragmentActivity() {
                                                             }
                                                         },
                                                         modifier = Modifier
-                                                            .fillMaxSize()
                                                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
+                                                            .size(36.dp)
                                                     ) {
                                                         Icon(
                                                             imageVector = if (pendingSaleRequests.isNotEmpty()) Icons.Default.NotificationsActive else Icons.Default.Notifications,
                                                             contentDescription = "Sale Approvals",
                                                             tint = if (pendingSaleRequests.isNotEmpty()) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            modifier = Modifier.size(17.5.dp)
+                                                            modifier = Modifier.size(18.dp)
                                                         )
                                                     }
                                                     if (pendingSaleRequests.isNotEmpty()) {
