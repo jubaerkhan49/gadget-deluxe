@@ -118,6 +118,7 @@ class MainActivity : FragmentActivity() {
                     val shipments by mainViewModel.shipments.collectAsState()
                     val users by mainViewModel.users.collectAsState()
                     val pendingSaleRequests by mainViewModel.pendingSaleRequests.collectAsState()
+                    val sales by mainViewModel.sales.collectAsState()
 
                     // Auto-restore & verify session on app startup
                     LaunchedEffect(Unit) {
@@ -194,10 +195,11 @@ class MainActivity : FragmentActivity() {
                         
                         // For staff, filter custody devices
                         val myCustodyDevices = remember(devices, currentUser) {
+                            val user = currentUser
                             if (isAdmin) devices else devices.filter { dev ->
-                                dev.currentOwner == currentUser?.id ||
-                                dev.currentOwnerName.equals(currentUser?.username, ignoreCase = true) ||
-                                (currentUser?.displayName?.isNotBlank() == true && dev.currentOwnerName.equals(currentUser?.displayName, ignoreCase = true))
+                                dev.currentOwner == user?.id ||
+                                dev.currentOwnerName.equals(user?.username, ignoreCase = true) ||
+                                (user?.displayName?.isNotBlank() == true && dev.currentOwnerName.equals(user?.displayName, ignoreCase = true))
                             }
                         }
                         val activeCount = remember(myCustodyDevices) { myCustodyDevices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) && !it.isB2B } }
@@ -206,12 +208,13 @@ class MainActivity : FragmentActivity() {
 
                         // Automated rules alert count for staff notifications
                         val staffAlertCount = remember(devices, sales, currentUser, isAdmin) {
+                            val user = currentUser
                             if (isAdmin) 0 else {
                                 val myDevs = devices.filter { dev ->
-                                    val matchId = dev.currentOwner != null && currentUser?.id != null && dev.currentOwner == currentUser.id
+                                    val matchId = dev.currentOwner != null && user?.id != null && dev.currentOwner == user.id
                                     val matchName = !dev.currentOwnerName.isNullOrBlank() && (
-                                        (currentUser?.username != null && dev.currentOwnerName.equals(currentUser.username, ignoreCase = true)) ||
-                                        (currentUser?.displayName != null && dev.currentOwnerName.equals(currentUser.displayName, ignoreCase = true))
+                                        (user?.username != null && dev.currentOwnerName.equals(user.username, ignoreCase = true)) ||
+                                        (user?.displayName != null && dev.currentOwnerName.equals(user.displayName, ignoreCase = true))
                                     )
                                     (matchId || matchName) && !dev.isB2B && !dev.currentStatus.equals("SOLD", ignoreCase = true)
                                 }
@@ -219,9 +222,9 @@ class MainActivity : FragmentActivity() {
                                     (calculateDaysAgo(dev.receivedDateBd ?: dev.createdAt) ?: 0L) >= 7L
                                 }
                                 val mySales = sales.filter { sale ->
-                                    (currentUser?.username != null && sale.soldBy?.equals(currentUser.username, ignoreCase = true) == true) ||
-                                    (currentUser?.username != null && sale.sellerName?.equals(currentUser.username, ignoreCase = true) == true) ||
-                                    (currentUser?.displayName != null && sale.sellerName?.equals(currentUser.displayName, ignoreCase = true) == true)
+                                    (user?.username != null && sale.soldBy?.equals(user.username, ignoreCase = true) == true) ||
+                                    (user?.username != null && sale.sellerName?.equals(user.username, ignoreCase = true) == true) ||
+                                    (user?.displayName != null && sale.sellerName?.equals(user.displayName, ignoreCase = true) == true)
                                 }
                                 val latestSale = mySales.maxByOrNull { it.createdAt ?: "" }
                                 val daysSinceLastSale = calculateDaysAgo(latestSale?.createdAt)
@@ -680,9 +683,9 @@ class MainActivity : FragmentActivity() {
                                                             selectedTab = if (selectedTab == 4) 0 else 4
                                                         },
                                                         modifier = Modifier
-                                                            .fillMaxSize()
+                                                            .size(36.dp)
                                                             .background(
-                                                                if (selectedTab == 4) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                                                if (selectedTab == 4) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
                                                                 else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                                                                 CircleShape
                                                             )

@@ -24,8 +24,6 @@ import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.SaleDto
 import com.imei.inventory.data.model.UserDto
 import com.imei.inventory.ui.components.CopyableText
-import com.imei.inventory.ui.components.StatusBadge
-import com.imei.inventory.ui.components.VariantBadge
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -47,6 +45,23 @@ fun calculateDaysAgo(dateStr: String?): Long? {
         } catch (_: Exception) {}
     }
     return null
+}
+
+fun formatReadableDate(dateStr: String?): String {
+    if (dateStr.isNullOrBlank()) return "N/A"
+    val formats = listOf(
+        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US),
+        SimpleDateFormat("yyyy-MM-dd", Locale.US)
+    )
+    val outFmt = SimpleDateFormat("d MMMM, yyyy", Locale.US)
+    for (fmt in formats) {
+        try {
+            val cleanStr = if (dateStr.length >= 10) dateStr.substring(0, minOf(dateStr.length, 19)) else dateStr
+            val date = fmt.parse(cleanStr)
+            if (date != null) return outFmt.format(date)
+        } catch (_: Exception) {}
+    }
+    return dateStr
 }
 
 @Composable
@@ -82,7 +97,7 @@ fun StaffNotificationsTab(
         }
     }
 
-    // Rule 1: Devices held for 7 days or more (show exact days like 7, 8, etc.)
+    // Rule 1: Devices held for 7 days or more
     val staleCustodyDevices = remember(myCustodyDevices) {
         myCustodyDevices.mapNotNull { dev ->
             val days = calculateDaysAgo(dev.receivedDateBd ?: dev.createdAt) ?: 0L
@@ -90,7 +105,7 @@ fun StaffNotificationsTab(
         }.sortedByDescending { it.second }
     }
 
-    // Rule 2: Inability to sell within 3 days (no sales recorded in >= 3 days)
+    // Rule 2: Inability to sell within 3 days
     val latestSale = remember(mySales) {
         mySales.maxByOrNull { it.createdAt ?: "" }
     }
@@ -111,7 +126,7 @@ fun StaffNotificationsTab(
     // Rule 3: Monthly selling target (15 devices per month)
     val currentCal = Calendar.getInstance()
     val curYear = currentCal.get(Calendar.YEAR)
-    val curMonth = currentCal.get(Calendar.MONTH) // 0-indexed
+    val curMonth = currentCal.get(Calendar.MONTH)
     val curDayOfMonth = currentCal.get(Calendar.DAY_OF_MONTH)
     val maxDaysInMonth = currentCal.getActualMaximum(Calendar.DAY_OF_MONTH)
     val daysLeftInMonth = maxDaysInMonth - curDayOfMonth
@@ -140,17 +155,17 @@ fun StaffNotificationsTab(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Top Header Banner
+        // Compact Top Header Banner
         item {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 2.dp,
-                shadowElevation = 2.dp
+                tonalElevation = 1.dp,
+                shadowElevation = 1.dp
             ) {
                 Box(
                     modifier = Modifier
@@ -158,68 +173,77 @@ fun StaffNotificationsTab(
                         .background(
                             brush = Brush.linearGradient(
                                 colors = listOf(
-                                    Color(0xFF6366F1).copy(alpha = 0.12f),
+                                    Color(0xFF6366F1).copy(alpha = 0.10f),
                                     MaterialTheme.colorScheme.surface
                                 )
                             )
                         )
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                        .padding(horizontal = 13.dp, vertical = 10.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f, fill = false)
+                        ) {
                             Surface(
                                 color = Color(0xFF6366F1),
                                 shape = CircleShape,
-                                modifier = Modifier.size(38.dp)
+                                modifier = Modifier.size(32.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.NotificationsActive,
                                         contentDescription = null,
                                         tint = Color.White,
-                                        modifier = Modifier.size(19.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(9.dp))
                             Column {
                                 Text(
                                     text = "Automated Staff Alerts",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    maxLines = 1
                                 )
                                 Text(
                                     text = "Smart custody rules & selling targets",
-                                    fontSize = 11.sp,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    fontSize = 10.5.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
                                 )
                             }
                         }
 
+                        Spacer(modifier = Modifier.width(8.dp))
+
                         Surface(
                             color = if (totalAlerts > 0) Color(0xFFEF4444).copy(alpha = 0.12f) else Color(0xFF10B981).copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(14.dp)
+                            shape = RoundedCornerShape(10.dp)
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.5.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .size(6.dp)
+                                        .size(5.dp)
                                         .background(if (totalAlerts > 0) Color(0xFFEF4444) else Color(0xFF10B981), CircleShape)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = if (totalAlerts > 0) "$totalAlerts Alert${if (totalAlerts > 1) "s" else ""}" else "All Good",
                                     color = if (totalAlerts > 0) Color(0xFFEF4444) else Color(0xFF10B981),
-                                    fontSize = 10.5.sp,
-                                    fontWeight = FontWeight.Bold
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
                                 )
                             }
                         }
@@ -228,21 +252,21 @@ fun StaffNotificationsTab(
             }
         }
 
-        // Rule 3: Monthly Target Card
+        // Rule 3: Monthly Target Card (Compact)
         item {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(12.dp),
                 color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 2.dp,
+                tonalElevation = 1.dp,
                 shadowElevation = 1.dp,
-                border = BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.25f))
+                border = BorderStroke(1.dp, Color(0xFF6366F1).copy(alpha = 0.20f))
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                        .padding(11.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -254,13 +278,13 @@ fun StaffNotificationsTab(
                                 imageVector = Icons.Default.EmojiEvents,
                                 contentDescription = null,
                                 tint = Color(0xFFF59E0B),
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = "Monthly Sales Target",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.5.sp,
+                                fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -272,20 +296,20 @@ fun StaffNotificationsTab(
                                 text = "$currentMonthSalesCount / $monthlyTarget Sold",
                                 color = if (remainingForTarget == 0) Color(0xFF10B981) else Color(0xFF6366F1),
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.sp,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.5.dp)
+                                fontSize = 10.5.sp,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                             )
                         }
                     }
 
                     // Progress Bar
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                         LinearProgressIndicator(
                             progress = { targetProgress },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp)),
+                                .height(5.dp)
+                                .clip(RoundedCornerShape(3.dp)),
                             color = if (remainingForTarget == 0) Color(0xFF10B981) else Color(0xFF6366F1),
                             trackColor = MaterialTheme.colorScheme.surfaceVariant
                         )
@@ -295,45 +319,43 @@ fun StaffNotificationsTab(
                         ) {
                             Text(
                                 text = "${(targetProgress * 100).toInt()}% completed",
-                                fontSize = 10.sp,
+                                fontSize = 9.5.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = "$daysLeftInMonth days left in month",
-                                fontSize = 10.sp,
+                                fontSize = 9.5.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
 
-                    // Suggestion Box
+                    // User Required Target Update Text
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(7.dp),
                         color = (if (remainingForTarget == 0) Color(0xFF10B981) else Color(0xFF6366F1)).copy(alpha = 0.08f),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
-                            modifier = Modifier.padding(10.dp),
-                            verticalAlignment = Alignment.Top
+                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
                                 imageVector = if (remainingForTarget == 0) Icons.Default.CheckCircle else Icons.Default.TrendingUp,
                                 contentDescription = null,
                                 tint = if (remainingForTarget == 0) Color(0xFF10B981) else Color(0xFF6366F1),
-                                modifier = Modifier
-                                    .size(16.dp)
-                                    .padding(top = 1.dp)
+                                modifier = Modifier.size(14.dp)
                             )
-                            Spacer(modifier = Modifier.width(7.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = if (remainingForTarget == 0) {
-                                    "🎉 Target Achieved! Great work reaching your 15-device target this month! Keep closing sales to earn extra incentives."
+                                    "🎉 Target Achieved: You reached your 15-devices monthly target!"
                                 } else {
-                                    "🎯 Target Update: You are $remainingForTarget device${if (remainingForTarget > 1) "s" else ""} away from reaching your 15-device monthly target. Push your active custody devices to reach your goal!"
+                                    "Target Update: You are $remainingForTarget device${if (remainingForTarget > 1) "s" else ""} away from reaching your 15-devices monthly target."
                                 },
-                                fontSize = 11.5.sp,
+                                fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 16.sp
+                                lineHeight = 15.sp
                             )
                         }
                     }
@@ -341,22 +363,22 @@ fun StaffNotificationsTab(
             }
         }
 
-        // Rule 2: Sales Inactivity Alert (No sales in 3+ days)
+        // Rule 2: Sales Inactivity Alert (Compact)
         if (showInactivityAlert) {
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
+                    shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surface,
-                    tonalElevation = 2.dp,
+                    tonalElevation = 1.dp,
                     shadowElevation = 1.dp,
-                    border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.35f))
+                    border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.25f))
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(14.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                            .padding(11.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -364,25 +386,17 @@ fun StaffNotificationsTab(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(
-                                    color = Color(0xFFF59E0B).copy(alpha = 0.15f),
-                                    shape = CircleShape,
-                                    modifier = Modifier.size(26.dp)
-                                ) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Icon(
-                                            imageVector = Icons.Default.Warning,
-                                            contentDescription = null,
-                                            tint = Color(0xFFD97706),
-                                            modifier = Modifier.size(14.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD97706),
+                                    modifier = Modifier.size(15.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = "Sales Activity Alert",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.5.sp,
+                                    fontSize = 13.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
@@ -396,40 +410,35 @@ fun StaffNotificationsTab(
                                     text = "$daysCount Days Inactive",
                                     color = Color(0xFFD97706),
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 10.5.sp,
-                                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
+                                    fontSize = 10.sp,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
                         }
 
-                        // Suggestion
+                        // Compact Suggestion
+                        val daysCount = daysSinceLastSale ?: 3L
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(7.dp),
                             color = Color(0xFFF59E0B).copy(alpha = 0.08f),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Row(
-                                modifier = Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.Top
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Speed,
                                     contentDescription = null,
                                     tint = Color(0xFFD97706),
-                                    modifier = Modifier
-                                        .size(15.dp)
-                                        .padding(top = 1.dp)
+                                    modifier = Modifier.size(13.dp)
                                 )
-                                Spacer(modifier = Modifier.width(7.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (daysSinceLastSale != null) {
-                                        "⚡ No sales recorded in the last $daysSinceLastSale days. Please do more work, connect with customers, and actively pitch your in-custody devices to close deals!"
-                                    } else {
-                                        "⚡ You haven't made a sale in over 3 days. You currently have ${myCustodyDevices.size} device(s) in custody. Engage buyers to make your next sale!"
-                                    },
-                                    fontSize = 11.5.sp,
+                                    text = "No sales recorded in the last $daysCount days. Time to close new sales!",
+                                    fontSize = 11.sp,
                                     color = MaterialTheme.colorScheme.onSurface,
-                                    lineHeight = 16.sp
+                                    lineHeight = 15.sp
                                 )
                             }
                         }
@@ -443,26 +452,23 @@ fun StaffNotificationsTab(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                    .padding(top = 2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.AccessTime,
-                        contentDescription = null,
-                        tint = if (staleCustodyDevices.isNotEmpty()) Color(0xFFEF4444) else MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "DEVICES HELD OVER 7 DAYS (${staleCustodyDevices.size})",
-                        fontSize = 11.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        letterSpacing = 0.5.sp
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Default.AccessTime,
+                    contentDescription = null,
+                    tint = if (staleCustodyDevices.isNotEmpty()) Color(0xFFEF4444) else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(15.dp)
+                )
+                Spacer(modifier = Modifier.width(5.dp))
+                Text(
+                    text = "DEVICES HELD OVER 7 DAYS (${staleCustodyDevices.size})",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    letterSpacing = 0.4.sp
+                )
             }
         }
 
@@ -477,26 +483,26 @@ fun StaffNotificationsTab(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(14.dp),
+                            .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
                             tint = Color(0xFF10B981),
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(9.dp))
                         Column {
                             Text(
                                 text = "All Custody Devices Are Fresh",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.5.sp,
+                                fontSize = 12.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "None of your custody devices have exceeded 7 days.",
-                                fontSize = 11.sp,
+                                fontSize = 10.5.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -524,28 +530,31 @@ fun StaleDeviceNotificationCard(
     onMarkSold: () -> Unit
 ) {
     val isPendingSale = device.currentStatus.equals("PENDING_SALE", ignoreCase = true)
+    val readableDate = remember(device.receivedDateBd, device.createdAt) {
+        formatReadableDate(device.receivedDateBd ?: device.createdAt)
+    }
 
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
-        shadowElevation = 2.dp,
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp,
         border = BorderStroke(
-            1.2.dp,
-            if (daysInCustody >= 14) Color(0xFFEF4444).copy(alpha = 0.45f)
-            else Color(0xFFF59E0B).copy(alpha = 0.4f)
+            1.dp,
+            if (daysInCustody >= 14) Color(0xFFEF4444).copy(alpha = 0.35f)
+            else Color(0xFFF59E0B).copy(alpha = 0.30f)
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(13.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(11.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            // Header: Model Name + Days in Custody Warning Chip
+            // Row 1: Model Name + Days in Custody Chip
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -559,37 +568,39 @@ fun StaleDeviceNotificationCard(
                         imageVector = Icons.Default.PhoneAndroid,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(15.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Text(
                         text = device.model,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 14.5.sp,
+                        fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Surface(
-                    shape = RoundedCornerShape(7.dp),
+                    shape = RoundedCornerShape(6.dp),
                     color = (if (daysInCustody >= 14) Color(0xFFEF4444) else Color(0xFFD97706)).copy(alpha = 0.12f),
-                    border = BorderStroke(1.dp, (if (daysInCustody >= 14) Color(0xFFEF4444) else Color(0xFFD97706)).copy(alpha = 0.25f))
+                    border = BorderStroke(0.8.dp, (if (daysInCustody >= 14) Color(0xFFEF4444) else Color(0xFFD97706)).copy(alpha = 0.25f))
                 ) {
                     Text(
                         text = "⚠️ $daysInCustody Days in Custody",
                         color = if (daysInCustody >= 14) Color(0xFFEF4444) else Color(0xFFD97706),
                         fontWeight = FontWeight.Bold,
-                        fontSize = 10.5.sp,
-                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
+                        fontSize = 10.sp,
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
 
-            // Specs Row + Battery Info
+            // Row 2: Specs Pill Chips & Battery Info
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 device.capacity?.takeIf { it.isNotBlank() }?.let { cap ->
@@ -604,37 +615,39 @@ fun StaleDeviceNotificationCard(
                     NotifSpecPill(text = v.trim(), color = Color(0xFF8B5CF6))
                 }
 
-                // Battery Info (Health & Cycle)
+                // Battery Info
                 if (device.batteryHealth != null) {
                     val bHealth = device.batteryHealth
                     val bCycle = device.batteryCycle
                     val bColor = if (bHealth >= 80) Color(0xFF16A34A) else Color(0xFFEAB308)
                     Surface(
                         color = bColor.copy(alpha = 0.10f),
-                        shape = RoundedCornerShape(6.dp),
-                        border = BorderStroke(0.8.dp, bColor.copy(alpha = 0.25f))
+                        shape = RoundedCornerShape(5.dp),
+                        border = BorderStroke(0.7.dp, bColor.copy(alpha = 0.25f))
                     ) {
                         Text(
-                            text = "🔋 ${bHealth}%" + (if (bCycle != null) " • ${bCycle}c" else ""),
-                            fontSize = 10.5.sp,
+                            text = "🔋 ${bHealth}%" + (if (bCycle != null) " ($bCycle)" else ""),
+                            fontSize = 10.sp,
                             fontWeight = FontWeight.Bold,
                             color = bColor,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
             }
 
-            // IMEI Container
+            // Row 3: Monospace Copyable IMEI
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(6.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                        .padding(horizontal = 7.dp, vertical = 3.5.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -642,80 +655,79 @@ fun StaleDeviceNotificationCard(
                 }
             }
 
-            // Rule 1 Suggestion Message Box
+            // Row 4: User Required Shortened Suggestion Message
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(6.dp),
                 color = (if (daysInCustody >= 14) Color(0xFFEF4444) else Color(0xFFD97706)).copy(alpha = 0.08f),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(8.dp),
-                    verticalAlignment = Alignment.Top
+                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
                         tint = if (daysInCustody >= 14) Color(0xFFEF4444) else Color(0xFFD97706),
-                        modifier = Modifier
-                            .size(14.dp)
-                            .padding(top = 1.dp)
+                        modifier = Modifier.size(13.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(5.dp))
                     Text(
-                        text = "You need to work on this device—it has been in your custody for $daysInCustody days. Expedite testing and push for a sale immediately!",
+                        text = "It has been in your custody for $daysInCustody days!",
                         fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        lineHeight = 15.sp
+                        lineHeight = 14.sp
                     )
                 }
             }
 
-            // Action Buttons (View Details + Mark as Sold)
+            // Row 5: Formatted Received Date (e.g., "9 September, 2026") + Action Button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Received: ${device.receivedDateBd ?: device.createdAt?.take(10) ?: "N/A"}",
+                    text = "Received: $readableDate",
                     fontSize = 10.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 if (isPendingSale) {
                     Surface(
-                        shape = RoundedCornerShape(7.dp),
+                        shape = RoundedCornerShape(6.dp),
                         color = Color(0xFFF59E0B).copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f))
+                        border = BorderStroke(0.8.dp, Color(0xFFF59E0B).copy(alpha = 0.3f))
                     ) {
                         Text(
                             text = "⏳ Pending Approval",
                             color = Color(0xFFD97706),
                             fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.5.dp)
+                            fontSize = 10.5.sp,
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                         )
                     }
                 } else {
                     Button(
                         onClick = onMarkSold,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier.height(28.dp)
+                        shape = RoundedCornerShape(7.dp),
+                        contentPadding = PaddingValues(horizontal = 9.dp, vertical = 3.dp),
+                        modifier = Modifier.height(26.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.PointOfSale,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(12.dp)
+                            modifier = Modifier.size(11.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = "Mark Sold",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
+                            fontSize = 10.5.sp,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -733,15 +745,15 @@ private fun NotifSpecPill(
 ) {
     Surface(
         color = color.copy(alpha = 0.09f),
-        shape = RoundedCornerShape(6.dp),
+        shape = RoundedCornerShape(5.dp),
         border = BorderStroke(0.7.dp, color.copy(alpha = 0.2f))
     ) {
         Text(
             text = text,
-            fontSize = 10.5.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             color = color,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp),
             maxLines = 1,
             softWrap = false
         )
