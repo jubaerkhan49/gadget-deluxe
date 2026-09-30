@@ -546,11 +546,7 @@ class MainActivity : FragmentActivity() {
                                                             }
                                                         },
                                                         modifier = Modifier
-                                                            .background(
-                                                                if (pendingSaleRequests.isNotEmpty()) Color(0xFFF59E0B).copy(alpha = 0.15f)
-                                                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                                                CircleShape
-                                                            )
+                                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
                                                             .size(36.dp)
                                                     ) {
                                                         Icon(

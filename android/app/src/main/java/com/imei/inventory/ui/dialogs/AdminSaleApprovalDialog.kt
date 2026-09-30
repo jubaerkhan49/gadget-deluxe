@@ -249,20 +249,31 @@ fun AdminSaleApprovalDialog(
                 OutlinedTextField(
                     value = confirmedPrice,
                     onValueChange = { confirmedPrice = it },
-                    label = { Text("Final Selling Amount (BDT) *", fontSize = 12.sp) },
-                    placeholder = { Text("e.g. 115000", fontSize = 12.sp) },
+                    label = { Text("Final Selling Amount *", fontSize = 12.sp) },
+                    placeholder = { Text("55000", fontSize = 12.sp) },
                     leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Payments,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    prefix = {
                         Text(
-                            text = "BDT",
+                            text = "BDT ",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            color = Color(0xFF10B981),
-                            modifier = Modifier.padding(start = 6.dp)
+                            fontSize = 13.sp,
+                            color = Color(0xFF10B981)
                         )
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF10B981),
+                        focusedLabelColor = Color(0xFF10B981)
+                    ),
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -276,6 +287,14 @@ fun AdminSaleApprovalDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Payment Method", fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.AccountBalanceWallet,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentDropdownExpanded) },
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
@@ -303,8 +322,16 @@ fun AdminSaleApprovalDialog(
                     value = notes,
                     onValueChange = { notes = it },
                     label = { Text("Admin Review Notes (Optional)", fontSize = 12.sp) },
-                    placeholder = { Text("Approved by Admin", fontSize = 12.sp) },
-                    maxLines = 2,
+                    placeholder = { Text("e.g. Verified by Admin", fontSize = 12.sp) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Notes,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth()
                 )

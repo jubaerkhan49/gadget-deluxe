@@ -45,52 +45,50 @@ fun DashboardTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Pending Sale Approvals Alert Banner (Admin) - Compact & Sleek
+        // Pending Sale Approvals Alert Banner (Admin) - Compact & Elegant
         if (pendingSaleRequests.isNotEmpty()) {
             item {
                 val firstReq = pendingSaleRequests.first()
                 Surface(
                     onClick = { onOpenSaleApproval(firstReq) },
                     shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFFEF3C7),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.5f)),
+                    color = Color(0xFFFFFBEB),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 12.dp, vertical = 9.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
-                        Surface(
-                            color = Color(0xFFD97706),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.NotificationsActive,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(17.dp)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.Center
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                horizontalArrangement = Arrangement.spacedBy(7.dp)
                             ) {
+                                Surface(
+                                    color = Color(0xFFD97706),
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.size(22.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.NotificationsActive,
+                                            contentDescription = null,
+                                            tint = Color.White,
+                                            modifier = Modifier.size(13.dp)
+                                        )
+                                    }
+                                }
                                 Text(
                                     text = if (pendingSaleRequests.size == 1) "Sale Approval Pending" else "${pendingSaleRequests.size} Sale Approvals Pending",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 13.sp,
+                                    fontSize = 12.5.sp,
                                     color = Color(0xFF92400E)
                                 )
                                 Surface(
@@ -100,36 +98,52 @@ fun DashboardTab(
                                     Text(
                                         text = "${pendingSaleRequests.size}",
                                         color = Color.White,
-                                        fontSize = 9.sp,
+                                        fontSize = 8.5.sp,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 0.5.dp)
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "${firstReq.deviceModel ?: "Device"} • ${firstReq.employeeName ?: (firstReq.employeeUsername ?: "Staff")} • BDT ${formatIndianNumber(firstReq.proposedPrice)}",
-                                fontSize = 11.5.sp,
-                                color = Color(0xFF78350F),
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                            )
+
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = Color(0xFFD97706),
+                                modifier = Modifier.height(24.dp)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "Review →",
+                                        color = Color.White,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 10.5.sp
+                                    )
+                                }
+                            }
                         }
 
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Button(
-                            onClick = { onOpenSaleApproval(firstReq) },
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
-                            modifier = Modifier.height(30.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Review",
+                                text = "${firstReq.deviceModel ?: "Device"} • ${firstReq.employeeName ?: (firstReq.employeeUsername ?: "Staff")}",
+                                fontSize = 11.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color(0xFF1E293B),
+                                maxLines = 1,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "BDT ${formatIndianNumber(firstReq.proposedPrice)}",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = Color(0xFF059669)
                             )
                         }
                     }
