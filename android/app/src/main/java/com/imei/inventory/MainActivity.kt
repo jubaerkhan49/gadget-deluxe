@@ -482,7 +482,7 @@ class MainActivity : FragmentActivity() {
                                                                 else -> "Cloud Sync Active"
                                                             }
                                                         } else {
-                                                            "Custody Overview • ${currentUser?.displayName ?: (currentUser?.username ?: "Staff")}"
+                                                            currentUser?.displayName ?: (currentUser?.username ?: "Online")
                                                         },
                                                         fontSize = 11.sp,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,

@@ -1,6 +1,7 @@
 package com.imei.inventory.ui.dialogs
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -28,7 +29,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.ui.components.StatusBadge
-import com.imei.inventory.ui.components.VariantBadge
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,7 +53,7 @@ fun MarkSoldDialog(
     val paymentOptions = listOf(
         "CASH" to "Cash Payment",
         "BANK" to "Bank Transfer",
-        "MOBILE" to "Mobile Banking (bKash/Nagad/Rocket)",
+        "MOBILE" to "Mobile Banking (bKash/Nagad)",
         "CARD" to "Credit / Debit Card"
     )
 
@@ -63,20 +63,20 @@ fun MarkSoldDialog(
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.94f)
+                .fillMaxWidth(0.92f)
                 .wrapContentHeight()
-                .padding(vertical = 16.dp),
-            shape = RoundedCornerShape(22.dp),
+                .padding(vertical = 12.dp),
+            shape = RoundedCornerShape(20.dp),
             color = MaterialTheme.colorScheme.surface,
-            tonalElevation = 8.dp,
-            shadowElevation = 16.dp
+            tonalElevation = 6.dp,
+            shadowElevation = 12.dp
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(11.dp)
             ) {
                 // Header
                 Row(
@@ -86,30 +86,30 @@ fun MarkSoldDialog(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            color = Color(0xFF10B981).copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.size(40.dp)
+                            color = Color(0xFF10B981).copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.PointOfSale,
                                     contentDescription = null,
                                     tint = Color(0xFF10B981),
-                                    modifier = Modifier.size(22.dp)
+                                    modifier = Modifier.size(19.dp)
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
                                 text = "Mark Device as Sold",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 17.sp,
+                                fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Submit sale for Admin confirmation",
-                                fontSize = 11.5.sp,
+                                fontSize = 11.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -117,33 +117,30 @@ fun MarkSoldDialog(
                     IconButton(
                         onClick = onDismiss,
                         enabled = !isSubmitting,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(30.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
                             contentDescription = "Close",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(17.dp)
                         )
                     }
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.10f))
 
-                // Device Summary Card
+                // Compact Device Summary Card
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
-                    )
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                            .padding(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(5.dp)
                     ) {
                         // Top row: Model + StatusBadge
                         Row(
@@ -159,13 +156,13 @@ fun MarkSoldDialog(
                                     imageVector = Icons.Default.PhoneAndroid,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
+                                    modifier = Modifier.size(15.dp)
                                 )
-                                Spacer(modifier = Modifier.width(6.dp))
+                                Spacer(modifier = Modifier.width(5.dp))
                                 Text(
                                     text = device.model,
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 14.5.sp,
+                                    fontSize = 14.sp,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1
                                 )
@@ -174,45 +171,30 @@ fun MarkSoldDialog(
                             StatusBadge(device.currentStatus, device.statusDisplay)
                         }
 
-                        // IMEI
+                        // IMEI Monospace
                         Text(
                             text = "IMEI: ${device.imei}",
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         // Specs Row: Variant, Storage, Color chips
-                        val specsList = listOfNotNull(
-                            device.variant?.takeIf { it.isNotBlank() },
-                            device.capacity?.replace("gb", "", ignoreCase = true)?.trim()?.let { "${it}GB" },
-                            device.color?.trim()?.split(" ")?.firstOrNull()
-                        )
-                        if (specsList.isNotEmpty()) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                specsList.forEach { spec ->
-                                    Surface(
-                                        color = MaterialTheme.colorScheme.surface,
-                                        shape = RoundedCornerShape(6.dp),
-                                        border = androidx.compose.foundation.BorderStroke(
-                                            0.5.dp,
-                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                        )
-                                    ) {
-                                        Text(
-                                            text = spec,
-                                            fontSize = 10.5.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            device.variant?.takeIf { it.isNotBlank() }?.let { v ->
+                                SummaryChip(text = v.trim(), color = Color(0xFF8B5CF6))
+                            }
+                            device.capacity?.takeIf { it.isNotBlank() }?.let { cap ->
+                                val cleanCap = cap.replace("gb", "", ignoreCase = true).trim() + "GB"
+                                SummaryChip(text = cleanCap, color = MaterialTheme.colorScheme.primary)
+                            }
+                            device.color?.takeIf { it.isNotBlank() }?.let { col ->
+                                SummaryChip(text = col.trim(), color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
                     }
@@ -220,51 +202,52 @@ fun MarkSoldDialog(
 
                 // Info Alert Banner
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFF3B82F6).copy(alpha = 0.10f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.25f))
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFF3B82F6).copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.2f))
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(10.dp),
+                            .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
                             tint = Color(0xFF2563EB),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(7.dp))
                         Text(
-                            text = "Status will change to Pending Sale until Admin verifies and confirms the final price.",
-                            fontSize = 11.sp,
-                            lineHeight = 15.sp,
+                            text = "Status will change to Pending Sale until Admin approves.",
+                            fontSize = 10.5.sp,
+                            lineHeight = 14.sp,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
 
                 // Form Fields
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                     // Proposed Price
                     OutlinedTextField(
                         value = proposedPrice,
                         onValueChange = { proposedPrice = it },
-                        label = { Text("Selling Amount (BDT) *") },
-                        placeholder = { Text("e.g. 115000") },
+                        label = { Text("Selling Amount (BDT) *", fontSize = 12.sp) },
+                        placeholder = { Text("e.g. 115000", fontSize = 12.sp) },
                         leadingIcon = {
                             Text(
                                 text = "BDT",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
-                                color = Color(0xFF10B981)
+                                fontSize = 11.sp,
+                                color = Color(0xFF10B981),
+                                modifier = Modifier.padding(start = 6.dp)
                             )
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -277,9 +260,9 @@ fun MarkSoldDialog(
                             value = paymentOptions.find { it.first == paymentMethod }?.second ?: "Cash Payment",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Payment Method") },
+                            label = { Text("Payment Method", fontSize = 12.sp) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = paymentDropdownExpanded) },
-                            shape = RoundedCornerShape(12.dp),
+                            shape = RoundedCornerShape(10.dp),
                             modifier = Modifier
                                 .menuAnchor()
                                 .fillMaxWidth()
@@ -290,7 +273,7 @@ fun MarkSoldDialog(
                         ) {
                             paymentOptions.forEach { (code, label) ->
                                 DropdownMenuItem(
-                                    text = { Text(label, fontSize = 13.sp) },
+                                    text = { Text(label, fontSize = 12.5.sp) },
                                     onClick = {
                                         paymentMethod = code
                                         paymentDropdownExpanded = false
@@ -304,26 +287,31 @@ fun MarkSoldDialog(
                     OutlinedTextField(
                         value = notes,
                         onValueChange = { notes = it },
-                        label = { Text("Sale Notes (Optional)") },
-                        placeholder = { Text("Remarks, customer request, etc.") },
-                        maxLines = 3,
-                        shape = RoundedCornerShape(12.dp),
+                        label = { Text("Sale Notes (Optional)", fontSize = 12.sp) },
+                        placeholder = { Text("Remarks, customer request, etc.", fontSize = 12.sp) },
+                        maxLines = 2,
+                        shape = RoundedCornerShape(10.dp),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
 
+                Spacer(modifier = Modifier.height(2.dp))
+
                 // Actions
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedButton(
                         onClick = onDismiss,
                         enabled = !isSubmitting,
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1f)
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(42.dp)
                     ) {
-                        Text("Cancel", fontWeight = FontWeight.SemiBold)
+                        Text("Cancel", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     }
 
                     Button(
@@ -338,27 +326,59 @@ fun MarkSoldDialog(
                         },
                         enabled = !isSubmitting,
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.weight(1.3f)
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier
+                            .weight(1.4f)
+                            .height(42.dp)
                     ) {
                         if (isSubmitting) {
                             CircularProgressIndicator(
                                 color = Color.White,
                                 strokeWidth = 2.dp,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         } else {
                             Icon(
                                 imageVector = Icons.Default.Payments,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp)
+                                tint = Color.White,
+                                modifier = Modifier.size(15.dp)
                             )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Submit Request", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Submit Request",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                softWrap = false
+                            )
                         }
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SummaryChip(
+    text: String,
+    color: Color
+) {
+    Surface(
+        color = color.copy(alpha = 0.09f),
+        shape = RoundedCornerShape(5.dp),
+        border = BorderStroke(0.6.dp, color.copy(alpha = 0.2f))
+    ) {
+        Text(
+            text = text,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = color,
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp),
+            maxLines = 1,
+            softWrap = false
+        )
     }
 }
