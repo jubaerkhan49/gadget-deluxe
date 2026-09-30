@@ -121,8 +121,9 @@ class MainActivity : FragmentActivity() {
                     val pendingSaleRequests by mainViewModel.pendingSaleRequests.collectAsState()
                     val sales by mainViewModel.sales.collectAsState()
 
-                    // Auto-restore & verify session on app startup
+                    // Auto-restore & verify session on app startup (instantly loads local cache)
                     LaunchedEffect(Unit) {
+                        mainViewModel.initCache(context)
                         val savedToken = prefsManager.getSavedToken()
                         val savedUser = prefsManager.getSavedUser()
                         if (!savedToken.isNullOrBlank() && savedUser != null) {
@@ -547,6 +548,7 @@ class MainActivity : FragmentActivity() {
                                             onClick = {
                                                 coroutineScope.launch { drawerState.close() }
                                                 prefsManager.clearCredentials()
+                                                mainViewModel.clearLocalCache()
                                                 authViewModel.logout()
                                                 mainViewModel.stopRealtimeSync()
                                                 userToken = null

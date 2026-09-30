@@ -292,7 +292,7 @@ fun LoginScreen(
                             localErrorMessage = null
                         },
                         label = { Text("Username") },
-                        placeholder = { Text(if (selectedRoleIndex == 0) "e.g. admin" else "e.g. emon / ochi / ashraf", fontSize = 12.sp) },
+                        placeholder = { Text(if (selectedRoleIndex == 0) "e.g. admin" else "Staff Username", fontSize = 12.sp) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Default.Person,

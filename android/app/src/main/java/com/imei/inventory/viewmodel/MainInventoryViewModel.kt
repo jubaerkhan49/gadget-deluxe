@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.imei.inventory.data.api.ApiClient
 import com.imei.inventory.data.model.*
+import com.imei.inventory.util.LocalDataCache
 import java.util.Calendar
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,9 @@ data class DashboardStats(
 )
 
 class MainInventoryViewModel : ViewModel() {
+
+    // Local Storage Cache
+    private var localDataCache: LocalDataCache? = null
 
     // Current User / Role
     private val _currentUser = MutableStateFlow<UserDto?>(null)
@@ -91,7 +95,60 @@ class MainInventoryViewModel : ViewModel() {
 
     private var realtimeJob: kotlinx.coroutines.Job? = null
 
+    /**
+     * Instantly restores all cached data from local storage into memory.
+     * Guarantees 0ms UI render time on startup.
+     */
+    fun initCache(context: android.content.Context) {
+        if (localDataCache == null) {
+            val cache = LocalDataCache(context)
+            localDataCache = cache
+            loadFromLocalCache(cache)
+        }
+    }
+
+    private fun loadFromLocalCache(cache: LocalDataCache) {
+        val cachedStats = cache.getDashboardStats()
+        if (cachedStats != null) _stats.value = cachedStats
+
+        val cachedDevs = cache.getDevices()
+        if (cachedDevs.isNotEmpty()) _devices.value = cachedDevs
+
+        val cachedShips = cache.getShipments()
+        if (cachedShips.isNotEmpty()) _shipments.value = cachedShips
+
+        val cachedSales = cache.getSales()
+        if (cachedSales.isNotEmpty()) _sales.value = cachedSales
+
+        val cachedRepairs = cache.getRepairs()
+        if (cachedRepairs.isNotEmpty()) _repairs.value = cachedRepairs
+
+        val cachedUsers = cache.getUsers()
+        if (cachedUsers.isNotEmpty()) _users.value = cachedUsers
+
+        val cachedAnalytics = cache.getAnalytics()
+        if (cachedAnalytics != null) _analyticsData.value = cachedAnalytics
+
+        val cachedRequests = cache.getPendingSaleRequests()
+        if (cachedRequests.isNotEmpty()) _pendingSaleRequests.value = cachedRequests
+    }
+
+    fun clearLocalCache() {
+        localDataCache?.clearCache()
+        _devices.value = emptyList()
+        _shipments.value = emptyList()
+        _sales.value = emptyList()
+        _repairs.value = emptyList()
+        _users.value = emptyList()
+        _pendingSaleRequests.value = emptyList()
+        _analyticsData.value = null
+        _stats.value = DashboardStats()
+    }
+
     fun loadAllData(token: String, context: android.content.Context? = null) {
+        if (context != null) {
+            initCache(context)
+        }
         fetchDashboardStats(token)
         fetchUsers(token)
         fetchDevices(token)
@@ -114,7 +171,7 @@ class MainInventoryViewModel : ViewModel() {
                     val s = statsRes.body()!!
                     val localSalesSum = _sales.value.sumOf { it.displayPrice }
                     val localProfitSum = _sales.value.sumOf { it.profit ?: 0.0 }
-                    _stats.value = DashboardStats(
+                    val newStats = DashboardStats(
                         totalDevices = s.totalDevices,
                         inStock = s.inStock,
                         sold = s.sold,
@@ -125,9 +182,11 @@ class MainInventoryViewModel : ViewModel() {
                         totalProfit = if (s.totalProfit > 0) s.totalProfit else localProfitSum,
                         totalAssets = s.totalAssets
                     )
+                    _stats.value = newStats
+                    localDataCache?.saveDashboardStats(newStats)
                 }
             } catch (e: Exception) {
-                // ignore
+                // ignore, keep cached stats
             }
         }
     }
@@ -140,6 +199,7 @@ class MainInventoryViewModel : ViewModel() {
                 if (res.isSuccessful && res.body() != null) {
                     val list = res.body()!!.results
                     _pendingSaleRequests.value = list
+                    localDataCache?.savePendingSaleRequests(list)
                     if (!isFirstSyncCompleted) {
                         list.forEach { seenSaleRequestIds.add(it.id) }
                     }
@@ -158,14 +218,14 @@ class MainInventoryViewModel : ViewModel() {
                 try {
                     val bearer = "Bearer $token"
                     val isAdminUser = _currentUser.value?.isAdmin == true
-                    
+
                     // 1. Fetch real-time dashboard analytics
                     val statsRes = ApiClient.apiService.getDashboardStats(bearer)
                     if (statsRes.isSuccessful && statsRes.body() != null) {
                         val s = statsRes.body()!!
                         val localSalesSum = _sales.value.sumOf { it.displayPrice }
                         val localProfitSum = _sales.value.sumOf { it.profit ?: 0.0 }
-                        _stats.value = DashboardStats(
+                        val newStats = DashboardStats(
                             totalDevices = s.totalDevices,
                             inStock = s.inStock,
                             sold = s.sold,
@@ -176,12 +236,20 @@ class MainInventoryViewModel : ViewModel() {
                             totalProfit = if (s.totalProfit > 0) s.totalProfit else localProfitSum,
                             totalAssets = s.totalAssets
                         )
+                        if (_stats.value != newStats) {
+                            _stats.value = newStats
+                            localDataCache?.saveDashboardStats(newStats)
+                        }
                     }
 
                     // 2. Fetch full device inventory
                     val devRes = ApiClient.apiService.getDevices(bearer, null, null, 500)
                     if (devRes.isSuccessful && devRes.body() != null) {
-                        _devices.value = devRes.body()!!.results
+                        val list = devRes.body()!!.results
+                        if (_devices.value != list) {
+                            _devices.value = list
+                            localDataCache?.saveDevices(list)
+                        }
                     }
 
                     // 3. For Admin: Check for new pending sale approval requests and notify
@@ -189,7 +257,10 @@ class MainInventoryViewModel : ViewModel() {
                         val reqRes = ApiClient.apiService.getDeviceSaleRequests(bearer, status = "PENDING", pageSize = 100)
                         if (reqRes.isSuccessful && reqRes.body() != null) {
                             val requests = reqRes.body()!!.results
-                            _pendingSaleRequests.value = requests
+                            if (_pendingSaleRequests.value != requests) {
+                                _pendingSaleRequests.value = requests
+                                localDataCache?.savePendingSaleRequests(requests)
+                            }
 
                             if (isFirstSyncCompleted && context != null) {
                                 for (req in requests) {
@@ -208,14 +279,24 @@ class MainInventoryViewModel : ViewModel() {
                     // 4. Fetch shipments
                     val shipRes = ApiClient.apiService.getShipments(bearer)
                     if (shipRes.isSuccessful && shipRes.body() != null) {
-                        _shipments.value = shipRes.body()!!.results
+                        val list = shipRes.body()!!.results
+                        if (_shipments.value != list) {
+                            _shipments.value = list
+                            localDataCache?.saveShipments(list)
+                        }
                     }
 
                     // 5. Fetch sales
                     val salesRes = ApiClient.apiService.getSales(bearer)
                     if (salesRes.isSuccessful && salesRes.body() != null) {
-                        _sales.value = salesRes.body()!!.results
+                        val list = salesRes.body()!!.results
+                        if (_sales.value != list) {
+                            _sales.value = list
+                            localDataCache?.saveSales(list)
+                        }
                     }
+
+                    localDataCache?.setLastSyncTime()
                 } catch (e: Exception) {
                     // silent background sync
                 }
@@ -234,7 +315,9 @@ class MainInventoryViewModel : ViewModel() {
 
     fun fetchDevices(token: String, query: String? = null) {
         viewModelScope.launch {
-            _isLoading.value = true
+            if (_devices.value.isEmpty()) {
+                _isLoading.value = true
+            }
             _errorMessage.value = null
             try {
                 val bearer = "Bearer $token"
@@ -247,6 +330,9 @@ class MainInventoryViewModel : ViewModel() {
                 if (response.isSuccessful && response.body() != null) {
                     val list = response.body()!!.results
                     _devices.value = list
+                    if (query.isNullOrBlank()) {
+                        localDataCache?.saveDevices(list)
+                    }
                 } else {
                     _errorMessage.value = "Failed to load inventory (${response.code()})"
                 }
@@ -283,7 +369,9 @@ class MainInventoryViewModel : ViewModel() {
             try {
                 val response = ApiClient.apiService.getUsers("Bearer $token")
                 if (response.isSuccessful && response.body() != null) {
-                    _users.value = response.body()!!.results.filter { !it.username.equals("admin", ignoreCase = true) }
+                    val usersList = response.body()!!.results.filter { !it.username.equals("admin", ignoreCase = true) }
+                    _users.value = usersList
+                    localDataCache?.saveUsers(usersList)
                 }
             } catch (e: Exception) {
                 // silent failure
@@ -326,7 +414,9 @@ class MainInventoryViewModel : ViewModel() {
             try {
                 val response = ApiClient.apiService.getShipments("Bearer $token")
                 if (response.isSuccessful && response.body() != null) {
-                    _shipments.value = response.body()!!.results
+                    val list = response.body()!!.results
+                    _shipments.value = list
+                    localDataCache?.saveShipments(list)
                 }
             } catch (e: Exception) {
                 // ignore
@@ -396,6 +486,7 @@ class MainInventoryViewModel : ViewModel() {
                 if (response.isSuccessful && response.body() != null) {
                     val salesList = response.body()!!.results
                     _sales.value = salesList
+                    localDataCache?.saveSales(salesList)
                 }
             } catch (e: Exception) {
                 // ignore
@@ -408,7 +499,9 @@ class MainInventoryViewModel : ViewModel() {
             try {
                 val response = ApiClient.apiService.getRepairs("Bearer $token")
                 if (response.isSuccessful && response.body() != null) {
-                    _repairs.value = response.body()!!.results
+                    val list = response.body()!!.results
+                    _repairs.value = list
+                    localDataCache?.saveRepairs(list)
                 }
             } catch (e: Exception) {
                 // ignore
@@ -423,11 +516,15 @@ class MainInventoryViewModel : ViewModel() {
         _analyticsMonth.value = m
 
         viewModelScope.launch {
-            _isAnalyticsLoading.value = true
+            if (_analyticsData.value == null) {
+                _isAnalyticsLoading.value = true
+            }
             try {
                 val res = ApiClient.apiService.getAnalytics("Bearer $token", y, m)
                 if (res.isSuccessful && res.body() != null) {
-                    _analyticsData.value = res.body()!!
+                    val body = res.body()!!
+                    _analyticsData.value = body
+                    localDataCache?.saveAnalytics(body)
                 }
             } catch (e: Exception) {
                 // ignore
@@ -461,26 +558,6 @@ class MainInventoryViewModel : ViewModel() {
         val curYear = Calendar.getInstance().get(Calendar.YEAR)
         val curMonth = Calendar.getInstance().get(Calendar.MONTH) + 1
         fetchAnalytics(token, curYear, curMonth)
-    }
-
-    private fun computeStats(deviceList: List<DeviceDto>, salesList: List<SaleDto>) {
-        val total = deviceList.size
-        val inStock = deviceList.count { it.currentStatus == "IN_STOCK" }
-        val sold = deviceList.count { it.currentStatus == "SOLD" }
-        val repair = deviceList.count { it.currentStatus == "UNDER_REPAIR" }
-        val totalSales = salesList.sumOf { it.finalPrice }
-        val totalProfit = salesList.sumOf { it.profit ?: 0.0 }
-        val totalAssets = deviceList.filter { it.currentStatus != "SOLD" }.sumOf { it.buyingPrice ?: 0.0 }
-
-        _stats.value = DashboardStats(
-            totalDevices = total,
-            inStock = inStock,
-            sold = sold,
-            underRepair = repair,
-            totalSalesAmount = totalSales,
-            totalProfit = totalProfit,
-            totalAssets = totalAssets
-        )
     }
 
     fun requestDeviceSale(
