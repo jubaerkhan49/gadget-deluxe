@@ -44,9 +44,7 @@ fun DashboardTab(
     val vmUser by viewModel.currentUser.collectAsState()
     val effectiveUser = currentUser ?: vmUser
 
-    var assignedSearchQuery by remember { mutableStateOf("") }
-
-    // Filter devices in current user's physical custody (not B2B, not SOLD)
+    // Filter devices in current user's physical custody (not B2B, not SOLD), sorted descending by date
     val myAssignedDevices = remember(devices, effectiveUser) {
         devices.filter { dev ->
             val matchId = dev.currentOwner != null && effectiveUser?.id != null && dev.currentOwner == effectiveUser.id
@@ -55,23 +53,10 @@ fun DashboardTab(
                 (effectiveUser?.displayName != null && dev.currentOwnerName.equals(effectiveUser.displayName, ignoreCase = true))
             )
             (matchId || matchName) && !dev.isB2B && !dev.currentStatus.equals("SOLD", ignoreCase = true)
-        }
-    }
-
-    val filteredAssignedDevices = remember(myAssignedDevices, assignedSearchQuery) {
-        if (assignedSearchQuery.isBlank()) {
-            myAssignedDevices
-        } else {
-            val q = assignedSearchQuery.trim().lowercase()
-            myAssignedDevices.filter { dev ->
-                dev.model.lowercase().contains(q) ||
-                dev.imei.lowercase().contains(q) ||
-                (dev.serialNumber?.lowercase()?.contains(q) == true) ||
-                (dev.color?.lowercase()?.contains(q) == true) ||
-                (dev.capacity?.lowercase()?.contains(q) == true) ||
-                (dev.variant?.lowercase()?.contains(q) == true)
-            }
-        }
+        }.sortedWith(
+            compareByDescending<DeviceDto> { it.receivedDateBd ?: it.createdAt ?: "" }
+                .thenByDescending { it.id }
+        )
     }
 
     LazyColumn(
@@ -300,101 +285,19 @@ fun DashboardTab(
             }
         }
 
-        // My Assigned Devices in Physical Custody Header & Filter
+        // My Assigned Devices in Physical Custody Section Header
         item {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(14.dp),
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Surface(
-                            color = MaterialTheme.colorScheme.primary,
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.size(38.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Badge,
-                                    contentDescription = null,
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "My Assigned Devices in Physical Custody",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.5.sp,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = "${myAssignedDevices.size} device${if (myAssignedDevices.size == 1) "" else "s"} currently assigned to your account",
-                                fontSize = 11.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    // Filter Search Input
-                    OutlinedTextField(
-                        value = assignedSearchQuery,
-                        onValueChange = { assignedSearchQuery = it },
-                        placeholder = {
-                            Text(
-                                "Filter assigned devices...",
-                                fontSize = 12.5.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                                modifier = Modifier.size(17.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        trailingIcon = {
-                            if (assignedSearchQuery.isNotEmpty()) {
-                                IconButton(
-                                    onClick = { assignedSearchQuery = "" },
-                                    modifier = Modifier.size(24.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Clear",
-                                        modifier = Modifier.size(15.dp)
-                                    )
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        shape = RoundedCornerShape(10.dp),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(50.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = MaterialTheme.colorScheme.primary,
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f),
-                            focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
-                        )
-                    )
-                }
+                Text(
+                    text = "My Assigned Devices (${myAssignedDevices.size})",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
 
@@ -443,29 +346,8 @@ fun DashboardTab(
                     }
                 }
             }
-        } else if (filteredAssignedDevices.isEmpty()) {
-            item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No assigned devices match \"$assignedSearchQuery\"",
-                            fontSize = 12.5.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
         } else {
-            items(filteredAssignedDevices, key = { it.id }) { device ->
+            items(myAssignedDevices, key = { it.id }) { device ->
                 AdminAssignedDeviceCard(
                     device = device,
                     onClick = { onSelectDevice(device) }
