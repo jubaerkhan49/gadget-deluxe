@@ -51,6 +51,8 @@ import com.imei.inventory.ui.dialogs.SalesDialog
 import com.imei.inventory.ui.dialogs.ShipmentDetailDialog
 import com.imei.inventory.ui.dialogs.SickwParserDialog
 import com.imei.inventory.ui.screens.*
+import com.imei.inventory.ui.screens.calculateDaysAgo
+import java.util.Calendar
 import com.imei.inventory.ui.theme.AppTheme
 import com.imei.inventory.viewmodel.AuthViewModel
 import com.imei.inventory.viewmodel.MainInventoryViewModel
@@ -201,6 +203,47 @@ class MainActivity : FragmentActivity() {
                         val activeCount = remember(myCustodyDevices) { myCustodyDevices.count { !it.currentStatus.equals("SOLD", ignoreCase = true) && !it.isB2B } }
                         val b2bCount = remember(devices) { devices.count { it.isB2B } }
                         val archiveCount = remember(myCustodyDevices) { myCustodyDevices.count { it.currentStatus.equals("SOLD", ignoreCase = true) } }
+
+                        // Automated rules alert count for staff notifications
+                        val staffAlertCount = remember(devices, sales, currentUser, isAdmin) {
+                            if (isAdmin) 0 else {
+                                val myDevs = devices.filter { dev ->
+                                    val matchId = dev.currentOwner != null && currentUser?.id != null && dev.currentOwner == currentUser.id
+                                    val matchName = !dev.currentOwnerName.isNullOrBlank() && (
+                                        (currentUser?.username != null && dev.currentOwnerName.equals(currentUser.username, ignoreCase = true)) ||
+                                        (currentUser?.displayName != null && dev.currentOwnerName.equals(currentUser.displayName, ignoreCase = true))
+                                    )
+                                    (matchId || matchName) && !dev.isB2B && !dev.currentStatus.equals("SOLD", ignoreCase = true)
+                                }
+                                val staleCount = myDevs.count { dev ->
+                                    (calculateDaysAgo(dev.receivedDateBd ?: dev.createdAt) ?: 0L) >= 7L
+                                }
+                                val mySales = sales.filter { sale ->
+                                    (currentUser?.username != null && sale.soldBy?.equals(currentUser.username, ignoreCase = true) == true) ||
+                                    (currentUser?.username != null && sale.sellerName?.equals(currentUser.username, ignoreCase = true) == true) ||
+                                    (currentUser?.displayName != null && sale.sellerName?.equals(currentUser.displayName, ignoreCase = true) == true)
+                                }
+                                val latestSale = mySales.maxByOrNull { it.createdAt ?: "" }
+                                val daysSinceLastSale = calculateDaysAgo(latestSale?.createdAt)
+                                val inactivityAlert = if (daysSinceLastSale != null && daysSinceLastSale >= 3L) 1 else if (mySales.isEmpty() && myDevs.isNotEmpty() && (myDevs.mapNotNull { calculateDaysAgo(it.receivedDateBd ?: it.createdAt) }.maxOrNull() ?: 0L) >= 3L) 1 else 0
+
+                                val cal = Calendar.getInstance()
+                                val curYr = cal.get(Calendar.YEAR)
+                                val curMo = cal.get(Calendar.MONTH) + 1
+                                val curMonthSales = mySales.count { sale ->
+                                    val sDate = sale.createdAt
+                                    if (!sDate.isNullOrBlank() && sDate.length >= 7) {
+                                        try {
+                                            val parts = sDate.substring(0, 7).split("-")
+                                            parts[0].toIntOrNull() == curYr && parts[1].toIntOrNull() == curMo
+                                        } catch (_: Exception) { false }
+                                    } else false
+                                }
+                                val targetAlert = if (curMonthSales < 15) 1 else 0
+
+                                staleCount + inactivityAlert + targetAlert
+                            }
+                        }
 
                         ModalNavigationDrawer(
                             drawerState = drawerState,
@@ -432,13 +475,26 @@ class MainActivity : FragmentActivity() {
                                                 }
                                             )
                                         } else {
-                                            // Staff items: only Custody Dashboard
+                                            // Staff items: Custody Dashboard and Notifications
                                             CompactDrawerItem(
                                                 icon = Icons.Default.Dashboard,
                                                 label = "Custody Dashboard",
-                                                selected = true,
+                                                selected = selectedTab == 0,
                                                 onClick = {
                                                     selectedTab = 0
+                                                    coroutineScope.launch { drawerState.close() }
+                                                }
+                                            )
+
+                                            CompactDrawerItem(
+                                                icon = Icons.Default.Notifications,
+                                                label = "Notifications",
+                                                selected = selectedTab == 4,
+                                                badgeText = if (staffAlertCount > 0) "$staffAlertCount" else null,
+                                                badgeColor = Color(0xFFEF4444),
+                                                iconTint = if (staffAlertCount > 0) Color(0xFFEF4444) else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                onClick = {
+                                                    selectedTab = 4
                                                     coroutineScope.launch { drawerState.close() }
                                                 }
                                             )
@@ -543,7 +599,10 @@ class MainActivity : FragmentActivity() {
                                                                 else -> "Cloud Sync Active"
                                                             }
                                                         } else {
-                                                            currentUser?.displayName ?: (currentUser?.username ?: "Online")
+                                                            when (selectedTab) {
+                                                                4 -> "Notifications & Alerts"
+                                                                else -> currentUser?.displayName ?: (currentUser?.username ?: "Online")
+                                                            }
                                                         },
                                                         fontSize = 11.sp,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -596,6 +655,59 @@ class MainActivity : FragmentActivity() {
                                                             ) {
                                                                 Text(
                                                                     text = "${pendingSaleRequests.size}",
+                                                                    color = Color.White,
+                                                                    fontSize = 9.sp,
+                                                                    fontWeight = FontWeight.ExtraBold,
+                                                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                                                    lineHeight = 9.sp
+                                                                )
+                                                            }
+                                                        }
+                                                    }
+                                                }
+
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                            }
+
+                                            if (!isAdmin) {
+                                                // Staff Notification Bell with Badge
+                                                Box(
+                                                    modifier = Modifier.size(36.dp),
+                                                    contentAlignment = Alignment.TopEnd
+                                                ) {
+                                                    IconButton(
+                                                        onClick = {
+                                                            selectedTab = if (selectedTab == 4) 0 else 4
+                                                        },
+                                                        modifier = Modifier
+                                                            .fillMaxSize()
+                                                            .background(
+                                                                if (selectedTab == 4) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                                                CircleShape
+                                                            )
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = if (staffAlertCount > 0) Icons.Default.NotificationsActive else Icons.Default.Notifications,
+                                                            contentDescription = "Notifications",
+                                                            tint = if (selectedTab == 4) MaterialTheme.colorScheme.primary
+                                                            else if (staffAlertCount > 0) Color(0xFFEF4444)
+                                                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            modifier = Modifier.size(17.5.dp)
+                                                        )
+                                                    }
+                                                    if (staffAlertCount > 0) {
+                                                        Surface(
+                                                            shape = CircleShape,
+                                                            color = Color(0xFFEF4444),
+                                                            modifier = Modifier.size(16.dp)
+                                                        ) {
+                                                            Box(
+                                                                contentAlignment = Alignment.Center,
+                                                                modifier = Modifier.fillMaxSize()
+                                                            ) {
+                                                                Text(
+                                                                    text = "$staffAlertCount",
                                                                     color = Color.White,
                                                                     fontSize = 9.sp,
                                                                     fontWeight = FontWeight.ExtraBold,
@@ -786,6 +898,18 @@ class MainActivity : FragmentActivity() {
                                                 AnalyticsTab(
                                                     token = token,
                                                     viewModel = mainViewModel
+                                                )
+                                            }
+                                        }
+                                        4 -> {
+                                            if (!isAdmin) {
+                                                StaffNotificationsTab(
+                                                    token = token,
+                                                    viewModel = mainViewModel,
+                                                    currentUser = currentUser,
+                                                    onSelectDevice = { dev -> selectedDeviceForDetail = dev },
+                                                    onOpenMarkSold = { dev -> deviceForMarkSold = dev },
+                                                    onNavigateToCustody = { selectedTab = 0 }
                                                 )
                                             }
                                         }

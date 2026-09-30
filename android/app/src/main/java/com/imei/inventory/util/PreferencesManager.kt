@@ -87,6 +87,8 @@ class PreferencesManager(context: Context) {
         return !getSavedToken().isNullOrBlank() && !getSavedUsername().isNullOrBlank()
     }
 
+    fun isBiometricEnabled(): Boolean = prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
+
     fun clearCredentials() {
         prefs.edit().apply {
             remove(KEY_SAVED_USERNAME)
