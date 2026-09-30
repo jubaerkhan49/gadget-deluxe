@@ -129,7 +129,7 @@ fun StaffNotificationsTab(
     val curMonth = currentCal.get(Calendar.MONTH)
     val curDayOfMonth = currentCal.get(Calendar.DAY_OF_MONTH)
     val maxDaysInMonth = currentCal.getActualMaximum(Calendar.DAY_OF_MONTH)
-    val daysLeftInMonth = maxDaysInMonth - curDayOfMonth
+    val daysLeftInMonth = maxOf(1, maxDaysInMonth - curDayOfMonth + 1)
 
     val currentMonthSalesCount = remember(mySales, curYear, curMonth) {
         mySales.count { sale ->

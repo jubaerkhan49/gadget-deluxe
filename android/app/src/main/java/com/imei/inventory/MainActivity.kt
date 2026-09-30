@@ -683,12 +683,8 @@ class MainActivity : FragmentActivity() {
                                                             selectedTab = if (selectedTab == 4) 0 else 4
                                                         },
                                                         modifier = Modifier
+                                                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f), CircleShape)
                                                             .size(36.dp)
-                                                            .background(
-                                                                if (selectedTab == 4) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                                                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                                                                CircleShape
-                                                            )
                                                     ) {
                                                         Icon(
                                                             imageVector = if (staffAlertCount > 0) Icons.Default.NotificationsActive else Icons.Default.Notifications,
@@ -696,7 +692,7 @@ class MainActivity : FragmentActivity() {
                                                             tint = if (selectedTab == 4) MaterialTheme.colorScheme.primary
                                                             else if (staffAlertCount > 0) Color(0xFFEF4444)
                                                             else MaterialTheme.colorScheme.onSurfaceVariant,
-                                                            modifier = Modifier.size(17.5.dp)
+                                                            modifier = Modifier.size(18.dp)
                                                         )
                                                     }
                                                     if (staffAlertCount > 0) {
