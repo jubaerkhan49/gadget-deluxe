@@ -42,7 +42,8 @@ import {
   HourglassEmpty as HourglassIcon,
   EventAvailable as EventIcon,
   EmojiEvents as TrophyIcon,
-  Stars as StarsIcon
+  Stars as StarsIcon,
+  NotificationsActive as NotificationsActiveIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -60,6 +61,7 @@ import ManageEmployeesDialog from '../dialogs/ManageEmployeesDialog';
 import MarkSoldDialog from '../dialogs/MarkSoldDialog';
 import { formatNumber, formatDate } from '../utils/formatters';
 import { apiCache } from '../utils/apiCache';
+import { computeStaffAlerts } from '../utils/staffAlerts';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -262,6 +264,10 @@ export default function Dashboard() {
           : "Hey! Please wake up! Post ASAP"
     );
 
+    const allDevs = cachedDevices?.results || cachedDevices || [];
+    const allSales = cachedSales?.results || cachedSales || [];
+    const staffAlerts = computeStaffAlerts(allDevs, allSales, user);
+
     const employeeMetricCards = [
       {
         title: 'Devices in Custody',
@@ -317,7 +323,7 @@ export default function Dashboard() {
           elevation={0}
           sx={{
             p: { xs: 2, sm: 2.5 },
-            mb: { xs: 2, sm: 3 },
+            mb: { xs: 2, sm: 2.5 },
             borderRadius: 2,
             border: 1,
             borderColor: 'divider',
@@ -376,6 +382,79 @@ export default function Dashboard() {
             </Box>
           </Box>
         </Paper>
+
+        {/* Staff Automated Alerts Quick Banner */}
+        {staffAlerts.totalAlertCount > 0 && (
+          <Paper
+            elevation={0}
+            onClick={() => navigate('/notifications')}
+            sx={{
+              p: { xs: 1.5, sm: 1.8 },
+              mb: { xs: 2, sm: 2.5 },
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'rgba(239, 68, 68, 0.35)',
+              bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(239, 68, 68, 0.08)' : '#FEF2F2'),
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              '&:hover': {
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 14px rgba(239, 68, 68, 0.15)'
+              }
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 1.5,
+                  bgcolor: '#EF4444',
+                  color: '#fff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}
+              >
+                <NotificationsActiveIcon sx={{ fontSize: 18 }} />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" fontWeight={800} color="#991B1B">
+                  {staffAlerts.totalAlertCount} Automated Alert{staffAlerts.totalAlertCount > 1 ? 's' : ''} & Notification{staffAlerts.totalAlertCount > 1 ? 's' : ''}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {staffAlerts.staleCustodyDevices.length > 0
+                    ? `${staffAlerts.staleCustodyDevices.length} device(s) held over 7 days in custody • `
+                    : ''}
+                  {staffAlerts.remainingForTarget > 0
+                    ? `${staffAlerts.remainingForTarget} device(s) away from monthly target`
+                    : 'Target Achieved!'}
+                </Typography>
+              </Box>
+            </Box>
+
+            <Button
+              size="small"
+              variant="contained"
+              color="error"
+              sx={{
+                borderRadius: 1.5,
+                textTransform: 'none',
+                fontWeight: 700,
+                fontSize: '0.78rem',
+                py: 0.5,
+                px: 1.5,
+                display: { xs: 'none', sm: 'inline-flex' }
+              }}
+            >
+              View Alerts →
+            </Button>
+          </Paper>
+        )}
 
         {/* Employee Summary 5 KPIs */}
         <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2.5, sm: 3.5 } }}>

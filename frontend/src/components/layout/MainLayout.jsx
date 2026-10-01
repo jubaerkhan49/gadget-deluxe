@@ -19,7 +19,8 @@ import {
   Divider,
   useTheme,
   useMediaQuery,
-  Tooltip
+  Tooltip,
+  Badge
 } from '@mui/material';
 
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -37,12 +38,16 @@ import LockResetIcon from '@mui/icons-material/LockReset';
 import PeopleIcon from '@mui/icons-material/People';
 import ArchiveIcon from '@mui/icons-material/Inventory2';
 import InsightsIcon from '@mui/icons-material/Insights';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
+import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
 
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { useAuth } from '../../context/AuthContext';
 import { ColorModeContext } from '../../App';
+import { deviceApi, saleApi } from '../../api/client';
+import { apiCache } from '../../utils/apiCache';
+import { computeStaffAlerts } from '../../utils/staffAlerts';
 import AddDeviceDialog from '../../dialogs/AddDeviceDialog';
 import AddShipmentDialog from '../../dialogs/AddShipmentDialog';
 import AddOwnerDialog from '../../dialogs/AddOwnerDialog';
@@ -81,6 +86,33 @@ export default function MainLayout() {
   const [showUpdateProfile, setShowUpdateProfile] = useState(false);
   const [showManageEmployees, setShowManageEmployees] = useState(false);
 
+  const cachedDevices = apiCache.get('/api/devices/');
+  const cachedSales = apiCache.get('/api/sales/');
+  const [devices, setDevices] = useState(() => cachedDevices?.results || cachedDevices || []);
+  const [sales, setSales] = useState(() => cachedSales?.results || cachedSales || []);
+
+  React.useEffect(() => {
+    if (!isAdmin) {
+      const fetchAlertsData = async () => {
+        try {
+          const [devsRes, salesRes] = await Promise.all([
+            deviceApi.getAll(),
+            saleApi.getAll()
+          ]);
+          const freshDevs = devsRes.data.results || devsRes.data || [];
+          const freshSales = salesRes.data.results || salesRes.data || [];
+          setDevices(freshDevs);
+          setSales(freshSales);
+        } catch (e) {}
+      };
+      fetchAlertsData();
+      const interval = setInterval(fetchAlertsData, 6000);
+      return () => clearInterval(interval);
+    }
+  }, [isAdmin]);
+
+  const { totalAlertCount: staffAlertCount } = computeStaffAlerts(devices, sales, user);
+
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
@@ -88,7 +120,16 @@ export default function MainLayout() {
   const visibleNavItems = isAdmin
     ? NAV_ITEMS
     : [
-        { text: 'My Assigned Devices', path: '/dashboard', icon: <PhoneAndroidIcon /> }
+        { text: 'My Assigned Devices', path: '/dashboard', icon: <PhoneAndroidIcon /> },
+        {
+          text: 'Notifications',
+          path: '/notifications',
+          icon: (
+            <Badge badgeContent={staffAlertCount} color="error" max={99}>
+              <NotificationImportantIcon />
+            </Badge>
+          )
+        }
       ];
 
   const drawerContent = (
@@ -218,8 +259,9 @@ export default function MainLayout() {
     </Box>
   );
 
-  const activePageTitle =
-    NAV_ITEMS.find((n) => location.pathname.startsWith(n.path))?.text || 'Dashboard';
+  const activePageTitle = location.pathname.startsWith('/notifications')
+    ? 'Notifications & Alerts'
+    : (visibleNavItems.find((n) => location.pathname.startsWith(n.path))?.text || 'Dashboard');
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
@@ -271,6 +313,28 @@ export default function MainLayout() {
                   Add Device
                 </Button>
               </>
+            )}
+
+            {!isAdmin && (
+              <Tooltip title="Notifications & Automated Alerts">
+                <IconButton
+                  color="inherit"
+                  size="small"
+                  onClick={() => navigate('/notifications')}
+                  sx={{
+                    bgcolor: location.pathname === '/notifications' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
+                    color: location.pathname === '/notifications' ? 'primary.main' : 'inherit'
+                  }}
+                >
+                  <Badge badgeContent={staffAlertCount} color="error" max={99}>
+                    {staffAlertCount > 0 ? (
+                      <NotificationsActiveIcon color="warning" fontSize="small" />
+                    ) : (
+                      <NotificationsIcon fontSize="small" />
+                    )}
+                  </Badge>
+                </IconButton>
+              </Tooltip>
             )}
 
             <Tooltip title={`Switch to ${colorMode.mode === 'dark' ? 'Light' : 'Dark'} mode`}>

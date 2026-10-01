@@ -18,6 +18,7 @@ import B2B from './pages/B2B';
 import OtherGoods from './pages/OtherGoods';
 import Landing from './pages/Landing';
 import PublicOrderTracking from './pages/PublicOrderTracking';
+import StaffNotifications from './pages/StaffNotifications';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 export const ColorModeContext = createContext({ toggleColorMode: () => {}, mode: 'dark' });
@@ -103,6 +104,7 @@ export default function App() {
                   }
                 >
                   <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/notifications" element={<StaffNotifications />} />
                   <Route
                     path="/analytics"
                     element={
