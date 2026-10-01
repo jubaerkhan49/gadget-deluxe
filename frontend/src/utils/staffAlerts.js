@@ -104,19 +104,40 @@ export function computeStaffAlerts(devices = [], sales = [], currentUser = null)
   // 2. Filter staff sales
   const mySales = sales.filter((sale) => {
     if (!currentUser) return false;
-    const seller = sale.seller || sale.seller_name || sale.sold_by;
-    const sellerId = typeof seller === 'object' ? seller?.id : null;
-    const sellerName = typeof seller === 'object' ? seller?.username : String(seller || '');
 
-    const matchId = currentUser?.id && (sale.seller_id === currentUser.id || sellerId === currentUser.id);
-    const matchUsername =
-      currentUser?.username &&
-      sellerName.toLowerCase() === currentUser.username.toLowerCase();
-    const matchDisplayName =
-      currentUser?.display_name &&
-      sellerName.toLowerCase() === currentUser.display_name.toLowerCase();
+    // 1) Match by seller ID (seller can be integer id, or object with id, or seller_id)
+    const rawSellerId =
+      typeof sale.seller === 'object' && sale.seller !== null
+        ? sale.seller.id
+        : typeof sale.seller === 'number'
+        ? sale.seller
+        : sale.seller_id;
 
-    return matchId || matchUsername || matchDisplayName;
+    if (currentUser.id && rawSellerId && Number(rawSellerId) === Number(currentUser.id)) {
+      return true;
+    }
+
+    // 2) Match by username / display names
+    const possibleNames = [
+      typeof sale.seller === 'object' && sale.seller !== null ? sale.seller.username : null,
+      sale.seller_name,
+      sale.sold_by,
+      typeof sale.seller === 'string' ? sale.seller : null
+    ]
+      .filter(Boolean)
+      .map((s) => String(s).trim().toLowerCase());
+
+    const targetUsername = String(currentUser.username || '').trim().toLowerCase();
+    const targetDisplayName = String(currentUser.display_name || '').trim().toLowerCase();
+    const targetFullName = String(
+      `${currentUser.first_name || ''} ${currentUser.last_name || ''}`
+    ).trim().toLowerCase();
+
+    return (
+      (targetUsername && possibleNames.includes(targetUsername)) ||
+      (targetDisplayName && possibleNames.includes(targetDisplayName)) ||
+      (targetFullName && possibleNames.includes(targetFullName))
+    );
   });
 
   // Rule 1: Devices held 7+ days
@@ -169,7 +190,15 @@ export function computeStaffAlerts(devices = [], sales = [], currentUser = null)
   const currentMonthSales = mySales.filter((s) => {
     const rawDate = s.sale_date || s.created_at;
     if (!rawDate) return false;
-    const d = new Date(rawDate);
+    const str = String(rawDate).trim();
+    let d;
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) {
+      const parts = str.slice(0, 10).split('-').map(Number);
+      d = new Date(parts[0], parts[1] - 1, parts[2]);
+    } else {
+      d = new Date(str);
+    }
+    if (isNaN(d.getTime())) return false;
     return d.getFullYear() === curYear && d.getMonth() === curMonth;
   });
 
