@@ -9,6 +9,9 @@ if command -v npm &> /dev/null && [ -d "../frontend" ]; then
     npm install
     npm run build
     cd ../backend
+    if [ -f "../frontend/dist/index.html" ]; then
+        cp "../frontend/dist/index.html" "templates/index.html"
+    fi
 fi
 
 # Install Python backend dependencies
