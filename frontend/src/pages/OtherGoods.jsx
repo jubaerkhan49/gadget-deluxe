@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSmartPolling } from '../utils/useSmartPolling';
 import {
   Box,
   Paper,
@@ -125,14 +126,12 @@ export default function OtherGoods() {
 
   useEffect(() => {
     fetchOrders(!cachedOrders);
-
-    // Live auto-sync interval every 5 seconds
-    const interval = setInterval(() => {
-      fetchOrders(false);
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
+  useSmartPolling(() => {
+    fetchOrders(false);
+  }, 30000);
 
   const handleCopyLink = (orderId, e) => {
     e?.stopPropagation();

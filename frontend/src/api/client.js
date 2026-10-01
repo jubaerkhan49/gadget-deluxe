@@ -135,6 +135,10 @@ export const sickwApi = {
   parseRaw: (raw_text) => api.post('/api/sickw/parse-raw/', { raw_text }),
 };
 
+export const syncApi = {
+  getStatus: () => api.get('/api/sync/status/'),
+};
+
 export const repairApi = {
   getAll: (params) => api.get('/api/repairs/', { params }),
   getById: (id) => api.get(`/api/repairs/${id}/`),

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSmartPolling } from '../utils/useSmartPolling';
 import {
   Box,
   Paper,
@@ -90,14 +91,12 @@ export default function Shipments() {
 
   useEffect(() => {
     fetchShipments(Boolean(cachedShipments));
-
-    // Auto-sync polling every 6 seconds
-    const interval = setInterval(() => {
-      fetchShipments(true);
-    }, 6000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
+  useSmartPolling(() => {
+    fetchShipments(true);
+  }, 30000);
 
   // Handle IMEI live search when searchMode is 'IMEI'
   useEffect(() => {

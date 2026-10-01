@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSmartPolling } from '../utils/useSmartPolling';
 import {
   Box,
   Paper,
@@ -109,11 +110,12 @@ export default function B2B() {
 
   useEffect(() => {
     fetchB2BDevices(Boolean(cachedB2b));
-    const interval = setInterval(() => {
-      fetchB2BDevices(true);
-    }, 5000);
-    return () => clearInterval(interval);
   }, []);
+
+  // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
+  useSmartPolling(() => {
+    fetchB2BDevices(true);
+  }, 30000);
 
   const fetchB2BDevices = async (silent = false) => {
     try {

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSmartPolling } from '../utils/useSmartPolling';
 import {
   Box,
   Paper,
@@ -56,14 +57,12 @@ export default function Repairs() {
 
   useEffect(() => {
     fetchRepairs(Boolean(cachedRepairs));
-
-    // Live auto-sync interval every 5 seconds
-    const interval = setInterval(() => {
-      fetchRepairs(true);
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
+  useSmartPolling(() => {
+    fetchRepairs(true);
+  }, 30000);
 
   const fetchRepairs = async (silent = false) => {
     try {

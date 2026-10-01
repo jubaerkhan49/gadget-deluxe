@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSmartPolling } from '../utils/useSmartPolling';
 import {
   Box,
   Paper,
@@ -55,14 +56,12 @@ export default function Sales() {
 
   useEffect(() => {
     fetchSales(Boolean(cachedSales));
-
-    // Live auto-sync interval every 5 seconds
-    const interval = setInterval(() => {
-      fetchSales(true);
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
+  useSmartPolling(() => {
+    fetchSales(true);
+  }, 30000);
 
   const fetchSales = async (silent = false) => {
     try {

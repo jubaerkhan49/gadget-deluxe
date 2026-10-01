@@ -214,7 +214,7 @@ class MainInventoryViewModel : ViewModel() {
         realtimeJob?.cancel()
         realtimeJob = viewModelScope.launch {
             while (true) {
-                kotlinx.coroutines.delay(4000) // Poll sync every 4 seconds quietly in background
+                kotlinx.coroutines.delay(30000) // Poll sync every 30 seconds quietly in background to save battery & data
                 try {
                     val bearer = "Bearer $token"
                     val isAdminUser = _currentUser.value?.isAdmin == true

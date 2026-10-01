@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSmartPolling } from '../utils/useSmartPolling';
 import {
   Box,
   Grid,
@@ -129,14 +130,12 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchDashboardData(Boolean(cachedStats));
-
-    // Live auto-sync interval every 4 seconds to instantly reflect updates from mobile apps and other browsers
-    const interval = setInterval(() => {
-      fetchDashboardData(true);
-    }, 4000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
+  useSmartPolling(() => {
+    fetchDashboardData(true);
+  }, 30000);
 
   const fetchDashboardData = async (silent = false) => {
     try {

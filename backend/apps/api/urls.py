@@ -7,7 +7,7 @@ from .views import (
     UserViewSet, DeviceViewSet, ShipmentViewSet, CustomerViewSet,
     SaleViewSet, RepairViewSet, SickwViewSet,
     SickwParseAPIView, ExportDevicesCSVView, DashboardStatsAPIView,
-    AnalyticsStatsAPIView, OtherGoodsOrderViewSet, PublicOrderTrackingAPIView,
+    AnalyticsStatsAPIView, SyncStatusAPIView, OtherGoodsOrderViewSet, PublicOrderTrackingAPIView,
     EmployeeApplicationViewSet, EmployeeProfileUpdateRequestViewSet,
     DeviceSaleRequestViewSet
 )
@@ -43,6 +43,7 @@ urlpatterns = [
     # Specialized Utility Endpoints
     path('dashboard/stats/', DashboardStatsAPIView.as_view(), name='dashboard_stats'),
     path('analytics/', AnalyticsStatsAPIView.as_view(), name='analytics_stats'),
+    path('sync/status/', SyncStatusAPIView.as_view(), name='sync_status'),
     path('sickw/parse-raw/', SickwParseAPIView.as_view(), name='sickw_parse_raw'),
     path('export/devices/csv/', ExportDevicesCSVView.as_view(), name='export_devices_csv'),
 

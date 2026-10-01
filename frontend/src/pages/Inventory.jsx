@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSmartPolling } from '../utils/useSmartPolling';
 import {
   Box,
   Paper,
@@ -105,14 +106,12 @@ export default function Inventory() {
   useEffect(() => {
     fetchInventory(Boolean(cachedDevices));
     fetchUsers(Boolean(cachedUsers));
-
-    // Auto-sync every 5 seconds to seamlessly reflect mobile updates live
-    const interval = setInterval(() => {
-      fetchInventory(true);
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
+  useSmartPolling(() => {
+    fetchInventory(true);
+  }, 30000);
 
   const fetchInventory = async (silent = false) => {
     try {

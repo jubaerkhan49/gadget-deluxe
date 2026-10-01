@@ -1,4 +1,5 @@
 import React, { useState, useContext } from 'react';
+import { useSmartPolling } from '../../utils/useSmartPolling';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -91,25 +92,30 @@ export default function MainLayout() {
   const [devices, setDevices] = useState(() => cachedDevices?.results || cachedDevices || []);
   const [sales, setSales] = useState(() => cachedSales?.results || cachedSales || []);
 
+  const fetchAlertsData = async () => {
+    try {
+      const [devsRes, salesRes] = await Promise.all([
+        deviceApi.getAll(),
+        saleApi.getAll()
+      ]);
+      const freshDevs = devsRes.data.results || devsRes.data || [];
+      const freshSales = salesRes.data.results || salesRes.data || [];
+      setDevices(freshDevs);
+      setSales(freshSales);
+    } catch (e) {}
+  };
+
   React.useEffect(() => {
     if (!isAdmin) {
-      const fetchAlertsData = async () => {
-        try {
-          const [devsRes, salesRes] = await Promise.all([
-            deviceApi.getAll(),
-            saleApi.getAll()
-          ]);
-          const freshDevs = devsRes.data.results || devsRes.data || [];
-          const freshSales = salesRes.data.results || salesRes.data || [];
-          setDevices(freshDevs);
-          setSales(freshSales);
-        } catch (e) {}
-      };
       fetchAlertsData();
-      const interval = setInterval(fetchAlertsData, 6000);
-      return () => clearInterval(interval);
     }
   }, [isAdmin]);
+
+  useSmartPolling(() => {
+    if (!isAdmin) {
+      fetchAlertsData();
+    }
+  }, 30000, !isAdmin);
 
   const { totalAlertCount: staffAlertCount } = computeStaffAlerts(devices, sales, user);
 

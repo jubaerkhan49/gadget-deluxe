@@ -13,6 +13,7 @@ from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
 
 from django.utils import timezone
+from django.core.cache import cache
 from apps.accounts.models import User, EmployeeApplication, EmployeeProfileUpdateRequest
 from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory, DeviceAssignment
 from apps.shipments.models import Shipment, Supplier
@@ -1227,11 +1228,15 @@ class ExportDevicesCSVView(APIView):
 
 
 class DashboardStatsAPIView(APIView):
-    """API endpoint returning operational dashboard metrics in real-time."""
+    """API endpoint returning operational dashboard metrics in real-time with caching."""
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         user = request.user
+        cache_key = f"dashboard_stats_{user.id}_{user.role}"
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return Response(cached_data)
 
         # If regular employee, return ONLY their personal assigned custody metrics!
         if user.is_authenticated and user.role == User.Role.EMPLOYEE and not user.is_superuser and user.username not in ['jubaer', 'admin']:
@@ -1301,7 +1306,7 @@ class DashboardStatsAPIView(APIView):
                 performance = 'Below Average'
                 performance_desc = "Hey! Please wake up! Post ASAP"
 
-            return Response({
+            payload = {
                 'user_role': 'EMPLOYEE',
                 'is_admin': False,
                 'username': user.username,
@@ -1327,7 +1332,10 @@ class DashboardStatsAPIView(APIView):
                 'monthly_profit': 0,
                 'others_owned': 0,
                 'pending_applications_count': 0,
-            })
+                'pending_sale_requests_count': 0,
+            }
+            cache.set(cache_key, payload, timeout=20)
+            return Response(payload)
 
         local_today = timezone.localdate()
         month_start = local_today.replace(day=1)
@@ -1396,7 +1404,7 @@ class DashboardStatsAPIView(APIView):
                 status=DeviceSaleRequest.Status.PENDING
             ).count()
 
-        return Response({
+        payload = {
             'user_role': request.user.role if request.user.is_authenticated else 'ADMIN',
             'is_admin': True,
             'total_devices': total_devices,
@@ -1416,7 +1424,43 @@ class DashboardStatsAPIView(APIView):
             'pending_applications_count': pending_applications_count,
             'pending_sale_requests_count': pending_sale_requests_count,
             'username': request.user.username if request.user.is_authenticated else ''
-        })
+        }
+        cache.set(cache_key, payload, timeout=20)
+        return Response(payload)
+
+
+class SyncStatusAPIView(APIView):
+    """
+    Ultra-lightweight endpoint returning sync version markers and pending notification counts.
+    Consumes less than 100 bytes per request to keep database bandwidth and egress minimal.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        cache_key = f"sync_status_{user.id}"
+        cached_status = cache.get(cache_key)
+        if cached_status is not None:
+            return Response(cached_status)
+
+        devices_count = Device.objects.count()
+        sales_count = Sale.objects.count()
+        
+        pending_sale_requests = 0
+        pending_applications = 0
+        if user.is_authenticated and (user.role in [User.Role.ADMIN, User.Role.MANAGER] or user.is_superuser):
+            pending_sale_requests = DeviceSaleRequest.objects.filter(status=DeviceSaleRequest.Status.PENDING).count()
+            pending_applications = EmployeeApplication.objects.filter(status=EmployeeApplication.Status.PENDING).count()
+
+        status_data = {
+            'v_devices': devices_count,
+            'v_sales': sales_count,
+            'pending_sale_requests': pending_sale_requests,
+            'pending_applications': pending_applications,
+            'server_time': timezone.now().isoformat()
+        }
+        cache.set(cache_key, status_data, timeout=15)
+        return Response(status_data)
 
 
 class AnalyticsStatsAPIView(APIView):

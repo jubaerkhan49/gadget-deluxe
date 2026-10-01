@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSmartPolling } from '../utils/useSmartPolling';
 import {
   Box,
   Paper,
@@ -68,14 +69,12 @@ export default function Archive() {
 
   useEffect(() => {
     fetchArchivedData(Boolean(cachedDevices));
-
-    // Live auto-sync interval every 6 seconds
-    const interval = setInterval(() => {
-      fetchArchivedData(true);
-    }, 6000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
+  useSmartPolling(() => {
+    fetchArchivedData(true);
+  }, 30000);
 
   const fetchArchivedData = async (silent = false) => {
     try {

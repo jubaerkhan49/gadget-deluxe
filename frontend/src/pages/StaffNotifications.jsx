@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSmartPolling } from '../utils/useSmartPolling';
 import {
   Box,
   Grid,
@@ -77,11 +78,12 @@ export default function StaffNotifications() {
 
   useEffect(() => {
     fetchData(Boolean(cachedDevices));
-    const interval = setInterval(() => {
-      fetchData(true);
-    }, 4000);
-    return () => clearInterval(interval);
   }, []);
+
+  // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
+  useSmartPolling(() => {
+    fetchData(true);
+  }, 30000);
 
   const alerts = computeStaffAlerts(devices, sales, user);
   const {
