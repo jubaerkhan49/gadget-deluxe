@@ -198,10 +198,10 @@ LOGOUT_REDIRECT_URL = 'accounts:login'
 SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
 SUPABASE_ANON_KEY = os.environ.get('SUPABASE_ANON_KEY', '')
 
-# In-Memory Cache (reduces Supabase database egress and query load)
+# In-Memory Cache (reduces database query load)
 CACHES = {
     'default': {
-        'ENGINE': 'django.core.cache.backends.locmem.LocMemCache',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'gadget-deluxe-cache',
         'TIMEOUT': 30,
     }
