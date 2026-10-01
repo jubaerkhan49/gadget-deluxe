@@ -41,7 +41,8 @@ import ArchiveIcon from '@mui/icons-material/Inventory2';
 import InsightsIcon from '@mui/icons-material/Insights';
 import NotificationImportantIcon from '@mui/icons-material/NotificationImportant';
 import NotificationsIcon from '@mui/icons-material/Notifications';
-import NotificationsActiveIcon from '@mui/icons-material/NotificationsActive';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import ShoppingBagIcon from '@mui/icons-material/ShoppingBag';
 
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import { useAuth } from '../../context/AuthContext';
