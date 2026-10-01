@@ -514,6 +514,13 @@ class DeviceSaleRequestViewSet(viewsets.ModelViewSet):
             "sale_request": DeviceSaleRequestSerializer(sale_req).data
         })
 
+    @action(detail=True, methods=['post'], url_path='confirm')
+    def confirm(self, request, pk=None):
+        """
+        Alias for approve endpoint for compatibility.
+        """
+        return self.approve(request, pk)
+
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """

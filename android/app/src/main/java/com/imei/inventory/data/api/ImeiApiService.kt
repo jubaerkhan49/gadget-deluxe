@@ -142,7 +142,7 @@ interface ImeiApiService {
         @Query("page_size") pageSize: Int? = 100
     ): Response<PaginatedResponse<DeviceSaleRequestDto>>
 
-    @POST("api/device-sale-requests/{id}/confirm/")
+    @POST("api/device-sale-requests/{id}/approve/")
     suspend fun confirmDeviceSaleRequest(
         @Header("Authorization") token: String,
         @Path("id") id: Int,
