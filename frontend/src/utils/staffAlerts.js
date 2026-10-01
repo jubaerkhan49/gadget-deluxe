@@ -6,11 +6,24 @@ export function calculateDaysAgo(dateStr) {
   if (!dateStr) return null;
   try {
     const cleanStr = String(dateStr).trim();
-    const date = new Date(cleanStr);
+    // Support YYYY-MM-DD strings directly without UTC timezone skew
+    let date;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
+      const [y, m, d] = cleanStr.split('-').map(Number);
+      date = new Date(y, m - 1, d);
+    } else {
+      date = new Date(cleanStr);
+    }
+
     if (isNaN(date.getTime())) return null;
+
     const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
+    // Normalize both dates to start of day in local time
+    const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+    const diffMs = startOfToday - startOfTarget;
+    return Math.max(0, Math.round(diffMs / (1000 * 60 * 60 * 24)));
   } catch (e) {
     return null;
   }
@@ -19,10 +32,17 @@ export function calculateDaysAgo(dateStr) {
 export function formatReadableDate(dateStr) {
   if (!dateStr) return 'N/A';
   try {
-    const d = new Date(dateStr);
+    let d;
+    const cleanStr = String(dateStr).trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(cleanStr)) {
+      const [year, month, day] = cleanStr.split('-').map(Number);
+      d = new Date(year, month - 1, day);
+    } else {
+      d = new Date(cleanStr);
+    }
     if (isNaN(d.getTime())) return String(dateStr).slice(0, 10);
     const day = d.getDate();
-    const month = d.toLocaleDateString('en-US', { month: 'long' });
+    const month = d.toLocaleDateString('en-US', { month: 'short' });
     const year = d.getFullYear();
     return `${day} ${month}, ${year}`;
   } catch (e) {
@@ -34,19 +54,25 @@ export function getDeviceAssignedDateStr(dev, currentUser) {
   if (!dev) return null;
 
   if (Array.isArray(dev.assignments) && dev.assignments.length > 0) {
-    const userAssign = dev.assignments.find((assign) => {
-      const matchId = currentUser?.id && assign.employee === currentUser.id;
+    const userAssignments = dev.assignments.filter((assign) => {
+      const matchId = currentUser?.id && (assign.employee === currentUser.id || assign.employee_id === currentUser.id);
       const matchUsername =
         currentUser?.username &&
-        (assign.employee_username?.toLowerCase() === currentUser.username.toLowerCase() ||
-          assign.employeeName?.toLowerCase() === currentUser.username.toLowerCase());
+        (String(assign.employee_username || '').toLowerCase() === currentUser.username.toLowerCase() ||
+          String(assign.employeeName || '').toLowerCase() === currentUser.username.toLowerCase());
       const matchDisplayName =
         currentUser?.display_name &&
-        assign.employee_name?.toLowerCase() === currentUser.display_name.toLowerCase();
+        String(assign.employee_name || '').toLowerCase() === currentUser.display_name.toLowerCase();
       return matchId || matchUsername || matchDisplayName;
     });
-    if (userAssign?.assigned_date) {
-      return userAssign.assigned_date;
+
+    if (userAssignments.length > 0) {
+      userAssignments.sort(
+        (a, b) => new Date(b.assigned_date || b.created_at || 0) - new Date(a.assigned_date || a.created_at || 0)
+      );
+      if (userAssignments[0].assigned_date) {
+        return userAssignments[0].assigned_date;
+      }
     }
   }
 
@@ -105,10 +131,14 @@ export function computeStaffAlerts(devices = [], sales = [], currentUser = null)
 
   // Rule 2: Sales Inactivity Alert (3+ days)
   const latestSale = mySales.length > 0
-    ? [...mySales].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))[0]
+    ? [...mySales].sort(
+        (a, b) =>
+          new Date(b.sale_date || b.created_at || 0) - new Date(a.sale_date || a.created_at || 0)
+      )[0]
     : null;
 
-  const daysSinceLastSale = latestSale?.created_at ? calculateDaysAgo(latestSale.created_at) : null;
+  const latestSaleDateStr = latestSale ? (latestSale.sale_date || latestSale.created_at) : null;
+  const daysSinceLastSale = latestSaleDateStr ? calculateDaysAgo(latestSaleDateStr) : null;
 
   let showInactivityAlert = false;
   let inactivityDays = 0;
@@ -117,6 +147,7 @@ export function computeStaffAlerts(devices = [], sales = [], currentUser = null)
     showInactivityAlert = true;
     inactivityDays = daysSinceLastSale;
   } else if (mySales.length === 0 && myCustodyDevices.length > 0) {
+    // If no sales yet, days inactive equals days since oldest assigned device
     const oldestDays = Math.max(
       0,
       ...myCustodyDevices.map((d) => calculateDaysAgo(getDeviceAssignedDateStr(d, currentUser)) || 0)
@@ -136,8 +167,9 @@ export function computeStaffAlerts(devices = [], sales = [], currentUser = null)
   const daysLeftInMonth = Math.max(1, lastDayOfMonth - curDay + 1);
 
   const currentMonthSales = mySales.filter((s) => {
-    if (!s.created_at) return false;
-    const d = new Date(s.created_at);
+    const rawDate = s.sale_date || s.created_at;
+    if (!rawDate) return false;
+    const d = new Date(rawDate);
     return d.getFullYear() === curYear && d.getMonth() === curMonth;
   });
 
@@ -148,8 +180,7 @@ export function computeStaffAlerts(devices = [], sales = [], currentUser = null)
 
   const totalAlertCount =
     staleCustodyDevices.length +
-    (showInactivityAlert ? 1 : 0) +
-    (remainingForTarget > 0 ? 1 : 0);
+    (showInactivityAlert ? 1 : 0);
 
   return {
     myCustodyDevices,
