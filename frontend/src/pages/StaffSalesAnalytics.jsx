@@ -663,35 +663,46 @@ export default function StaffSalesAnalytics() {
                           borderRadius: 1.75,
                           cursor: hasSales ? 'pointer' : 'default',
                           border: '1px solid',
-                          borderColor: hasSales
+                          borderColor: isHovered
+                            ? '#2563EB'
+                            : hasSales
                             ? '#10B981'
                             : isToday
                             ? 'primary.main'
-                            : isHovered
-                            ? 'text.secondary'
                             : 'divider',
-                          bgcolor: hasSales
+                          bgcolor: isHovered
+                            ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.35)' : '#DBEAFE')
+                            : hasSales
                             ? (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5')
                             : isToday
                             ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.08)' : '#EFF6FF')
-                            : isHovered
-                            ? 'action.hover'
                             : 'background.paper',
                           transition: 'all 0.15s ease-in-out',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          transform: isHovered && hasSales ? 'scale(1.08)' : 'none',
-                          boxShadow: hasSales ? '0 2px 6px rgba(16, 185, 129, 0.15)' : 'none'
+                          transform: isHovered ? 'scale(1.12)' : 'none',
+                          boxShadow: isHovered
+                            ? '0 4px 12px rgba(37, 99, 235, 0.35)'
+                            : hasSales
+                            ? '0 2px 6px rgba(16, 185, 129, 0.15)'
+                            : 'none',
+                          zIndex: isHovered ? 2 : 1
                         }}
                       >
                         <Typography
                           variant="caption"
-                          fontWeight={hasSales || isToday ? 800 : 500}
+                          fontWeight={isHovered || hasSales || isToday ? 800 : 500}
                           sx={{
                             fontSize: { xs: '0.72rem', sm: '0.78rem' },
                             lineHeight: 1,
-                            color: hasSales ? '#047857' : isToday ? 'primary.main' : 'text.primary'
+                            color: isHovered
+                              ? '#1D4ED8'
+                              : hasSales
+                              ? '#047857'
+                              : isToday
+                              ? 'primary.main'
+                              : 'text.primary'
                           }}
                         >
                           {dayNum}
