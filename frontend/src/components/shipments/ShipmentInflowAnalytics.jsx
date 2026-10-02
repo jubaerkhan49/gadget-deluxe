@@ -27,7 +27,6 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  CircularProgress,
   useTheme
 } from '@mui/material';
 import {
@@ -45,8 +44,10 @@ import {
   AccessTime as TimeIcon,
   BatteryChargingFull as BatteryIcon,
   QrCode as QrCodeIcon,
-  ContentCopy as CopyIcon
+  ContentCopy as CopyIcon,
+  Business as SupplierIcon
 } from '@mui/icons-material';
+import { useSnackbar } from 'notistack';
 import { deviceApi, shipmentApi } from '../../api/client';
 import { apiCache } from '../../utils/apiCache';
 import StatusBadge from '../common/StatusBadge';
@@ -63,6 +64,7 @@ const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function ShipmentInflowAnalytics({ shipments: initialShipments = [], onSelectShipment, onSelectDevice }) {
   const theme = useTheme();
+  const { enqueueSnackbar } = useSnackbar();
 
   const cachedDevices = apiCache.get('/api/devices/');
   const cachedShipments = apiCache.get('/api/shipments/');
@@ -245,6 +247,58 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
     }
     return { maxDevices, peakDays };
   }, [dayDevicesMap, daysInMonth]);
+
+  // Group selected day devices by Shipping Agent -> Supplier -> devices
+  const dayAgentGroups = useMemo(() => {
+    if (!selectedDayModal?.devices) return [];
+    const groups = {};
+    selectedDayModal.devices.forEach((d) => {
+      const s = d.current_shipment ? shipmentMap[d.current_shipment] : null;
+      const agentName = (d.shipment_agent || s?.shipping_company || 'Direct / Unassigned').trim();
+      const supplierName = (d.shipment_supplier || s?.supplier_name || s?.supplier?.name || 'Direct / Unknown').trim();
+
+      if (!groups[agentName]) {
+        groups[agentName] = {
+          agent: agentName,
+          total: 0,
+          suppliers: {}
+        };
+      }
+      groups[agentName].total += 1;
+
+      if (!groups[agentName].suppliers[supplierName]) {
+        groups[agentName].suppliers[supplierName] = [];
+      }
+      groups[agentName].suppliers[supplierName].push(d);
+    });
+    return Object.values(groups);
+  }, [selectedDayModal, shipmentMap]);
+
+  // Copy day reception report to clipboard
+  const handleCopyDayReport = () => {
+    if (!selectedDayModal?.devices?.length) return;
+    const dateFormatted = `${selectedDayModal.day} ${MONTH_NAMES[selectedMonth]} ${selectedYear}`;
+    let text = `📦 Daily Reception Report (${dateFormatted})\n`;
+    text += `Type: Received at Bangladesh (BD)\n`;
+    text += `Total Devices: ${selectedDayModal.devices.length}\n\n`;
+
+    dayAgentGroups.forEach((ag) => {
+      text += `🚚 Shipping Agent: ${ag.agent} (${ag.total} ${ag.total === 1 ? 'device' : 'devices'})\n`;
+      Object.entries(ag.suppliers).forEach(([sup, devs]) => {
+        text += `  • Supplier: ${sup} (${devs.length} devices)\n`;
+        devs.forEach((dev) => {
+          text += `     - ${dev.model || dev.model_name} [${dev.variant || 'Std'}] (${dev.capacity || ''} ${dev.color || ''}) - IMEI: ${dev.imei}\n`;
+        });
+      });
+      text += `\n`;
+    });
+
+    navigator.clipboard.writeText(text.trim()).then(() => {
+      enqueueSnackbar('Day reception report copied to clipboard!', { variant: 'success' });
+    }).catch(() => {
+      enqueueSnackbar('Failed to copy to clipboard', { variant: 'error' });
+    });
+  };
 
   // Filtered devices for the monthly ledger
   const filteredLedger = useMemo(() => {
@@ -697,7 +751,7 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
                     <Tooltip
                       title={
                         hasReceptions
-                          ? `Day ${dayNum}: ${count} device(s) received — Click to inspect`
+                          ? `Day ${dayNum}: ${count} device(s) received — Click to inspect by Agent`
                           : `Day ${dayNum}: No devices received`
                       }
                       arrow
@@ -731,7 +785,7 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          transform: 'none', // DO NOT increase size on hover per request
+                          transform: 'none',
                           boxShadow: isHovered
                             ? '0 3px 8px rgba(37, 99, 235, 0.25)'
                             : hasReceptions
@@ -843,7 +897,7 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
                       return (
                         <Tooltip
                           key={`shipment-plot-${dayNum}`}
-                          title={`Day ${dayNum}: ${count} device(s) received`}
+                          title={`Day ${dayNum}: ${count} device(s) received — Click to inspect by Agent`}
                           arrow
                         >
                           <Box
@@ -887,7 +941,7 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
                                     : '#10B981'
                                   : 'transparent',
                                 transition: 'all 0.15s ease-in-out',
-                                transform: 'none', // DO NOT increase size on hover per request
+                                transform: 'none',
                                 opacity: count > 0 ? 1 : 0.2
                               }}
                             />
@@ -1061,7 +1115,7 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
                       </Typography>
 
                       <Typography variant="caption" color="primary.main" fontWeight={700} sx={{ fontSize: '0.72rem' }}>
-                        {d.shipment_supplier || s?.supplier_name || 'Direct'}
+                        {d.shipment_agent || s?.shipping_company || 'Direct'}
                       </Typography>
                     </Box>
                   </Paper>
@@ -1076,7 +1130,7 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
                   <TableRow sx={{ bgcolor: 'action.hover' }}>
                     <TableCell sx={{ fontWeight: 700 }}>Device Model & Spec</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>IMEI / Serial</TableCell>
-                    <TableCell sx={{ fontWeight: 700 }}>Supplier & Carrier</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Shipping Agent & Supplier</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Received Date</TableCell>
                     <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                     <TableCell sx={{ fontWeight: 700 }} align="right">Shipment Batch</TableCell>
@@ -1105,11 +1159,11 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
                           )}
                         </TableCell>
                         <TableCell>
-                          <Typography variant="body2" fontWeight={600}>
-                            {d.shipment_supplier || s?.supplier_name || 'Direct / Supplier'}
+                          <Typography variant="body2" fontWeight={700} sx={{ color: '#2563EB' }}>
+                            {d.shipment_agent || s?.shipping_company || 'Direct / Unassigned'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {d.shipment_agent || s?.shipping_company || 'Standard Cargo'}
+                            Supplier: {d.shipment_supplier || s?.supplier_name || 'Supplier'}
                           </Typography>
                         </TableCell>
                         <TableCell>
@@ -1152,7 +1206,7 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
         )}
       </Paper>
 
-      {/* 5. Day Devices Received Inspection Modal */}
+      {/* 5. Day Devices Received Inspection Modal — Grouped by Shipping Agent */}
       <Dialog
         open={Boolean(selectedDayModal)}
         onClose={() => setSelectedDayModal(null)}
@@ -1160,11 +1214,11 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
         fullWidth
         PaperProps={{ sx: { borderRadius: { xs: 2, sm: 3 }, p: 0.5, m: { xs: 1.5, sm: 2 } } }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1.2, px: { xs: 1.5, sm: 2 } }}>
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1.2, px: { xs: 1.5, sm: 2.5 } }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1, pr: 1 }}>
             <CheckCircleIcon sx={{ color: '#10B981', fontSize: 22, flexShrink: 0 }} />
             <Typography variant="subtitle1" fontWeight={800} noWrap sx={{ fontSize: { xs: '0.88rem', sm: '1.05rem' } }}>
-              Devices Received: {selectedDayModal?.day} {MONTH_NAMES[selectedMonth]} {selectedYear}
+              Received: {selectedDayModal?.day} {MONTH_NAMES[selectedMonth]} {selectedYear}
             </Typography>
             <Chip
               label={`${selectedDayModal?.devices?.length || 0} Devices`}
@@ -1172,71 +1226,141 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
               sx={{ fontWeight: 800, fontSize: '0.68rem', height: 22, bgcolor: '#D1FAE5', color: '#047857', borderRadius: 1.2, flexShrink: 0 }}
             />
           </Box>
-          <IconButton size="small" onClick={() => setSelectedDayModal(null)}>
-            <CloseIcon fontSize="small" />
-          </IconButton>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<CopyIcon sx={{ fontSize: '13px !important' }} />}
+              onClick={handleCopyDayReport}
+              sx={{
+                fontSize: '0.72rem',
+                textTransform: 'none',
+                fontWeight: 700,
+                borderRadius: 1.5,
+                py: 0.3,
+                px: 1
+              }}
+            >
+              Copy Report
+            </Button>
+            <IconButton size="small" onClick={() => setSelectedDayModal(null)}>
+              <CloseIcon fontSize="small" />
+            </IconButton>
+          </Box>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: { xs: 1.5, sm: 2 } }}>
-          <Stack spacing={1.5}>
-            {selectedDayModal?.devices?.map((dev) => {
-              const s = dev.current_shipment ? shipmentMap[dev.current_shipment] : null;
-              return (
-                <Paper
-                  key={`day-dev-${dev.id}`}
-                  variant="outlined"
-                  sx={{
-                    p: 1.5,
-                    borderRadius: 2,
-                    bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#F8FAFC'),
-                    display: 'flex',
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    alignItems: { xs: 'flex-start', sm: 'center' },
-                    justifyContent: 'space-between',
-                    gap: 1.2
-                  }}
-                >
-                  <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.3 }}>
-                      <Typography variant="subtitle2" fontWeight={800}>
-                        {dev.model || dev.model_name}
-                      </Typography>
-                      <VariantBadge variant={dev.variant} />
-                      <Typography variant="caption" color="text.secondary">
-                        ({dev.capacity || ''} • {dev.color || ''})
-                      </Typography>
+        <DialogContent dividers sx={{ p: { xs: 1.5, sm: 2.5 } }}>
+          <Stack spacing={2.5}>
+            {dayAgentGroups.map((agGroup) => (
+              <Paper
+                key={`agent-group-${agGroup.agent}`}
+                variant="outlined"
+                sx={{
+                  p: { xs: 1.5, sm: 2 },
+                  borderRadius: 2.5,
+                  bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#F8FAFC'),
+                  border: '1px solid',
+                  borderColor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.1)' : '#E2E8F0')
+                }}
+              >
+                {/* Agent Group Header */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, pb: 1, borderBottom: '1px dashed', borderColor: 'divider' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ p: 0.5, borderRadius: 1.5, bgcolor: 'rgba(37, 99, 235, 0.1)', color: '#2563EB', display: 'flex' }}>
+                      <ShippingIcon sx={{ fontSize: 18 }} />
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-                      <CopyableText text={dev.imei} />
-                      {dev.battery_health && (
-                        <Typography variant="caption" color="text.secondary">
-                          🔋 {dev.battery_health}% {dev.battery_cycle ? `(${dev.battery_cycle} cycles)` : ''}
-                        </Typography>
-                      )}
-                      <Typography variant="caption" color="text.secondary">
-                        Supplier: <strong>{dev.shipment_supplier || s?.supplier_name || 'Direct'}</strong>
-                      </Typography>
-                    </Box>
+                    <Typography variant="subtitle2" fontWeight={800} sx={{ fontSize: { xs: '0.88rem', sm: '1rem' } }}>
+                      Shipping Agent: {agGroup.agent}
+                    </Typography>
                   </Box>
+                  <Chip
+                    label={`${agGroup.total} ${agGroup.total === 1 ? 'device' : 'devices'}`}
+                    size="small"
+                    sx={{ fontWeight: 800, fontSize: '0.7rem', height: 22, bgcolor: '#DBEAFE', color: '#1D4ED8', borderRadius: 1.2 }}
+                  />
+                </Box>
 
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
-                    <StatusBadge status={dev.current_status || dev.status} />
-                    {s && onSelectShipment && (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                          setSelectedDayModal(null);
-                          onSelectShipment(s);
-                        }}
-                        sx={{ fontSize: '0.72rem', py: 0.3, px: 1, borderRadius: 1.5, textTransform: 'none', fontWeight: 700 }}
-                      >
-                        Shipment
-                      </Button>
-                    )}
-                  </Box>
-                </Paper>
-              );
-            })}
+                {/* Sub-group by Supplier */}
+                <Stack spacing={1.5}>
+                  {Object.entries(agGroup.suppliers).map(([supName, devs]) => (
+                    <Box key={`agent-sup-${supName}`}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1 }}>
+                        <SupplierIcon sx={{ fontSize: 15, color: 'text.secondary' }} />
+                        <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                          Supplier: <strong>{supName}</strong> ({devs.length} units)
+                        </Typography>
+                      </Box>
+
+                      {/* Device Cards for this Supplier */}
+                      <Grid container spacing={1}>
+                        {devs.map((dev) => {
+                          const s = dev.current_shipment ? shipmentMap[dev.current_shipment] : null;
+                          return (
+                            <Grid item xs={12} sm={6} key={`modal-dev-${dev.id}`}>
+                              <Paper
+                                variant="outlined"
+                                sx={{
+                                  p: 1.2,
+                                  borderRadius: 2,
+                                  bgcolor: 'background.paper',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: 0.6
+                                }}
+                              >
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 0.5 }}>
+                                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap' }}>
+                                      <Typography variant="subtitle2" fontWeight={800} sx={{ fontSize: '0.82rem' }}>
+                                        {dev.model || dev.model_name}
+                                      </Typography>
+                                      <VariantBadge variant={dev.variant} />
+                                    </Box>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
+                                      {dev.capacity || ''} {dev.color || ''}
+                                    </Typography>
+                                  </Box>
+                                  <StatusBadge status={dev.current_status || dev.status} />
+                                </Box>
+
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.5, pt: 0.2 }}>
+                                  <CopyableText text={dev.imei} />
+                                  {dev.battery_health && (
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                                      🔋 {dev.battery_health}% {dev.battery_cycle ? `(${dev.battery_cycle} CC)` : ''}
+                                    </Typography>
+                                  )}
+                                </Box>
+
+                                {s && (
+                                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: 1, borderColor: 'divider', pt: 0.4, mt: 0.2 }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }} noWrap>
+                                      Tracking: {s.tracking_number || '—'}
+                                    </Typography>
+                                    {onSelectShipment && (
+                                      <Button
+                                        size="small"
+                                        variant="text"
+                                        onClick={() => {
+                                          setSelectedDayModal(null);
+                                          onSelectShipment(s);
+                                        }}
+                                        sx={{ fontSize: '0.68rem', py: 0, px: 0.5, minWidth: 'auto', textTransform: 'none', fontWeight: 700 }}
+                                      >
+                                        Batch Details
+                                      </Button>
+                                    )}
+                                  </Box>
+                                )}
+                              </Paper>
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
+                    </Box>
+                  ))}
+                </Stack>
+              </Paper>
+            ))}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: { xs: 1.5, sm: 2.5 }, py: 1.2 }}>
