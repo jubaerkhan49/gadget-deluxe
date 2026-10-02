@@ -297,7 +297,7 @@ export default function Shipments() {
           </Typography>
         </div>
 
-        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ gap: 1, width: { xs: '100%', sm: 'auto' } }}>
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
           {/* View Mode Switcher: Batches Grid vs Inflow Analytics */}
           <ToggleButtonGroup
             value={viewMode}
@@ -308,9 +308,7 @@ export default function Shipments() {
               bgcolor: 'action.hover',
               p: 0.35,
               borderRadius: '10px',
-              width: { xs: '100%', sm: 'auto' },
               '& .MuiToggleButton-root': {
-                flex: { xs: 1, sm: 'auto' },
                 border: 'none',
                 borderRadius: '8px',
                 px: 1.5,
@@ -348,10 +346,10 @@ export default function Shipments() {
                   fontSize: '0.82rem',
                   px: 1.75,
                   py: 0.75,
-                  flex: { xs: 1, sm: 'auto' },
                   borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
                   bgcolor: viewTab === 'ARCHIVED' ? 'primary.main' : undefined,
                   color: viewTab === 'ARCHIVED' ? '#fff' : 'text.primary',
+                  whiteSpace: 'nowrap',
                   '&:hover': {
                     bgcolor: viewTab === 'ARCHIVED' ? 'primary.dark' : 'action.hover',
                     borderColor: 'primary.main'
@@ -375,10 +373,10 @@ export default function Shipments() {
                   fontSize: '0.82rem',
                   px: 1.75,
                   py: 0.75,
-                  flex: { xs: 1, sm: 'auto' },
                   borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
                   bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(239, 246, 255, 0.75)',
                   color: 'primary.main',
+                  whiteSpace: 'nowrap',
                   '&:hover': {
                     bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.16)' : '#DBEAFE',
                     borderColor: 'primary.main'
@@ -403,7 +401,8 @@ export default function Shipments() {
               fontSize: '0.82rem',
               px: 2,
               py: 0.75,
-              flex: { xs: '1 1 100%', sm: 'auto' },
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
               boxShadow: '0 4px 14px rgba(37, 99, 235, 0.28)'
             }}
           >

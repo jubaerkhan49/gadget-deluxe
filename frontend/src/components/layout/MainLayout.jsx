@@ -309,7 +309,7 @@ export default function MainLayout() {
                   size="small"
                   startIcon={<AddIcon />}
                   onClick={() => setShowAddShipment(true)}
-                  sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                  sx={{ display: { xs: 'none', sm: 'inline-flex' }, borderRadius: 2 }}
                 >
                   New Shipment
                 </Button>
@@ -318,9 +318,28 @@ export default function MainLayout() {
                   size="small"
                   startIcon={<AddIcon />}
                   onClick={() => setShowAddDevice(true)}
+                  sx={{ display: { xs: 'none', sm: 'inline-flex' }, borderRadius: 2 }}
                 >
                   Add Device
                 </Button>
+                <Tooltip title="Add Device">
+                  <IconButton
+                    size="small"
+                    color="primary"
+                    onClick={() => setShowAddDevice(true)}
+                    sx={{
+                      display: { xs: 'inline-flex', sm: 'none' },
+                      bgcolor: 'primary.main',
+                      color: '#fff',
+                      width: 32,
+                      height: 32,
+                      borderRadius: 2,
+                      '&:hover': { bgcolor: 'primary.dark' }
+                    }}
+                  >
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </>
             )}
 

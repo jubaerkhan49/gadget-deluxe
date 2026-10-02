@@ -857,7 +857,7 @@ export default function Dashboard() {
       bgLight: 'rgba(139, 92, 246, 0.12)'
     },
     {
-      title: 'WAITING SHIPMENT',
+      title: 'IN SHIPMENT',
       value: stats ? stats.waiting_shipment : 0,
       icon: <ShippingIcon sx={{ fontSize: 26 }} />,
       color: '#F59E0B',
@@ -1016,13 +1016,33 @@ export default function Dashboard() {
         </Box>
 
         {/* Action Buttons */}
-        <Stack direction="row" spacing={1.5} sx={{ width: { xs: '100%', md: 'auto' }, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            width: { xs: '100%', md: 'auto' },
+            display: 'grid',
+            gridTemplateColumns: { xs: 'repeat(3, 1fr)', sm: 'repeat(3, auto)' },
+            gap: { xs: 1, sm: 1.5 }
+          }}
+        >
           <Button
             variant="contained"
             color="primary"
             startIcon={<AddIcon />}
             onClick={() => setAddDeviceOpen(true)}
-            sx={{ fontWeight: 600, flex: { xs: 1, sm: 'auto' } }}
+            sx={{
+              fontWeight: 700,
+              fontSize: { xs: '0.72rem', sm: '0.85rem' },
+              px: { xs: 1, sm: 2 },
+              py: { xs: 0.9, sm: 0.8 },
+              borderRadius: 2,
+              whiteSpace: 'nowrap',
+              flexDirection: { xs: 'column', sm: 'row' },
+              '& .MuiButton-startIcon': {
+                mr: { xs: 0, sm: 1 },
+                mb: { xs: 0.3, sm: 0 },
+                ml: { xs: 0, sm: '-4px' }
+              }
+            }}
           >
             Add Device
           </Button>
@@ -1031,7 +1051,20 @@ export default function Dashboard() {
             color="primary"
             startIcon={<ShippingIcon />}
             onClick={() => setAddShipmentOpen(true)}
-            sx={{ fontWeight: 600, flex: { xs: 1, sm: 'auto' } }}
+            sx={{
+              fontWeight: 700,
+              fontSize: { xs: '0.72rem', sm: '0.85rem' },
+              px: { xs: 1, sm: 2 },
+              py: { xs: 0.9, sm: 0.8 },
+              borderRadius: 2,
+              whiteSpace: 'nowrap',
+              flexDirection: { xs: 'column', sm: 'row' },
+              '& .MuiButton-startIcon': {
+                mr: { xs: 0, sm: 1 },
+                mb: { xs: 0.3, sm: 0 },
+                ml: { xs: 0, sm: '-4px' }
+              }
+            }}
           >
             New Shipment
           </Button>
@@ -1040,11 +1073,24 @@ export default function Dashboard() {
             color="success"
             startIcon={<SaleIcon />}
             onClick={() => setRecordSaleOpen(true)}
-            sx={{ fontWeight: 600, flex: { xs: 1, sm: 'auto' } }}
+            sx={{
+              fontWeight: 700,
+              fontSize: { xs: '0.72rem', sm: '0.85rem' },
+              px: { xs: 1, sm: 2 },
+              py: { xs: 0.9, sm: 0.8 },
+              borderRadius: 2,
+              whiteSpace: 'nowrap',
+              flexDirection: { xs: 'column', sm: 'row' },
+              '& .MuiButton-startIcon': {
+                mr: { xs: 0, sm: 1 },
+                mb: { xs: 0.3, sm: 0 },
+                ml: { xs: 0, sm: '-4px' }
+              }
+            }}
           >
             Record Sale
           </Button>
-        </Stack>
+        </Box>
       </Paper>
 
       {/* 8 Uniform Metric Cards Grid */}
@@ -1053,11 +1099,11 @@ export default function Dashboard() {
           <Grid item xs={6} sm={6} md={3} key={idx}>
             <Card
               sx={{
-                height: { xs: 86, sm: 108 },
+                minHeight: { xs: 80, sm: 104 },
                 display: 'flex',
                 alignItems: 'center',
                 p: { xs: 1.25, sm: 2 },
-                borderRadius: 2,
+                borderRadius: 2.5,
                 border: 1,
                 borderColor: 'divider',
                 transition: 'transform 0.2s, box-shadow 0.2s',
@@ -1073,18 +1119,19 @@ export default function Dashboard() {
               {/* Responsive Icon Container */}
               <Box
                 sx={{
-                  width: { xs: 38, sm: 52 },
-                  height: { xs: 38, sm: 52 },
-                  minWidth: { xs: 38, sm: 52 },
-                  borderRadius: { xs: '10px', sm: '12px' },
+                  width: { xs: 36, sm: 48 },
+                  height: { xs: 36, sm: 48 },
+                  minWidth: { xs: 36, sm: 48 },
+                  borderRadius: { xs: '8px', sm: '12px' },
                   backgroundColor: card.bgLight,
                   color: card.color,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  mr: { xs: 1.2, sm: 2 },
+                  mr: { xs: 1.1, sm: 1.8 },
+                  flexShrink: 0,
                   '& .MuiSvgIcon-root': {
-                    fontSize: { xs: 20, sm: 26 }
+                    fontSize: { xs: 18, sm: 24 }
                   }
                 }}
               >
@@ -1098,11 +1145,11 @@ export default function Dashboard() {
                   fontWeight={700}
                   sx={{
                     textTransform: 'uppercase',
-                    letterSpacing: 0.4,
+                    letterSpacing: 0.3,
                     fontSize: { xs: '0.62rem', sm: '0.72rem' },
+                    lineHeight: 1.2,
                     display: 'block'
                   }}
-                  noWrap
                 >
                   {card.title}
                 </Typography>
@@ -1113,7 +1160,7 @@ export default function Dashboard() {
                     mt: 0.2,
                     fontFamily: '"JetBrains Mono", monospace',
                     letterSpacing: -0.5,
-                    fontSize: { xs: '1.05rem', sm: '1.45rem' }
+                    fontSize: { xs: '0.98rem', sm: '1.4rem' }
                   }}
                   noWrap
                 >
