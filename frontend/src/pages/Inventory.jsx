@@ -307,25 +307,32 @@ export default function Inventory() {
           flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
           alignItems: { xs: 'flex-start', sm: 'center' },
-          gap: 2,
-          mb: 3
+          gap: { xs: 1.5, sm: 2 },
+          mb: { xs: 2, sm: 3 }
         }}
       >
         <div>
-          <Typography variant="h5" fontWeight={800} letterSpacing={-0.5}>
+          <Typography variant="h5" fontWeight={800} letterSpacing={-0.5} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             Device Inventory
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
             Manage, filter and audit active mobile phone assets ({filteredDevices.length} active)
           </Typography>
         </div>
-        <Stack direction="row" spacing={1.5} alignItems="center">
+
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-end' } }}
+        >
           <Tooltip title="Live Sync / Refresh">
             <Button
               variant="outlined"
               color="primary"
               onClick={handleManualRefresh}
               disabled={refreshing}
+              size="small"
               startIcon={
                 <RefreshIcon
                   fontSize="small"
@@ -338,26 +345,28 @@ export default function Inventory() {
                   }}
                 />
               }
-              sx={{ fontWeight: 600, borderRadius: 2 }}
+              sx={{ fontWeight: 600, borderRadius: 2, flex: { xs: 1, sm: 'none' }, py: { xs: 0.8, sm: 0.6 } }}
             >
               {refreshing ? 'Syncing...' : 'Sync'}
             </Button>
           </Tooltip>
           <Button
             variant="outlined"
+            size="small"
             startIcon={exporting ? <CircularProgress size={16} color="inherit" /> : <ExportIcon />}
             onClick={handleExportCSV}
             disabled={exporting}
-            sx={{ borderRadius: 2 }}
+            sx={{ borderRadius: 2, flex: { xs: 1, sm: 'none' }, py: { xs: 0.8, sm: 0.6 } }}
           >
-            {exporting ? 'Exporting...' : 'Export CSV'}
+            {exporting ? 'Exporting...' : 'Export'}
           </Button>
           <Button
             variant="contained"
             color="primary"
+            size="small"
             startIcon={<AddIcon />}
             onClick={() => setAddDeviceOpen(true)}
-            sx={{ borderRadius: 2 }}
+            sx={{ borderRadius: 2, flex: { xs: 1.2, sm: 'none' }, py: { xs: 0.8, sm: 0.6 }, fontWeight: 700 }}
           >
             Add Device
           </Button>
@@ -365,16 +374,15 @@ export default function Inventory() {
       </Box>
 
       {/* Filter Control Box */}
-      <Paper variant="outlined" sx={{ p: 2.5, mb: 3, borderRadius: 3 }}>
-        <Stack spacing={2}>
+      <Paper variant="outlined" sx={{ p: { xs: 1.75, sm: 2.5 }, mb: 2.5, borderRadius: 3 }}>
+        <Stack spacing={1.5}>
           {/* Top Filter Bar: Search, Variant, Status & Owner Selectors */}
           <Box
             sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              gap: 2,
-              alignItems: 'center',
-              flexWrap: 'wrap'
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: '1.4fr 1fr 1fr 1fr' },
+              gap: 1.5,
+              alignItems: 'center'
             }}
           >
             <TextField
@@ -385,7 +393,7 @@ export default function Inventory() {
                 setSearchQuery(e.target.value);
                 setPage(0);
               }}
-              sx={{ width: { xs: '100%', md: 280, lg: 320 } }}
+              fullWidth
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -402,7 +410,7 @@ export default function Inventory() {
               }}
             />
 
-            <FormControl size="small" sx={{ minWidth: 140, width: { xs: '100%', md: 'auto' } }}>
+            <FormControl size="small" fullWidth>
               <InputLabel>Variant</InputLabel>
               <Select
                 value={selectedVariant}
@@ -421,7 +429,7 @@ export default function Inventory() {
               </Select>
             </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 150, width: { xs: '100%', md: 'auto' } }}>
+            <FormControl size="small" fullWidth>
               <InputLabel>Status</InputLabel>
               <Select
                 value={selectedStatus}
@@ -439,7 +447,7 @@ export default function Inventory() {
               </Select>
             </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 170, width: { xs: '100%', md: 'auto' } }}>
+            <FormControl size="small" fullWidth>
               <InputLabel>Assigned To</InputLabel>
               <Select
                 value={selectedOwner}
@@ -461,9 +469,20 @@ export default function Inventory() {
 
           <Divider />
 
-          {/* Quick Filter Chips */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mr: 1, textTransform: 'uppercase' }}>
+          {/* Quick Filter Chips (Scrollable on Mobile) */}
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              overflowX: 'auto',
+              flexWrap: { xs: 'nowrap', sm: 'wrap' },
+              pb: { xs: 0.5, sm: 0 },
+              '::-webkit-scrollbar': { height: '3px' },
+              '::-webkit-scrollbar-thumb': { bgcolor: 'rgba(0,0,0,0.15)', borderRadius: '4px' }
+            }}
+          >
+            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ mr: 0.5, textTransform: 'uppercase', flexShrink: 0 }}>
               Filters:
             </Typography>
 
@@ -482,7 +501,8 @@ export default function Inventory() {
               variant={selectedStatus === 'ALL' && selectedOwner === 'ALL' && selectedVariant === 'ALL' ? 'filled' : 'outlined'}
               sx={{
                 fontWeight: selectedStatus === 'ALL' && selectedOwner === 'ALL' && selectedVariant === 'ALL' ? 700 : 500,
-                borderRadius: '8px'
+                borderRadius: '8px',
+                flexShrink: 0
               }}
             />
 
@@ -500,7 +520,8 @@ export default function Inventory() {
               variant={selectedStatus === 'IN_STOCK' && selectedOwner === 'ALL' ? 'filled' : 'outlined'}
               sx={{
                 fontWeight: selectedStatus === 'IN_STOCK' && selectedOwner === 'ALL' ? 700 : 500,
-                borderRadius: '8px'
+                borderRadius: '8px',
+                flexShrink: 0
               }}
             />
 
@@ -523,7 +544,8 @@ export default function Inventory() {
                   sx={{
                     fontWeight: isSelected ? 700 : 500,
                     borderRadius: '8px',
-                    textTransform: 'capitalize'
+                    textTransform: 'capitalize',
+                    flexShrink: 0
                   }}
                 />
               );
@@ -543,7 +565,8 @@ export default function Inventory() {
               variant={selectedStatus === 'WAITING_SHIPMENT' && selectedOwner === 'ALL' ? 'filled' : 'outlined'}
               sx={{
                 fontWeight: selectedStatus === 'WAITING_SHIPMENT' && selectedOwner === 'ALL' ? 700 : 500,
-                borderRadius: '8px'
+                borderRadius: '8px',
+                flexShrink: 0
               }}
             />
 
@@ -561,18 +584,48 @@ export default function Inventory() {
               variant={selectedStatus === 'UNDER_REPAIR' && selectedOwner === 'ALL' ? 'filled' : 'outlined'}
               sx={{
                 fontWeight: selectedStatus === 'UNDER_REPAIR' && selectedOwner === 'ALL' ? 700 : 500,
-                borderRadius: '8px'
+                borderRadius: '8px',
+                flexShrink: 0
               }}
             />
           </Box>
         </Stack>
       </Paper>
 
-      {/* Devices Count Indicator */}
+      {/* Devices Count & Mobile Sort Indicator */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, px: 0.5 }}>
-        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+        <Typography variant="body2" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
           {filteredDevices.length} {filteredDevices.length === 1 ? 'Device' : 'Devices'} Listed
         </Typography>
+
+        {/* Mobile Date Sort Toggle Button */}
+        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+          <Button
+            size="small"
+            variant={assignedDateSort ? 'contained' : 'outlined'}
+            color={assignedDateSort ? 'primary' : 'inherit'}
+            onClick={handleToggleAssignedDateSort}
+            startIcon={
+              assignedDateSort === 'desc' ? (
+                <ArrowDownwardIcon sx={{ fontSize: 15 }} />
+              ) : assignedDateSort === 'asc' ? (
+                <ArrowUpwardIcon sx={{ fontSize: 15 }} />
+              ) : (
+                <SortIcon sx={{ fontSize: 15 }} />
+              )
+            }
+            sx={{
+              fontSize: '0.72rem',
+              py: 0.4,
+              px: 1,
+              borderRadius: 1.5,
+              textTransform: 'none',
+              fontWeight: 700
+            }}
+          >
+            {assignedDateSort === 'desc' ? 'Newest Assigned' : assignedDateSort === 'asc' ? 'Oldest Assigned' : 'Sort Date'}
+          </Button>
+        </Box>
       </Box>
 
       {/* Inventory Mobile Cards View (xs to md) */}
@@ -592,6 +645,7 @@ export default function Inventory() {
             const cleanCap = dev.capacity ? String(dev.capacity).replace(/gb/gi, '').trim() : '';
             const cleanCol = dev.color ? String(dev.color).trim().split(/\s+/)[0] : '';
             const specs = [cleanCap, cleanCol].filter(Boolean).join(' • ');
+            const assignedDateStr = getAssignedDate(dev);
 
             return (
               <Card
@@ -603,23 +657,32 @@ export default function Inventory() {
                 }}
                 sx={{
                   p: 1.5,
-                  borderRadius: 2,
+                  borderRadius: 2.5,
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 1
+                  gap: 1.2,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#FFFFFF',
+                  borderColor: 'divider',
+                  transition: 'transform 0.15s, box-shadow 0.15s',
+                  '&:active': { transform: 'scale(0.99)' }
                 }}
               >
-                {/* Top Row: Model, Specs & Status */}
+                {/* Top Row: Model, Specs & Status Badge */}
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
                   <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="subtitle2" fontWeight={800} noWrap>
+                    <Typography variant="subtitle2" fontWeight={800} noWrap sx={{ fontSize: '0.92rem' }}>
                       {dev.model}
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.3 }}>
                       {specs && (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" color="text.secondary" fontWeight={500}>
                           {specs}
+                        </Typography>
+                      )}
+                      {specs && dev.variant && (
+                        <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.5 }}>
+                          •
                         </Typography>
                       )}
                       {dev.variant && <VariantBadge variant={dev.variant} size="small" />}
@@ -628,7 +691,7 @@ export default function Inventory() {
                   <StatusBadge status={dev.current_status} />
                 </Box>
 
-                {/* Mid Row: IMEI & Battery */}
+                {/* Mid Row: IMEI & Battery Health */}
                 <Box
                   sx={{
                     display: 'flex',
@@ -637,39 +700,49 @@ export default function Inventory() {
                     p: 0.8,
                     borderRadius: 1.5,
                     bgcolor: (theme) =>
-                      theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                      theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                    border: 1,
+                    borderColor: 'divider'
                   }}
                   onClick={(e) => e.stopPropagation()}
                 >
                   <CopyableText text={dev.imei} />
                   {dev.battery_health ? (
-                    <Typography variant="caption" fontWeight={700} color="text.primary">
+                    <Typography variant="caption" fontWeight={700} color="text.primary" sx={{ fontSize: '0.75rem' }}>
                       🔋 {dev.battery_health}% {dev.battery_cycle ? `(${dev.battery_cycle} CC)` : ''}
                     </Typography>
                   ) : null}
                 </Box>
 
-                {/* Bottom Row: Assigned Owner & Actions */}
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 0.3 }}>
-                  <Box>
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.68rem' }}>
+                {/* Bottom Row: Assigned Owner, Assigned Date & Quick Edit */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 0.2 }}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.65rem' }}>
                       Assigned to:
                     </Typography>
-                    {dev.current_owner_name ? (
-                      <Chip
-                        size="small"
-                        label={dev.current_owner_name}
-                        variant="outlined"
-                        sx={{ fontSize: '0.72rem', height: 20, textTransform: 'capitalize', fontWeight: 600 }}
-                      />
-                    ) : (
-                      <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                        Unassigned
-                      </Typography>
-                    )}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap', mt: 0.2 }}>
+                      {dev.current_owner_name ? (
+                        <Chip
+                          size="small"
+                          label={dev.current_owner_name}
+                          variant="outlined"
+                          sx={{ fontSize: '0.72rem', height: 22, textTransform: 'capitalize', fontWeight: 700 }}
+                        />
+                      ) : (
+                        <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                          Unassigned
+                        </Typography>
+                      )}
+
+                      {assignedDateStr && (
+                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                          📅 {formatDate(assignedDateStr)}
+                        </Typography>
+                      )}
+                    </Box>
                   </Box>
 
-                  <Stack direction="row" spacing={0.5} onClick={(e) => e.stopPropagation()}>
+                  <Stack direction="row" spacing={0.5} onClick={(e) => e.stopPropagation()} sx={{ flexShrink: 0 }}>
                     <IconButton
                       size="small"
                       color="primary"
@@ -677,7 +750,7 @@ export default function Inventory() {
                         setEditDevice(dev);
                         setEditDialogOpen(true);
                       }}
-                      sx={{ p: 0.5 }}
+                      sx={{ p: 0.6, bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(59, 130, 246, 0.08)' }}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
@@ -686,6 +759,35 @@ export default function Inventory() {
               </Card>
             );
           })
+        )}
+
+        {/* Mobile Pagination Control */}
+        {filteredDevices.length > 0 && (
+          <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+            <TablePagination
+              rowsPerPageOptions={[10, 25, 50]}
+              component="div"
+              count={filteredDevices.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={(e, newPage) => setPage(newPage)}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+              labelRowsPerPage="Rows:"
+              sx={{
+                '& .MuiTablePagination-toolbar': {
+                  px: 1,
+                  minHeight: 48,
+                  fontSize: '0.8rem'
+                },
+                '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
+                  fontSize: '0.78rem'
+                }
+              }}
+            />
+          </Paper>
         )}
       </Box>
 
