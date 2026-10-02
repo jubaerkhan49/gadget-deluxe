@@ -137,59 +137,71 @@ export default function Analytics() {
   const topModels = analyticsData?.top_models || [];
 
   return (
-    <Box sx={{ pb: 5 }}>
+    <Box sx={{ pb: 4 }}>
       {/* Header & Month Filter Controls */}
       <Box
         sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', md: 'row' },
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', md: 'center' },
-          gap: { xs: 1.5, md: 2 },
-          mb: { xs: 2, sm: 3 }
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          gap: { xs: 1.25, sm: 2 },
+          mb: { xs: 1.5, sm: 2 }
         }}
       >
         <div>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-            <Typography variant="h5" fontWeight={800} letterSpacing={-0.5} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+            <Typography variant="h5" fontWeight={800} letterSpacing={-0.5} sx={{ fontSize: { xs: '1.2rem', sm: '1.45rem' } }}>
               Business Analytics
             </Typography>
             <Chip
               label={analyticsData?.month_label || 'Current Month'}
               color="primary"
               size="small"
-              sx={{ fontWeight: 700, borderRadius: '8px', height: 24, fontSize: '0.72rem' }}
+              sx={{ fontWeight: 700, borderRadius: '8px', height: 22, fontSize: '0.72rem' }}
             />
           </Stack>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.3, fontSize: { xs: '0.78rem', sm: '0.85rem' } }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.2, fontSize: { xs: '0.75rem', sm: '0.82rem' } }}>
             Monthly profit, seller speed & consistency rankings, investment, and logistics cost breakdown.
           </Typography>
         </div>
 
-        {/* Timeframe Selectors & Quick Actions */}
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-end' } }}>
-          <FormControl size="small" sx={{ flex: { xs: 1, sm: 'none' }, minWidth: { xs: 110, sm: 130 } }}>
+        {/* Timeframe Selectors & Quick Actions (Compact & snugly sized) */}
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+          <FormControl size="small" sx={{ width: { xs: 118, sm: 124 }, minWidth: { xs: 118, sm: 124 } }}>
             <Select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              sx={{ borderRadius: '10px', fontWeight: 600, fontSize: '0.85rem' }}
+              sx={{
+                borderRadius: '10px',
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                height: 36,
+                '& .MuiSelect-select': { py: 0.6, px: 1.2 }
+              }}
             >
               {months.map((m) => (
-                <MenuItem key={m.value} value={m.value}>
+                <MenuItem key={m.value} value={m.value} sx={{ fontSize: '0.82rem' }}>
                   {m.label}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ width: { xs: 80, sm: 95 }, minWidth: { xs: 80, sm: 95 } }}>
+          <FormControl size="small" sx={{ width: { xs: 78, sm: 84 }, minWidth: { xs: 78, sm: 84 } }}>
             <Select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
-              sx={{ borderRadius: '10px', fontWeight: 600, fontSize: '0.85rem' }}
+              sx={{
+                borderRadius: '10px',
+                fontWeight: 600,
+                fontSize: '0.82rem',
+                height: 36,
+                '& .MuiSelect-select': { py: 0.6, px: 1.2 }
+              }}
             >
               {years.map((y) => (
-                <MenuItem key={y} value={y}>
+                <MenuItem key={y} value={y} sx={{ fontSize: '0.82rem' }}>
                   {y}
                 </MenuItem>
               ))}
@@ -201,7 +213,15 @@ export default function Analytics() {
               variant="outlined"
               size="small"
               onClick={handleResetToCurrentMonth}
-              sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap', fontSize: '0.75rem', px: 1 }}
+              sx={{
+                borderRadius: '10px',
+                textTransform: 'none',
+                fontWeight: 700,
+                whiteSpace: 'nowrap',
+                fontSize: '0.75rem',
+                height: 36,
+                px: 1.2
+              }}
             >
               This Month
             </Button>
@@ -216,7 +236,8 @@ export default function Analytics() {
                 bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
                 borderRadius: '10px',
                 flexShrink: 0,
-                p: 0.8
+                width: 36,
+                height: 36
               }}
             >
               <RefreshIcon
@@ -239,9 +260,9 @@ export default function Analytics() {
           <CircularProgress />
         </Box>
       ) : (
-        <Stack spacing={{ xs: 2.5, sm: 3.5 }}>
+        <Stack spacing={{ xs: 2, sm: 2.5 }}>
           {/* 1. PRIMARY FINANCIAL PILLARS (4 METRICS IN 2x2 GRID ON MOBILE) */}
-          <Grid container spacing={{ xs: 1.25, sm: 2.5 }}>
+          <Grid container spacing={{ xs: 1.25, sm: 2 }}>
             {/* PILLAR 1: TOTAL PROFIT THIS MONTH */}
             <Grid item xs={6} sm={6} lg={3}>
               <Card
@@ -936,24 +957,38 @@ export default function Analytics() {
             )}
           </Paper>
 
-          {/* 4. TOP SELLING MODELS & BUSINESS VELOCITY */}
-          <Grid container spacing={{ xs: 2, md: 2.5 }}>
+          {/* 4. TOP SELLING MODELS & EXECUTIVE OVERVIEW BANNERS */}
+          <Grid container spacing={{ xs: 2, md: 2.5 }} alignItems="stretch">
             {/* Top Selling Models */}
-            <Grid item xs={12} md={7}>
-              <Paper variant="outlined" sx={{ p: { xs: 1.75, sm: 2.5 }, borderRadius: 3, height: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.75, flexWrap: 'wrap', gap: 1 }}>
-                  <Typography variant="subtitle1" fontWeight={800} sx={{ fontSize: { xs: '0.92rem', sm: '1rem' } }}>
-                    Top Selling Device Models
-                  </Typography>
+            <Grid item xs={12} md={7} sx={{ display: 'flex' }}>
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: { xs: 2, sm: 2.5 },
+                  borderRadius: 3,
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <PhoneIcon color="primary" sx={{ fontSize: 20 }} />
+                    <Typography variant="subtitle1" fontWeight={800} sx={{ fontSize: { xs: '0.92rem', sm: '1rem' } }}>
+                      Top Selling Device Models
+                    </Typography>
+                  </Stack>
                   <Chip label="By Volume & Profit" size="small" sx={{ fontWeight: 700, fontSize: '0.7rem', height: 22 }} />
                 </Box>
 
                 {topModels.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>
-                    No sales data recorded for this period.
-                  </Typography>
+                  <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No sales data recorded for this period.
+                    </Typography>
+                  </Box>
                 ) : (
-                  <Stack spacing={1.2}>
+                  <Stack spacing={1.2} sx={{ flexGrow: 1, justifyContent: 'flex-start' }}>
                     {topModels.map((m, idx) => (
                       <Paper
                         key={m.model}
@@ -1023,24 +1058,32 @@ export default function Analytics() {
             </Grid>
 
             {/* Business Velocity & Executive Summary Card */}
-            <Grid item xs={12} md={5}>
+            <Grid item xs={12} md={5} sx={{ display: 'flex' }}>
               <Paper
                 variant="outlined"
                 sx={{
-                  p: { xs: 1.75, sm: 2.5 },
+                  p: { xs: 2, sm: 2.5 },
                   borderRadius: 3,
-                  height: '100%',
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
                   background: (theme) =>
                     theme.palette.mode === 'dark'
                       ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.6) 0%, rgba(15, 23, 42, 0.95) 100%)'
                       : 'linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%)'
                 }}
               >
-                <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 1.75, fontSize: { xs: '0.92rem', sm: '1rem' } }}>
-                  Executive Business Overview
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <InsightsIcon color="primary" sx={{ fontSize: 20 }} />
+                    <Typography variant="subtitle1" fontWeight={800} sx={{ fontSize: { xs: '0.92rem', sm: '1rem' } }}>
+                      Executive Business Overview
+                    </Typography>
+                  </Stack>
+                  <Chip label={analyticsData?.month_label || 'Summary'} size="small" sx={{ fontWeight: 700, fontSize: '0.7rem', height: 22 }} />
+                </Box>
 
-                <Stack spacing={1.2}>
+                <Stack spacing={1.5} sx={{ flexGrow: 1, justifyContent: 'center' }}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 0.5 }}>
                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', sm: '0.85rem' } }}>Total Revenue (Sales):</Typography>
                     <Typography variant="body2" fontWeight={800} color="text.primary" sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
