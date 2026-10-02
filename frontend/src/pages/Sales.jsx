@@ -255,8 +255,106 @@ export default function Sales() {
         />
       </Paper>
 
-      {/* Sales Table */}
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+      {/* Mobile Sales Cards View (xs to md) */}
+      <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2 }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : filteredSales.length === 0 ? (
+          <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              No sales records found.
+            </Typography>
+          </Paper>
+        ) : (
+          paginatedSales.map((sale) => (
+            <Card
+              key={`mob-sale-${sale.id}`}
+              variant="outlined"
+              sx={{
+                p: 1.5,
+                borderRadius: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1
+              }}
+            >
+              {/* Top: Model & Profit */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={800} noWrap>
+                    {sale.device_model || 'Device Unit'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
+                    {(sale.device_capacity || sale.device_color) && (
+                      <Typography variant="caption" color="text.secondary">
+                        {sale.device_capacity || ''} {sale.device_color ? `• ${sale.device_color}` : ''}
+                      </Typography>
+                    )}
+                    {sale.device_variant && <VariantBadge variant={sale.device_variant} size="small" />}
+                  </Box>
+                </Box>
+
+                <Chip
+                  label={`Profit: ${sale.profit !== null && sale.profit !== undefined ? formatNumber(sale.profit) : '—'}`}
+                  size="small"
+                  sx={{
+                    fontWeight: 800,
+                    fontSize: '0.72rem',
+                    height: 22,
+                    bgcolor: Number(sale.profit || 0) >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                    color: Number(sale.profit || 0) >= 0 ? '#059669' : '#DC2626'
+                  }}
+                />
+              </Box>
+
+              {/* IMEI */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  p: 0.8,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                }}
+              >
+                <CopyableText text={sale.device_imei || '—'} />
+                <Typography variant="caption" color="text.secondary">
+                  {formatDate(sale.sale_date || sale.created_at)}
+                </Typography>
+              </Box>
+
+              {/* Bottom: Sold By & Prices */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 0.3, flexWrap: 'wrap', gap: 0.5 }}>
+                <Chip
+                  size="small"
+                  icon={<PersonIcon sx={{ fontSize: '13px !important', color: '#0284c7 !important' }} />}
+                  label={sale.sold_by || sale.seller_name || 'Store'}
+                  sx={{
+                    bgcolor: 'rgba(2, 132, 199, 0.1)',
+                    color: '#0284c7',
+                    fontWeight: 600,
+                    fontSize: '0.72rem',
+                    height: 22
+                  }}
+                />
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Sold: <strong style={{ color: '#2563EB' }}>{sale.selling_price ? formatNumber(sale.selling_price) : '—'}</strong>
+                  </Typography>
+                </Box>
+              </Box>
+            </Card>
+          ))
+        )}
+      </Box>
+
+      {/* Sales Desktop Table (md+) */}
+      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', display: { xs: 'none', md: 'block' } }}>
         <TableContainer>
           <Table size="medium">
             <TableHead>

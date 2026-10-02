@@ -574,8 +574,122 @@ export default function Inventory() {
         </Typography>
       </Box>
 
-      {/* Inventory Table */}
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+      {/* Inventory Mobile Cards View (xs to md) */}
+      <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2 }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : filteredDevices.length === 0 ? (
+          <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              No devices match your current filters.
+            </Typography>
+          </Paper>
+        ) : (
+          paginatedDevices.map((dev) => {
+            const cleanCap = dev.capacity ? String(dev.capacity).replace(/gb/gi, '').trim() : '';
+            const cleanCol = dev.color ? String(dev.color).trim().split(/\s+/)[0] : '';
+            const specs = [cleanCap, cleanCol].filter(Boolean).join(' • ');
+
+            return (
+              <Card
+                key={`mob-inv-${dev.id}`}
+                variant="outlined"
+                onClick={() => {
+                  setSelectedDevice(dev);
+                  setDrawerOpen(true);
+                }}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1
+                }}
+              >
+                {/* Top Row: Model, Specs & Status */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="subtitle2" fontWeight={800} noWrap>
+                      {dev.model}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
+                      {specs && (
+                        <Typography variant="caption" color="text.secondary">
+                          {specs}
+                        </Typography>
+                      )}
+                      {dev.variant && <VariantBadge variant={dev.variant} size="small" />}
+                    </Box>
+                  </Box>
+                  <StatusBadge status={dev.current_status} />
+                </Box>
+
+                {/* Mid Row: IMEI & Battery */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    p: 0.8,
+                    borderRadius: 1.5,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <CopyableText text={dev.imei} />
+                  {dev.battery_health ? (
+                    <Typography variant="caption" fontWeight={700} color="text.primary">
+                      🔋 {dev.battery_health}% {dev.battery_cycle ? `(${dev.battery_cycle} CC)` : ''}
+                    </Typography>
+                  ) : null}
+                </Box>
+
+                {/* Bottom Row: Assigned Owner & Actions */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 0.3 }}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.68rem' }}>
+                      Assigned to:
+                    </Typography>
+                    {dev.current_owner_name ? (
+                      <Chip
+                        size="small"
+                        label={dev.current_owner_name}
+                        variant="outlined"
+                        sx={{ fontSize: '0.72rem', height: 20, textTransform: 'capitalize', fontWeight: 600 }}
+                      />
+                    ) : (
+                      <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                        Unassigned
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Stack direction="row" spacing={0.5} onClick={(e) => e.stopPropagation()}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => {
+                        setEditDevice(dev);
+                        setEditDialogOpen(true);
+                      }}
+                      sx={{ p: 0.5 }}
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                </Box>
+              </Card>
+            );
+          })
+        )}
+      </Box>
+
+      {/* Inventory Desktop Table (md+) */}
+      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', display: { xs: 'none', md: 'block' } }}>
         <TableContainer>
           <Table size="medium">
             <TableHead>

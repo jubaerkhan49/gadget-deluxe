@@ -677,37 +677,33 @@ export default function Analytics() {
                 </Typography>
               </Box>
             ) : (
-              <TableContainer>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={{ fontWeight: 800 }}>Rank</TableCell>
-                      <TableCell sx={{ fontWeight: 800 }}>Salesperson</TableCell>
-                      <TableCell sx={{ fontWeight: 800 }} align="center">Units Sold</TableCell>
-                      <TableCell sx={{ fontWeight: 800 }} align="right">Total Revenue</TableCell>
-                      <TableCell sx={{ fontWeight: 800 }} align="right">Profit Generated</TableCell>
-                      <TableCell sx={{ fontWeight: 800 }} align="center">Avg Turnaround Speed</TableCell>
-                      <TableCell sx={{ fontWeight: 800 }} align="center">Consistency</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {sellers.map((s, index) => {
-                      const isFirst = index === 0;
-                      const isSecond = index === 1;
-                      const isThird = index === 2;
+              <>
+                {/* Mobile Leaderboard Cards (xs to md) */}
+                <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5 }}>
+                  {sellers.map((s, index) => {
+                    const isFirst = index === 0;
+                    const isSecond = index === 1;
+                    const isThird = index === 2;
 
-                      return (
-                        <TableRow
-                          key={s.seller_id}
-                          hover
-                          sx={{
-                            bgcolor: isFirst
-                              ? (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 179, 8, 0.08)' : 'rgba(254, 252, 232, 0.6)'
-                              : undefined
-                          }}
-                        >
-                          {/* Rank Badge */}
-                          <TableCell>
+                    return (
+                      <Paper
+                        key={`mob-seller-${s.seller_id}`}
+                        variant="outlined"
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          bgcolor: isFirst
+                            ? (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 179, 8, 0.08)' : 'rgba(254, 252, 232, 0.6)'
+                            : (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.02)' : '#F8FAFC',
+                          borderColor: isFirst ? '#EAB308' : 'divider',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: 1
+                        }}
+                      >
+                        {/* Top: Rank & Salesperson */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Stack direction="row" spacing={1.2} alignItems="center">
                             {isFirst ? (
                               <Chip label="🥇 #1" size="small" sx={{ fontWeight: 900, bgcolor: '#FEF08A', color: '#854D0E', borderRadius: '6px' }} />
                             ) : isSecond ? (
@@ -715,98 +711,193 @@ export default function Analytics() {
                             ) : isThird ? (
                               <Chip label="🥉 #3" size="small" sx={{ fontWeight: 800, bgcolor: '#FFEDD5', color: '#9A3412', borderRadius: '6px' }} />
                             ) : (
-                              <Typography variant="body2" fontWeight={700} color="text.secondary" sx={{ pl: 1 }}>
-                                #{s.profit_rank}
-                              </Typography>
+                              <Chip label={`#${s.profit_rank}`} size="small" sx={{ fontWeight: 700, borderRadius: '6px' }} />
                             )}
-                          </TableCell>
 
-                          {/* Salesperson Name */}
-                          <TableCell>
-                            <Stack direction="row" spacing={1.5} alignItems="center">
-                              <Avatar sx={{ width: 32, height: 32, fontSize: '0.85rem', bgcolor: 'primary.main' }}>
-                                {s.display_name.charAt(0).toUpperCase()}
-                              </Avatar>
-                              <div>
-                                <Typography variant="body2" fontWeight={700}>
-                                  {s.display_name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  @{s.username}
-                                </Typography>
-                              </div>
-                            </Stack>
-                          </TableCell>
+                            <Avatar sx={{ width: 28, height: 28, fontSize: '0.78rem', bgcolor: 'primary.main' }}>
+                              {s.display_name.charAt(0).toUpperCase()}
+                            </Avatar>
 
-                          {/* Units Sold */}
-                          <TableCell align="center">
-                            <Chip
-                              label={`${s.units_sold} ${s.units_sold === 1 ? 'Unit' : 'Units'}`}
-                              size="small"
-                              sx={{
-                                fontWeight: 800,
-                                borderRadius: '8px',
-                                px: 0.75,
-                                height: 26,
-                                fontSize: '0.78rem',
-                                bgcolor: (theme) =>
-                                  theme.palette.mode === 'dark'
-                                    ? 'rgba(59, 130, 246, 0.2)'
-                                    : '#EFF6FF',
-                                color: (theme) =>
-                                  theme.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8',
-                                border: '1px solid',
-                                borderColor: (theme) =>
-                                  theme.palette.mode === 'dark'
-                                    ? 'rgba(59, 130, 246, 0.4)'
-                                    : '#BFDBFE'
-                              }}
-                            />
-                          </TableCell>
+                            <Box>
+                              <Typography variant="subtitle2" fontWeight={800} noWrap>
+                                {s.display_name}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                @{s.username}
+                              </Typography>
+                            </Box>
+                          </Stack>
 
-                          {/* Total Revenue */}
-                          <TableCell align="right">
-                            <Typography variant="body2" fontWeight={700}>
-                              {formatBDT(s.total_revenue)}
+                          <Chip
+                            label={`${s.units_sold} Units`}
+                            size="small"
+                            sx={{
+                              fontWeight: 800,
+                              bgcolor: 'rgba(59, 130, 246, 0.12)',
+                              color: '#2563EB',
+                              height: 22,
+                              fontSize: '0.72rem'
+                            }}
+                          />
+                        </Box>
+
+                        {/* Financial Stats */}
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: 1, borderColor: 'divider', pt: 0.8 }}>
+                          <Box>
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.68rem' }}>
+                              Profit Generated
                             </Typography>
-                          </TableCell>
-
-                          {/* Profit Generated */}
-                          <TableCell align="right">
                             <Typography variant="body2" fontWeight={900} color="#16A34A">
                               {formatBDT(s.total_profit)}
                             </Typography>
-                          </TableCell>
+                          </Box>
 
-                          {/* Avg Turnaround Speed */}
-                          <TableCell align="center">
-                            <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
-                              <SpeedIcon sx={{ fontSize: 16, color: '#EA580C' }} />
-                              <Typography variant="body2" fontWeight={700}>
-                                {s.avg_turnaround_days} d
-                              </Typography>
-                            </Stack>
-                          </TableCell>
+                          <Box sx={{ textAlign: 'right' }}>
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.68rem' }}>
+                              Avg Speed
+                            </Typography>
+                            <Typography variant="body2" fontWeight={700} color="#EA580C">
+                              {s.avg_turnaround_days} Days
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Paper>
+                    );
+                  })}
+                </Box>
 
-                          {/* Consistency */}
-                          <TableCell align="center">
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
-                              <LinearProgress
-                                variant="determinate"
-                                value={s.consistency_score}
-                                sx={{ width: 60, height: 6, borderRadius: 3 }}
+                {/* Desktop Leaderboard Table (md+) */}
+                <TableContainer sx={{ display: { xs: 'none', md: 'block' } }}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 800 }}>Rank</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }}>Salesperson</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="center">Units Sold</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="right">Total Revenue</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="right">Profit Generated</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="center">Avg Turnaround Speed</TableCell>
+                        <TableCell sx={{ fontWeight: 800 }} align="center">Consistency</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {sellers.map((s, index) => {
+                        const isFirst = index === 0;
+                        const isSecond = index === 1;
+                        const isThird = index === 2;
+
+                        return (
+                          <TableRow
+                            key={s.seller_id}
+                            hover
+                            sx={{
+                              bgcolor: isFirst
+                                ? (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 179, 8, 0.08)' : 'rgba(254, 252, 232, 0.6)'
+                                : undefined
+                            }}
+                          >
+                            {/* Rank Badge */}
+                            <TableCell>
+                              {isFirst ? (
+                                <Chip label="🥇 #1" size="small" sx={{ fontWeight: 900, bgcolor: '#FEF08A', color: '#854D0E', borderRadius: '6px' }} />
+                              ) : isSecond ? (
+                                <Chip label="🥈 #2" size="small" sx={{ fontWeight: 800, bgcolor: '#E2E8F0', color: '#334155', borderRadius: '6px' }} />
+                              ) : isThird ? (
+                                <Chip label="🥉 #3" size="small" sx={{ fontWeight: 800, bgcolor: '#FFEDD5', color: '#9A3412', borderRadius: '6px' }} />
+                              ) : (
+                                <Typography variant="body2" fontWeight={700} color="text.secondary" sx={{ pl: 1 }}>
+                                  #{s.profit_rank}
+                                </Typography>
+                              )}
+                            </TableCell>
+
+                            {/* Salesperson Name */}
+                            <TableCell>
+                              <Stack direction="row" spacing={1.5} alignItems="center">
+                                <Avatar sx={{ width: 32, height: 32, fontSize: '0.85rem', bgcolor: 'primary.main' }}>
+                                  {s.display_name.charAt(0).toUpperCase()}
+                                </Avatar>
+                                <div>
+                                  <Typography variant="body2" fontWeight={700}>
+                                    {s.display_name}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    @{s.username}
+                                  </Typography>
+                                </div>
+                              </Stack>
+                            </TableCell>
+
+                            {/* Units Sold */}
+                            <TableCell align="center">
+                              <Chip
+                                label={`${s.units_sold} ${s.units_sold === 1 ? 'Unit' : 'Units'}`}
+                                size="small"
+                                sx={{
+                                  fontWeight: 800,
+                                  borderRadius: '8px',
+                                  px: 0.75,
+                                  height: 26,
+                                  fontSize: '0.78rem',
+                                  bgcolor: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                      ? 'rgba(59, 130, 246, 0.2)'
+                                      : '#EFF6FF',
+                                  color: (theme) =>
+                                    theme.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8',
+                                  border: '1px solid',
+                                  borderColor: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                      ? 'rgba(59, 130, 246, 0.4)'
+                                      : '#BFDBFE'
+                                }}
                               />
-                              <Typography variant="caption" fontWeight={700} color="text.secondary">
-                                {s.active_sale_days} days
+                            </TableCell>
+
+                            {/* Total Revenue */}
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight={700}>
+                                {formatBDT(s.total_revenue)}
                               </Typography>
-                            </Box>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </TableContainer>
+                            </TableCell>
+
+                            {/* Profit Generated */}
+                            <TableCell align="right">
+                              <Typography variant="body2" fontWeight={900} color="#16A34A">
+                                {formatBDT(s.total_profit)}
+                              </Typography>
+                            </TableCell>
+
+                            {/* Avg Turnaround Speed */}
+                            <TableCell align="center">
+                              <Stack direction="row" spacing={0.5} alignItems="center" justifyContent="center">
+                                <SpeedIcon sx={{ fontSize: 16, color: '#EA580C' }} />
+                                <Typography variant="body2" fontWeight={700}>
+                                  {s.avg_turnaround_days} d
+                                </Typography>
+                              </Stack>
+                            </TableCell>
+
+                            {/* Consistency */}
+                            <TableCell align="center">
+                              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={s.consistency_score}
+                                  sx={{ width: 60, height: 6, borderRadius: 3 }}
+                                />
+                                <Typography variant="caption" fontWeight={700} color="text.secondary">
+                                  {s.active_sale_days} days
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </>
             )}
           </Paper>
 

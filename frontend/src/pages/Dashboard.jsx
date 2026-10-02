@@ -1048,15 +1048,15 @@ export default function Dashboard() {
       </Paper>
 
       {/* 8 Uniform Metric Cards Grid */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Grid container spacing={{ xs: 1.25, sm: 2 }} sx={{ mb: { xs: 2.5, sm: 4 } }}>
         {statCards.map((card, idx) => (
-          <Grid item xs={12} sm={6} md={3} key={idx}>
+          <Grid item xs={6} sm={6} md={3} key={idx}>
             <Card
               sx={{
-                height: 108,
+                height: { xs: 86, sm: 108 },
                 display: 'flex',
                 alignItems: 'center',
-                p: 2,
+                p: { xs: 1.25, sm: 2 },
                 borderRadius: 2,
                 border: 1,
                 borderColor: 'divider',
@@ -1070,19 +1070,22 @@ export default function Dashboard() {
                 }
               }}
             >
-              {/* Uniform 52px Icon Container */}
+              {/* Responsive Icon Container */}
               <Box
                 sx={{
-                  width: 52,
-                  height: 52,
-                  minWidth: 52,
-                  borderRadius: '12px',
+                  width: { xs: 38, sm: 52 },
+                  height: { xs: 38, sm: 52 },
+                  minWidth: { xs: 38, sm: 52 },
+                  borderRadius: { xs: '10px', sm: '12px' },
                   backgroundColor: card.bgLight,
                   color: card.color,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  mr: 2
+                  mr: { xs: 1.2, sm: 2 },
+                  '& .MuiSvgIcon-root': {
+                    fontSize: { xs: 20, sm: 26 }
+                  }
                 }}
               >
                 {card.icon}
@@ -1095,8 +1098,8 @@ export default function Dashboard() {
                   fontWeight={700}
                   sx={{
                     textTransform: 'uppercase',
-                    letterSpacing: 0.6,
-                    fontSize: '0.72rem',
+                    letterSpacing: 0.4,
+                    fontSize: { xs: '0.62rem', sm: '0.72rem' },
                     display: 'block'
                   }}
                   noWrap
@@ -1107,9 +1110,10 @@ export default function Dashboard() {
                   variant="h5"
                   fontWeight={800}
                   sx={{
-                    mt: 0.3,
+                    mt: 0.2,
                     fontFamily: '"JetBrains Mono", monospace',
-                    letterSpacing: -0.5
+                    letterSpacing: -0.5,
+                    fontSize: { xs: '1.05rem', sm: '1.45rem' }
                   }}
                   noWrap
                 >

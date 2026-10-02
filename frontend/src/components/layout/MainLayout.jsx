@@ -455,10 +455,12 @@ export default function MainLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: { xs: 2, sm: 3, md: 4 },
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          mt: '64px',
-          minHeight: 'calc(100vh - 64px)'
+          p: { xs: 1.25, sm: 2, md: 3, lg: 3.5 },
+          width: { xs: '100%', md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          maxWidth: '100vw',
+          overflowX: 'hidden',
+          mt: { xs: '56px', sm: '64px' },
+          minHeight: { xs: 'calc(100vh - 56px)', sm: 'calc(100vh - 64px)' }
         }}
       >
         <Outlet />

@@ -362,8 +362,114 @@ export default function Archive() {
         />
       </Paper>
 
-      {/* Archive Table */}
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+      {/* Mobile Archive Cards View (xs to md) */}
+      <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2 }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : filteredDevices.length === 0 ? (
+          <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              No archived sold devices found.
+            </Typography>
+          </Paper>
+        ) : (
+          paginatedDevices.map((dev) => {
+            const sale = salesMap[dev.id];
+            const sellPrice = sale?.selling_price || dev.selling_price || null;
+            const cleanCap = dev.capacity ? String(dev.capacity).replace(/gb/gi, '').trim() : '';
+            const cleanCol = dev.color ? String(dev.color).trim().split(/\s+/)[0] : '';
+            const specs = [cleanCap, cleanCol].filter(Boolean).join(' • ');
+
+            return (
+              <Card
+                key={`mob-arch-${dev.id}`}
+                variant="outlined"
+                onClick={() => {
+                  setSelectedDevice(dev);
+                  setDrawerOpen(true);
+                }}
+                sx={{
+                  p: 1.5,
+                  borderRadius: 2,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 1
+                }}
+              >
+                {/* Top Row: Model, Specs & Status */}
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography variant="subtitle2" fontWeight={800} noWrap>
+                      {dev.model}
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
+                      {specs && (
+                        <Typography variant="caption" color="text.secondary">
+                          {specs}
+                        </Typography>
+                      )}
+                      {dev.variant && <VariantBadge variant={dev.variant} size="small" />}
+                    </Box>
+                  </Box>
+                  <StatusBadge status={dev.current_status} />
+                </Box>
+
+                {/* IMEI & Price */}
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    p: 0.8,
+                    borderRadius: 1.5,
+                    bgcolor: (theme) =>
+                      theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <CopyableText text={dev.imei} />
+                  <Typography variant="caption" fontWeight={800} color="success.main">
+                    {sellPrice ? `${formatNumber(sellPrice)} ৳` : '—'}
+                  </Typography>
+                </Box>
+
+                {/* Bottom Row: Customer / Seller & Actions */}
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 0.3 }} onClick={(e) => e.stopPropagation()}>
+                  <Box>
+                    <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.68rem' }}>
+                      Sold by: <strong>{sale?.seller_username || dev.current_owner_name || 'Store'}</strong>
+                    </Typography>
+                    {sale?.customer_name && (
+                      <Typography variant="caption" color="text.secondary">
+                        Customer: {sale.customer_name}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Stack direction="row" spacing={0.5}>
+                    <Tooltip title="Restore to Active Stock">
+                      <IconButton
+                        size="small"
+                        color="primary"
+                        onClick={() => handleRestoreToStock(dev)}
+                        sx={{ p: 0.5 }}
+                      >
+                        <RestoreIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                </Box>
+              </Card>
+            );
+          })
+        )}
+      </Box>
+
+      {/* Archive Desktop Table (md+) */}
+      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', display: { xs: 'none', md: 'block' } }}>
         <TableContainer>
           <Table size="medium">
             <TableHead>

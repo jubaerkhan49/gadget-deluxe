@@ -321,8 +321,114 @@ export default function Repairs() {
         />
       </Paper>
 
-      {/* Repairs Table */}
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
+      {/* Mobile Repairs Cards View (xs to md) */}
+      <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2 }}>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : filteredRepairs.length === 0 ? (
+          <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              No repair logs found.
+            </Typography>
+          </Paper>
+        ) : (
+          paginatedRepairs.map((r) => (
+            <Card
+              key={`mob-repair-${r.id}`}
+              variant="outlined"
+              sx={{
+                p: 1.5,
+                borderRadius: 2,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1
+              }}
+            >
+              {/* Top Row: Device Model & Status */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography variant="subtitle2" fontWeight={800} noWrap>
+                    {r.device_model || 'Unknown Device'}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
+                    {(r.device_capacity || r.device_color) && (
+                      <Typography variant="caption" color="text.secondary">
+                        {r.device_capacity} {r.device_color ? `• ${r.device_color}` : ''}
+                      </Typography>
+                    )}
+                    {r.device_is_b2b && (
+                      <Chip
+                        size="small"
+                        label={`B2B: ${r.device_b2b_shop_name || 'Client'}`}
+                        sx={{
+                          bgcolor: 'rgba(147, 51, 234, 0.12)',
+                          color: '#9333EA',
+                          fontWeight: 700,
+                          fontSize: '0.65rem',
+                          height: 18
+                        }}
+                      />
+                    )}
+                  </Box>
+                </Box>
+                {getStatusChip(r.status)}
+              </Box>
+
+              {/* IMEI & Issue */}
+              <Box
+                sx={{
+                  p: 0.8,
+                  borderRadius: 1.5,
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                }}
+              >
+                <CopyableText text={r.device_imei || '—'} />
+                {r.issue_description && (
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.3, fontStyle: 'italic' }}>
+                    Issue: {r.issue_description}
+                  </Typography>
+                )}
+              </Box>
+
+              {/* Bottom: Cost, Location & Actions */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 0.3, flexWrap: 'wrap', gap: 0.5 }}>
+                <Box>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ fontSize: '0.68rem' }}>
+                    {r.repair_center_name || 'Center'} • Cost: <strong style={{ color: '#EA580C' }}>{r.cost ? `${formatNumber(r.cost)} ৳` : '—'}</strong>
+                  </Typography>
+                </Box>
+
+                <Stack direction="row" spacing={0.5}>
+                  {r.status === 'IN_PROGRESS' && (
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="success"
+                      onClick={() => handleMarkCompleted(r)}
+                      sx={{ fontSize: '0.72rem', py: 0.2, px: 1, textTransform: 'none', fontWeight: 700 }}
+                    >
+                      Complete
+                    </Button>
+                  )}
+                  <IconButton
+                    size="small"
+                    onClick={() => handleDeleteRepair(r.id)}
+                    sx={{ color: '#DC2626', p: 0.4 }}
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
+              </Box>
+            </Card>
+          ))
+        )}
+      </Box>
+
+      {/* Repairs Desktop Table (md+) */}
+      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', display: { xs: 'none', md: 'block' } }}>
         <TableContainer>
           <Table size="medium">
             <TableHead>
