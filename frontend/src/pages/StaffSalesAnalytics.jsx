@@ -935,6 +935,7 @@ export default function StaffSalesAnalytics() {
                 <TableRow sx={{ bgcolor: 'action.hover' }}>
                   <TableCell sx={{ fontWeight: 700 }}>Model & Specs</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>IMEI Number</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Sale Date</TableCell>
                   <TableCell sx={{ fontWeight: 700 }} align="right">Payment Method</TableCell>
                 </TableRow>
@@ -960,6 +961,24 @@ export default function StaffSalesAnalytics() {
                       </TableCell>
                       <TableCell>
                         <CopyableText text={sale.device_imei} />
+                      </TableCell>
+                      <TableCell>
+                        {sale.device_battery_health ? (
+                          <Box>
+                            <Typography variant="body2" fontWeight={700} sx={{ color: Number(sale.device_battery_health) >= 80 ? 'success.main' : 'warning.main' }}>
+                              {sale.device_battery_health}%
+                            </Typography>
+                            {sale.device_battery_cycle ? (
+                              <Typography variant="caption" color="text.secondary">
+                                {sale.device_battery_cycle} cycles
+                              </Typography>
+                            ) : null}
+                          </Box>
+                        ) : (
+                          <Typography variant="caption" color="text.disabled">
+                            —
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight={600}>
@@ -1053,9 +1072,16 @@ export default function StaffSalesAnalytics() {
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
                     <CopyableText text={sale.device_imei} />
-                    <Typography variant="caption" fontWeight={700} color="text.secondary">
-                      Sold on: {formatDate(sale.sale_date || sale.created_at)}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      {sale.device_battery_health && (
+                        <Typography variant="caption" fontWeight={700} sx={{ color: 'success.main' }}>
+                          BH {sale.device_battery_health}% {sale.device_battery_cycle ? `(${sale.device_battery_cycle} CC)` : ''}
+                        </Typography>
+                      )}
+                      <Typography variant="caption" color="text.secondary">
+                        Sold on: {formatDate(sale.sale_date || sale.created_at)}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Paper>
               );

@@ -243,14 +243,14 @@ export default function MainLayout() {
       <Box sx={{ p: 2, borderTop: 1, borderColor: 'divider' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5, px: 0.5 }}>
           <Avatar sx={{ width: 34, height: 34, bgcolor: 'primary.main', fontSize: '0.85rem', fontWeight: 700 }}>
-            {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
+            {user?.first_name ? user.first_name.charAt(0).toUpperCase() : (user?.username ? user.username.charAt(0).toUpperCase() : 'U')}
           </Avatar>
           <Box sx={{ minWidth: 0, flex: 1 }}>
             <Typography variant="body2" fontWeight={700} noWrap>
-              {user?.username || 'User'}
+              {user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.display_name || user?.username || 'User')}
             </Typography>
             <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-              {user?.email || 'Logged In'}
+              {user?.email || `@${user?.username}`}
             </Typography>
           </Box>
         </Box>

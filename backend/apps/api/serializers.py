@@ -75,6 +75,8 @@ class SaleSerializer(serializers.ModelSerializer):
     device_variant = serializers.CharField(source='device.variant', read_only=True)
     device_capacity = serializers.CharField(source='device.capacity', read_only=True)
     device_color = serializers.CharField(source='device.color', read_only=True)
+    device_battery_health = serializers.IntegerField(source='device.battery_health', read_only=True, allow_null=True, default=None)
+    device_battery_cycle = serializers.IntegerField(source='device.battery_cycle', read_only=True, allow_null=True, default=None)
     customer_name = serializers.CharField(source='customer.name', read_only=True)
     seller_name = serializers.CharField(source='seller.username', read_only=True)
     sold_by = serializers.SerializerMethodField()
