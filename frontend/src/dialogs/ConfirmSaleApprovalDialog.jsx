@@ -27,6 +27,7 @@ import { deviceSaleRequestApi } from '../api/client';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import { formatNumber } from '../utils/formatters';
+import { apiCache } from '../utils/apiCache';
 
 export default function ConfirmSaleApprovalDialog({
   open,
@@ -96,6 +97,9 @@ export default function ConfirmSaleApprovalDialog({
       };
 
       const res = await deviceSaleRequestApi.approve(saleRequest.id, payload);
+      apiCache.invalidate('/api/dashboard/stats/');
+      apiCache.invalidate('/api/devices/');
+      apiCache.invalidate('/api/sales/');
       enqueueSnackbar(res.data.message || `Sale confirmed for BDT ${soldAmount}! Device is marked as Sold.`, {
         variant: 'success'
       });

@@ -508,6 +508,12 @@ class DeviceSaleRequestViewSet(viewsets.ModelViewSet):
             new_state=f"Sale confirmed by @{request.user.username}. Sold by @{sale_req.employee.username} for BDT {selling_price} (Invoice #{invoice_number})."
         )
 
+        # Invalidate dashboard stats and sync cache so client updates immediately
+        try:
+            cache.clear()
+        except Exception:
+            pass
+
         return Response({
             "success": True,
             "message": f"Sale for {device.model} confirmed for BDT {selling_price}! Device is now marked as Sold.",
@@ -548,6 +554,12 @@ class DeviceSaleRequestViewSet(viewsets.ModelViewSet):
             old_state='Pending Sale',
             new_state=f"Sale request rejected by @{request.user.username}. Returned to In Stock."
         )
+
+        # Invalidate dashboard stats and sync cache so client updates immediately
+        try:
+            cache.clear()
+        except Exception:
+            pass
 
         return Response({
             "success": True,

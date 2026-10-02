@@ -609,27 +609,30 @@ export default function DeviceDetailDrawer({
                   </Grid>
 
                   {device.current_status === 'IN_STOCK' && (
-                    <Button
-                      fullWidth
-                      variant="contained"
-                      color="success"
-                      startIcon={<SalesIcon sx={{ fontSize: '18px !important' }} />}
-                      onClick={() => {
-                        onClose();
-                        if (onMarkSoldRequested) onMarkSoldRequested(device);
-                      }}
-                      sx={{
-                        mt: 1.5,
-                        fontWeight: 700,
-                        borderRadius: 1.75,
-                        height: 38,
-                        textTransform: 'none',
-                        fontSize: '0.84rem',
-                        boxShadow: 'none'
-                      }}
-                    >
-                      Mark as Sold
-                    </Button>
+                    <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-start' }, mt: 1.5 }}>
+                      <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<SalesIcon sx={{ fontSize: '18px !important' }} />}
+                        onClick={() => {
+                          onClose();
+                          if (onMarkSoldRequested) onMarkSoldRequested(device);
+                        }}
+                        sx={{
+                          width: { xs: '100%', sm: 'auto' },
+                          minWidth: { sm: 160 },
+                          px: 2.5,
+                          fontWeight: 700,
+                          borderRadius: 1.75,
+                          height: 38,
+                          textTransform: 'none',
+                          fontSize: '0.84rem',
+                          boxShadow: 'none'
+                        }}
+                      >
+                        Mark as Sold
+                      </Button>
+                    </Box>
                   )}
 
                   {device.current_status === 'PENDING_SALE' && (

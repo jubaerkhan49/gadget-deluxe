@@ -140,21 +140,10 @@ export default function StaffNotifications() {
               Notifications & Automated Alerts
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', sm: '0.85rem' } }}>
-              Live custody age tracking, sales activity monitoring, and monthly targets for <strong>@{user?.username}</strong>
+              Live custody age tracking, sales activity monitoring, and monthly targets for <strong>{user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.display_name || user?.username)}</strong>
             </Typography>
           </Box>
         </Box>
-
-        <Button
-          variant="outlined"
-          size="small"
-          startIcon={<RefreshIcon />}
-          onClick={() => fetchData(false)}
-          disabled={loading}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 700 }}
-        >
-          {loading ? 'Refreshing...' : 'Refresh'}
-        </Button>
       </Paper>
 
       <Stack spacing={2.5}>
