@@ -238,10 +238,10 @@ export default function Analytics() {
         </Box>
       ) : (
         <Stack spacing={{ xs: 2.5, sm: 3.5 }}>
-          {/* 1. PRIMARY FINANCIAL PILLARS (4 METRICS) */}
-          <Grid container spacing={{ xs: 1.5, sm: 2.5 }}>
+          {/* 1. PRIMARY FINANCIAL PILLARS (4 METRICS IN 2x2 GRID ON MOBILE) */}
+          <Grid container spacing={{ xs: 1.25, sm: 2.5 }}>
             {/* PILLAR 1: TOTAL PROFIT THIS MONTH */}
-            <Grid item xs={12} sm={6} lg={3}>
+            <Grid item xs={6} sm={6} lg={3}>
               <Card
                 sx={{
                   borderRadius: 3,
@@ -252,19 +252,23 @@ export default function Analytics() {
                       ? 'linear-gradient(135deg, rgba(22, 163, 74, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%)'
                       : 'linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%)',
                   boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.05)',
-                  height: '100%'
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
                 }}
               >
-                <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
-                    <Typography variant="body2" fontWeight={700} color="#16A34A" sx={{ fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>
-                      Total Profit (This Month)
+                <CardContent sx={{ p: { xs: 1.5, sm: 2.5 }, '&:last-child': { pb: { xs: 1.5, sm: 2.5 } } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1, gap: 0.5 }}>
+                    <Typography variant="body2" fontWeight={700} color="#16A34A" sx={{ fontSize: { xs: '0.72rem', sm: '0.875rem' }, lineHeight: 1.2 }}>
+                      Total Profit
                     </Typography>
                     <Box
                       sx={{
-                        width: { xs: 32, sm: 38 },
-                        height: { xs: 32, sm: 38 },
-                        borderRadius: 2,
+                        width: { xs: 26, sm: 36 },
+                        height: { xs: 26, sm: 36 },
+                        minWidth: { xs: 26, sm: 36 },
+                        borderRadius: 1.5,
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.25)' : '#DCFCE7',
                         color: '#16A34A',
                         display: 'flex',
@@ -273,7 +277,7 @@ export default function Analytics() {
                         flexShrink: 0
                       }}
                     >
-                      <TrendingUpIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                      <TrendingUpIcon sx={{ fontSize: { xs: 15, sm: 20 } }} />
                     </Box>
                   </Box>
 
@@ -282,27 +286,28 @@ export default function Analytics() {
                     fontWeight={900}
                     color="#16A34A"
                     letterSpacing={-0.5}
-                    sx={{ fontSize: { xs: '1.65rem', sm: '1.95rem', lg: '2.15rem' } }}
+                    sx={{ fontSize: { xs: '1.05rem', sm: '1.75rem', lg: '2.1rem' } }}
+                    noWrap
                   >
                     {formatBDT(summary.total_profit)}
                   </Typography>
 
-                  <Divider sx={{ my: { xs: 1.2, sm: 1.5 }, opacity: 0.6 }} />
+                  <Divider sx={{ my: { xs: 0.8, sm: 1.5 }, opacity: 0.6 }} />
 
-                  <Stack spacing={0.5}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Net Profit (After Expenses):
+                  <Stack spacing={0.3}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        Net Profit:
                       </Typography>
-                      <Typography variant="caption" fontWeight={700} color="text.primary">
+                      <Typography variant="caption" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {formatBDT(summary.net_profit)}
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Profit Margin:
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        Margin:
                       </Typography>
-                      <Typography variant="caption" fontWeight={700} color="#16A34A">
+                      <Typography variant="caption" fontWeight={700} color="#16A34A" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {summary.profit_margin || 0}%
                       </Typography>
                     </Box>
@@ -312,7 +317,7 @@ export default function Analytics() {
             </Grid>
 
             {/* PILLAR 2: TOTAL INVESTMENT THIS MONTH */}
-            <Grid item xs={12} sm={6} lg={3}>
+            <Grid item xs={6} sm={6} lg={3}>
               <Card
                 sx={{
                   borderRadius: 3,
@@ -323,19 +328,23 @@ export default function Analytics() {
                       ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%)'
                       : 'linear-gradient(135deg, #EFF6FF 0%, #FFFFFF 100%)',
                   boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.05)',
-                  height: '100%'
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
                 }}
               >
-                <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
-                    <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>
-                      Total Investment (This Month)
+                <CardContent sx={{ p: { xs: 1.5, sm: 2.5 }, '&:last-child': { pb: { xs: 1.5, sm: 2.5 } } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1, gap: 0.5 }}>
+                    <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ fontSize: { xs: '0.72rem', sm: '0.875rem' }, lineHeight: 1.2 }}>
+                      Investment
                     </Typography>
                     <Box
                       sx={{
-                        width: { xs: 32, sm: 38 },
-                        height: { xs: 32, sm: 38 },
-                        borderRadius: 2,
+                        width: { xs: 26, sm: 36 },
+                        height: { xs: 26, sm: 36 },
+                        minWidth: { xs: 26, sm: 36 },
+                        borderRadius: 1.5,
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.25)' : '#DBEAFE',
                         color: 'primary.main',
                         display: 'flex',
@@ -344,7 +353,7 @@ export default function Analytics() {
                         flexShrink: 0
                       }}
                     >
-                      <InvestmentIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                      <InvestmentIcon sx={{ fontSize: { xs: 15, sm: 20 } }} />
                     </Box>
                   </Box>
 
@@ -353,27 +362,28 @@ export default function Analytics() {
                     fontWeight={900}
                     color="primary.main"
                     letterSpacing={-0.5}
-                    sx={{ fontSize: { xs: '1.65rem', sm: '1.95rem', lg: '2.15rem' } }}
+                    sx={{ fontSize: { xs: '1.05rem', sm: '1.75rem', lg: '2.1rem' } }}
+                    noWrap
                   >
                     {formatBDT(summary.total_investment)}
                   </Typography>
 
-                  <Divider sx={{ my: { xs: 1.2, sm: 1.5 }, opacity: 0.6 }} />
+                  <Divider sx={{ my: { xs: 0.8, sm: 1.5 }, opacity: 0.6 }} />
 
-                  <Stack spacing={0.5}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Devices Added (CN/BD):
+                  <Stack spacing={0.3}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        Added:
                       </Typography>
-                      <Typography variant="caption" fontWeight={700} color="text.primary">
+                      <Typography variant="caption" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {summary.total_devices_invested || 0} Units
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Avg Cost per Device:
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        Avg/Unit:
                       </Typography>
-                      <Typography variant="caption" fontWeight={700} color="primary.main">
+                      <Typography variant="caption" fontWeight={700} color="primary.main" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {formatBDT(summary.avg_investment_per_device)}
                       </Typography>
                     </Box>
@@ -383,7 +393,7 @@ export default function Analytics() {
             </Grid>
 
             {/* PILLAR 3: REPAIR COST THIS MONTH */}
-            <Grid item xs={12} sm={6} lg={3}>
+            <Grid item xs={6} sm={6} lg={3}>
               <Card
                 sx={{
                   borderRadius: 3,
@@ -394,19 +404,23 @@ export default function Analytics() {
                       ? 'linear-gradient(135deg, rgba(234, 88, 12, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%)'
                       : 'linear-gradient(135deg, #FFF7ED 0%, #FFFFFF 100%)',
                   boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.05)',
-                  height: '100%'
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
                 }}
               >
-                <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
-                    <Typography variant="body2" fontWeight={700} color="#EA580C" sx={{ fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>
-                      Repair Cost (This Month)
+                <CardContent sx={{ p: { xs: 1.5, sm: 2.5 }, '&:last-child': { pb: { xs: 1.5, sm: 2.5 } } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1, gap: 0.5 }}>
+                    <Typography variant="body2" fontWeight={700} color="#EA580C" sx={{ fontSize: { xs: '0.72rem', sm: '0.875rem' }, lineHeight: 1.2 }}>
+                      Repair Cost
                     </Typography>
                     <Box
                       sx={{
-                        width: { xs: 32, sm: 38 },
-                        height: { xs: 32, sm: 38 },
-                        borderRadius: 2,
+                        width: { xs: 26, sm: 36 },
+                        height: { xs: 26, sm: 36 },
+                        minWidth: { xs: 26, sm: 36 },
+                        borderRadius: 1.5,
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.25)' : '#FFEDD5',
                         color: '#EA580C',
                         display: 'flex',
@@ -415,7 +429,7 @@ export default function Analytics() {
                         flexShrink: 0
                       }}
                     >
-                      <RepairIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                      <RepairIcon sx={{ fontSize: { xs: 15, sm: 20 } }} />
                     </Box>
                   </Box>
 
@@ -424,28 +438,29 @@ export default function Analytics() {
                     fontWeight={900}
                     color="#EA580C"
                     letterSpacing={-0.5}
-                    sx={{ fontSize: { xs: '1.65rem', sm: '1.95rem', lg: '2.15rem' } }}
+                    sx={{ fontSize: { xs: '1.05rem', sm: '1.75rem', lg: '2.1rem' } }}
+                    noWrap
                   >
                     {formatBDT(summary.total_repair_cost)}
                   </Typography>
 
-                  <Divider sx={{ my: { xs: 1.2, sm: 1.5 }, opacity: 0.6 }} />
+                  <Divider sx={{ my: { xs: 0.8, sm: 1.5 }, opacity: 0.6 }} />
 
-                  <Stack spacing={0.5}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Devices in Service:
+                  <Stack spacing={0.3}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        In Service:
                       </Typography>
-                      <Typography variant="caption" fontWeight={700} color="text.primary">
-                        {summary.repair_devices_count || 0} Devices
+                      <Typography variant="caption" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        {summary.repair_devices_count || 0} Units
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Status:
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        Done:
                       </Typography>
-                      <Typography variant="caption" fontWeight={700} color="#EA580C">
-                        {summary.repairs_in_progress || 0} In Progress • {summary.repairs_completed || 0} Done
+                      <Typography variant="caption" fontWeight={700} color="#EA580C" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        {summary.repairs_completed || 0} Units
                       </Typography>
                     </Box>
                   </Stack>
@@ -454,7 +469,7 @@ export default function Analytics() {
             </Grid>
 
             {/* PILLAR 4: SHIPPING COSTS THIS MONTH */}
-            <Grid item xs={12} sm={6} lg={3}>
+            <Grid item xs={6} sm={6} lg={3}>
               <Card
                 sx={{
                   borderRadius: 3,
@@ -465,19 +480,23 @@ export default function Analytics() {
                       ? 'linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%)'
                       : 'linear-gradient(135deg, #FAF5FF 0%, #FFFFFF 100%)',
                   boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.05)',
-                  height: '100%'
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between'
                 }}
               >
-                <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
-                    <Typography variant="body2" fontWeight={700} color="#9333EA" sx={{ fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>
-                      Shipping Costs (This Month)
+                <CardContent sx={{ p: { xs: 1.5, sm: 2.5 }, '&:last-child': { pb: { xs: 1.5, sm: 2.5 } } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 1, gap: 0.5 }}>
+                    <Typography variant="body2" fontWeight={700} color="#9333EA" sx={{ fontSize: { xs: '0.72rem', sm: '0.875rem' }, lineHeight: 1.2 }}>
+                      Shipping
                     </Typography>
                     <Box
                       sx={{
-                        width: { xs: 32, sm: 38 },
-                        height: { xs: 32, sm: 38 },
-                        borderRadius: 2,
+                        width: { xs: 26, sm: 36 },
+                        height: { xs: 26, sm: 36 },
+                        minWidth: { xs: 26, sm: 36 },
+                        borderRadius: 1.5,
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.25)' : '#F3E8FF',
                         color: '#9333EA',
                         display: 'flex',
@@ -486,7 +505,7 @@ export default function Analytics() {
                         flexShrink: 0
                       }}
                     >
-                      <ShippingIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+                      <ShippingIcon sx={{ fontSize: { xs: 15, sm: 20 } }} />
                     </Box>
                   </Box>
 
@@ -495,27 +514,28 @@ export default function Analytics() {
                     fontWeight={900}
                     color="#9333EA"
                     letterSpacing={-0.5}
-                    sx={{ fontSize: { xs: '1.65rem', sm: '1.95rem', lg: '2.15rem' } }}
+                    sx={{ fontSize: { xs: '1.05rem', sm: '1.75rem', lg: '2.1rem' } }}
+                    noWrap
                   >
                     {formatBDT(summary.total_shipping_cost)}
                   </Typography>
 
-                  <Divider sx={{ my: { xs: 1.2, sm: 1.5 }, opacity: 0.6 }} />
+                  <Divider sx={{ my: { xs: 0.8, sm: 1.5 }, opacity: 0.6 }} />
 
-                  <Stack spacing={0.5}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Shipment Batches:
+                  <Stack spacing={0.3}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        Batches:
                       </Typography>
-                      <Typography variant="caption" fontWeight={700} color="text.primary">
+                      <Typography variant="caption" fontWeight={700} color="text.primary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {summary.shipment_batches_count || 0} Batches
                       </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <Typography variant="caption" color="text.secondary">
-                        Inbound Shipped Devices:
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                        Units:
                       </Typography>
-                      <Typography variant="caption" fontWeight={700} color="#9333EA">
+                      <Typography variant="caption" fontWeight={700} color="#9333EA" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                         {summary.shipment_devices_count || 0} Units
                       </Typography>
                     </Box>
