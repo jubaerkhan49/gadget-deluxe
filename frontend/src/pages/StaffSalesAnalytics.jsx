@@ -569,10 +569,15 @@ export default function StaffSalesAnalytics() {
         </Box>
 
         {/* Day of Week Headers */}
-        <Grid container spacing={1} sx={{ mb: 1 }}>
+        <Grid container spacing={0.75} sx={{ mb: 0.75 }}>
           {WEEKDAY_NAMES.map((dayName) => (
             <Grid item xs={12 / 7} key={dayName} sx={{ textAlign: 'center' }}>
-              <Typography variant="caption" fontWeight={800} color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              <Typography
+                variant="caption"
+                fontWeight={800}
+                color="text.secondary"
+                sx={{ fontSize: '0.72rem', letterSpacing: 0.5, textTransform: 'uppercase' }}
+              >
                 {dayName}
               </Typography>
             </Grid>
@@ -580,16 +585,16 @@ export default function StaffSalesAnalytics() {
         </Grid>
 
         {/* Calendar Grid Cells */}
-        <Grid container spacing={1}>
+        <Grid container spacing={0.75}>
           {/* Empty offset cells for starting weekday */}
           {Array.from({ length: firstDayWeekday }).map((_, idx) => (
             <Grid item xs={12 / 7} key={`empty-${idx}`}>
               <Box
                 sx={{
-                  minHeight: { xs: 60, sm: 80 },
+                  height: { xs: 46, sm: 54 },
                   borderRadius: 2,
                   bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)'),
-                  opacity: 0.3
+                  opacity: 0.2
                 }}
               />
             </Grid>
@@ -607,91 +612,110 @@ export default function StaffSalesAnalytics() {
 
             return (
               <Grid item xs={12 / 7} key={`day-${dayNum}`}>
-                <Paper
-                  variant="outlined"
-                  onClick={() => hasSales && setSelectedDayModal({ day: dayNum, sales: daySalesList })}
-                  sx={{
-                    minHeight: { xs: 60, sm: 80 },
-                    p: { xs: 0.8, sm: 1 },
-                    borderRadius: 2,
-                    cursor: hasSales ? 'pointer' : 'default',
-                    border: '1px solid',
-                    borderColor: hasSales
-                      ? 'rgba(16, 185, 129, 0.4)'
+                <Tooltip
+                  title={
+                    hasSales
+                      ? `${daySalesList.length} device(s) sold — Click to view details`
                       : isToday
-                      ? 'primary.main'
-                      : 'divider',
-                    bgcolor: hasSales
-                      ? (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5')
-                      : isToday
-                      ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.08)' : '#EFF6FF')
-                      : 'background.paper',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    '&:hover': hasSales
-                      ? {
-                          transform: 'translateY(-2px)',
-                          boxShadow: '0 4px 14px rgba(16, 185, 129, 0.2)',
-                          borderColor: '#10B981'
-                        }
-                      : {}
-                  }}
+                      ? 'Today — No sales recorded'
+                      : ''
+                  }
+                  arrow
+                  disableHoverListener={!hasSales && !isToday}
                 >
-                  {/* Top: Day Number & Today Tag */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Typography
-                      variant="caption"
-                      fontWeight={isToday || hasSales ? 800 : 600}
-                      sx={{
-                        color: hasSales ? '#059669' : isToday ? 'primary.main' : 'text.primary',
-                        fontSize: { xs: '0.72rem', sm: '0.8rem' }
-                      }}
-                    >
-                      {dayNum}
-                    </Typography>
-                    {isToday && (
-                      <Chip
-                        label="Today"
-                        size="small"
-                        color="primary"
-                        sx={{ height: 16, fontSize: '0.6rem', fontWeight: 800, px: 0.3 }}
-                      />
-                    )}
-                  </Box>
-
-                  {/* Bottom: Sold Badge or Empty Indicator */}
-                  <Box sx={{ mt: 'auto', pt: 0.5 }}>
-                    {hasSales ? (
-                      <Box
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.4,
-                          bgcolor: '#10B981',
-                          color: '#ffffff',
-                          px: 0.6,
-                          py: 0.2,
-                          borderRadius: 1,
-                          fontSize: { xs: '0.62rem', sm: '0.72rem' },
-                          fontWeight: 800
-                        }}
-                      >
-                        <SaleIcon sx={{ fontSize: 13 }} />
-                        <span>{daySalesList.length} sold</span>
-                      </Box>
-                    ) : (
+                  <Paper
+                    variant="outlined"
+                    onClick={() => hasSales && setSelectedDayModal({ day: dayNum, sales: daySalesList })}
+                    sx={{
+                      height: { xs: 48, sm: 54 },
+                      px: { xs: 0.6, sm: 1 },
+                      py: 0.6,
+                      borderRadius: 2,
+                      cursor: hasSales ? 'pointer' : 'default',
+                      border: '1px solid',
+                      borderColor: hasSales
+                        ? '#10B981'
+                        : isToday
+                        ? 'primary.main'
+                        : 'divider',
+                      bgcolor: hasSales
+                        ? (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.16)' : '#ECFDF5')
+                        : isToday
+                        ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.08)' : '#EFF6FF')
+                        : 'background.paper',
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      '&:hover': hasSales
+                        ? {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
+                            borderColor: '#059669'
+                          }
+                        : {}
+                    }}
+                  >
+                    {/* Top Row: Day Number & Today Tag */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: 1 }}>
                       <Typography
                         variant="caption"
-                        color="text.disabled"
-                        sx={{ fontSize: { xs: '0.6rem', sm: '0.68rem' }, display: 'block', textAlign: 'center' }}
+                        fontWeight={isToday || hasSales ? 800 : 600}
+                        sx={{
+                          color: hasSales ? '#059669' : isToday ? 'primary.main' : 'text.primary',
+                          fontSize: { xs: '0.7rem', sm: '0.76rem' }
+                        }}
                       >
-                        —
+                        {dayNum}
                       </Typography>
-                    )}
-                  </Box>
-                </Paper>
+                      {isToday && (
+                        <Box
+                          sx={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: '50%',
+                            bgcolor: 'primary.main'
+                          }}
+                        />
+                      )}
+                    </Box>
+
+                    {/* Bottom: Sold Badge or Empty Indicator */}
+                    <Box sx={{ mt: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {hasSales ? (
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 0.3,
+                            bgcolor: '#10B981',
+                            color: '#ffffff',
+                            px: 0.6,
+                            py: 0.15,
+                            borderRadius: 1,
+                            fontSize: { xs: '0.6rem', sm: '0.68rem' },
+                            fontWeight: 800,
+                            lineHeight: 1.2,
+                            width: '100%',
+                            textAlign: 'center'
+                          }}
+                        >
+                          <SaleIcon sx={{ fontSize: '11px !important' }} />
+                          <span>{daySalesList.length} sold</span>
+                        </Box>
+                      ) : (
+                        <Typography
+                          variant="caption"
+                          color="text.disabled"
+                          sx={{ fontSize: '0.62rem', lineHeight: 1 }}
+                        >
+                          —
+                        </Typography>
+                      )}
+                    </Box>
+                  </Paper>
+                </Tooltip>
               </Grid>
             );
           })}
@@ -721,7 +745,7 @@ export default function StaffSalesAnalytics() {
             <TextField
               fullWidth
               size="small"
-              placeholder="Search model, IMEI, customer..."
+              placeholder="Search model, IMEI..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               InputProps={{
@@ -752,54 +776,56 @@ export default function StaffSalesAnalytics() {
                 <TableRow sx={{ bgcolor: 'action.hover' }}>
                   <TableCell sx={{ fontWeight: 700 }}>Model & Specs</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>IMEI Number</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Variant</TableCell>
                   <TableCell sx={{ fontWeight: 700 }}>Sale Date</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Customer Info</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Payment Method</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="right">Invoice</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }} align="right">Payment Method</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredSalesLedger.map((sale) => (
-                  <TableRow key={sale.id || Math.random()} hover>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={700}>
-                        {sale.device_model || 'Standard Device'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {sale.device_capacity || ''} {sale.device_color ? `• ${sale.device_color}` : ''}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <CopyableText text={sale.device_imei} />
-                    </TableCell>
-                    <TableCell>
-                      <VariantBadge variant={sale.device_variant} />
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={600}>
-                        {formatDate(sale.sale_date || sale.created_at)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={600}>
-                        {sale.customer_name || 'Walk-in Customer'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={sale.payment_method || 'CASH'}
-                        size="small"
-                        sx={{ fontWeight: 700, fontSize: '0.7rem', height: 22 }}
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="caption" sx={{ fontFamily: 'monospace', fontWeight: 700, color: 'primary.main' }}>
-                        {sale.invoice_number || `INV-${sale.id}`}
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filteredSalesLedger.map((sale) => {
+                  const specsParts = [
+                    sale.device_capacity || '',
+                    sale.device_color || '',
+                    sale.device_variant || ''
+                  ].filter(Boolean);
+                  const specsText = specsParts.join(' • ');
+
+                  return (
+                    <TableRow key={sale.id || Math.random()} hover>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={700}>
+                          {sale.device_model || 'Standard Device'}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                          {specsText || '—'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <CopyableText text={sale.device_imei} />
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2" fontWeight={600}>
+                          {formatDate(sale.sale_date || sale.created_at)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Chip
+                          label={sale.payment_method || 'CASH'}
+                          size="small"
+                          sx={{
+                            fontWeight: 700,
+                            fontSize: '0.72rem',
+                            height: 24,
+                            borderRadius: 1.5,
+                            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF'),
+                            color: (t) => (t.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8'),
+                            border: '1px solid',
+                            borderColor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.3)' : '#BFDBFE')
+                          }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
