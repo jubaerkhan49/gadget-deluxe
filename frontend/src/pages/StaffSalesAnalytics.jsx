@@ -25,7 +25,8 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  useMediaQuery
 } from '@mui/material';
 import {
   Insights as InsightsIcon,
@@ -39,7 +40,9 @@ import {
   PointOfSale as SaleIcon,
   Close as CloseIcon,
   Whatshot as FireIcon,
-  BarChart as BarChartIcon
+  BarChart as BarChartIcon,
+  BatteryChargingFull as BatteryIcon,
+  AccessTime as TimeIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { saleApi } from '../api/client';
@@ -57,6 +60,7 @@ const WEEKDAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export default function StaffSalesAnalytics() {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { user } = useAuth();
 
   const today = new Date();
@@ -259,7 +263,7 @@ export default function StaffSalesAnalytics() {
     }
   };
 
-  // Filtered sales ledger for the table
+  // Filtered sales ledger for the table/cards
   const filteredSalesLedger = useMemo(() => {
     if (!searchQuery.trim()) return monthSales;
     const q = searchQuery.toLowerCase();
@@ -273,29 +277,29 @@ export default function StaffSalesAnalytics() {
   }, [monthSales, searchQuery]);
 
   return (
-    <Box sx={{ pb: 6 }}>
-      {/* 1. Header Card with Month Navigator */}
+    <Box sx={{ pb: { xs: 8, sm: 6 } }}>
+      {/* 1. Header Card with Responsive Month Navigator */}
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 2, sm: 2.5 },
-          mb: 3,
-          borderRadius: 2.5,
+          p: { xs: 1.75, sm: 2.5 },
+          mb: { xs: 2, sm: 3 },
+          borderRadius: { xs: 2, sm: 2.5 },
           border: 1,
           borderColor: 'divider',
           bgcolor: 'background.paper',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: { xs: 'stretch', sm: 'center' },
           justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: 2
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: 1.5
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.75 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Box
             sx={{
-              width: { xs: 40, sm: 46 },
-              height: { xs: 40, sm: 46 },
+              width: { xs: 38, sm: 46 },
+              height: { xs: 38, sm: 46 },
               borderRadius: 2,
               bgcolor: 'primary.main',
               color: '#fff',
@@ -306,64 +310,76 @@ export default function StaffSalesAnalytics() {
               flexShrink: 0
             }}
           >
-            <InsightsIcon sx={{ fontSize: { xs: 22, sm: 26 } }} />
+            <InsightsIcon sx={{ fontSize: { xs: 20, sm: 26 } }} />
           </Box>
-          <Box>
-            <Typography variant="h5" fontWeight={800} sx={{ fontSize: { xs: '1.15rem', sm: '1.4rem' } }}>
+          <Box sx={{ minWidth: 0, flex: 1 }}>
+            <Typography variant="h5" fontWeight={800} sx={{ fontSize: { xs: '1.05rem', sm: '1.4rem' } }} noWrap>
               Sale Analytics
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.78rem', sm: '0.85rem' } }}>
-              Monthly performance calendar and sales volume breakdown for{' '}
+            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.74rem', sm: '0.85rem' } }} noWrap>
+              Sales performance for{' '}
               <strong>{user?.first_name ? `${user.first_name} ${user.last_name || ''}`.trim() : (user?.display_name || user?.username)}</strong>
             </Typography>
           </Box>
         </Box>
 
         {/* Month / Year Navigator Bar */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'action.hover', p: 0.5, borderRadius: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            bgcolor: 'action.hover',
+            p: 0.5,
+            borderRadius: 2,
+            width: { xs: '100%', sm: 'auto' }
+          }}
+        >
           <IconButton size="small" onClick={handlePrevMonth}>
             <ChevronLeftIcon fontSize="small" />
           </IconButton>
 
-          <FormControl size="small" sx={{ minWidth: 120 }}>
-            <Select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(Number(e.target.value))}
-              sx={{
-                fontWeight: 700,
-                fontSize: '0.88rem',
-                borderRadius: 1.5,
-                bgcolor: 'background.paper',
-                '& .MuiSelect-select': { py: 0.8, px: 1.2 }
-              }}
-            >
-              {MONTH_NAMES.map((m, idx) => (
-                <MenuItem key={m} value={idx}>
-                  {m}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flex: 1, justifyContent: 'center' }}>
+            <FormControl size="small" sx={{ minWidth: { xs: 95, sm: 120 } }}>
+              <Select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(Number(e.target.value))}
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: '0.8rem', sm: '0.88rem' },
+                  borderRadius: 1.5,
+                  bgcolor: 'background.paper',
+                  '& .MuiSelect-select': { py: 0.6, px: 1 }
+                }}
+              >
+                {MONTH_NAMES.map((m, idx) => (
+                  <MenuItem key={m} value={idx}>
+                    {m}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 90 }}>
-            <Select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
-              sx={{
-                fontWeight: 700,
-                fontSize: '0.88rem',
-                borderRadius: 1.5,
-                bgcolor: 'background.paper',
-                '& .MuiSelect-select': { py: 0.8, px: 1.2 }
-              }}
-            >
-              {[2024, 2025, 2026, 2027].map((y) => (
-                <MenuItem key={y} value={y}>
-                  {y}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+            <FormControl size="small" sx={{ minWidth: { xs: 75, sm: 90 } }}>
+              <Select
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                sx={{
+                  fontWeight: 700,
+                  fontSize: { xs: '0.8rem', sm: '0.88rem' },
+                  borderRadius: 1.5,
+                  bgcolor: 'background.paper',
+                  '& .MuiSelect-select': { py: 0.6, px: 1 }
+                }}
+              >
+                {[2024, 2025, 2026, 2027].map((y) => (
+                  <MenuItem key={y} value={y}>
+                    {y}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
 
           <IconButton size="small" onClick={handleNextMonth}>
             <ChevronRightIcon fontSize="small" />
@@ -372,14 +388,14 @@ export default function StaffSalesAnalytics() {
       </Paper>
 
       {/* 2. Top Summary KPI Cards */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {/* Total Units Sold in Selected Month */}
-        <Grid item xs={12} sm={6} md={3}>
+      <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ mb: { xs: 2, sm: 3 } }}>
+        {/* Total Units Sold */}
+        <Grid item xs={6} md={3}>
           <Card
             variant="outlined"
             sx={{
-              p: 2,
-              borderRadius: 2.5,
+              p: { xs: 1.5, sm: 2 },
+              borderRadius: { xs: 2, sm: 2.5 },
               height: '100%',
               bgcolor: 'background.paper',
               display: 'flex',
@@ -387,30 +403,30 @@ export default function StaffSalesAnalytics() {
               justifyContent: 'space-between'
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="caption" fontWeight={800} color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+              <Typography variant="caption" fontWeight={800} color="text.secondary" textTransform="uppercase" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                 Monthly Volume
               </Typography>
-              <Box sx={{ p: 0.8, borderRadius: 1.5, bgcolor: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }}>
-                <TrophyIcon fontSize="small" />
+              <Box sx={{ p: 0.6, borderRadius: 1.2, bgcolor: 'rgba(16, 185, 129, 0.1)', color: '#10B981' }}>
+                <TrophyIcon sx={{ fontSize: 16 }} />
               </Box>
             </Box>
-            <Typography variant="h4" fontWeight={800} sx={{ color: '#10B981', my: 0.5 }}>
-              {totalUnitsSold} <Typography component="span" variant="subtitle2" color="text.secondary">Units</Typography>
+            <Typography variant="h4" fontWeight={800} sx={{ color: '#10B981', my: 0.25, fontSize: { xs: '1.45rem', sm: '2rem' } }}>
+              {totalUnitsSold} <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>Units</Typography>
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Total sold in {MONTH_NAMES[selectedMonth]} {selectedYear}
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }} noWrap>
+              {MONTH_NAMES[selectedMonth]} {selectedYear}
             </Typography>
           </Card>
         </Grid>
 
         {/* Consistency & Active Days */}
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={6} md={3}>
           <Card
             variant="outlined"
             sx={{
-              p: 2,
-              borderRadius: 2.5,
+              p: { xs: 1.5, sm: 2 },
+              borderRadius: { xs: 2, sm: 2.5 },
               height: '100%',
               bgcolor: 'background.paper',
               display: 'flex',
@@ -418,32 +434,33 @@ export default function StaffSalesAnalytics() {
               justifyContent: 'space-between'
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-              <Typography variant="caption" fontWeight={800} color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
-                Sales Consistency
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+              <Typography variant="caption" fontWeight={800} color="text.secondary" textTransform="uppercase" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
+                Consistency
               </Typography>
-              <Box sx={{ p: 0.8, borderRadius: 1.5, bgcolor: consistencyRating.bg, color: consistencyRating.color }}>
-                <FireIcon fontSize="small" />
+              <Box sx={{ p: 0.6, borderRadius: 1.2, bgcolor: consistencyRating.bg, color: consistencyRating.color }}>
+                <FireIcon sx={{ fontSize: 16 }} />
               </Box>
             </Box>
-            <Box sx={{ my: 0.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="h4" fontWeight={800} sx={{ color: consistencyRating.color }}>
-                {activeSellingDaysCount} <Typography component="span" variant="subtitle2" color="text.secondary">Days</Typography>
+            <Box sx={{ my: 0.25, display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+              <Typography variant="h4" fontWeight={800} sx={{ color: consistencyRating.color, fontSize: { xs: '1.45rem', sm: '2rem' } }}>
+                {activeSellingDaysCount} <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>Days</Typography>
               </Typography>
               <Chip
                 label={consistencyRating.label}
                 size="small"
                 sx={{
                   fontWeight: 700,
-                  fontSize: '0.7rem',
+                  fontSize: '0.62rem',
+                  height: 18,
                   bgcolor: consistencyRating.bg,
                   color: consistencyRating.color,
-                  borderRadius: 1.5
+                  borderRadius: 1
                 }}
               />
             </Box>
-            <Typography variant="caption" color="text.secondary">
-              Active sale days out of {elapsedDays} elapsed days ({consistencyPercent}%)
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }} noWrap>
+              {activeSellingDaysCount} of {elapsedDays} days ({consistencyPercent}%)
             </Typography>
           </Card>
         </Grid>
@@ -453,8 +470,8 @@ export default function StaffSalesAnalytics() {
           <Card
             variant="outlined"
             sx={{
-              p: 2,
-              borderRadius: 2.5,
+              p: { xs: 1.5, sm: 2 },
+              borderRadius: { xs: 2, sm: 2.5 },
               height: '100%',
               bgcolor: 'background.paper',
               display: 'flex',
@@ -462,36 +479,36 @@ export default function StaffSalesAnalytics() {
               justifyContent: 'space-between'
             }}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-              <Typography variant="caption" fontWeight={800} color="text.secondary" textTransform="uppercase" letterSpacing={0.5}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="caption" fontWeight={800} color="text.secondary" textTransform="uppercase" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                 10-Day Volume Breakdown
               </Typography>
-              <Typography variant="caption" fontWeight={700} color="primary.main">
-                {MONTH_NAMES[selectedMonth]} Performance Phases
+              <Typography variant="caption" fontWeight={700} color="primary.main" sx={{ fontSize: '0.7rem' }}>
+                {MONTH_NAMES[selectedMonth]} Phases
               </Typography>
             </Box>
 
-            <Grid container spacing={1.5}>
+            <Grid container spacing={1}>
               {/* Early Month (1-10) */}
               <Grid item xs={4}>
                 <Paper
                   variant="outlined"
                   sx={{
-                    p: 1.2,
-                    borderRadius: 2,
+                    p: { xs: 0.8, sm: 1.2 },
+                    borderRadius: 1.75,
                     bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : '#EFF6FF'),
                     borderColor: 'rgba(59, 130, 246, 0.3)',
                     textAlign: 'center'
                   }}
                 >
-                  <Typography variant="caption" color="text.secondary" fontWeight={700} display="block">
+                  <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" sx={{ fontSize: { xs: '0.62rem', sm: '0.7rem' } }}>
                     Days 1 – 10
                   </Typography>
-                  <Typography variant="h6" fontWeight={800} color="#2563EB">
+                  <Typography variant="h6" fontWeight={800} color="#2563EB" sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }}>
                     {earlyMonthUnits}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                    Early Month
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>
+                    Early
                   </Typography>
                 </Paper>
               </Grid>
@@ -501,21 +518,21 @@ export default function StaffSalesAnalytics() {
                 <Paper
                   variant="outlined"
                   sx={{
-                    p: 1.2,
-                    borderRadius: 2,
+                    p: { xs: 0.8, sm: 1.2 },
+                    borderRadius: 1.75,
                     bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.08)' : '#F5F3FF'),
                     borderColor: 'rgba(139, 92, 246, 0.3)',
                     textAlign: 'center'
                   }}
                 >
-                  <Typography variant="caption" color="text.secondary" fontWeight={700} display="block">
+                  <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" sx={{ fontSize: { xs: '0.62rem', sm: '0.7rem' } }}>
                     Days 11 – 20
                   </Typography>
-                  <Typography variant="h6" fontWeight={800} color="#7C3AED">
+                  <Typography variant="h6" fontWeight={800} color="#7C3AED" sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }}>
                     {midMonthUnits}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                    Mid Month
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>
+                    Mid
                   </Typography>
                 </Paper>
               </Grid>
@@ -525,21 +542,21 @@ export default function StaffSalesAnalytics() {
                 <Paper
                   variant="outlined"
                   sx={{
-                    p: 1.2,
-                    borderRadius: 2,
+                    p: { xs: 0.8, sm: 1.2 },
+                    borderRadius: 1.75,
                     bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.08)' : '#ECFDF5'),
                     borderColor: 'rgba(16, 185, 129, 0.3)',
                     textAlign: 'center'
                   }}
                 >
-                  <Typography variant="caption" color="text.secondary" fontWeight={700} display="block">
+                  <Typography variant="caption" color="text.secondary" fontWeight={700} display="block" sx={{ fontSize: { xs: '0.62rem', sm: '0.7rem' } }}>
                     Days 21 – {daysInMonth}
                   </Typography>
-                  <Typography variant="h6" fontWeight={800} color="#059669">
+                  <Typography variant="h6" fontWeight={800} color="#059669" sx={{ fontSize: { xs: '1rem', sm: '1.2rem' } }}>
                     {lateMonthUnits}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                    Late Month
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.62rem' }}>
+                    Late
                   </Typography>
                 </Paper>
               </Grid>
@@ -549,14 +566,14 @@ export default function StaffSalesAnalytics() {
       </Grid>
 
       {/* 3. SIDE-BY-SIDE: Compact Calendar on Left & Daily Volume Plot on Right */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }} alignItems="stretch">
+      <Grid container spacing={{ xs: 2, sm: 2.5 }} sx={{ mb: { xs: 2, sm: 3 } }} alignItems="stretch">
         {/* LEFT COLUMN: Compact Month Calendar */}
         <Grid item xs={12} lg={5}>
           <Paper
             variant="outlined"
             sx={{
-              p: { xs: 2, sm: 2.25 },
-              borderRadius: 2.5,
+              p: { xs: 1.5, sm: 2.25 },
+              borderRadius: { xs: 2, sm: 2.5 },
               height: '100%',
               bgcolor: 'background.paper',
               display: 'flex',
@@ -567,32 +584,32 @@ export default function StaffSalesAnalytics() {
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CalendarIcon sx={{ color: 'primary.main', fontSize: 20 }} />
-                <Typography variant="subtitle2" fontWeight={800}>
+                <Typography variant="subtitle2" fontWeight={800} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
                   {MONTH_NAMES[selectedMonth]} {selectedYear} Calendar
                 </Typography>
               </Box>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: '#10B981' }} />
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Sold</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: '#10B981' }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>Sold</Typography>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'text.disabled', opacity: 0.4 }} />
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Empty</Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.4 }}>
+                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'text.disabled', opacity: 0.4 }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>Empty</Typography>
                 </Box>
               </Box>
             </Box>
 
             {/* Weekday Header */}
-            <Grid container spacing={0.6} sx={{ mb: 0.6 }}>
+            <Grid container spacing={0.5} sx={{ mb: 0.5 }}>
               {WEEKDAY_NAMES.map((d) => (
                 <Grid item xs={12 / 7} key={d} sx={{ textAlign: 'center' }}>
                   <Typography
                     variant="caption"
                     fontWeight={800}
                     color="text.secondary"
-                    sx={{ fontSize: '0.68rem', textTransform: 'uppercase' }}
+                    sx={{ fontSize: { xs: '0.64rem', sm: '0.7rem' }, textTransform: 'uppercase' }}
                   >
                     {d.charAt(0)}
                   </Typography>
@@ -601,12 +618,12 @@ export default function StaffSalesAnalytics() {
             </Grid>
 
             {/* Calendar Compact Squares */}
-            <Grid container spacing={0.6} sx={{ flex: 1, alignItems: 'center' }}>
+            <Grid container spacing={0.5} sx={{ flex: 1, alignItems: 'center' }}>
               {Array.from({ length: firstDayWeekday }).map((_, idx) => (
                 <Grid item xs={12 / 7} key={`empty-${idx}`}>
                   <Box
                     sx={{
-                      height: 38,
+                      height: { xs: 34, sm: 38 },
                       borderRadius: 1.5,
                       bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)'),
                       opacity: 0.15
@@ -630,7 +647,7 @@ export default function StaffSalesAnalytics() {
                     <Tooltip
                       title={
                         hasSales
-                          ? `Day ${dayNum}: ${daySalesList.length} unit(s) sold (Click for details)`
+                          ? `Day ${dayNum}: ${daySalesList.length} unit(s) sold (Tap for details)`
                           : `Day ${dayNum}: No sales`
                       }
                       arrow
@@ -641,9 +658,9 @@ export default function StaffSalesAnalytics() {
                         onMouseLeave={() => setHoveredDay(null)}
                         onClick={() => hasSales && setSelectedDayModal({ day: dayNum, sales: daySalesList })}
                         sx={{
-                          height: 38,
-                          p: 0.5,
-                          borderRadius: 2,
+                          height: { xs: 34, sm: 38 },
+                          p: 0.3,
+                          borderRadius: 1.75,
                           cursor: hasSales ? 'pointer' : 'default',
                           border: '1px solid',
                           borderColor: hasSales
@@ -672,7 +689,7 @@ export default function StaffSalesAnalytics() {
                           variant="caption"
                           fontWeight={hasSales || isToday ? 800 : 500}
                           sx={{
-                            fontSize: '0.78rem',
+                            fontSize: { xs: '0.72rem', sm: '0.78rem' },
                             lineHeight: 1,
                             color: hasSales ? '#047857' : isToday ? 'primary.main' : 'text.primary'
                           }}
@@ -693,8 +710,8 @@ export default function StaffSalesAnalytics() {
           <Paper
             variant="outlined"
             sx={{
-              p: { xs: 2, sm: 2.25 },
-              borderRadius: 2.5,
+              p: { xs: 1.5, sm: 2.25 },
+              borderRadius: { xs: 2, sm: 2.5 },
               height: '100%',
               bgcolor: 'background.paper',
               display: 'flex',
@@ -703,22 +720,23 @@ export default function StaffSalesAnalytics() {
             }}
           >
             {/* Top Graph Header */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <BarChartIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-                <Typography variant="subtitle2" fontWeight={800}>
-                  Daily Sales Volume Plot & Peak Distribution
+                <BarChartIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                <Typography variant="subtitle2" fontWeight={800} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
+                  Daily Sales Volume Plot
                 </Typography>
               </Box>
 
               {peakDayInfo.maxUnits > 0 && (
                 <Chip
-                  icon={<FireIcon sx={{ fontSize: '15px !important', color: '#F59E0B' }} />}
-                  label={`Peak: ${peakDayInfo.maxUnits} units on ${MONTH_NAMES[selectedMonth].slice(0, 3)} ${peakDayInfo.peakDays.join(', ')}`}
+                  icon={<FireIcon sx={{ fontSize: '13px !important', color: '#F59E0B' }} />}
+                  label={`Peak: ${peakDayInfo.maxUnits} units (Day ${peakDayInfo.peakDays.join(', ')})`}
                   size="small"
                   sx={{
                     fontWeight: 700,
-                    fontSize: '0.72rem',
+                    fontSize: '0.68rem',
+                    height: 22,
                     bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.12)' : '#FEF3C7'),
                     color: '#D97706',
                     border: '1px solid rgba(245, 158, 11, 0.3)'
@@ -727,16 +745,16 @@ export default function StaffSalesAnalytics() {
               )}
             </Box>
 
-            {/* Custom Interactive SVG Daily Histogram / Cluster Plot */}
-            <Box sx={{ flex: 1, minHeight: 160, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', pt: 2, pb: 1 }}>
+            {/* Custom Interactive SVG Daily Histogram */}
+            <Box sx={{ flex: 1, minHeight: 140, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', pt: 1, pb: 0.5 }}>
               {totalUnitsSold === 0 ? (
-                <Box sx={{ my: 'auto', textAlign: 'center', py: 4, color: 'text.secondary' }}>
-                  <TrendingUpIcon sx={{ fontSize: 36, opacity: 0.3, mb: 0.5 }} />
-                  <Typography variant="body2" fontWeight={600}>
+                <Box sx={{ my: 'auto', textAlign: 'center', py: 3, color: 'text.secondary' }}>
+                  <TrendingUpIcon sx={{ fontSize: 32, opacity: 0.3, mb: 0.5 }} />
+                  <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.82rem' }}>
                     No sales recorded in {MONTH_NAMES[selectedMonth]} {selectedYear}.
                   </Typography>
-                  <Typography variant="caption">
-                    Sales will appear as vertical volume clusters across the 30-day timeline.
+                  <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                    Daily activity will plot automatically as units are sold.
                   </Typography>
                 </Box>
               ) : (
@@ -747,7 +765,7 @@ export default function StaffSalesAnalytics() {
                       display: 'flex',
                       alignItems: 'flex-end',
                       gap: { xs: '2px', sm: '3px', md: '4px' },
-                      height: 130,
+                      height: { xs: 110, sm: 125 },
                       px: 0.5,
                       borderBottom: '2px solid',
                       borderColor: 'divider'
@@ -785,9 +803,9 @@ export default function StaffSalesAnalytics() {
                                 variant="caption"
                                 fontWeight={800}
                                 sx={{
-                                  fontSize: '0.62rem',
+                                  fontSize: '0.58rem',
                                   color: isHovered ? 'primary.main' : '#10B981',
-                                  mb: 0.3,
+                                  mb: 0.2,
                                   lineHeight: 1
                                 }}
                               >
@@ -799,8 +817,8 @@ export default function StaffSalesAnalytics() {
                               sx={{
                                 width: '100%',
                                 height: `${barHeightPercent}%`,
-                                minHeight: count > 0 ? 8 : 0,
-                                borderRadius: '4px 4px 0 0',
+                                minHeight: count > 0 ? 6 : 0,
+                                borderRadius: '3px 3px 0 0',
                                 bgcolor: count > 0
                                   ? isHovered
                                     ? '#2563EB'
@@ -818,17 +836,17 @@ export default function StaffSalesAnalytics() {
                   </Box>
 
                   {/* Day Ticks / Labels */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.8, px: 0.5 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.6, px: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', fontWeight: 600 }}>
                       Day 1
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', fontWeight: 600 }}>
                       Day 10
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', fontWeight: 600 }}>
                       Day 20
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem', fontWeight: 600 }}>
                       Day {daysInMonth}
                     </Typography>
                   </Box>
@@ -837,42 +855,45 @@ export default function StaffSalesAnalytics() {
             </Box>
 
             {/* Bottom 3 Phase Cluster Badges */}
-            <Box sx={{ pt: 1.5, borderTop: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-              <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                Sales Distribution:
+            <Box sx={{ pt: 1.2, borderTop: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.75 }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ fontSize: '0.7rem' }}>
+                Distribution:
               </Typography>
-              <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Stack direction="row" spacing={0.75} flexWrap="wrap" sx={{ gap: 0.5 }}>
                 <Chip
-                  label={`Early (1-10): ${earlyMonthUnits} units`}
+                  label={`Early (1-10): ${earlyMonthUnits}u`}
                   size="small"
                   sx={{
                     fontWeight: 700,
-                    fontSize: '0.68rem',
+                    fontSize: '0.65rem',
+                    height: 22,
                     bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.12)' : '#EFF6FF'),
                     color: '#2563EB',
-                    borderRadius: 1.2
+                    borderRadius: 1
                   }}
                 />
                 <Chip
-                  label={`Mid (11-20): ${midMonthUnits} units`}
+                  label={`Mid (11-20): ${midMonthUnits}u`}
                   size="small"
                   sx={{
                     fontWeight: 700,
-                    fontSize: '0.68rem',
+                    fontSize: '0.65rem',
+                    height: 22,
                     bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.12)' : '#F5F3FF'),
                     color: '#7C3AED',
-                    borderRadius: 1.2
+                    borderRadius: 1
                   }}
                 />
                 <Chip
-                  label={`Late (21-${daysInMonth}): ${lateMonthUnits} units`}
+                  label={`Late (21-${daysInMonth}): ${lateMonthUnits}u`}
                   size="small"
                   sx={{
                     fontWeight: 700,
-                    fontSize: '0.68rem',
+                    fontSize: '0.65rem',
+                    height: 22,
                     bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5'),
                     color: '#059669',
-                    borderRadius: 1.2
+                    borderRadius: 1
                   }}
                 />
               </Stack>
@@ -885,18 +906,18 @@ export default function StaffSalesAnalytics() {
       <Paper
         variant="outlined"
         sx={{
-          p: { xs: 2, sm: 2.5 },
-          borderRadius: 2.5,
+          p: { xs: 1.5, sm: 2.5 },
+          borderRadius: { xs: 2, sm: 2.5 },
           bgcolor: 'background.paper'
         }}
       >
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 1.5 }}>
           <Box>
-            <Typography variant="subtitle1" fontWeight={800}>
+            <Typography variant="subtitle1" fontWeight={800} sx={{ fontSize: { xs: '0.95rem', sm: '1.1rem' } }}>
               Sold Devices Ledger ({filteredSalesLedger.length})
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              List of all units sold by you in {MONTH_NAMES[selectedMonth]} {selectedYear}
+              Units sold in {MONTH_NAMES[selectedMonth]} {selectedYear}
             </Typography>
           </Box>
 
@@ -919,124 +940,203 @@ export default function StaffSalesAnalytics() {
         </Box>
 
         {filteredSalesLedger.length === 0 ? (
-          <Box sx={{ py: 5, textAlign: 'center', color: 'text.secondary' }}>
-            <CalendarIcon sx={{ fontSize: 40, opacity: 0.4, mb: 1 }} />
-            <Typography variant="body2" fontWeight={600}>
+          <Box sx={{ py: 4, textAlign: 'center', color: 'text.secondary' }}>
+            <CalendarIcon sx={{ fontSize: 36, opacity: 0.4, mb: 1 }} />
+            <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.85rem' }}>
               No sales records found for {MONTH_NAMES[selectedMonth]} {selectedYear}.
             </Typography>
-            <Typography variant="caption">
-              Switch months above or use the inventory to mark devices sold.
+            <Typography variant="caption" sx={{ fontSize: '0.72rem' }}>
+              Use the month selector above to view other periods.
             </Typography>
           </Box>
         ) : (
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ bgcolor: 'action.hover' }}>
-                  <TableCell sx={{ fontWeight: 700 }}>Model & Specs</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>IMEI Number</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }}>Sale Date</TableCell>
-                  <TableCell sx={{ fontWeight: 700 }} align="right">Payment Method</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredSalesLedger.map((sale) => {
-                  const specsParts = [
-                    sale.device_capacity || '',
-                    sale.device_color || '',
-                    sale.device_variant || ''
-                  ].filter(Boolean);
-                  const specsText = specsParts.join(' • ');
+          <>
+            {/* MOBILE CARD VIEW (xs only) */}
+            <Box sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', gap: 1.25 }}>
+              {filteredSalesLedger.map((sale) => {
+                const specsParts = [
+                  sale.device_capacity || '',
+                  sale.device_color || '',
+                  sale.device_variant || ''
+                ].filter(Boolean);
+                const specsText = specsParts.join(' • ');
 
-                  return (
-                    <TableRow key={sale.id || Math.random()} hover>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={700}>
+                return (
+                  <Paper
+                    key={`mob-sale-${sale.id || Math.random()}`}
+                    variant="outlined"
+                    sx={{
+                      p: 1.5,
+                      borderRadius: 2,
+                      bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#F8FAFC'),
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 0.8
+                    }}
+                  >
+                    {/* Top row: Model & Payment Method */}
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Typography variant="subtitle2" fontWeight={800} noWrap>
                           {sale.device_model || 'Standard Device'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
                           {specsText || '—'}
                         </Typography>
-                      </TableCell>
-                      <TableCell>
-                        <CopyableText text={sale.device_imei} />
-                      </TableCell>
-                      <TableCell>
-                        {sale.device_battery_health ? (
-                          <Box>
-                            <Typography variant="body2" fontWeight={700} sx={{ color: Number(sale.device_battery_health) >= 80 ? 'success.main' : 'warning.main' }}>
-                              {sale.device_battery_health}%
-                            </Typography>
-                            {sale.device_battery_cycle ? (
-                              <Typography variant="caption" color="text.secondary">
-                                {sale.device_battery_cycle} cycles
-                              </Typography>
-                            ) : null}
-                          </Box>
-                        ) : (
-                          <Typography variant="caption" color="text.disabled">
-                            —
+                      </Box>
+                      <Chip
+                        label={sale.payment_method || 'CASH'}
+                        size="small"
+                        sx={{
+                          fontWeight: 700,
+                          fontSize: '0.68rem',
+                          height: 22,
+                          borderRadius: 1.2,
+                          bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF'),
+                          color: (t) => (t.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8'),
+                          border: '1px solid',
+                          borderColor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.3)' : '#BFDBFE')
+                        }}
+                      />
+                    </Box>
+
+                    {/* Middle row: IMEI & Battery Health */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.75, pt: 0.3 }}>
+                      <CopyableText text={sale.device_imei} />
+                      {sale.device_battery_health ? (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                          <BatteryIcon sx={{ fontSize: 14, color: Number(sale.device_battery_health) >= 80 ? '#10B981' : '#F59E0B' }} />
+                          <Typography variant="caption" fontWeight={700} sx={{ color: Number(sale.device_battery_health) >= 80 ? 'success.main' : 'warning.main', fontSize: '0.72rem' }}>
+                            {sale.device_battery_health}% {sale.device_battery_cycle ? `(${sale.device_battery_cycle} CC)` : ''}
                           </Typography>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
-                          {formatDate(sale.sale_date || sale.created_at)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Chip
-                          label={sale.payment_method || 'CASH'}
-                          size="small"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: '0.72rem',
-                            height: 24,
-                            borderRadius: 1.5,
-                            bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF'),
-                            color: (t) => (t.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8'),
-                            border: '1px solid',
-                            borderColor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.3)' : '#BFDBFE')
-                          }}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                        </Box>
+                      ) : (
+                        <Typography variant="caption" color="text.disabled">—</Typography>
+                      )}
+                    </Box>
+
+                    {/* Bottom row: Sale Date */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, borderTop: 1, borderColor: 'divider', pt: 0.6 }}>
+                      <TimeIcon sx={{ fontSize: 13, color: 'text.secondary' }} />
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                        Sold on {formatDate(sale.sale_date || sale.created_at)}
+                      </Typography>
+                    </Box>
+                  </Paper>
+                );
+              })}
+            </Box>
+
+            {/* DESKTOP/TABLET TABLE VIEW (sm and up) */}
+            <TableContainer sx={{ display: { xs: 'none', sm: 'block' } }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'action.hover' }}>
+                    <TableCell sx={{ fontWeight: 700 }}>Model & Specs</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>IMEI Number</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Battery Health</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Sale Date</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }} align="right">Payment Method</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredSalesLedger.map((sale) => {
+                    const specsParts = [
+                      sale.device_capacity || '',
+                      sale.device_color || '',
+                      sale.device_variant || ''
+                    ].filter(Boolean);
+                    const specsText = specsParts.join(' • ');
+
+                    return (
+                      <TableRow key={sale.id || Math.random()} hover>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={700}>
+                            {sale.device_model || 'Standard Device'}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                            {specsText || '—'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <CopyableText text={sale.device_imei} />
+                        </TableCell>
+                        <TableCell>
+                          {sale.device_battery_health ? (
+                            <Box>
+                              <Typography variant="body2" fontWeight={700} sx={{ color: Number(sale.device_battery_health) >= 80 ? 'success.main' : 'warning.main' }}>
+                                {sale.device_battery_health}%
+                              </Typography>
+                              {sale.device_battery_cycle ? (
+                                <Typography variant="caption" color="text.secondary">
+                                  {sale.device_battery_cycle} cycles
+                                </Typography>
+                              ) : null}
+                            </Box>
+                          ) : (
+                            <Typography variant="caption" color="text.disabled">
+                              —
+                            </Typography>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={600}>
+                            {formatDate(sale.sale_date || sale.created_at)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Chip
+                            label={sale.payment_method || 'CASH'}
+                            size="small"
+                            sx={{
+                              fontWeight: 700,
+                              fontSize: '0.72rem',
+                              height: 24,
+                              borderRadius: 1.5,
+                              bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#EFF6FF'),
+                              color: (t) => (t.palette.mode === 'dark' ? '#93C5FD' : '#1D4ED8'),
+                              border: '1px solid',
+                              borderColor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.3)' : '#BFDBFE')
+                            }}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </>
         )}
       </Paper>
 
-      {/* 5. Day Sales Inspection Modal */}
+      {/* 5. Day Sales Inspection Modal (Mobile-Optimized) */}
       <Dialog
         open={Boolean(selectedDayModal)}
         onClose={() => setSelectedDayModal(null)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{ sx: { borderRadius: 3, p: 0.5 } }}
+        PaperProps={{ sx: { borderRadius: { xs: 2, sm: 3 }, p: 0.5, m: { xs: 1.5, sm: 2 } } }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1.2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-            <CheckCircleIcon sx={{ color: '#10B981', fontSize: 22 }} />
-            <Typography variant="subtitle1" fontWeight={800}>
-              Sales on {selectedDayModal?.day} {MONTH_NAMES[selectedMonth]} {selectedYear}
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1.2, px: { xs: 1.5, sm: 2 } }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0, flex: 1, pr: 1 }}>
+            <CheckCircleIcon sx={{ color: '#10B981', fontSize: 20, flexShrink: 0 }} />
+            <Typography variant="subtitle1" fontWeight={800} noWrap sx={{ fontSize: { xs: '0.88rem', sm: '1.05rem' } }}>
+              {selectedDayModal?.day} {MONTH_NAMES[selectedMonth]} {selectedYear}
             </Typography>
             <Chip
-              label={`${selectedDayModal?.sales?.length || 0} ${selectedDayModal?.sales?.length === 1 ? 'Unit' : 'Units'} Sold`}
+              label={`${selectedDayModal?.sales?.length || 0} ${selectedDayModal?.sales?.length === 1 ? 'Unit' : 'Units'}`}
               size="small"
               color="success"
-              sx={{ fontWeight: 800, fontSize: '0.72rem', height: 24, borderRadius: 1.5 }}
+              sx={{ fontWeight: 800, fontSize: '0.68rem', height: 22, borderRadius: 1.2, flexShrink: 0 }}
             />
           </Box>
           <IconButton size="small" onClick={() => setSelectedDayModal(null)}>
             <CloseIcon fontSize="small" />
           </IconButton>
         </DialogTitle>
-        <DialogContent dividers sx={{ p: 2 }}>
-          <Stack spacing={1.5}>
+        <DialogContent dividers sx={{ p: { xs: 1.5, sm: 2 } }}>
+          <Stack spacing={1.25}>
             {selectedDayModal?.sales?.map((sale) => {
               const specsParts = [
                 sale.device_capacity || '',
@@ -1052,12 +1152,15 @@ export default function StaffSalesAnalytics() {
                   sx={{
                     p: 1.5,
                     borderRadius: 2,
-                    bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#F8FAFC')
+                    bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#F8FAFC'),
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 0.6
                   }}
                 >
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.8 }}>
-                    <Box>
-                      <Typography variant="subtitle2" fontWeight={800}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2" fontWeight={800} noWrap>
                         {sale.device_model}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
@@ -1067,19 +1170,19 @@ export default function StaffSalesAnalytics() {
                     <Chip
                       label={sale.payment_method || 'CASH'}
                       size="small"
-                      sx={{ fontWeight: 700, fontSize: '0.7rem', height: 22 }}
+                      sx={{ fontWeight: 700, fontSize: '0.68rem', height: 22 }}
                     />
                   </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 0.75, pt: 0.2 }}>
                     <CopyableText text={sale.device_imei} />
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       {sale.device_battery_health && (
-                        <Typography variant="caption" fontWeight={700} sx={{ color: 'success.main' }}>
+                        <Typography variant="caption" fontWeight={700} sx={{ color: 'success.main', fontSize: '0.72rem' }}>
                           BH {sale.device_battery_health}% {sale.device_battery_cycle ? `(${sale.device_battery_cycle} CC)` : ''}
                         </Typography>
                       )}
-                      <Typography variant="caption" color="text.secondary">
-                        Sold on: {formatDate(sale.sale_date || sale.created_at)}
+                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }}>
+                        {formatDate(sale.sale_date || sale.created_at)}
                       </Typography>
                     </Box>
                   </Box>
@@ -1088,9 +1191,9 @@ export default function StaffSalesAnalytics() {
             })}
           </Stack>
         </DialogContent>
-        <DialogActions sx={{ px: 2.5, py: 1.5 }}>
-          <Button variant="contained" onClick={() => setSelectedDayModal(null)} sx={{ borderRadius: 2 }}>
-            Done
+        <DialogActions sx={{ px: { xs: 1.5, sm: 2.5 }, py: 1.2 }}>
+          <Button variant="contained" onClick={() => setSelectedDayModal(null)} fullWidth sx={{ borderRadius: 2 }}>
+            Close
           </Button>
         </DialogActions>
       </Dialog>
