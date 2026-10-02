@@ -581,35 +581,44 @@ export default function DeviceDetailDrawer({
                 <Paper
                   variant="outlined"
                   sx={{
-                    p: 1.5,
-                    borderRadius: 2,
+                    p: { xs: 1.75, sm: 2 },
+                    borderRadius: 2.5,
                     backgroundColor: (theme) =>
                       theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#F8FAFC'
                   }}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
                     <Typography variant="caption" color="primary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.8 }}>
                       Custody & Assignment
                     </Typography>
                     <StatusBadge status={device.current_status} />
                   </Box>
-                  <Grid container spacing={1.5} sx={{ mt: 0.2 }}>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Assigned To</Typography>
-                      <Typography variant="body2" fontWeight={700}>
-                        {device.current_owner_name || authUser?.username || 'You'}
-                      </Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="caption" color="text.secondary">Assigned Date</Typography>
-                      <Typography variant="body2" fontWeight={700}>
-                        {formatDate(device.assigned_date || device.received_date_bd || device.created_at)}
-                      </Typography>
-                    </Grid>
-                  </Grid>
 
-                  {device.current_status === 'IN_STOCK' && (
-                    <Box sx={{ display: 'flex', justifyContent: { xs: 'stretch', sm: 'flex-start' }, mt: 1.5 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: { xs: 'stretch', sm: 'center' },
+                      justifyContent: 'space-between',
+                      flexDirection: { xs: 'column', sm: 'row' },
+                      gap: 2
+                    }}
+                  >
+                    <Grid container spacing={2} sx={{ flex: 1 }}>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary">Assigned To</Typography>
+                        <Typography variant="body2" fontWeight={700}>
+                          {device.current_owner_name || authUser?.username || 'You'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" color="text.secondary">Assigned Date</Typography>
+                        <Typography variant="body2" fontWeight={700}>
+                          {formatDate(device.assigned_date || device.received_date_bd || device.created_at)}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+
+                    {device.current_status === 'IN_STOCK' && (
                       <Button
                         variant="contained"
                         color="success"
@@ -620,20 +629,22 @@ export default function DeviceDetailDrawer({
                         }}
                         sx={{
                           width: { xs: '100%', sm: 'auto' },
-                          minWidth: { sm: 160 },
+                          minWidth: { sm: 150 },
                           px: 2.5,
+                          py: 0.85,
                           fontWeight: 700,
-                          borderRadius: 1.75,
-                          height: 38,
+                          borderRadius: 2,
                           textTransform: 'none',
                           fontSize: '0.84rem',
-                          boxShadow: 'none'
+                          boxShadow: 'none',
+                          whiteSpace: 'nowrap',
+                          flexShrink: 0
                         }}
                       >
                         Mark as Sold
                       </Button>
-                    </Box>
-                  )}
+                    )}
+                  </Box>
 
                   {device.current_status === 'PENDING_SALE' && (
                     <Alert severity="warning" sx={{ mt: 1.5, py: 0.5, borderRadius: 2 }}>
