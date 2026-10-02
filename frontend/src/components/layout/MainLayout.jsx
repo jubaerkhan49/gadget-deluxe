@@ -128,7 +128,8 @@ export default function MainLayout() {
   const visibleNavItems = isAdmin
     ? NAV_ITEMS
     : [
-        { text: 'My Assigned Devices', path: '/dashboard', icon: <PhoneAndroidIcon /> },
+        { text: 'Assigned Devices', path: '/dashboard', icon: <PhoneAndroidIcon /> },
+        { text: 'Sale Analytics', path: '/staff-analytics', icon: <InsightsIcon /> },
         {
           text: 'Notifications',
           path: '/notifications',
