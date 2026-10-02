@@ -68,7 +68,7 @@ export default function Shipments() {
 
   const [shipments, setShipments] = useState(() => cachedShipments?.results || cachedShipments || []);
   const [loading, setLoading] = useState(() => !cachedShipments);
-  const [showAnalytics, setShowAnalytics] = useState(true);
+  const [viewMode, setViewMode] = useState('BATCHES'); // 'BATCHES' | 'ANALYTICS'
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState('NAME'); // 'NAME' | 'IMEI' | 'TRACKING'
   const [viewTab, setViewTab] = useState('ACTIVE'); // 'ACTIVE' | 'ARCHIVED'
@@ -292,88 +292,101 @@ export default function Shipments() {
           </Typography>
           <Typography variant="body2" color="text.secondary">
             {viewTab === 'ACTIVE'
-              ? `Track active batches from China / international suppliers (${activeShipments.length} active)`
+              ? `Track active batches from China suppliers (${activeShipments.length} active)`
               : `Historical archive of fully received and stocked batches (${archivedShipments.length} archived)`}
           </Typography>
         </div>
 
         <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
-          {/* 1. Inflow Calendar & Volume Plot Toggle */}
-          <Button
-            variant={showAnalytics ? 'contained' : 'outlined'}
-            startIcon={<InsightsIcon />}
-            onClick={() => setShowAnalytics((v) => !v)}
+          {/* View Mode Switcher: Batches Grid vs Inflow Analytics */}
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, val) => val && setViewMode(val)}
+            size="small"
             sx={{
+              bgcolor: 'action.hover',
+              p: 0.35,
               borderRadius: '10px',
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              px: 2,
-              py: 0.85,
-              bgcolor: showAnalytics ? '#6366F1' : undefined,
-              color: showAnalytics ? '#fff' : 'text.primary',
-              borderColor: showAnalytics ? '#6366F1' : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
-              boxShadow: showAnalytics ? '0 4px 12px rgba(99, 102, 241, 0.3)' : 'none',
-              '&:hover': {
-                bgcolor: showAnalytics ? '#4F46E5' : 'action.hover',
-                borderColor: '#6366F1'
+              '& .MuiToggleButton-root': {
+                border: 'none',
+                borderRadius: '8px',
+                px: 1.5,
+                py: 0.6,
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                textTransform: 'none',
+                '&.Mui-selected': {
+                  bgcolor: viewMode === 'ANALYTICS' ? '#6366F1' : 'primary.main',
+                  color: '#fff',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                }
               }
             }}
           >
-            {showAnalytics ? 'Hide Inflow Plot' : 'Inflow Calendar & Plot'}
-          </Button>
+            <ToggleButton value="BATCHES">
+              <ActiveIcon sx={{ fontSize: 16, mr: 0.7 }} /> Batches ({activeShipments.length})
+            </ToggleButton>
+            <ToggleButton value="ANALYTICS">
+              <InsightsIcon sx={{ fontSize: 16, mr: 0.7 }} /> Inflow Analytics
+            </ToggleButton>
+          </ToggleButtonGroup>
 
-          {/* 2. Archive Toggle Button */}
-          <Button
-            variant={viewTab === 'ARCHIVED' ? 'contained' : 'outlined'}
-            startIcon={viewTab === 'ARCHIVED' ? <ActiveIcon /> : <ArchiveIcon />}
-            onClick={() => setViewTab(viewTab === 'ARCHIVED' ? 'ACTIVE' : 'ARCHIVED')}
-            sx={{
-              borderRadius: '10px',
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              px: 2,
-              py: 0.85,
-              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
-              bgcolor: viewTab === 'ARCHIVED' ? 'primary.main' : undefined,
-              color: viewTab === 'ARCHIVED' ? '#fff' : 'text.primary',
-              '&:hover': {
-                bgcolor: viewTab === 'ARCHIVED' ? 'primary.dark' : 'action.hover',
-                borderColor: 'primary.main'
-              }
-            }}
-          >
-            {viewTab === 'ARCHIVED'
-              ? 'Active Batches'
-              : `Archived (${archivedShipments.length})`}
-          </Button>
+          {viewMode === 'BATCHES' && (
+            <>
+              {/* Archive Toggle Button */}
+              <Button
+                variant={viewTab === 'ARCHIVED' ? 'contained' : 'outlined'}
+                startIcon={viewTab === 'ARCHIVED' ? <ActiveIcon /> : <ArchiveIcon />}
+                onClick={() => setViewTab(viewTab === 'ARCHIVED' ? 'ACTIVE' : 'ARCHIVED')}
+                sx={{
+                  borderRadius: '10px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  px: 2,
+                  py: 0.85,
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
+                  bgcolor: viewTab === 'ARCHIVED' ? 'primary.main' : undefined,
+                  color: viewTab === 'ARCHIVED' ? '#fff' : 'text.primary',
+                  '&:hover': {
+                    bgcolor: viewTab === 'ARCHIVED' ? 'primary.dark' : 'action.hover',
+                    borderColor: 'primary.main'
+                  }
+                }}
+              >
+                {viewTab === 'ARCHIVED'
+                  ? 'Active Batches'
+                  : `Archived (${archivedShipments.length})`}
+              </Button>
 
-          {/* 3. Daily Reception Report Button */}
-          <Button
-            variant="outlined"
-            startIcon={<ReportIcon sx={{ color: 'primary.main' }} />}
-            onClick={() => setReportDialogOpen(true)}
-            sx={{
-              borderRadius: '10px',
-              textTransform: 'none',
-              fontWeight: 700,
-              fontSize: '0.875rem',
-              px: 2,
-              py: 0.85,
-              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
-              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(239, 246, 255, 0.75)',
-              color: 'primary.main',
-              '&:hover': {
-                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.16)' : '#DBEAFE',
-                borderColor: 'primary.main'
-              }
-            }}
-          >
-            Daily Received Report
-          </Button>
+              {/* Daily Reception Report Button */}
+              <Button
+                variant="outlined"
+                startIcon={<ReportIcon sx={{ color: 'primary.main' }} />}
+                onClick={() => setReportDialogOpen(true)}
+                sx={{
+                  borderRadius: '10px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '0.875rem',
+                  px: 2,
+                  py: 0.85,
+                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(239, 246, 255, 0.75)',
+                  color: 'primary.main',
+                  '&:hover': {
+                    bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.16)' : '#DBEAFE',
+                    borderColor: 'primary.main'
+                  }
+                }}
+              >
+                Daily Received Report
+              </Button>
+            </>
+          )}
 
-          {/* 4. New Shipment Batch Button */}
+          {/* New Shipment Batch Button */}
           <Button
             variant="contained"
             color="primary"
@@ -394,8 +407,8 @@ export default function Shipments() {
         </Stack>
       </Box>
 
-      {/* Inflow Calendar & Volume Plot Collapsible Overview */}
-      {showAnalytics && (
+      {/* Main Content Area: Inflow Analytics Mode vs Batches Grid Mode */}
+      {viewMode === 'ANALYTICS' ? (
         <ShipmentInflowAnalytics
           shipments={shipments}
           onSelectShipment={(shipment) => {
@@ -403,10 +416,10 @@ export default function Shipments() {
             setDetailDialogOpen(true);
           }}
         />
-      )}
-
-      {/* Search Mode Chips & Clean Search Input */}
-      <Box sx={{ mb: 3 }}>
+      ) : (
+        <>
+          {/* Search Mode Chips & Clean Search Input */}
+          <Box sx={{ mb: 3 }}>
         {/* Search Mode Selector Chips */}
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, flexWrap: 'wrap', gap: 1 }}>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
@@ -505,8 +518,8 @@ export default function Shipments() {
               searchMode === 'NAME'
                 ? 'Type Agent or Supplier name (e.g. "AB Group", "Hongxin Technology")...'
                 : searchMode === 'IMEI'
-                ? 'Scan barcode or type Device IMEI, IMEI 2, or Serial Number...'
-                : 'Enter Shipment Tracking Number (e.g. "SF1225516188466")...'
+                  ? 'Scan barcode or type Device IMEI, IMEI 2, or Serial Number...'
+                  : 'Enter Shipment Tracking Number (e.g. "SF1225516188466")...'
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -1256,6 +1269,8 @@ export default function Shipments() {
             );
           })}
         </Grid>
+      )}
+      </>
       )}
 
       {/* Add Shipment Dialog */}
