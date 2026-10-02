@@ -45,7 +45,8 @@ import {
   Person as PersonIcon,
   InfoOutlined as InfoIcon,
   OpenInNew as OpenInNewIcon,
-  ReceiptLong as ReceiptIcon
+  ReceiptLong as ReceiptIcon,
+  Insights as InsightsIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { shipmentApi, deviceApi } from '../api/client';
@@ -58,6 +59,7 @@ import EditShipmentDialog from '../dialogs/EditShipmentDialog';
 import ShipmentDetailDialog from '../dialogs/ShipmentDetailDialog';
 import DailyReceivedReportDialog from '../dialogs/DailyReceivedReportDialog';
 import DeviceDetailDrawer from '../dialogs/DeviceDetailDrawer';
+import ShipmentInflowAnalytics from '../components/shipments/ShipmentInflowAnalytics';
 
 export default function Shipments() {
   const { enqueueSnackbar } = useSnackbar();
@@ -66,6 +68,7 @@ export default function Shipments() {
 
   const [shipments, setShipments] = useState(() => cachedShipments?.results || cachedShipments || []);
   const [loading, setLoading] = useState(() => !cachedShipments);
+  const [showAnalytics, setShowAnalytics] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState('NAME'); // 'NAME' | 'IMEI' | 'TRACKING'
   const [viewTab, setViewTab] = useState('ACTIVE'); // 'ACTIVE' | 'ARCHIVED'
@@ -295,7 +298,32 @@ export default function Shipments() {
         </div>
 
         <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
-          {/* 1. Archive Toggle Button */}
+          {/* 1. Inflow Calendar & Volume Plot Toggle */}
+          <Button
+            variant={showAnalytics ? 'contained' : 'outlined'}
+            startIcon={<InsightsIcon />}
+            onClick={() => setShowAnalytics((v) => !v)}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.875rem',
+              px: 2,
+              py: 0.85,
+              bgcolor: showAnalytics ? '#6366F1' : undefined,
+              color: showAnalytics ? '#fff' : 'text.primary',
+              borderColor: showAnalytics ? '#6366F1' : (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
+              boxShadow: showAnalytics ? '0 4px 12px rgba(99, 102, 241, 0.3)' : 'none',
+              '&:hover': {
+                bgcolor: showAnalytics ? '#4F46E5' : 'action.hover',
+                borderColor: '#6366F1'
+              }
+            }}
+          >
+            {showAnalytics ? 'Hide Inflow Plot' : 'Inflow Calendar & Plot'}
+          </Button>
+
+          {/* 2. Archive Toggle Button */}
           <Button
             variant={viewTab === 'ARCHIVED' ? 'contained' : 'outlined'}
             startIcon={viewTab === 'ARCHIVED' ? <ActiveIcon /> : <ArchiveIcon />}
@@ -321,7 +349,7 @@ export default function Shipments() {
               : `Archived (${archivedShipments.length})`}
           </Button>
 
-          {/* 2. Daily Reception Report Button */}
+          {/* 3. Daily Reception Report Button */}
           <Button
             variant="outlined"
             startIcon={<ReportIcon sx={{ color: 'primary.main' }} />}
@@ -345,7 +373,7 @@ export default function Shipments() {
             Daily Received Report
           </Button>
 
-          {/* 3. New Shipment Batch Button */}
+          {/* 4. New Shipment Batch Button */}
           <Button
             variant="contained"
             color="primary"
@@ -365,6 +393,17 @@ export default function Shipments() {
           </Button>
         </Stack>
       </Box>
+
+      {/* Inflow Calendar & Volume Plot Collapsible Overview */}
+      {showAnalytics && (
+        <ShipmentInflowAnalytics
+          shipments={shipments}
+          onSelectShipment={(shipment) => {
+            setSelectedShipment(shipment);
+            setDetailDialogOpen(true);
+          }}
+        />
+      )}
 
       {/* Search Mode Chips & Clean Search Input */}
       <Box sx={{ mb: 3 }}>

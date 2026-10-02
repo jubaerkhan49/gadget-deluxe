@@ -104,8 +104,8 @@ export default function StaffSalesAnalytics() {
         typeof sale.seller === 'object' && sale.seller !== null
           ? sale.seller.id
           : typeof sale.seller === 'number'
-          ? sale.seller
-          : sale.seller_id;
+            ? sale.seller
+            : sale.seller_id;
 
       if (user.id && rawSellerId && Number(rawSellerId) === Number(user.id)) {
         return true;
@@ -225,8 +225,8 @@ export default function StaffSalesAnalytics() {
   const consistencyRating = consistencyPercent >= 40
     ? { label: 'High Consistency', color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)' }
     : consistencyPercent >= 20
-    ? { label: 'Moderate Pace', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' }
-    : { label: 'Needs Consistency', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' };
+      ? { label: 'Moderate Pace', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' }
+      : { label: 'Needs Consistency', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' };
 
   // Peak sales day calculation
   const peakDayInfo = useMemo(() => {
@@ -585,7 +585,7 @@ export default function StaffSalesAnalytics() {
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <CalendarIcon sx={{ color: 'primary.main', fontSize: 20 }} />
                 <Typography variant="subtitle2" fontWeight={800} sx={{ fontSize: { xs: '0.85rem', sm: '0.95rem' } }}>
-                  {MONTH_NAMES[selectedMonth]} {selectedYear} Calendar
+                  {MONTH_NAMES[selectedMonth]} {selectedYear}
                 </Typography>
               </Box>
 
@@ -666,17 +666,17 @@ export default function StaffSalesAnalytics() {
                           borderColor: isHovered
                             ? '#2563EB'
                             : hasSales
-                            ? '#10B981'
-                            : isToday
-                            ? 'primary.main'
-                            : 'divider',
+                              ? '#10B981'
+                              : isToday
+                                ? 'primary.main'
+                                : 'divider',
                           bgcolor: isHovered
                             ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.35)' : '#DBEAFE')
                             : hasSales
-                            ? (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5')
-                            : isToday
-                            ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.08)' : '#EFF6FF')
-                            : 'background.paper',
+                              ? (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5')
+                              : isToday
+                                ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.08)' : '#EFF6FF')
+                                : 'background.paper',
                           transition: 'all 0.15s ease-in-out',
                           display: 'flex',
                           alignItems: 'center',
@@ -685,8 +685,8 @@ export default function StaffSalesAnalytics() {
                           boxShadow: isHovered
                             ? '0 4px 12px rgba(37, 99, 235, 0.35)'
                             : hasSales
-                            ? '0 2px 6px rgba(16, 185, 129, 0.15)'
-                            : 'none',
+                              ? '0 2px 6px rgba(16, 185, 129, 0.15)'
+                              : 'none',
                           zIndex: isHovered ? 2 : 1
                         }}
                       >
@@ -699,10 +699,10 @@ export default function StaffSalesAnalytics() {
                             color: isHovered
                               ? '#1D4ED8'
                               : hasSales
-                              ? '#047857'
-                              : isToday
-                              ? 'primary.main'
-                              : 'text.primary'
+                                ? '#047857'
+                                : isToday
+                                  ? 'primary.main'
+                                  : 'text.primary'
                           }}
                         >
                           {dayNum}
