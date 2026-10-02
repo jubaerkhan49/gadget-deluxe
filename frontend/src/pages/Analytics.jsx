@@ -267,7 +267,7 @@ export default function Analytics() {
             <Grid item xs={6} sm={6} lg={3}>
               <Card
                 sx={{
-                  borderRadius: 3,
+                  borderRadius: 2,
                   border: 1,
                   borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(34, 197, 94, 0.3)' : '#BBF7D0',
                   background: (theme) =>
@@ -343,7 +343,7 @@ export default function Analytics() {
             <Grid item xs={6} sm={6} lg={3}>
               <Card
                 sx={{
-                  borderRadius: 3,
+                  borderRadius: 2,
                   border: 1,
                   borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.3)' : '#BFDBFE',
                   background: (theme) =>
@@ -419,7 +419,7 @@ export default function Analytics() {
             <Grid item xs={6} sm={6} lg={3}>
               <Card
                 sx={{
-                  borderRadius: 3,
+                  borderRadius: 2,
                   border: 1,
                   borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.3)' : '#FED7AA',
                   background: (theme) =>
@@ -495,7 +495,7 @@ export default function Analytics() {
             <Grid item xs={6} sm={6} lg={3}>
               <Card
                 sx={{
-                  borderRadius: 3,
+                  borderRadius: 2,
                   border: 1,
                   borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.3)' : '#E9D5FF',
                   background: (theme) =>
@@ -958,14 +958,14 @@ export default function Analytics() {
           </Paper>
 
           {/* 4. TOP SELLING MODELS & EXECUTIVE OVERVIEW BANNERS */}
-          <Grid container spacing={{ xs: 2, md: 2.5 }} alignItems="stretch">
+          <Grid container spacing={{ xs: 1.25, sm: 2, md: 2.5 }} alignItems="stretch">
             {/* Top Selling Models */}
             <Grid item xs={12} md={7} sx={{ display: 'flex' }}>
               <Paper
                 variant="outlined"
                 sx={{
                   p: { xs: 2, sm: 2.5 },
-                  borderRadius: 3,
+                  borderRadius: 2,
                   width: '100%',
                   display: 'flex',
                   flexDirection: 'column'
@@ -1063,7 +1063,7 @@ export default function Analytics() {
                 variant="outlined"
                 sx={{
                   p: { xs: 2, sm: 2.5 },
-                  borderRadius: 3,
+                  borderRadius: 2,
                   width: '100%',
                   display: 'flex',
                   flexDirection: 'column',
