@@ -167,8 +167,8 @@ export default function Analytics() {
         </div>
 
         {/* Timeframe Selectors & Quick Actions */}
-        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
-          <FormControl size="small" sx={{ minWidth: 130 }}>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <FormControl size="small" sx={{ flex: { xs: 1, sm: 'none' }, minWidth: { xs: 0, sm: 130 } }}>
             <Select
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(Number(e.target.value))}
@@ -182,7 +182,7 @@ export default function Analytics() {
             </Select>
           </FormControl>
 
-          <FormControl size="small" sx={{ minWidth: 100 }}>
+          <FormControl size="small" sx={{ width: { xs: 90, sm: 100 }, minWidth: { xs: 90, sm: 100 } }}>
             <Select
               value={selectedYear}
               onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -201,7 +201,7 @@ export default function Analytics() {
               variant="outlined"
               size="small"
               onClick={handleResetToCurrentMonth}
-              sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700 }}
+              sx={{ borderRadius: '10px', textTransform: 'none', fontWeight: 700, whiteSpace: 'nowrap' }}
             >
               This Month
             </Button>
@@ -213,7 +213,8 @@ export default function Analytics() {
               disabled={loading || refreshing}
               sx={{
                 bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : '#F1F5F9',
-                borderRadius: '10px'
+                borderRadius: '10px',
+                flexShrink: 0
               }}
             >
               <RefreshIcon
@@ -236,9 +237,9 @@ export default function Analytics() {
           <CircularProgress />
         </Box>
       ) : (
-        <Stack spacing={3.5}>
+        <Stack spacing={{ xs: 2.5, sm: 3.5 }}>
           {/* 1. PRIMARY FINANCIAL PILLARS (4 METRICS) */}
-          <Grid container spacing={2.5}>
+          <Grid container spacing={{ xs: 1.5, sm: 2.5 }}>
             {/* PILLAR 1: TOTAL PROFIT THIS MONTH */}
             <Grid item xs={12} sm={6} lg={3}>
               <Card
@@ -254,32 +255,39 @@ export default function Analytics() {
                   height: '100%'
                 }}
               >
-                <CardContent sx={{ p: 2.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                    <Typography variant="body2" fontWeight={700} color="#16A34A">
+                <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
+                    <Typography variant="body2" fontWeight={700} color="#16A34A" sx={{ fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>
                       Total Profit (This Month)
                     </Typography>
                     <Box
                       sx={{
-                        width: 38,
-                        height: 38,
+                        width: { xs: 32, sm: 38 },
+                        height: { xs: 32, sm: 38 },
                         borderRadius: 2,
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(22, 163, 74, 0.25)' : '#DCFCE7',
                         color: '#16A34A',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        flexShrink: 0
                       }}
                     >
-                      <TrendingUpIcon fontSize="small" />
+                      <TrendingUpIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
                     </Box>
                   </Box>
 
-                  <Typography variant="h4" fontWeight={900} color="#16A34A" letterSpacing={-0.5}>
+                  <Typography
+                    variant="h4"
+                    fontWeight={900}
+                    color="#16A34A"
+                    letterSpacing={-0.5}
+                    sx={{ fontSize: { xs: '1.65rem', sm: '1.95rem', lg: '2.15rem' } }}
+                  >
                     {formatBDT(summary.total_profit)}
                   </Typography>
 
-                  <Divider sx={{ my: 1.5, opacity: 0.6 }} />
+                  <Divider sx={{ my: { xs: 1.2, sm: 1.5 }, opacity: 0.6 }} />
 
                   <Stack spacing={0.5}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -318,32 +326,39 @@ export default function Analytics() {
                   height: '100%'
                 }}
               >
-                <CardContent sx={{ p: 2.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                    <Typography variant="body2" fontWeight={700} color="primary.main">
+                <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
+                    <Typography variant="body2" fontWeight={700} color="primary.main" sx={{ fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>
                       Total Investment (This Month)
                     </Typography>
                     <Box
                       sx={{
-                        width: 38,
-                        height: 38,
+                        width: { xs: 32, sm: 38 },
+                        height: { xs: 32, sm: 38 },
                         borderRadius: 2,
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.25)' : '#DBEAFE',
                         color: 'primary.main',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        flexShrink: 0
                       }}
                     >
-                      <InvestmentIcon fontSize="small" />
+                      <InvestmentIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
                     </Box>
                   </Box>
 
-                  <Typography variant="h4" fontWeight={900} color="primary.main" letterSpacing={-0.5}>
+                  <Typography
+                    variant="h4"
+                    fontWeight={900}
+                    color="primary.main"
+                    letterSpacing={-0.5}
+                    sx={{ fontSize: { xs: '1.65rem', sm: '1.95rem', lg: '2.15rem' } }}
+                  >
                     {formatBDT(summary.total_investment)}
                   </Typography>
 
-                  <Divider sx={{ my: 1.5, opacity: 0.6 }} />
+                  <Divider sx={{ my: { xs: 1.2, sm: 1.5 }, opacity: 0.6 }} />
 
                   <Stack spacing={0.5}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -382,32 +397,39 @@ export default function Analytics() {
                   height: '100%'
                 }}
               >
-                <CardContent sx={{ p: 2.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                    <Typography variant="body2" fontWeight={700} color="#EA580C">
+                <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
+                    <Typography variant="body2" fontWeight={700} color="#EA580C" sx={{ fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>
                       Repair Cost (This Month)
                     </Typography>
                     <Box
                       sx={{
-                        width: 38,
-                        height: 38,
+                        width: { xs: 32, sm: 38 },
+                        height: { xs: 32, sm: 38 },
                         borderRadius: 2,
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(234, 88, 12, 0.25)' : '#FFEDD5',
                         color: '#EA580C',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        flexShrink: 0
                       }}
                     >
-                      <RepairIcon fontSize="small" />
+                      <RepairIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
                     </Box>
                   </Box>
 
-                  <Typography variant="h4" fontWeight={900} color="#EA580C" letterSpacing={-0.5}>
+                  <Typography
+                    variant="h4"
+                    fontWeight={900}
+                    color="#EA580C"
+                    letterSpacing={-0.5}
+                    sx={{ fontSize: { xs: '1.65rem', sm: '1.95rem', lg: '2.15rem' } }}
+                  >
                     {formatBDT(summary.total_repair_cost)}
                   </Typography>
 
-                  <Divider sx={{ my: 1.5, opacity: 0.6 }} />
+                  <Divider sx={{ my: { xs: 1.2, sm: 1.5 }, opacity: 0.6 }} />
 
                   <Stack spacing={0.5}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -446,32 +468,39 @@ export default function Analytics() {
                   height: '100%'
                 }}
               >
-                <CardContent sx={{ p: 2.5 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                    <Typography variant="body2" fontWeight={700} color="#9333EA">
+                <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.2 }}>
+                    <Typography variant="body2" fontWeight={700} color="#9333EA" sx={{ fontSize: { xs: '0.82rem', sm: '0.875rem' } }}>
                       Shipping Costs (This Month)
                     </Typography>
                     <Box
                       sx={{
-                        width: 38,
-                        height: 38,
+                        width: { xs: 32, sm: 38 },
+                        height: { xs: 32, sm: 38 },
                         borderRadius: 2,
                         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(168, 85, 247, 0.25)' : '#F3E8FF',
                         color: '#9333EA',
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        flexShrink: 0
                       }}
                     >
-                      <ShippingIcon fontSize="small" />
+                      <ShippingIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
                     </Box>
                   </Box>
 
-                  <Typography variant="h4" fontWeight={900} color="#9333EA" letterSpacing={-0.5}>
+                  <Typography
+                    variant="h4"
+                    fontWeight={900}
+                    color="#9333EA"
+                    letterSpacing={-0.5}
+                    sx={{ fontSize: { xs: '1.65rem', sm: '1.95rem', lg: '2.15rem' } }}
+                  >
                     {formatBDT(summary.total_shipping_cost)}
                   </Typography>
 
-                  <Divider sx={{ my: 1.5, opacity: 0.6 }} />
+                  <Divider sx={{ my: { xs: 1.2, sm: 1.5 }, opacity: 0.6 }} />
 
                   <Stack spacing={0.5}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -501,7 +530,7 @@ export default function Analytics() {
             <Paper
               variant="outlined"
               sx={{
-                p: { xs: 2.5, md: 3 },
+                p: { xs: 2, sm: 2.5, md: 3 },
                 borderRadius: 3.5,
                 background: (theme) =>
                   theme.palette.mode === 'dark'
@@ -512,43 +541,46 @@ export default function Analytics() {
                 boxShadow: '0 10px 30px -5px rgba(234, 179, 8, 0.12)'
               }}
             >
-              <Grid container spacing={3} alignItems="center">
+              <Grid container spacing={{ xs: 2, md: 3 }} alignItems="center">
                 <Grid item xs={12} md={7}>
-                  <Stack direction="row" spacing={2.5} alignItems="center">
+                  <Stack direction="row" spacing={{ xs: 1.5, sm: 2.5 }} alignItems="center">
                     <Avatar
                       sx={{
-                        width: { xs: 56, sm: 68 },
-                        height: { xs: 56, sm: 68 },
+                        width: { xs: 48, sm: 64 },
+                        height: { xs: 48, sm: 64 },
                         bgcolor: '#EAB308',
                         color: '#FFFFFF',
                         fontWeight: 900,
                         fontSize: '1.5rem',
-                        boxShadow: '0 6px 20px rgba(234, 179, 8, 0.4)'
+                        boxShadow: '0 6px 20px rgba(234, 179, 8, 0.4)',
+                        flexShrink: 0
                       }}
                     >
-                      <TrophyIcon sx={{ fontSize: 36 }} />
+                      <TrophyIcon sx={{ fontSize: { xs: 26, sm: 34 } }} />
                     </Avatar>
 
                     <div>
                       <Stack direction="row" spacing={1} alignItems="center">
                         <Chip
-                          icon={<MedalIcon sx={{ fontSize: '15px !important', color: '#EAB308 !important' }} />}
+                          icon={<MedalIcon sx={{ fontSize: '14px !important', color: '#EAB308 !important' }} />}
                           label="#1 Best Seller of the Month"
                           size="small"
                           sx={{
                             fontWeight: 800,
                             bgcolor: '#FEF08A',
                             color: '#854D0E',
-                            borderRadius: '8px'
+                            borderRadius: '8px',
+                            fontSize: { xs: '0.7rem', sm: '0.78rem' },
+                            height: 24
                           }}
                         />
                       </Stack>
 
-                      <Typography variant="h5" fontWeight={900} letterSpacing={-0.5} sx={{ mt: 0.5 }}>
+                      <Typography variant="h5" fontWeight={900} letterSpacing={-0.5} sx={{ mt: 0.5, fontSize: { xs: '1.15rem', sm: '1.45rem' } }}>
                         {bestSeller.display_name} ({bestSeller.username})
                       </Typography>
 
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25, fontSize: { xs: '0.78rem', sm: '0.85rem' } }}>
                         Generated the highest profit this month with consistent sales velocity and fast inventory turnover.
                       </Typography>
                     </div>
@@ -556,12 +588,12 @@ export default function Analytics() {
                 </Grid>
 
                 <Grid item xs={12} md={5}>
-                  <Grid container spacing={1.5}>
+                  <Grid container spacing={1}>
                     <Grid item xs={4}>
                       <Paper
                         elevation={0}
                         sx={{
-                          p: 1.5,
+                          p: { xs: 1, sm: 1.5 },
                           textAlign: 'center',
                           borderRadius: 2.5,
                           bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.25)' : '#FFFFFF',
@@ -569,10 +601,10 @@ export default function Analytics() {
                           borderColor: 'divider'
                         }}
                       >
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                           Profit
                         </Typography>
-                        <Typography variant="subtitle1" fontWeight={900} color="#16A34A">
+                        <Typography variant="subtitle1" fontWeight={900} color="#16A34A" sx={{ fontSize: { xs: '0.82rem', sm: '1.05rem' } }} noWrap>
                           {formatBDT(bestSeller.total_profit)}
                         </Typography>
                       </Paper>
@@ -582,7 +614,7 @@ export default function Analytics() {
                       <Paper
                         elevation={0}
                         sx={{
-                          p: 1.5,
+                          p: { xs: 1, sm: 1.5 },
                           textAlign: 'center',
                           borderRadius: 2.5,
                           bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.25)' : '#FFFFFF',
@@ -590,10 +622,10 @@ export default function Analytics() {
                           borderColor: 'divider'
                         }}
                       >
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                           Units Sold
                         </Typography>
-                        <Typography variant="subtitle1" fontWeight={900} color="primary.main">
+                        <Typography variant="subtitle1" fontWeight={900} color="primary.main" sx={{ fontSize: { xs: '0.82rem', sm: '1.05rem' } }} noWrap>
                           {bestSeller.units_sold} Phones
                         </Typography>
                       </Paper>
@@ -603,7 +635,7 @@ export default function Analytics() {
                       <Paper
                         elevation={0}
                         sx={{
-                          p: 1.5,
+                          p: { xs: 1, sm: 1.5 },
                           textAlign: 'center',
                           borderRadius: 2.5,
                           bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.25)' : '#FFFFFF',
@@ -611,10 +643,10 @@ export default function Analytics() {
                           borderColor: 'divider'
                         }}
                       >
-                        <Typography variant="caption" color="text.secondary" fontWeight={600}>
+                        <Typography variant="caption" color="text.secondary" fontWeight={600} sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' } }}>
                           Avg Speed
                         </Typography>
-                        <Typography variant="subtitle1" fontWeight={900} color="#EA580C">
+                        <Typography variant="subtitle1" fontWeight={900} color="#EA580C" sx={{ fontSize: { xs: '0.82rem', sm: '1.05rem' } }} noWrap>
                           {bestSeller.avg_turnaround_days} Days
                         </Typography>
                       </Paper>
@@ -902,15 +934,15 @@ export default function Analytics() {
           </Paper>
 
           {/* 4. TOP SELLING MODELS & BUSINESS VELOCITY */}
-          <Grid container spacing={2.5}>
+          <Grid container spacing={{ xs: 2, md: 2.5 }}>
             {/* Top Selling Models */}
             <Grid item xs={12} md={7}>
-              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, height: '100%' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                  <Typography variant="subtitle1" fontWeight={800}>
+              <Paper variant="outlined" sx={{ p: { xs: 2, sm: 2.5 }, borderRadius: 3, height: '100%' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                  <Typography variant="subtitle1" fontWeight={800} sx={{ fontSize: { xs: '0.92rem', sm: '1rem' } }}>
                     Top Selling Device Models (This Month)
                   </Typography>
-                  <Chip label="By Volume & Profit" size="small" sx={{ fontWeight: 700 }} />
+                  <Chip label="By Volume & Profit" size="small" sx={{ fontWeight: 700, fontSize: '0.72rem' }} />
                 </Box>
 
                 {topModels.length === 0 ? (
@@ -924,33 +956,40 @@ export default function Analytics() {
                         key={m.model}
                         elevation={0}
                         sx={{
-                          p: 1.5,
+                          p: { xs: 1.2, sm: 1.5 },
                           borderRadius: 2,
                           bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : '#F8FAFC',
                           border: 1,
                           borderColor: 'divider',
                           display: 'flex',
-                          alignItems: 'center',
+                          alignItems: { xs: 'flex-start', sm: 'center' },
                           justifyContent: 'space-between',
-                          gap: 1.5
+                          flexDirection: { xs: 'column', sm: 'row' },
+                          gap: 1
                         }}
                       >
-                        <Stack direction="row" spacing={1.5} alignItems="center">
-                          <Typography variant="body2" fontWeight={800} color="text.secondary" sx={{ width: 20 }}>
+                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 0, width: { xs: '100%', sm: 'auto' } }}>
+                          <Typography variant="body2" fontWeight={800} color="text.secondary" sx={{ width: 20, flexShrink: 0 }}>
                             #{idx + 1}
                           </Typography>
-                          <PhoneIcon fontSize="small" color="primary" />
-                          <div>
-                            <Typography variant="body2" fontWeight={700}>
+                          <PhoneIcon fontSize="small" color="primary" sx={{ flexShrink: 0 }} />
+                          <div style={{ minWidth: 0 }}>
+                            <Typography variant="body2" fontWeight={700} noWrap>
                               {m.model}
                             </Typography>
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography variant="caption" color="text.secondary" display="block">
                               Revenue: {formatBDT(m.total_revenue)}
                             </Typography>
                           </div>
                         </Stack>
 
-                        <Stack direction="row" spacing={2} alignItems="center">
+                        <Stack
+                          direction="row"
+                          spacing={1.5}
+                          alignItems="center"
+                          justifyContent={{ xs: 'space-between', sm: 'flex-end' }}
+                          sx={{ width: { xs: '100%', sm: 'auto' }, pl: { xs: 4, sm: 0 }, pt: { xs: 0.5, sm: 0 } }}
+                        >
                           <Chip
                             label={`${m.units_sold} Sold`}
                             size="small"
@@ -989,7 +1028,7 @@ export default function Analytics() {
               <Paper
                 variant="outlined"
                 sx={{
-                  p: 2.5,
+                  p: { xs: 2, sm: 2.5 },
                   borderRadius: 3,
                   height: '100%',
                   background: (theme) =>
@@ -998,46 +1037,46 @@ export default function Analytics() {
                       : 'linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%)'
                 }}
               >
-                <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" fontWeight={800} sx={{ mb: 2, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
                   Executive Business Overview
                 </Typography>
 
-                <Stack spacing={2}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">Total Revenue (Sales):</Typography>
-                    <Typography variant="body1" fontWeight={800} color="text.primary">
+                <Stack spacing={1.5}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>Total Revenue (Sales):</Typography>
+                    <Typography variant="body1" fontWeight={800} color="text.primary" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {formatBDT(summary.total_revenue)}
                     </Typography>
                   </Box>
                   <Divider />
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">Net Return on Investment (ROI):</Typography>
-                    <Typography variant="body1" fontWeight={800} color="#16A34A">
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>Net Return on Investment (ROI):</Typography>
+                    <Typography variant="body1" fontWeight={800} color="#16A34A" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {summary.roi_percentage || 0}%
                     </Typography>
                   </Box>
                   <Divider />
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">Total Sales Count:</Typography>
-                    <Typography variant="body1" fontWeight={800} color="text.primary">
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>Total Sales Count:</Typography>
+                    <Typography variant="body1" fontWeight={800} color="text.primary" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {summary.total_sales_count || 0} Transactions
                     </Typography>
                   </Box>
                   <Divider />
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">Total Inbound Shipments Received:</Typography>
-                    <Typography variant="body1" fontWeight={800} color="primary.main">
-                      {summary.shipment_batches_count || 0} Batches ({summary.shipment_devices_count || 0} devices)
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>Inbound Shipments:</Typography>
+                    <Typography variant="body1" fontWeight={800} color="primary.main" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
+                      {summary.shipment_batches_count || 0} Batches ({summary.shipment_devices_count || 0} units)
                     </Typography>
                   </Box>
                   <Divider />
 
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body2" color="text.secondary">Repair & Servicing Expenses:</Typography>
-                    <Typography variant="body1" fontWeight={800} color="#EA580C">
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 0.5 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>Repair & Servicing:</Typography>
+                    <Typography variant="body1" fontWeight={800} color="#EA580C" sx={{ fontSize: { xs: '0.9rem', sm: '1rem' } }}>
                       {formatBDT(summary.total_repair_cost)}
                     </Typography>
                   </Box>
