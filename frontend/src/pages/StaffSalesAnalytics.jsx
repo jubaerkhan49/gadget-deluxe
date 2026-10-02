@@ -642,8 +642,8 @@ export default function StaffSalesAnalytics() {
                         onClick={() => hasSales && setSelectedDayModal({ day: dayNum, sales: daySalesList })}
                         sx={{
                           height: 38,
-                          p: 0.4,
-                          borderRadius: 1.5,
+                          p: 0.5,
+                          borderRadius: 2,
                           cursor: hasSales ? 'pointer' : 'default',
                           border: '1px solid',
                           borderColor: hasSales
@@ -654,15 +654,14 @@ export default function StaffSalesAnalytics() {
                             ? 'text.secondary'
                             : 'divider',
                           bgcolor: hasSales
-                            ? (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5')
+                            ? (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.22)' : '#D1FAE5')
                             : isToday
-                            ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#EFF6FF')
+                            ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.08)' : '#EFF6FF')
                             : isHovered
                             ? 'action.hover'
                             : 'background.paper',
                           transition: 'all 0.15s ease-in-out',
                           display: 'flex',
-                          flexDirection: 'column',
                           alignItems: 'center',
                           justifyContent: 'center',
                           transform: isHovered && hasSales ? 'scale(1.08)' : 'none',
@@ -673,42 +672,13 @@ export default function StaffSalesAnalytics() {
                           variant="caption"
                           fontWeight={hasSales || isToday ? 800 : 500}
                           sx={{
-                            fontSize: '0.74rem',
+                            fontSize: '0.78rem',
                             lineHeight: 1,
                             color: hasSales ? '#047857' : isToday ? 'primary.main' : 'text.primary'
                           }}
                         >
                           {dayNum}
                         </Typography>
-
-                        {hasSales ? (
-                          <Box
-                            sx={{
-                              mt: 0.3,
-                              px: 0.5,
-                              py: 0.1,
-                              borderRadius: 0.8,
-                              bgcolor: '#10B981',
-                              color: '#fff',
-                              fontSize: '0.58rem',
-                              fontWeight: 900,
-                              lineHeight: 1
-                            }}
-                          >
-                            {daySalesList.length}
-                          </Box>
-                        ) : (
-                          <Box
-                            sx={{
-                              mt: 0.4,
-                              width: 3,
-                              height: 3,
-                              borderRadius: '50%',
-                              bgcolor: 'text.disabled',
-                              opacity: 0.5
-                            }}
-                          />
-                        )}
                       </Paper>
                     </Tooltip>
                   </Grid>
@@ -1029,12 +999,18 @@ export default function StaffSalesAnalytics() {
         fullWidth
         PaperProps={{ sx: { borderRadius: 3, p: 0.5 } }}
       >
-        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CheckCircleIcon sx={{ color: '#10B981' }} />
+        <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pb: 1.2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+            <CheckCircleIcon sx={{ color: '#10B981', fontSize: 22 }} />
             <Typography variant="subtitle1" fontWeight={800}>
               Sales on {selectedDayModal?.day} {MONTH_NAMES[selectedMonth]} {selectedYear}
             </Typography>
+            <Chip
+              label={`${selectedDayModal?.sales?.length || 0} ${selectedDayModal?.sales?.length === 1 ? 'Unit' : 'Units'} Sold`}
+              size="small"
+              color="success"
+              sx={{ fontWeight: 800, fontSize: '0.72rem', height: 24, borderRadius: 1.5 }}
+            />
           </Box>
           <IconButton size="small" onClick={() => setSelectedDayModal(null)}>
             <CloseIcon fontSize="small" />
