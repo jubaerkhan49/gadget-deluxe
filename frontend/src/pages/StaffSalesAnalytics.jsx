@@ -8,12 +8,10 @@ import {
   Stack,
   Paper,
   Chip,
-  LinearProgress,
   IconButton,
   MenuItem,
   Select,
   FormControl,
-  InputLabel,
   Table,
   TableBody,
   TableCell,
@@ -27,8 +25,7 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
-  Divider
+  DialogActions
 } from '@mui/material';
 import {
   Insights as InsightsIcon,
@@ -36,24 +33,20 @@ import {
   TrendingUp as TrendingUpIcon,
   CheckCircle as CheckCircleIcon,
   EmojiEvents as TrophyIcon,
-  Speed as SpeedIcon,
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
   Search as SearchIcon,
   PointOfSale as SaleIcon,
   Close as CloseIcon,
-  DateRange as DateRangeIcon,
-  PhoneAndroid as PhoneIcon,
-  Person as PersonIcon,
-  Whatshot as FireIcon
+  Whatshot as FireIcon,
+  BarChart as BarChartIcon
 } from '@mui/icons-material';
 import { useAuth } from '../context/AuthContext';
 import { saleApi } from '../api/client';
 import { apiCache } from '../utils/apiCache';
 import { useSmartPolling } from '../utils/useSmartPolling';
-import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
-import { formatNumber, formatDate } from '../utils/formatters';
+import { formatDate } from '../utils/formatters';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -75,6 +68,7 @@ export default function StaffSalesAnalytics() {
   const [loading, setLoading] = useState(() => !cachedSales);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDayModal, setSelectedDayModal] = useState(null);
+  const [hoveredDay, setHoveredDay] = useState(null);
 
   const fetchSalesData = async (silent = false) => {
     try {
@@ -98,7 +92,7 @@ export default function StaffSalesAnalytics() {
     fetchSalesData(true);
   }, 30000);
 
-  // 1. Filter sales specifically belonging to this logged in employee
+  // 1. Filter sales specifically belonging to this logged-in employee
   const mySales = useMemo(() => {
     if (!user || !Array.isArray(sales)) return [];
     return sales.filter((sale) => {
@@ -230,6 +224,22 @@ export default function StaffSalesAnalytics() {
     ? { label: 'Moderate Pace', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.12)' }
     : { label: 'Needs Consistency', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)' };
 
+  // Peak sales day calculation
+  const peakDayInfo = useMemo(() => {
+    let maxUnits = 0;
+    let peakDays = [];
+    for (let day = 1; day <= daysInMonth; day++) {
+      const count = daySalesMap[day]?.length || 0;
+      if (count > maxUnits) {
+        maxUnits = count;
+        peakDays = [day];
+      } else if (count === maxUnits && count > 0) {
+        peakDays.push(day);
+      }
+    }
+    return { maxUnits, peakDays };
+  }, [daySalesMap, daysInMonth]);
+
   // Month navigation helpers
   const handlePrevMonth = () => {
     if (selectedMonth === 0) {
@@ -257,8 +267,8 @@ export default function StaffSalesAnalytics() {
       (s) =>
         s.device_model?.toLowerCase().includes(q) ||
         s.device_imei?.toLowerCase().includes(q) ||
-        s.customer_name?.toLowerCase().includes(q) ||
-        s.invoice_number?.toLowerCase().includes(q)
+        s.device_variant?.toLowerCase().includes(q) ||
+        s.payment_method?.toLowerCase().includes(q)
     );
   }, [monthSales, searchQuery]);
 
@@ -538,189 +548,368 @@ export default function StaffSalesAnalytics() {
         </Grid>
       </Grid>
 
-      {/* 3. Monthly Calendar Grid (Days 1 to End of Month) */}
-      <Paper
-        variant="outlined"
-        sx={{
-          p: { xs: 2, sm: 2.5 },
-          mb: 3,
-          borderRadius: 2.5,
-          bgcolor: 'background.paper'
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CalendarIcon sx={{ color: 'primary.main', fontSize: 22 }} />
-            <Typography variant="subtitle1" fontWeight={800}>
-              Sales Calendar Grid — {MONTH_NAMES[selectedMonth]} {selectedYear}
-            </Typography>
-          </Box>
+      {/* 3. SIDE-BY-SIDE: Compact Calendar on Left & Daily Volume Plot on Right */}
+      <Grid container spacing={2.5} sx={{ mb: 3 }} alignItems="stretch">
+        {/* LEFT COLUMN: Compact Month Calendar */}
+        <Grid item xs={12} lg={5}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: { xs: 2, sm: 2.25 },
+              borderRadius: 2.5,
+              height: '100%',
+              bgcolor: 'background.paper',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CalendarIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                <Typography variant="subtitle2" fontWeight={800}>
+                  {MONTH_NAMES[selectedMonth]} {selectedYear} Calendar
+                </Typography>
+              </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
-              <Box sx={{ width: 12, height: 12, borderRadius: 0.5, bgcolor: '#10B981' }} />
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>Sold Units</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: '#10B981' }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Sold</Typography>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{ width: 9, height: 9, borderRadius: '50%', bgcolor: 'text.disabled', opacity: 0.4 }} />
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>Empty</Typography>
+                </Box>
+              </Box>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.7 }}>
-              <Box sx={{ width: 12, height: 12, borderRadius: 0.5, border: '1px dashed', borderColor: 'text.disabled' }} />
-              <Typography variant="caption" color="text.secondary" fontWeight={600}>No Sales</Typography>
-            </Box>
-          </Box>
-        </Box>
 
-        {/* Day of Week Headers */}
-        <Grid container spacing={0.75} sx={{ mb: 0.75 }}>
-          {WEEKDAY_NAMES.map((dayName) => (
-            <Grid item xs={12 / 7} key={dayName} sx={{ textAlign: 'center' }}>
-              <Typography
-                variant="caption"
-                fontWeight={800}
-                color="text.secondary"
-                sx={{ fontSize: '0.72rem', letterSpacing: 0.5, textTransform: 'uppercase' }}
-              >
-                {dayName}
-              </Typography>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Calendar Grid Cells */}
-        <Grid container spacing={0.75}>
-          {/* Empty offset cells for starting weekday */}
-          {Array.from({ length: firstDayWeekday }).map((_, idx) => (
-            <Grid item xs={12 / 7} key={`empty-${idx}`}>
-              <Box
-                sx={{
-                  height: { xs: 46, sm: 54 },
-                  borderRadius: 2,
-                  bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)'),
-                  opacity: 0.2
-                }}
-              />
-            </Grid>
-          ))}
-
-          {/* Days 1 to daysInMonth */}
-          {Array.from({ length: daysInMonth }).map((_, idx) => {
-            const dayNum = idx + 1;
-            const daySalesList = daySalesMap[dayNum] || [];
-            const hasSales = daySalesList.length > 0;
-            const isToday =
-              today.getFullYear() === selectedYear &&
-              today.getMonth() === selectedMonth &&
-              today.getDate() === dayNum;
-
-            return (
-              <Grid item xs={12 / 7} key={`day-${dayNum}`}>
-                <Tooltip
-                  title={
-                    hasSales
-                      ? `${daySalesList.length} device(s) sold — Click to view details`
-                      : isToday
-                      ? 'Today — No sales recorded'
-                      : ''
-                  }
-                  arrow
-                  disableHoverListener={!hasSales && !isToday}
-                >
-                  <Paper
-                    variant="outlined"
-                    onClick={() => hasSales && setSelectedDayModal({ day: dayNum, sales: daySalesList })}
-                    sx={{
-                      height: { xs: 48, sm: 54 },
-                      px: { xs: 0.6, sm: 1 },
-                      py: 0.6,
-                      borderRadius: 2,
-                      cursor: hasSales ? 'pointer' : 'default',
-                      border: '1px solid',
-                      borderColor: hasSales
-                        ? '#10B981'
-                        : isToday
-                        ? 'primary.main'
-                        : 'divider',
-                      bgcolor: hasSales
-                        ? (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.16)' : '#ECFDF5')
-                        : isToday
-                        ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.08)' : '#EFF6FF')
-                        : 'background.paper',
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      '&:hover': hasSales
-                        ? {
-                            transform: 'translateY(-2px)',
-                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)',
-                            borderColor: '#059669'
-                          }
-                        : {}
-                    }}
+            {/* Weekday Header */}
+            <Grid container spacing={0.6} sx={{ mb: 0.6 }}>
+              {WEEKDAY_NAMES.map((d) => (
+                <Grid item xs={12 / 7} key={d} sx={{ textAlign: 'center' }}>
+                  <Typography
+                    variant="caption"
+                    fontWeight={800}
+                    color="text.secondary"
+                    sx={{ fontSize: '0.68rem', textTransform: 'uppercase' }}
                   >
-                    {/* Top Row: Day Number & Today Tag */}
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', lineHeight: 1 }}>
-                      <Typography
-                        variant="caption"
-                        fontWeight={isToday || hasSales ? 800 : 600}
+                    {d.charAt(0)}
+                  </Typography>
+                </Grid>
+              ))}
+            </Grid>
+
+            {/* Calendar Compact Squares */}
+            <Grid container spacing={0.6} sx={{ flex: 1, alignItems: 'center' }}>
+              {Array.from({ length: firstDayWeekday }).map((_, idx) => (
+                <Grid item xs={12 / 7} key={`empty-${idx}`}>
+                  <Box
+                    sx={{
+                      height: 38,
+                      borderRadius: 1.5,
+                      bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.01)'),
+                      opacity: 0.15
+                    }}
+                  />
+                </Grid>
+              ))}
+
+              {Array.from({ length: daysInMonth }).map((_, idx) => {
+                const dayNum = idx + 1;
+                const daySalesList = daySalesMap[dayNum] || [];
+                const hasSales = daySalesList.length > 0;
+                const isToday =
+                  today.getFullYear() === selectedYear &&
+                  today.getMonth() === selectedMonth &&
+                  today.getDate() === dayNum;
+                const isHovered = hoveredDay === dayNum;
+
+                return (
+                  <Grid item xs={12 / 7} key={`day-${dayNum}`}>
+                    <Tooltip
+                      title={
+                        hasSales
+                          ? `Day ${dayNum}: ${daySalesList.length} unit(s) sold (Click for details)`
+                          : `Day ${dayNum}: No sales`
+                      }
+                      arrow
+                    >
+                      <Paper
+                        variant="outlined"
+                        onMouseEnter={() => setHoveredDay(dayNum)}
+                        onMouseLeave={() => setHoveredDay(null)}
+                        onClick={() => hasSales && setSelectedDayModal({ day: dayNum, sales: daySalesList })}
                         sx={{
-                          color: hasSales ? '#059669' : isToday ? 'primary.main' : 'text.primary',
-                          fontSize: { xs: '0.7rem', sm: '0.76rem' }
+                          height: 38,
+                          p: 0.4,
+                          borderRadius: 1.5,
+                          cursor: hasSales ? 'pointer' : 'default',
+                          border: '1px solid',
+                          borderColor: hasSales
+                            ? '#10B981'
+                            : isToday
+                            ? 'primary.main'
+                            : isHovered
+                            ? 'text.secondary'
+                            : 'divider',
+                          bgcolor: hasSales
+                            ? (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5')
+                            : isToday
+                            ? (t) => (t.palette.mode === 'dark' ? 'rgba(37, 99, 235, 0.1)' : '#EFF6FF')
+                            : isHovered
+                            ? 'action.hover'
+                            : 'background.paper',
+                          transition: 'all 0.15s ease-in-out',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          transform: isHovered && hasSales ? 'scale(1.08)' : 'none',
+                          boxShadow: hasSales ? '0 2px 6px rgba(16, 185, 129, 0.15)' : 'none'
                         }}
                       >
-                        {dayNum}
-                      </Typography>
-                      {isToday && (
-                        <Box
-                          sx={{
-                            width: 6,
-                            height: 6,
-                            borderRadius: '50%',
-                            bgcolor: 'primary.main'
-                          }}
-                        />
-                      )}
-                    </Box>
-
-                    {/* Bottom: Sold Badge or Empty Indicator */}
-                    <Box sx={{ mt: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {hasSales ? (
-                        <Box
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: 0.3,
-                            bgcolor: '#10B981',
-                            color: '#ffffff',
-                            px: 0.6,
-                            py: 0.15,
-                            borderRadius: 1,
-                            fontSize: { xs: '0.6rem', sm: '0.68rem' },
-                            fontWeight: 800,
-                            lineHeight: 1.2,
-                            width: '100%',
-                            textAlign: 'center'
-                          }}
-                        >
-                          <SaleIcon sx={{ fontSize: '11px !important' }} />
-                          <span>{daySalesList.length} sold</span>
-                        </Box>
-                      ) : (
                         <Typography
                           variant="caption"
-                          color="text.disabled"
-                          sx={{ fontSize: '0.62rem', lineHeight: 1 }}
+                          fontWeight={hasSales || isToday ? 800 : 500}
+                          sx={{
+                            fontSize: '0.74rem',
+                            lineHeight: 1,
+                            color: hasSales ? '#047857' : isToday ? 'primary.main' : 'text.primary'
+                          }}
                         >
-                          —
+                          {dayNum}
                         </Typography>
-                      )}
-                    </Box>
-                  </Paper>
-                </Tooltip>
-              </Grid>
-            );
-          })}
+
+                        {hasSales ? (
+                          <Box
+                            sx={{
+                              mt: 0.3,
+                              px: 0.5,
+                              py: 0.1,
+                              borderRadius: 0.8,
+                              bgcolor: '#10B981',
+                              color: '#fff',
+                              fontSize: '0.58rem',
+                              fontWeight: 900,
+                              lineHeight: 1
+                            }}
+                          >
+                            {daySalesList.length}
+                          </Box>
+                        ) : (
+                          <Box
+                            sx={{
+                              mt: 0.4,
+                              width: 3,
+                              height: 3,
+                              borderRadius: '50%',
+                              bgcolor: 'text.disabled',
+                              opacity: 0.5
+                            }}
+                          />
+                        )}
+                      </Paper>
+                    </Tooltip>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </Paper>
         </Grid>
-      </Paper>
+
+        {/* RIGHT COLUMN: Daily Sales Volume Plot Graph */}
+        <Grid item xs={12} lg={7}>
+          <Paper
+            variant="outlined"
+            sx={{
+              p: { xs: 2, sm: 2.25 },
+              borderRadius: 2.5,
+              height: '100%',
+              bgcolor: 'background.paper',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}
+          >
+            {/* Top Graph Header */}
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <BarChartIcon sx={{ color: 'primary.main', fontSize: 22 }} />
+                <Typography variant="subtitle2" fontWeight={800}>
+                  Daily Sales Volume Plot & Peak Distribution
+                </Typography>
+              </Box>
+
+              {peakDayInfo.maxUnits > 0 && (
+                <Chip
+                  icon={<FireIcon sx={{ fontSize: '15px !important', color: '#F59E0B' }} />}
+                  label={`Peak: ${peakDayInfo.maxUnits} units on ${MONTH_NAMES[selectedMonth].slice(0, 3)} ${peakDayInfo.peakDays.join(', ')}`}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.72rem',
+                    bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.12)' : '#FEF3C7'),
+                    color: '#D97706',
+                    border: '1px solid rgba(245, 158, 11, 0.3)'
+                  }}
+                />
+              )}
+            </Box>
+
+            {/* Custom Interactive SVG Daily Histogram / Cluster Plot */}
+            <Box sx={{ flex: 1, minHeight: 160, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', pt: 2, pb: 1 }}>
+              {totalUnitsSold === 0 ? (
+                <Box sx={{ my: 'auto', textAlign: 'center', py: 4, color: 'text.secondary' }}>
+                  <TrendingUpIcon sx={{ fontSize: 36, opacity: 0.3, mb: 0.5 }} />
+                  <Typography variant="body2" fontWeight={600}>
+                    No sales recorded in {MONTH_NAMES[selectedMonth]} {selectedYear}.
+                  </Typography>
+                  <Typography variant="caption">
+                    Sales will appear as vertical volume clusters across the 30-day timeline.
+                  </Typography>
+                </Box>
+              ) : (
+                <Box sx={{ width: '100%' }}>
+                  {/* The Plot Columns */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'flex-end',
+                      gap: { xs: '2px', sm: '3px', md: '4px' },
+                      height: 130,
+                      px: 0.5,
+                      borderBottom: '2px solid',
+                      borderColor: 'divider'
+                    }}
+                  >
+                    {Array.from({ length: daysInMonth }).map((_, idx) => {
+                      const dayNum = idx + 1;
+                      const count = daySalesMap[dayNum]?.length || 0;
+                      const maxPossible = Math.max(1, peakDayInfo.maxUnits);
+                      const barHeightPercent = count > 0 ? Math.max(18, (count / maxPossible) * 100) : 0;
+                      const isHovered = hoveredDay === dayNum;
+
+                      return (
+                        <Tooltip
+                          key={`plot-${dayNum}`}
+                          title={`Day ${dayNum}: ${count} unit(s) sold`}
+                          arrow
+                        >
+                          <Box
+                            onMouseEnter={() => setHoveredDay(dayNum)}
+                            onMouseLeave={() => setHoveredDay(null)}
+                            onClick={() => count > 0 && setSelectedDayModal({ day: dayNum, sales: daySalesMap[dayNum] })}
+                            sx={{
+                              flex: 1,
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'flex-end',
+                              alignItems: 'center',
+                              cursor: count > 0 ? 'pointer' : 'default'
+                            }}
+                          >
+                            {count > 0 && (
+                              <Typography
+                                variant="caption"
+                                fontWeight={800}
+                                sx={{
+                                  fontSize: '0.62rem',
+                                  color: isHovered ? 'primary.main' : '#10B981',
+                                  mb: 0.3,
+                                  lineHeight: 1
+                                }}
+                              >
+                                {count}
+                              </Typography>
+                            )}
+
+                            <Box
+                              sx={{
+                                width: '100%',
+                                height: `${barHeightPercent}%`,
+                                minHeight: count > 0 ? 8 : 0,
+                                borderRadius: '4px 4px 0 0',
+                                bgcolor: count > 0
+                                  ? isHovered
+                                    ? '#2563EB'
+                                    : '#10B981'
+                                  : 'transparent',
+                                transition: 'all 0.2s',
+                                transform: isHovered && count > 0 ? 'scaleY(1.05)' : 'none',
+                                opacity: count > 0 ? 1 : 0.2
+                              }}
+                            />
+                          </Box>
+                        </Tooltip>
+                      );
+                    })}
+                  </Box>
+
+                  {/* Day Ticks / Labels */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.8, px: 0.5 }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                      Day 1
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                      Day 10
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                      Day 20
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem', fontWeight: 600 }}>
+                      Day {daysInMonth}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+
+            {/* Bottom 3 Phase Cluster Badges */}
+            <Box sx={{ pt: 1.5, borderTop: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+              <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                Sales Distribution:
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap">
+                <Chip
+                  label={`Early (1-10): ${earlyMonthUnits} units`}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.68rem',
+                    bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.12)' : '#EFF6FF'),
+                    color: '#2563EB',
+                    borderRadius: 1.2
+                  }}
+                />
+                <Chip
+                  label={`Mid (11-20): ${midMonthUnits} units`}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.68rem',
+                    bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(139, 92, 246, 0.12)' : '#F5F3FF'),
+                    color: '#7C3AED',
+                    borderRadius: 1.2
+                  }}
+                />
+                <Chip
+                  label={`Late (21-${daysInMonth}): ${lateMonthUnits} units`}
+                  size="small"
+                  sx={{
+                    fontWeight: 700,
+                    fontSize: '0.68rem',
+                    bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5'),
+                    color: '#059669',
+                    borderRadius: 1.2
+                  }}
+                />
+              </Stack>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
 
       {/* 4. Detailed Sales Ledger for the Month */}
       <Paper
@@ -853,35 +1042,48 @@ export default function StaffSalesAnalytics() {
         </DialogTitle>
         <DialogContent dividers sx={{ p: 2 }}>
           <Stack spacing={1.5}>
-            {selectedDayModal?.sales?.map((sale) => (
-              <Paper
-                key={sale.id}
-                variant="outlined"
-                sx={{
-                  p: 1.5,
-                  borderRadius: 2,
-                  bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#F8FAFC')
-                }}
-              >
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.8 }}>
-                  <Box>
-                    <Typography variant="subtitle2" fontWeight={800}>
-                      {sale.device_model}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {sale.device_capacity || ''} {sale.device_color ? `• ${sale.device_color}` : ''}
+            {selectedDayModal?.sales?.map((sale) => {
+              const specsParts = [
+                sale.device_capacity || '',
+                sale.device_color || '',
+                sale.device_variant || ''
+              ].filter(Boolean);
+              const specsText = specsParts.join(' • ');
+
+              return (
+                <Paper
+                  key={sale.id}
+                  variant="outlined"
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 2,
+                    bgcolor: (t) => (t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#F8FAFC')
+                  }}
+                >
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 0.8 }}>
+                    <Box>
+                      <Typography variant="subtitle2" fontWeight={800}>
+                        {sale.device_model}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {specsText || '—'}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={sale.payment_method || 'CASH'}
+                      size="small"
+                      sx={{ fontWeight: 700, fontSize: '0.7rem', height: 22 }}
+                    />
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                    <CopyableText text={sale.device_imei} />
+                    <Typography variant="caption" fontWeight={700} color="text.secondary">
+                      Sold on: {formatDate(sale.sale_date || sale.created_at)}
                     </Typography>
                   </Box>
-                  <VariantBadge variant={sale.device_variant} />
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
-                  <CopyableText text={sale.device_imei} />
-                  <Typography variant="caption" fontWeight={700} color="text.secondary">
-                    Customer: {sale.customer_name || 'Walk-in'}
-                  </Typography>
-                </Box>
-              </Paper>
-            ))}
+                </Paper>
+              );
+            })}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 2.5, py: 1.5 }}>
