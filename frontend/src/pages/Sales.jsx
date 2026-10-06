@@ -9,7 +9,6 @@ import {
   InputAdornment,
   Grid,
   Card,
-  CardContent,
   Table,
   TableBody,
   TableCell,
@@ -20,7 +19,9 @@ import {
   Chip,
   Stack,
   CircularProgress,
-  IconButton
+  IconButton,
+  ToggleButtonGroup,
+  ToggleButton
 } from '@mui/material';
 import {
   PointOfSale as SaleIcon,
@@ -30,7 +31,9 @@ import {
   Receipt as InvoiceIcon,
   AttachMoney as RevenueIcon,
   Clear as ClearIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  Insights as InsightsIcon,
+  CalendarMonth as CalendarIcon
 } from '@mui/icons-material';
 import { formatNumber, formatDate } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
@@ -39,6 +42,7 @@ import { apiCache } from '../utils/apiCache';
 import CopyableText from '../components/common/CopyableText';
 import VariantBadge from '../components/common/VariantBadge';
 import RecordSaleDialog from '../dialogs/RecordSaleDialog';
+import MonthlySalesAnalytics from '../components/sales/MonthlySalesAnalytics';
 
 export default function Sales() {
   const { enqueueSnackbar } = useSnackbar();
@@ -47,10 +51,11 @@ export default function Sales() {
 
   const [sales, setSales] = useState(() => cachedSales?.results || cachedSales || []);
   const [loading, setLoading] = useState(() => !cachedSales);
+  const [viewMode, setViewMode] = useState('ANALYTICS'); // 'ANALYTICS' | 'INVOICES'
   const [searchQuery, setSearchQuery] = useState('');
   const [recordSaleOpen, setRecordSaleOpen] = useState(false);
 
-  // Pagination
+  // Pagination for all invoices view
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
 
@@ -76,7 +81,7 @@ export default function Sales() {
         enqueueSnackbar('Failed to load sales history', { variant: 'error' });
       }
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -104,13 +109,13 @@ export default function Sales() {
 
   return (
     <Box sx={{ pb: 4 }}>
-      {/* Header */}
+      {/* Top Header Toolbar */}
       <Box
         sx={{
           display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
+          flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
+          alignItems: { xs: 'flex-start', md: 'center' },
           gap: 2,
           mb: 3
         }}
@@ -120,358 +125,414 @@ export default function Sales() {
             Sales & Invoicing
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Financial transactions, gross profits, and sold unit records
+            Monthly calendars, employee contributions, realized profits, and device invoices
           </Typography>
         </div>
-        <Button
-          variant="contained"
-          color="success"
-          startIcon={<AddIcon sx={{ color: '#ffffff !important' }} />}
-          onClick={() => setRecordSaleOpen(true)}
-          sx={{
-            color: '#ffffff !important',
-            fontWeight: 600,
-            bgcolor: '#10B981',
-            '&:hover': { bgcolor: '#059669' },
-            '& .MuiButton-startIcon': { color: '#ffffff !important' }
-          }}
-        >
-          Record Sale
-        </Button>
+
+        {/* View Mode Switcher + Action Buttons */}
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" sx={{ gap: 1 }}>
+          {/* View Mode Switcher: Monthly Analytics vs All Invoices */}
+          <ToggleButtonGroup
+            value={viewMode}
+            exclusive
+            onChange={(_, val) => val && setViewMode(val)}
+            size="small"
+            sx={{
+              bgcolor: 'action.hover',
+              p: 0.35,
+              borderRadius: '10px',
+              '& .MuiToggleButton-root': {
+                border: 'none',
+                borderRadius: '8px',
+                px: 1.5,
+                py: 0.6,
+                fontWeight: 700,
+                fontSize: '0.82rem',
+                textTransform: 'none',
+                '&.Mui-selected': {
+                  bgcolor: viewMode === 'ANALYTICS' ? '#10B981' : 'primary.main',
+                  color: '#fff',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                }
+              }
+            }}
+          >
+            <ToggleButton value="ANALYTICS">
+              <CalendarIcon sx={{ fontSize: 16, mr: 0.7 }} /> Monthly Calendar & Chart
+            </ToggleButton>
+            <ToggleButton value="INVOICES">
+              <InvoiceIcon sx={{ fontSize: 16, mr: 0.7 }} /> All Invoices ({sales.length})
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          {/* Record Sale Button */}
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<AddIcon sx={{ color: '#ffffff !important' }} />}
+            onClick={() => setRecordSaleOpen(true)}
+            sx={{
+              borderRadius: '10px',
+              textTransform: 'none',
+              fontWeight: 700,
+              fontSize: '0.82rem',
+              px: 2,
+              py: 0.75,
+              whiteSpace: 'nowrap',
+              color: '#ffffff !important',
+              bgcolor: '#10B981',
+              '&:hover': { bgcolor: '#059669' },
+              '& .MuiButton-startIcon': { color: '#ffffff !important' },
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.28)'
+            }}
+          >
+            Record Sale
+          </Button>
+        </Stack>
       </Box>
 
-      {/* Summary Cards */}
-      <Grid container spacing={2.5} sx={{ mb: 3 }}>
-        <Grid item xs={12} sm={4}>
-          <Card sx={{ p: 2, borderRadius: 3, border: 1, borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box
-                sx={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(59, 130, 246, 0.12)',
-                  color: '#3B82F6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <InvoiceIcon />
-              </Box>
-              <div>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                  TOTAL INVOICES
-                </Typography>
-                <Typography variant="h5" fontWeight={800}>
-                  {sales.length}
-                </Typography>
-              </div>
-            </Box>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={4}>
-          <Card sx={{ p: 2, borderRadius: 3, border: 1, borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box
-                sx={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(16, 185, 129, 0.12)',
-                  color: '#10B981',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <RevenueIcon />
-              </Box>
-              <div>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                  TOTAL REVENUE
-                </Typography>
-                <Typography variant="h5" fontWeight={800} color="primary">
-                  {formatNumber(totalRevenue)}
-                </Typography>
-              </div>
-            </Box>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={4}>
-          <Card sx={{ p: 2, borderRadius: 3, border: 1, borderColor: 'divider' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              <Box
-                sx={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: '12px',
-                  backgroundColor: 'rgba(99, 102, 241, 0.12)',
-                  color: '#6366F1',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <ProfitIcon />
-              </Box>
-              <div>
-                <Typography variant="caption" color="text.secondary" fontWeight={700}>
-                  TOTAL REALIZED PROFIT
-                </Typography>
-                <Typography variant="h5" fontWeight={800} color="success.main">
-                  {formatNumber(totalProfit)}
-                </Typography>
-              </div>
-            </Box>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Search Input */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3 }}>
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Search by Model, Color, Variant, IMEI, or Seller..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" color="action" />
-              </InputAdornment>
-            ),
-            endAdornment: searchQuery ? (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearchQuery('')}>
-                  <ClearIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ) : null
-          }}
+      {/* Content Area: Monthly Analytics & Calendar vs All Invoices Ledger */}
+      {viewMode === 'ANALYTICS' ? (
+        <MonthlySalesAnalytics
+          sales={sales}
+          onRecordSale={() => setRecordSaleOpen(true)}
         />
-      </Paper>
-
-      {/* Mobile Sales Cards View (xs to md) */}
-      <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2 }}>
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress size={32} />
-          </Box>
-        ) : filteredSales.length === 0 ? (
-          <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              No sales records found.
-            </Typography>
-          </Paper>
-        ) : (
-          paginatedSales.map((sale) => (
-            <Card
-              key={`mob-sale-${sale.id}`}
-              variant="outlined"
-              sx={{
-                p: 1.5,
-                borderRadius: 2,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 1
-              }}
-            >
-              {/* Top: Model & Profit */}
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-                <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="subtitle2" fontWeight={800} noWrap>
-                    {sale.device_model || 'Device Unit'}
-                  </Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
-                    {(sale.device_capacity || sale.device_color) && (
-                      <Typography variant="caption" color="text.secondary">
-                        {sale.device_capacity || ''} {sale.device_color ? `• ${sale.device_color}` : ''}
-                      </Typography>
-                    )}
-                    {sale.device_variant && <VariantBadge variant={sale.device_variant} size="small" />}
+      ) : (
+        <>
+          {/* Summary Cards */}
+          <Grid container spacing={2.5} sx={{ mb: 3 }}>
+            <Grid item xs={12} sm={4}>
+              <Card sx={{ p: 2, borderRadius: 3, border: 1, borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(59, 130, 246, 0.12)',
+                      color: '#3B82F6',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <InvoiceIcon />
                   </Box>
+                  <div>
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                      TOTAL INVOICES
+                    </Typography>
+                    <Typography variant="h5" fontWeight={800}>
+                      {sales.length}
+                    </Typography>
+                  </div>
                 </Box>
+              </Card>
+            </Grid>
 
-                <Chip
-                  label={`Profit: ${sale.profit !== null && sale.profit !== undefined ? formatNumber(sale.profit) : '—'}`}
-                  size="small"
-                  sx={{
-                    fontWeight: 800,
-                    fontSize: '0.72rem',
-                    height: 22,
-                    bgcolor: Number(sale.profit || 0) >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                    color: Number(sale.profit || 0) >= 0 ? '#059669' : '#DC2626'
-                  }}
-                />
+            <Grid item xs={12} sm={4}>
+              <Card sx={{ p: 2, borderRadius: 3, border: 1, borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                      color: '#10B981',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <RevenueIcon />
+                  </Box>
+                  <div>
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                      TOTAL REVENUE
+                    </Typography>
+                    <Typography variant="h5" fontWeight={800} color="primary">
+                      ৳{formatNumber(totalRevenue)}
+                    </Typography>
+                  </div>
+                </Box>
+              </Card>
+            </Grid>
+
+            <Grid item xs={12} sm={4}>
+              <Card sx={{ p: 2, borderRadius: 3, border: 1, borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box
+                    sx={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: '12px',
+                      backgroundColor: 'rgba(99, 102, 241, 0.12)',
+                      color: '#6366F1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <ProfitIcon />
+                  </Box>
+                  <div>
+                    <Typography variant="caption" color="text.secondary" fontWeight={700}>
+                      TOTAL REALIZED PROFIT
+                    </Typography>
+                    <Typography variant="h5" fontWeight={800} sx={{ color: '#6366F1' }}>
+                      ৳{formatNumber(totalProfit)}
+                    </Typography>
+                  </div>
+                </Box>
+              </Card>
+            </Grid>
+          </Grid>
+
+          {/* Search Input */}
+          <Paper variant="outlined" sx={{ p: 2, mb: 3, borderRadius: 3 }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Search by Model, Color, Variant, IMEI, or Seller..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery ? (
+                  <InputAdornment position="end">
+                    <IconButton size="small" onClick={() => setSearchQuery('')}>
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ) : null
+              }}
+            />
+          </Paper>
+
+          {/* Mobile Sales Cards View (xs to md) */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', gap: 1.5, mb: 2 }}>
+            {loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress size={32} />
               </Box>
-
-              {/* IMEI */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  p: 0.8,
-                  borderRadius: 1.5,
-                  bgcolor: (theme) =>
-                    theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
-                }}
-              >
-                <CopyableText text={sale.device_imei || '—'} />
-                <Typography variant="caption" color="text.secondary">
-                  {formatDate(sale.sale_date || sale.created_at)}
+            ) : filteredSales.length === 0 ? (
+              <Paper variant="outlined" sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+                <Typography variant="body2" color="text.secondary">
+                  No sales records found.
                 </Typography>
-              </Box>
-
-              {/* Bottom: Sold By & Prices */}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 0.3, flexWrap: 'wrap', gap: 0.5 }}>
-                <Chip
-                  size="small"
-                  icon={<PersonIcon sx={{ fontSize: '13px !important', color: '#0284c7 !important' }} />}
-                  label={sale.sold_by || sale.seller_name || 'Store'}
+              </Paper>
+            ) : (
+              paginatedSales.map((sale) => (
+                <Card
+                  key={`mob-sale-${sale.id}`}
+                  variant="outlined"
                   sx={{
-                    bgcolor: 'rgba(2, 132, 199, 0.1)',
-                    color: '#0284c7',
-                    fontWeight: 600,
-                    fontSize: '0.72rem',
-                    height: 22
+                    p: 1.5,
+                    borderRadius: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1
                   }}
-                />
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Sold: <strong style={{ color: '#2563EB' }}>{sale.selling_price ? formatNumber(sale.selling_price) : '—'}</strong>
-                  </Typography>
-                </Box>
-              </Box>
-            </Card>
-          ))
-        )}
-      </Box>
-
-      {/* Sales Desktop Table (md+) */}
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', display: { xs: 'none', md: 'block' } }}>
-        <TableContainer>
-          <Table size="medium">
-            <TableHead>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 700 }}>Device</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Device IMEI</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Sold By</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Buying Cost</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Selling Price</TableCell>
-                <TableCell sx={{ fontWeight: 700 }}>Profit</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
-                    <CircularProgress size={32} />
-                  </TableCell>
-                </TableRow>
-              ) : filteredSales.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary' }}>
-                    No sales records found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedSales.map((sale) => (
-                  <TableRow key={sale.id} hover>
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={700}>
+                >
+                  {/* Top: Model & Profit */}
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography variant="subtitle2" fontWeight={800} noWrap>
                         {sale.device_model || 'Device Unit'}
                       </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.4, flexWrap: 'wrap' }}>
-                        {sale.device_variant && (
-                          <VariantBadge variant={sale.device_variant} />
-                        )}
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.2 }}>
                         {(sale.device_capacity || sale.device_color) && (
-                          <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                          <Typography variant="caption" color="text.secondary">
                             {sale.device_capacity || ''} {sale.device_color ? `• ${sale.device_color}` : ''}
                           </Typography>
                         )}
+                        {sale.device_variant && <VariantBadge variant={sale.device_variant} size="small" />}
                       </Box>
-                    </TableCell>
+                    </Box>
 
-                    <TableCell>
-                      <Typography variant="body2" color="text.secondary">
-                        {formatDate(sale.sale_date || sale.created_at)}
+                    <Chip
+                      label={`Profit: ৳${sale.profit !== null && sale.profit !== undefined ? formatNumber(sale.profit) : '—'}`}
+                      size="small"
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: '0.72rem',
+                        height: 22,
+                        bgcolor: Number(sale.profit || 0) >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                        color: Number(sale.profit || 0) >= 0 ? '#059669' : '#DC2626'
+                      }}
+                    />
+                  </Box>
+
+                  {/* IMEI */}
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      p: 0.8,
+                      borderRadius: 1.5,
+                      bgcolor: (theme) =>
+                        theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)'
+                    }}
+                  >
+                    <CopyableText text={sale.device_imei || '—'} />
+                    <Typography variant="caption" color="text.secondary">
+                      {formatDate(sale.sale_date || sale.created_at)}
+                    </Typography>
+                  </Box>
+
+                  {/* Bottom: Sold By & Prices */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', pt: 0.3, flexWrap: 'wrap', gap: 0.5 }}>
+                    <Chip
+                      size="small"
+                      icon={<PersonIcon sx={{ fontSize: '13px !important', color: '#0284c7 !important' }} />}
+                      label={sale.sold_by || sale.seller_name || 'Store'}
+                      sx={{
+                        bgcolor: 'rgba(2, 132, 199, 0.1)',
+                        color: '#0284c7',
+                        fontWeight: 600,
+                        fontSize: '0.72rem',
+                        height: 22
+                      }}
+                    />
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        Sold: <strong style={{ color: '#2563EB' }}>{sale.selling_price ? `৳${formatNumber(sale.selling_price)}` : '—'}</strong>
                       </Typography>
-                    </TableCell>
+                    </Box>
+                  </Box>
+                </Card>
+              ))
+            )}
+          </Box>
 
-                    <TableCell>
-                      <CopyableText text={sale.device_imei || '—'} />
-                    </TableCell>
-
-                    <TableCell>
-                      <Chip
-                        size="small"
-                        icon={<PersonIcon sx={{ fontSize: '13px !important', color: '#0284c7 !important' }} />}
-                        label={sale.sold_by || sale.seller_name || 'Store'}
-                        sx={{
-                          bgcolor: 'rgba(2, 132, 199, 0.1)',
-                          color: '#0284c7',
-                          fontWeight: 600,
-                          fontSize: '0.75rem',
-                          height: 24
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2">
-                        {sale.buying_price !== null && sale.buying_price !== undefined
-                          ? formatNumber(sale.buying_price)
-                          : '—'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography variant="body2" fontWeight={700} color="primary">
-                        {sale.selling_price !== null && sale.selling_price !== undefined
-                          ? formatNumber(sale.selling_price)
-                          : '—'}
-                      </Typography>
-                    </TableCell>
-
-                    <TableCell>
-                      <Typography
-                        variant="body2"
-                        fontWeight={700}
-                        color={Number(sale.profit || 0) >= 0 ? "success.main" : "error.main"}
-                      >
-                        {sale.profit !== null && sale.profit !== undefined
-                          ? formatNumber(sale.profit)
-                          : '—'}
-                      </Typography>
-                    </TableCell>
+          {/* Sales Desktop Table (md+) */}
+          <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden', display: { xs: 'none', md: 'block' } }}>
+            <TableContainer>
+              <Table size="medium">
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700 }}>Device</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Device IMEI</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Sold By</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Buying Cost</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Selling Price</TableCell>
+                    <TableCell sx={{ fontWeight: 700 }}>Profit</TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                </TableHead>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
+                        <CircularProgress size={32} />
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredSales.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                        No sales records found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedSales.map((sale) => (
+                      <TableRow key={sale.id} hover>
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={700}>
+                            {sale.device_model || 'Device Unit'}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mt: 0.4, flexWrap: 'wrap' }}>
+                            {sale.device_variant && (
+                              <VariantBadge variant={sale.device_variant} />
+                            )}
+                            {(sale.device_capacity || sale.device_color) && (
+                              <Typography variant="caption" color="text.secondary" fontWeight={500}>
+                                {sale.device_capacity || ''} {sale.device_color ? `• ${sale.device_color}` : ''}
+                              </Typography>
+                            )}
+                          </Box>
+                        </TableCell>
 
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          component="div"
-          count={filteredSales.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={(e, newPage) => setPage(newPage)}
-          onRowsPerPageChange={(e) => {
-            setRowsPerPage(parseInt(e.target.value, 10));
-            setPage(0);
-          }}
-        />
-      </Paper>
+                        <TableCell>
+                          <Typography variant="body2" color="text.secondary">
+                            {formatDate(sale.sale_date || sale.created_at)}
+                          </Typography>
+                        </TableCell>
+
+                        <TableCell>
+                          <CopyableText text={sale.device_imei || '—'} />
+                        </TableCell>
+
+                        <TableCell>
+                          <Chip
+                            size="small"
+                            icon={<PersonIcon sx={{ fontSize: '13px !important', color: '#0284c7 !important' }} />}
+                            label={sale.sold_by || sale.seller_name || 'Store'}
+                            sx={{
+                              bgcolor: 'rgba(2, 132, 199, 0.1)',
+                              color: '#0284c7',
+                              fontWeight: 600,
+                              fontSize: '0.75rem',
+                              height: 24
+                            }}
+                          />
+                        </TableCell>
+
+                        <TableCell>
+                          <Typography variant="body2">
+                            {sale.buying_price !== null && sale.buying_price !== undefined
+                              ? `৳${formatNumber(sale.buying_price)}`
+                              : '—'}
+                          </Typography>
+                        </TableCell>
+
+                        <TableCell>
+                          <Typography variant="body2" fontWeight={700} color="primary">
+                            {sale.selling_price !== null && sale.selling_price !== undefined
+                              ? `৳${formatNumber(sale.selling_price)}`
+                              : '—'}
+                          </Typography>
+                        </TableCell>
+
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            fontWeight={700}
+                            color={Number(sale.profit || 0) >= 0 ? "success.main" : "error.main"}
+                          >
+                            {sale.profit !== null && sale.profit !== undefined
+                              ? `৳${formatNumber(sale.profit)}`
+                              : '—'}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+
+            <TablePagination
+              rowsPerPageOptions={[10, 25, 50, 100]}
+              component="div"
+              count={filteredSales.length}
+              rowsPerPage={rowsPerPage}
+              page={page}
+              onPageChange={(e, newPage) => setPage(newPage)}
+              onRowsPerPageChange={(e) => {
+                setRowsPerPage(parseInt(e.target.value, 10));
+                setPage(0);
+              }}
+            />
+          </Paper>
+        </>
+      )}
 
       {/* Record Sale Dialog */}
       <RecordSaleDialog
