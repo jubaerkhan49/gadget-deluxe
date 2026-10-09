@@ -45,7 +45,8 @@ import {
   BatteryChargingFull as BatteryIcon,
   QrCode as QrCodeIcon,
   ContentCopy as CopyIcon,
-  Business as SupplierIcon
+  Business as SupplierIcon,
+  HourglassEmpty as PendingIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { deviceApi, shipmentApi } from '../../api/client';
@@ -231,6 +232,50 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
     }
     return active;
   }, [dayDevicesMap, daysInMonth]);
+
+  // Total Pending Devices count across shipments
+  const totalPendingDevices = useMemo(() => {
+    const pendingFromShipments = shipments.reduce((acc, s) => {
+      if (s.pending_devices_count !== undefined && s.pending_devices_count !== null) {
+        return acc + s.pending_devices_count;
+      }
+      return acc + Math.max(0, (s.devices_count || 0) - (s.received_devices_count || 0));
+    }, 0);
+
+    const pendingFromDevices = Array.isArray(devices)
+      ? devices.filter((d) => (d.current_status || d.status) === 'WAITING_SHIPMENT').length
+      : 0;
+
+    return Math.max(pendingFromShipments, pendingFromDevices);
+  }, [shipments, devices]);
+
+  // Last Receive Date
+  const lastReceiveDate = useMemo(() => {
+    // 1. Check received devices in selected month first
+    let latestStr = null;
+    monthDevices.forEach((dev) => {
+      const dStr = getDeviceDateStr(dev);
+      if (dStr && (!latestStr || dStr > latestStr)) {
+        latestStr = dStr;
+      }
+    });
+
+    if (latestStr) {
+      return formatDate(latestStr);
+    }
+
+    // 2. Fallback: check all devices ever received
+    if (Array.isArray(devices)) {
+      devices.forEach((dev) => {
+        const dStr = getDeviceDateStr(dev);
+        if (dStr && (!latestStr || dStr > latestStr)) {
+          latestStr = dStr;
+        }
+      });
+    }
+
+    return latestStr ? formatDate(latestStr) : 'None';
+  }, [monthDevices, devices, dateField, shipmentMap]);
 
   // Peak Reception Day Calculation
   const peakDayInfo = useMemo(() => {
@@ -523,7 +568,7 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
           </Card>
         </Grid>
 
-        {/* Arrival Days & Frequency */}
+        {/* Pending Devices & Last Receive Date */}
         <Grid item xs={6} md={3}>
           <Card
             variant="outlined"
@@ -539,31 +584,31 @@ export default function ShipmentInflowAnalytics({ shipments: initialShipments = 
           >
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
               <Typography variant="caption" fontWeight={800} color="text.secondary" textTransform="uppercase" sx={{ fontSize: '0.65rem' }}>
-                Reception Days
+                Pending Devices
               </Typography>
-              <Box sx={{ p: 0.6, borderRadius: 1.2, bgcolor: 'rgba(59, 130, 246, 0.1)', color: '#2563EB' }}>
-                <CalendarIcon sx={{ fontSize: 16 }} />
+              <Box sx={{ p: 0.6, borderRadius: 1.2, bgcolor: 'rgba(245, 158, 11, 0.12)', color: '#F59E0B' }}>
+                <PendingIcon sx={{ fontSize: 16 }} />
               </Box>
             </Box>
             <Box sx={{ my: 0.25, display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
-              <Typography variant="h4" fontWeight={800} sx={{ color: '#2563EB', fontSize: { xs: '1.45rem', sm: '1.85rem' } }}>
-                {activeArrivalDaysCount} <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>Days</Typography>
+              <Typography variant="h4" fontWeight={800} sx={{ color: '#F59E0B', fontSize: { xs: '1.45rem', sm: '1.85rem' } }}>
+                {totalPendingDevices} <Typography component="span" variant="caption" color="text.secondary" sx={{ fontWeight: 700 }}>Units</Typography>
               </Typography>
               <Chip
-                label={activeArrivalDaysCount >= 3 ? 'Regular Inflow' : 'Intermittent'}
+                label={totalPendingDevices > 0 ? 'Pending Inflow' : 'All Received'}
                 size="small"
                 sx={{
                   fontWeight: 700,
                   fontSize: '0.62rem',
                   height: 18,
-                  bgcolor: activeArrivalDaysCount >= 3 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
-                  color: activeArrivalDaysCount >= 3 ? '#10B981' : '#F59E0B',
+                  bgcolor: totalPendingDevices > 0 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                  color: totalPendingDevices > 0 ? '#F59E0B' : '#10B981',
                   borderRadius: 1
                 }}
               />
             </Box>
             <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.68rem' }} noWrap>
-              Active delivery days out of {daysInMonth}
+              Last Receive Date: <strong style={{ color: '#2563EB' }}>{lastReceiveDate}</strong>
             </Typography>
           </Card>
         </Grid>
