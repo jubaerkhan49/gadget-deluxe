@@ -122,11 +122,15 @@ class MainActivity : FragmentActivity() {
                     prefs.saveFcmToken(fcmToken)
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
-                            ApiClient.apiService.registerFcmToken(
+                            val resp = ApiClient.apiService.registerFcmToken(
                                 "Bearer $authToken",
                                 mapOf("token" to fcmToken, "device_type" to "android")
                             )
-                            android.util.Log.d("FCM", "Successfully synced FCM token with backend server.")
+                            if (resp.isSuccessful) {
+                                android.util.Log.d("FCM", "Successfully synced FCM token with backend server: ${resp.body()}")
+                            } else {
+                                android.util.Log.w("FCM", "Backend rejected FCM token registration: ${resp.code()} - ${resp.errorBody()?.string()}")
+                            }
                         } catch (e: Exception) {
                             android.util.Log.e("FCM", "Failed to sync FCM token with backend: ${e.message}")
                         }
@@ -139,6 +143,7 @@ class MainActivity : FragmentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        NotificationHelper.createNotificationChannel(this)
         pendingIntentState.value = intent
         setContent {
             AppTheme {

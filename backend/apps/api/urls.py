@@ -9,7 +9,8 @@ from .views import (
     SickwParseAPIView, ExportDevicesCSVView, DashboardStatsAPIView,
     AnalyticsStatsAPIView, SyncStatusAPIView, OtherGoodsOrderViewSet, PublicOrderTrackingAPIView,
     EmployeeApplicationViewSet, EmployeeProfileUpdateRequestViewSet,
-    DeviceSaleRequestViewSet, RegisterFCMTokenAPIView
+    DeviceSaleRequestViewSet, RegisterFCMTokenAPIView,
+    FCMDiagnosticStatusAPIView, FCMTestPushAPIView
 )
 
 app_name = 'api'
@@ -32,6 +33,8 @@ urlpatterns = [
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/register-fcm-token/', RegisterFCMTokenAPIView.as_view(), name='register_fcm_token'),
+    path('fcm/status/', FCMDiagnosticStatusAPIView.as_view(), name='fcm_status'),
+    path('fcm/test-push/', FCMTestPushAPIView.as_view(), name='fcm_test_push'),
 
     # OpenAPI / Swagger Documentation
     path('schema/', SpectacularAPIView.as_view(), name='schema'),

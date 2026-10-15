@@ -248,6 +248,37 @@ class RegisterFCMTokenAPIView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+class FCMDiagnosticStatusAPIView(APIView):
+    """
+    Returns diagnostic details on Firebase initialization and registered device tokens.
+    GET /api/fcm/status/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from apps.core.fcm_utils import get_fcm_diagnostic_status
+        status_data = get_fcm_diagnostic_status()
+        status_data["caller"] = request.user.username
+        return Response(status_data)
+
+
+class FCMTestPushAPIView(APIView):
+    """
+    Sends a test push notification to the requesting user's registered devices.
+    POST /api/fcm/test-push/
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from apps.core.fcm_utils import send_test_push_to_user
+        success, message = send_test_push_to_user(request.user)
+        return Response({
+            "success": success > 0,
+            "success_count": success,
+            "message": message
+        })
+
+
 class EmployeeApplicationViewSet(viewsets.ModelViewSet):
     """
     API endpoint for employee recruitment applications.
