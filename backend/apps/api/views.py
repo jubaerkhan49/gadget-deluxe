@@ -847,11 +847,13 @@ class DeviceViewSet(viewsets.ModelViewSet):
             data = json.loads(resp_text)
             if isinstance(data, dict):
                 error_code = data.get('result')
-                if data.get('status') == 'error' or (isinstance(error_code, str) and error_code in ['E01', 'E02', 'R01', 'B01', 'S01', 'S02', 'S03', 'A01', 'A02', 'A03']):
+                is_err = data.get('status') == 'error' or (isinstance(error_code, str) and (error_code in ['E01', 'E02', 'R01', 'B01', 'S01', 'S02', 'S03', 'A01', 'A02', 'A03'] or 'R02' in error_code or 'duplicate' in error_code.lower()))
+                if is_err:
                     error_map = {
                         'E01': 'IMEI is Wrong! (Failed Luhn checksum)',
                         'E02': 'IMEI or Serial Number is Wrong! (Invalid format/length)',
                         'R01': 'Not Found! (Service offline or IMEI/SN not found)',
+                        'R02': 'Duplicate Order: Sickw requires waiting 2 minutes before re-checking this IMEI on the same service.',
                         'B01': 'Low Balance! (Not enough funds on Sickw account)',
                         'S01': 'Service ID is Wrong!',
                         'S02': 'Service ID is Wrong!',
@@ -860,7 +862,10 @@ class DeviceViewSet(viewsets.ModelViewSet):
                         'A02': 'API KEY is Wrong or IP not whitelisted!',
                         'A03': 'API KEY is Wrong or IP not whitelisted!',
                     }
-                    err_msg = error_map.get(str(error_code), f"Sickw Error: {error_code}")
+                    if 'duplicate' in str(error_code).lower() or '2 minutes' in str(error_code).lower() or 'R02' in str(error_code):
+                        err_msg = 'Duplicate Order: Sickw requires waiting 2 minutes before re-checking this IMEI on the same service. Please wait a minute and try again.'
+                    else:
+                        err_msg = error_map.get(str(error_code), f"Sickw Error: {error_code}")
                     return Response({"error": err_msg, "code": str(error_code)}, status=status.HTTP_400_BAD_REQUEST)
 
                 raw_result_data = data.get('result')

@@ -152,7 +152,7 @@ class SickwParser:
                         r'\b(Blue\s*Titanium|Natural\s*Titanium|Black\s*Titanium|White\s*Titanium|Desert\s*Titanium|'
                         r'Sierra\s*Blue|Pacific\s*Blue|Deep\s*Purple|Alpine\s*Green|Midnight\s*Green|Space\s*Black|'
                         r'Space\s*Gray|Space\s*Grey|Rose\s*Gold|Product\s*Red|Starlight|Midnight|'
-                        r'BLUE\s*TTNM|NATURAL\s*TTNM|NAT\s*TTNM|BLACK\s*TTNM|WHITE\s*TTNM|DESERT\s*TTNM)\b',
+                        r'BLUE\s*TTNM|NATURAL\s*TTNM|NATURL\s*TTNM|NATRL\s*TTNM|NAT\s*TTNM|BLACK\s*TTNM|WHITE\s*TTNM|DESERT\s*TTNM)\b',
                         search_text, re.IGNORECASE
                     )
                     if color_kw_match:

@@ -1208,13 +1208,16 @@ export default function DeviceDetailDrawer({
             const is12Disabled = hasRun12 || !!fetchingSickwService;
             const is103Disabled = hasRun103 || !!fetchingSickwService;
 
-            // Normalizes color to base keyword (e.g. "Natural Titanium" -> "natural", "Sierra Blue" -> "blue", "BLUE TTNM" -> "blue")
+            // Normalizes color to base keyword (e.g. "Natural Titanium" -> "natural", "NATURL TTNM" -> "natural", "Sierra Blue" -> "blue")
             const normalizeBaseColor = (colorStr) => {
               if (!colorStr) return null;
-              const s = String(colorStr).toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+              let s = String(colorStr).toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+              // Strip finish keywords like titanium/ttnm so comparison focuses strictly on color
+              s = s.replace(/\b(titanium|ttnm)\b/g, ' ').replace(/\s+/g, ' ').trim();
+
               if (/\b(rose\s*gold)\b/.test(s)) return 'rose gold';
-              if (/\b(natural|nat)\b/.test(s)) return 'natural';
-              if (/\b(desert)\b/.test(s)) return 'desert';
+              if (/\b(natural|naturl|natrl|nat)\b/.test(s)) return 'natural';
+              if (/\b(desert|dsrt)\b/.test(s)) return 'desert';
               if (/\b(blue|blu)\b/.test(s)) return 'blue';
               if (/\b(black|blk|midnight|dark)\b/.test(s)) return 'black';
               if (/\b(white|wht|starlight)\b/.test(s)) return 'white';
@@ -1227,7 +1230,7 @@ export default function DeviceDetailDrawer({
               if (/\b(yellow|ylw)\b/.test(s)) return 'yellow';
               if (/\b(orange|coral)\b/.test(s)) return 'orange';
               if (/\b(gray|grey|gry)\b/.test(s)) return 'gray';
-              return s.trim().split(/\s+/)[0] || null;
+              return s.split(/\s+/)[0] || null;
             };
 
             // Extracts true motherboard color from Sickw reports by parsing raw API payloads
@@ -1248,14 +1251,14 @@ export default function DeviceDetailDrawer({
                 return hyphenMatch[1].trim();
               }
 
-              // 3. Comma pattern (e.g. "...,256GB,BLUE TTNM")
+              // 3. Comma pattern (e.g. "...,256GB,BLUE TTNM" or "...,256GB,NATURL TTNM")
               const commaMatch = str.match(/\b\d+\s*(?:GB|TB)\s*,\s*([A-Za-z0-9\s]+?)(?:,|$|\r|\n)/i);
               if (commaMatch && commaMatch[1].trim()) {
                 return commaMatch[1].trim();
               }
 
-              // 4. Known Apple colors / shorthand anywhere in raw text
-              const knownColorRegex = /\b(Blue\s*Titanium|Natural\s*Titanium|Black\s*Titanium|White\s*Titanium|Desert\s*Titanium|Sierra\s*Blue|Pacific\s*Blue|Sky\s*Blue|Midnight\s*Blue|Deep\s*Purple|Alpine\s*Green|Midnight\s*Green|Space\s*Black|Space\s*Gray|Space\s*Grey|Rose\s*Gold|Product\s*Red|Starlight|Midnight|BLUE\s*TTNM|NATURAL\s*TTNM|NAT\s*TTNM|BLACK\s*TTNM|WHITE\s*TTNM|DESERT\s*TTNM)\b/i;
+              // 4. Known Apple colors / shorthand anywhere in raw text (including NATURL TTNM)
+              const knownColorRegex = /\b(Blue\s*Titanium|Natural\s*Titanium|Black\s*Titanium|White\s*Titanium|Desert\s*Titanium|Sierra\s*Blue|Pacific\s*Blue|Sky\s*Blue|Midnight\s*Blue|Deep\s*Purple|Alpine\s*Green|Midnight\s*Green|Space\s*Black|Space\s*Gray|Space\s*Grey|Rose\s*Gold|Product\s*Red|Starlight|Midnight|BLUE\s*TTNM|NATURAL\s*TTNM|NATURL\s*TTNM|NATRL\s*TTNM|NAT\s*TTNM|BLACK\s*TTNM|WHITE\s*TTNM|DESERT\s*TTNM)\b/i;
               const knownMatch = str.match(knownColorRegex);
               if (knownMatch && knownMatch[1].trim()) {
                 return knownMatch[1].trim();
@@ -1289,26 +1292,47 @@ export default function DeviceDetailDrawer({
             const hasColorChecked = Boolean(manualOutlookColor && sickwMotherboardColor && baseManual && baseSickw);
             const isColorMatch = hasColorChecked ? baseManual === baseSickw : null;
 
-            // Model number: ONLY Apple A-number (e.g. A2218, A3106) fetched from Service 12, otherwise '-'
-            const getService12ModelCode = () => {
+            // Model number: ONLY Apple A-number (e.g. A2218, A2849) fetched from Service 12 or Service 103, otherwise '-'
+            const getAppleModelCode = () => {
+              // Priority 1: Check Service 12 first
               const srv12 = sickwReports.find((r) => String(r.service_id) === '12');
-              if (!srv12) return '—';
-              const candidates = [
-                srv12.model_code,
-                srv12.parsed_data?.model_code,
-                srv12.parsed_data?.model_number,
-                srv12.raw_text
-              ];
-              for (const c of candidates) {
-                if (c) {
-                  const match = String(c).match(/\b(A\d{4})\b/i);
-                  if (match) return match[1].toUpperCase();
+              if (srv12) {
+                const candidates = [
+                  srv12.model_code,
+                  srv12.parsed_data?.model_code,
+                  srv12.parsed_data?.model_number,
+                  srv12.raw_text,
+                  srv12.model
+                ];
+                for (const c of candidates) {
+                  if (c) {
+                    const match = String(c).match(/\b(A\d{4})\b/i);
+                    if (match) return match[1].toUpperCase();
+                  }
                 }
               }
+
+              // Priority 2: Check any other Sickw report (e.g. Service 103 which also returns Model: ... A2849)
+              for (const r of sickwReports) {
+                const candidates = [
+                  r.model_code,
+                  r.parsed_data?.model_code,
+                  r.parsed_data?.model_number,
+                  r.raw_text,
+                  r.model
+                ];
+                for (const c of candidates) {
+                  if (c) {
+                    const match = String(c).match(/\b(A\d{4})\b/i);
+                    if (match) return match[1].toUpperCase();
+                  }
+                }
+              }
+
               return '—';
             };
 
-            const keyModelCode = getService12ModelCode();
+            const keyModelCode = getAppleModelCode();
 
             // Highlight other key information extracted from reports or device
             const findValue = (field, parsedKeys = []) => {
