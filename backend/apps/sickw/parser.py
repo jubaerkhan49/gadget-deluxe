@@ -134,15 +134,26 @@ class SickwParser:
             if cap_match:
                 parsed['capacity'] = cap_match.group(1).upper().replace(" ", "")
 
-        # Fallback: Extract motherboard color from description (e.g. "...,256GB,BLUE TTNM")
+        # Fallback: Extract motherboard color from description or raw text
         if 'color' not in parsed:
-            raw_desc = parsed.get('model_description', '')
-            if not raw_desc:
-                for k, v in parsed.items():
-                    if isinstance(v, str) and (',' in v and any(c in v.upper() for c in ['GB', 'TB'])):
-                        raw_desc = v
-                        break
-            if raw_desc:
-                color_match = re.search(r'\b\d+\s*(?:GB|TB)\s*,\s*([A-Za-z0-9\s]+?)(?:,|$|\n|\r)', raw_desc, re.IGNORECASE)
-                if color_match:
-                    parsed['color'] = color_match.group(1).strip()
+            search_text = (parsed.get('model_description', '') + ' ' + ' '.join(str(v) for v in parsed.values())).strip()
+            # 1. Hyphen pattern: "Apple - iPhone 15 Pro Max 256GB - Apple Intelligence - Blue Titanium (Unlocked)"
+            hyphen_match = re.search(r'-\s*([A-Za-z\s]+?(?:Titanium|Gold|Silver|Black|White|Blue|Purple|Green|Red|Yellow|Pink|Gray|Grey))\b', search_text, re.IGNORECASE)
+            if hyphen_match:
+                parsed['color'] = hyphen_match.group(1).strip()
+            else:
+                # 2. Comma pattern: "...,256GB,BLUE TTNM"
+                comma_match = re.search(r'\b\d+\s*(?:GB|TB)\s*,\s*([A-Za-z0-9\s]+?)(?:,|$|\n|\r)', search_text, re.IGNORECASE)
+                if comma_match:
+                    parsed['color'] = comma_match.group(1).strip()
+                else:
+                    # 3. Direct Apple color keyword match
+                    color_kw_match = re.search(
+                        r'\b(Blue\s*Titanium|Natural\s*Titanium|Black\s*Titanium|White\s*Titanium|Desert\s*Titanium|'
+                        r'Sierra\s*Blue|Pacific\s*Blue|Deep\s*Purple|Alpine\s*Green|Midnight\s*Green|Space\s*Black|'
+                        r'Space\s*Gray|Space\s*Grey|Rose\s*Gold|Product\s*Red|Starlight|Midnight|'
+                        r'BLUE\s*TTNM|NATURAL\s*TTNM|NAT\s*TTNM|BLACK\s*TTNM|WHITE\s*TTNM|DESERT\s*TTNM)\b',
+                        search_text, re.IGNORECASE
+                    )
+                    if color_kw_match:
+                        parsed['color'] = color_kw_match.group(1).strip()

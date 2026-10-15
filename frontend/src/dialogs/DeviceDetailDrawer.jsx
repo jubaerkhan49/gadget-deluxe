@@ -1230,16 +1230,53 @@ export default function DeviceDetailDrawer({
               return s.trim().split(/\s+/)[0] || null;
             };
 
-            // Extracts motherboard color from Sickw reports
+            // Extracts true motherboard color from Sickw reports by parsing raw API payloads
+            const extractSickwColorFromText = (rawText) => {
+              if (!rawText) return null;
+              const str = String(rawText);
+
+              // 1. Explicit line "Color: <val>"
+              const colorLineMatch = str.match(/Color:\s*([^\r\n,]+)/i);
+              if (colorLineMatch && colorLineMatch[1].trim()) {
+                const candidate = colorLineMatch[1].trim();
+                if (!candidate.toLowerCase().includes('apple')) return candidate;
+              }
+
+              // 2. Hyphen pattern (e.g. "Apple - iPhone 15 Pro Max 256GB - Apple Intelligence - Blue Titanium (Unlocked)")
+              const hyphenMatch = str.match(/-\s*([A-Za-z\s]+?(?:Titanium|Gold|Silver|Black|White|Blue|Purple|Green|Red|Yellow|Pink|Gray|Grey))\b/i);
+              if (hyphenMatch && hyphenMatch[1].trim()) {
+                return hyphenMatch[1].trim();
+              }
+
+              // 3. Comma pattern (e.g. "...,256GB,BLUE TTNM")
+              const commaMatch = str.match(/\b\d+\s*(?:GB|TB)\s*,\s*([A-Za-z0-9\s]+?)(?:,|$|\r|\n)/i);
+              if (commaMatch && commaMatch[1].trim()) {
+                return commaMatch[1].trim();
+              }
+
+              // 4. Known Apple colors / shorthand anywhere in raw text
+              const knownColorRegex = /\b(Blue\s*Titanium|Natural\s*Titanium|Black\s*Titanium|White\s*Titanium|Desert\s*Titanium|Sierra\s*Blue|Pacific\s*Blue|Sky\s*Blue|Midnight\s*Blue|Deep\s*Purple|Alpine\s*Green|Midnight\s*Green|Space\s*Black|Space\s*Gray|Space\s*Grey|Rose\s*Gold|Product\s*Red|Starlight|Midnight|BLUE\s*TTNM|NATURAL\s*TTNM|NAT\s*TTNM|BLACK\s*TTNM|WHITE\s*TTNM|DESERT\s*TTNM)\b/i;
+              const knownMatch = str.match(knownColorRegex);
+              if (knownMatch && knownMatch[1].trim()) {
+                return knownMatch[1].trim();
+              }
+
+              return null;
+            };
+
             const getSickwMotherboardColor = () => {
               for (const r of sickwReports) {
-                if (r.color) return r.color;
-                if (r.parsed_data?.color) return r.parsed_data.color;
-                const text = `${r.model_description || ''} \n ${r.raw_text || ''}`;
-                const matchDirect = text.match(/Color:\s*([^\n\r,]+)/i);
-                if (matchDirect) return matchDirect[1].trim();
-                const matchDesc = text.match(/\b\d+\s*(?:GB|TB)\s*,\s*([A-Za-z0-9\s]+?)(?:,|$|\n|\r)/i);
-                if (matchDesc) return matchDesc[1].trim();
+                // Ground truth 1: parse directly from the raw_text received from Sickw
+                const fromRaw = extractSickwColorFromText(r.raw_text);
+                if (fromRaw) return fromRaw;
+
+                // Ground truth 2: parse from model_description
+                const fromDesc = extractSickwColorFromText(r.model_description);
+                if (fromDesc) return fromDesc;
+
+                // Ground truth 3: check parsed_data or r.color ONLY if it matches actual color keyword
+                const fromColor = extractSickwColorFromText(r.color || r.parsed_data?.color);
+                if (fromColor) return fromColor;
               }
               return null;
             };

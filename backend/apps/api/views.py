@@ -910,7 +910,7 @@ class DeviceViewSet(viewsets.ModelViewSet):
             imei2=parsed.get('imei2') or device.imei2,
             meid=parsed.get('meid') or device.meid,
             serial_number=serial_number or device.serial_number,
-            color=color or device.color,
+            color=color,
             model_code=model_code,
             estimated_purchase_date=purchase_date_str or (str(purchase_date) if purchase_date else None),
             warranty_status=warranty or device.warranty_status,
