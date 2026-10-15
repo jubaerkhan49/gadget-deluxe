@@ -253,12 +253,12 @@ class FCMDiagnosticStatusAPIView(APIView):
     Returns diagnostic details on Firebase initialization and registered device tokens.
     GET /api/fcm/status/
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
         from apps.core.fcm_utils import get_fcm_diagnostic_status
         status_data = get_fcm_diagnostic_status()
-        status_data["caller"] = request.user.username
+        status_data["caller"] = request.user.username if request.user.is_authenticated else "anonymous_browser"
         return Response(status_data)
 
 
@@ -266,15 +266,31 @@ class FCMTestPushAPIView(APIView):
     """
     Sends a test push notification to the requesting user's registered devices.
     POST /api/fcm/test-push/
+    Optional Body/Query: { "username": "jubaer" }
     """
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         from apps.core.fcm_utils import send_test_push_to_user
-        success, message = send_test_push_to_user(request.user)
+        from apps.accounts.models import User
+        target_username = request.data.get('username') or request.query_params.get('username')
+        if not target_username and request.user.is_authenticated:
+            target_username = request.user.username
+        if not target_username:
+            target_username = 'jubaer'
+
+        user = User.objects.filter(username__iexact=target_username).first()
+        if not user:
+            user = User.objects.filter(is_superuser=True).first()
+
+        if not user:
+            return Response({"success": False, "message": f"User '{target_username}' not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        success, message = send_test_push_to_user(user)
         return Response({
             "success": success > 0,
             "success_count": success,
+            "target_user": user.username,
             "message": message
         })
 
