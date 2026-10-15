@@ -917,35 +917,34 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
         parsed['price'] = billed_price
 
+        color = str(color)[:100] if color else None
+        model_code = str(model_code)[:100] if model_code else None
+
         report = SickwReport.objects.create(
             device=device,
             service_id=service_id,
             raw_text=raw_text,
             parsed_data=parsed,
-            model_description=parsed.get('model_description') or device.model_description,
-            model=parsed.get('model') or device.model,
+            model_description=str(parsed.get('model_description') or device.model_description or '')[:255] or None,
+            model=str(parsed.get('model') or device.model or '')[:150] or None,
             imei=device.imei,
-            imei2=parsed.get('imei2') or device.imei2,
-            meid=parsed.get('meid') or device.meid,
-            serial_number=serial_number or device.serial_number,
+            imei2=str(parsed.get('imei2') or device.imei2 or '')[:50] or None,
+            meid=str(parsed.get('meid') or device.meid or '')[:50] or None,
+            serial_number=str(serial_number or device.serial_number or '')[:100] or None,
             color=color,
             model_code=model_code,
             estimated_purchase_date=purchase_date_str or (str(purchase_date) if purchase_date else None),
-            warranty_status=warranty or device.warranty_status,
-            icloud_lock=icloud or device.icloud_status,
-            purchase_country=purchase_country or device.purchase_country,
-            locked_carrier=carrier or device.carrier_policy,
-            sim_lock_status=sim_lock or device.sim_lock_status
+            warranty_status=str(warranty or device.warranty_status or '')[:150] or None,
+            icloud_lock=str(icloud or device.icloud_status or '')[:100] or None,
+            purchase_country=str(purchase_country or device.purchase_country or '')[:100] or None,
+            locked_carrier=str(carrier or device.carrier_policy or '')[:150] or None,
+            sim_lock_status=str(sim_lock or device.sim_lock_status or '')[:100] or None
         )
 
         updated_fields = []
         if color and not device.color:
-            device.color = color
+            device.color = str(color)[:50]
             updated_fields.append('color')
-
-        if model_code and not device.model_code:
-            device.model_code = model_code
-            updated_fields.append('model_code')
 
         if serial_number and not device.serial_number:
             device.serial_number = serial_number
@@ -1043,9 +1042,6 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
         # Reset specs that were populated by Sickw
         clear_fields = []
-        if device.model_code:
-            device.model_code = None
-            clear_fields.append('model_code')
         if device.sim_lock_status:
             device.sim_lock_status = None
             clear_fields.append('sim_lock_status')

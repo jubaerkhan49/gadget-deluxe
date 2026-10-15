@@ -6,6 +6,7 @@ class SickwParser:
     """Robust regex, JSON, and key-value parser for Sickw API and raw check reports."""
     
     KEY_MAPPINGS = {
+        'description': 'model_description',
         'model description': 'model_description',
         'model': 'model',
         'model name': 'model',
@@ -117,16 +118,25 @@ class SickwParser:
     @classmethod
     def _post_process(cls, parsed: Dict[str, Any]):
         """Extracts model number (A2218), capacity, color, and formats fields."""
-        # Extract Apple A-Number (e.g. A2218, A1524, A3106)
-        raw_code = parsed.get('model_code', '') or parsed.get('model_description', '') or parsed.get('model', '')
-        match = re.search(r'\b(A\d{4})\b', str(raw_code), re.IGNORECASE)
-        if match:
-            parsed['model_number'] = match.group(1).upper()
-            parsed['model_code'] = match.group(1).upper()
-        else:
-            # If model_code was mapped from generic "model" or text, clear it if it's not a real A-code
-            if 'model_code' in parsed and not re.search(r'\b(A\d{4})\b', str(parsed['model_code']), re.IGNORECASE):
-                del parsed['model_code']
+        # Extract Apple A-Number (e.g. A2218, A1524, A3106, A2849)
+        candidates = [
+            parsed.get('model_code'),
+            parsed.get('model'),
+            parsed.get('model_description'),
+            parsed.get('model_name')
+        ]
+        found_code = None
+        for cand in candidates:
+            if cand:
+                m = re.search(r'\b(A\d{4})\b', str(cand), re.IGNORECASE)
+                if m:
+                    found_code = m.group(1).upper()
+                    break
+        if found_code:
+            parsed['model_number'] = found_code
+            parsed['model_code'] = found_code
+        elif 'model_code' in parsed:
+            del parsed['model_code']
 
         # Fallback: Extract capacity from model_description if capacity is not explicitly present
         if 'capacity' not in parsed and 'model_description' in parsed:
@@ -136,24 +146,29 @@ class SickwParser:
 
         # Fallback: Extract motherboard color from description or raw text
         if 'color' not in parsed:
-            search_text = (parsed.get('model_description', '') + ' ' + ' '.join(str(v) for v in parsed.values())).strip()
-            # 1. Hyphen pattern: "Apple - iPhone 15 Pro Max 256GB - Apple Intelligence - Blue Titanium (Unlocked)"
-            hyphen_match = re.search(r'-\s*([A-Za-z\s]+?(?:Titanium|Gold|Silver|Black|White|Blue|Purple|Green|Red|Yellow|Pink|Gray|Grey))\b', search_text, re.IGNORECASE)
-            if hyphen_match:
-                parsed['color'] = hyphen_match.group(1).strip()
+            desc = str(parsed.get('model_description', '')).strip()
+            search_text = (desc + ' ' + ' '.join(str(v) for v in parsed.values())).strip()
+
+            # 1. Direct Apple color keyword match (highest priority, precise)
+            color_kw_match = re.search(
+                r'\b(Blue\s*Titanium|Natural\s*Titanium|Black\s*Titanium|White\s*Titanium|Desert\s*Titanium|'
+                r'Sierra\s*Blue|Pacific\s*Blue|Deep\s*Purple|Alpine\s*Green|Midnight\s*Green|Space\s*Black|'
+                r'Space\s*Gray|Space\s*Grey|Rose\s*Gold|Product\s*Red|Starlight|Midnight|'
+                r'BLUE\s*TTNM|NATURAL\s*TTNM|NATURL\s*TTNM|NATRL\s*TTNM|NAT\s*TTNM|BLACK\s*TTNM|WHITE\s*TTNM|DESERT\s*TTNM)\b',
+                search_text, re.IGNORECASE
+            )
+            if color_kw_match:
+                parsed['color'] = color_kw_match.group(1).strip()
             else:
-                # 2. Comma pattern: "...,256GB,BLUE TTNM"
-                comma_match = re.search(r'\b\d+\s*(?:GB|TB)\s*,\s*([A-Za-z0-9\s]+?)(?:,|$|\n|\r)', search_text, re.IGNORECASE)
-                if comma_match:
-                    parsed['color'] = comma_match.group(1).strip()
-                else:
-                    # 3. Direct Apple color keyword match
-                    color_kw_match = re.search(
-                        r'\b(Blue\s*Titanium|Natural\s*Titanium|Black\s*Titanium|White\s*Titanium|Desert\s*Titanium|'
-                        r'Sierra\s*Blue|Pacific\s*Blue|Deep\s*Purple|Alpine\s*Green|Midnight\s*Green|Space\s*Black|'
-                        r'Space\s*Gray|Space\s*Grey|Rose\s*Gold|Product\s*Red|Starlight|Midnight|'
-                        r'BLUE\s*TTNM|NATURAL\s*TTNM|NATURL\s*TTNM|NATRL\s*TTNM|NAT\s*TTNM|BLACK\s*TTNM|WHITE\s*TTNM|DESERT\s*TTNM)\b',
-                        search_text, re.IGNORECASE
-                    )
-                    if color_kw_match:
-                        parsed['color'] = color_kw_match.group(1).strip()
+                # 2. Hyphen pattern: "Apple - iPhone 15 Pro Max 256GB - Apple Intelligence - Blue Titanium (Unlocked)"
+                hyphen_match = re.search(r'-\s*([A-Za-z\s]{3,30}?(?:Titanium|Gold|Silver|Black|White|Blue|Purple|Green|Red|Yellow|Pink|Gray|Grey))\b', desc or search_text, re.IGNORECASE)
+                if hyphen_match:
+                    parsed['color'] = hyphen_match.group(1).strip()
+                elif desc:
+                    # 3. Comma pattern: "...,256GB,NATURL TTNM" only on model_description to avoid swallowing other fields
+                    comma_match = re.search(r'\b\d+\s*(?:GB|TB)\s*,\s*([A-Za-z0-9\s]{2,30}?)(?:,|$|\n|\r)', desc, re.IGNORECASE)
+                    if comma_match:
+                        parsed['color'] = comma_match.group(1).strip()
+
+        if 'color' in parsed and parsed['color']:
+            parsed['color'] = str(parsed['color'])[:50].strip()
