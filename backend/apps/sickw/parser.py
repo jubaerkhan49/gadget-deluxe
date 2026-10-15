@@ -116,17 +116,33 @@ class SickwParser:
 
     @classmethod
     def _post_process(cls, parsed: Dict[str, Any]):
-        """Extracts model number (A2218), capacity, and formats fields."""
+        """Extracts model number (A2218), capacity, color, and formats fields."""
         # Extract Apple A-Number (e.g. A2218, A1524, A3106)
         raw_code = parsed.get('model_code', '') or parsed.get('model_description', '') or parsed.get('model', '')
-        match = re.search(r'\b(A\d{4})\b', raw_code, re.IGNORECASE)
+        match = re.search(r'\b(A\d{4})\b', str(raw_code), re.IGNORECASE)
         if match:
             parsed['model_number'] = match.group(1).upper()
-            if not parsed.get('model_code') or len(parsed.get('model_code', '')) > 10:
-                parsed['model_code'] = match.group(1).upper()
+            parsed['model_code'] = match.group(1).upper()
+        else:
+            # If model_code was mapped from generic "model" or text, clear it if it's not a real A-code
+            if 'model_code' in parsed and not re.search(r'\b(A\d{4})\b', str(parsed['model_code']), re.IGNORECASE):
+                del parsed['model_code']
 
         # Fallback: Extract capacity from model_description if capacity is not explicitly present
         if 'capacity' not in parsed and 'model_description' in parsed:
             cap_match = re.search(r'\b(\d+\s*(?:GB|TB))\b', parsed['model_description'], re.IGNORECASE)
             if cap_match:
                 parsed['capacity'] = cap_match.group(1).upper().replace(" ", "")
+
+        # Fallback: Extract motherboard color from description (e.g. "...,256GB,BLUE TTNM")
+        if 'color' not in parsed:
+            raw_desc = parsed.get('model_description', '')
+            if not raw_desc:
+                for k, v in parsed.items():
+                    if isinstance(v, str) and (',' in v and any(c in v.upper() for c in ['GB', 'TB'])):
+                        raw_desc = v
+                        break
+            if raw_desc:
+                color_match = re.search(r'\b\d+\s*(?:GB|TB)\s*,\s*([A-Za-z0-9\s]+?)(?:,|$|\n|\r)', raw_desc, re.IGNORECASE)
+                if color_match:
+                    parsed['color'] = color_match.group(1).strip()

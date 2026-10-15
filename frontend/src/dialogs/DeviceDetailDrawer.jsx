@@ -60,7 +60,8 @@ import {
   LockOpen as LockOpenIcon,
   SimCard as SimCardIcon,
   QrCode2 as ModelCodeIcon,
-  Tag as TagIcon
+  Tag as TagIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { formatNumber, formatDate } from '../utils/formatters';
@@ -1207,7 +1208,72 @@ export default function DeviceDetailDrawer({
             const is12Disabled = hasRun12 || !!fetchingSickwService;
             const is103Disabled = hasRun103 || !!fetchingSickwService;
 
-            // Highlight key information extracted from reports or device
+            // Normalizes color to base keyword (e.g. "Natural Titanium" -> "natural", "Sierra Blue" -> "blue", "BLUE TTNM" -> "blue")
+            const normalizeBaseColor = (colorStr) => {
+              if (!colorStr) return null;
+              const s = String(colorStr).toLowerCase().replace(/[^a-z0-9\s]/g, ' ');
+              if (/\b(rose\s*gold)\b/.test(s)) return 'rose gold';
+              if (/\b(natural|nat)\b/.test(s)) return 'natural';
+              if (/\b(desert)\b/.test(s)) return 'desert';
+              if (/\b(blue|blu)\b/.test(s)) return 'blue';
+              if (/\b(black|blk|midnight|dark)\b/.test(s)) return 'black';
+              if (/\b(white|wht|starlight)\b/.test(s)) return 'white';
+              if (/\b(gold|gld)\b/.test(s)) return 'gold';
+              if (/\b(silver|slv)\b/.test(s)) return 'silver';
+              if (/\b(purple|violet|lavender)\b/.test(s)) return 'purple';
+              if (/\b(green|grn|alpine|mint)\b/.test(s)) return 'green';
+              if (/\b(red|product\s*red)\b/.test(s)) return 'red';
+              if (/\b(pink|rose)\b/.test(s)) return 'pink';
+              if (/\b(yellow|ylw)\b/.test(s)) return 'yellow';
+              if (/\b(orange|coral)\b/.test(s)) return 'orange';
+              if (/\b(gray|grey|gry)\b/.test(s)) return 'gray';
+              return s.trim().split(/\s+/)[0] || null;
+            };
+
+            // Extracts motherboard color from Sickw reports
+            const getSickwMotherboardColor = () => {
+              for (const r of sickwReports) {
+                if (r.color) return r.color;
+                if (r.parsed_data?.color) return r.parsed_data.color;
+                const text = `${r.model_description || ''} \n ${r.raw_text || ''}`;
+                const matchDirect = text.match(/Color:\s*([^\n\r,]+)/i);
+                if (matchDirect) return matchDirect[1].trim();
+                const matchDesc = text.match(/\b\d+\s*(?:GB|TB)\s*,\s*([A-Za-z0-9\s]+?)(?:,|$|\n|\r)/i);
+                if (matchDesc) return matchDesc[1].trim();
+              }
+              return null;
+            };
+
+            const manualOutlookColor = device.color || '';
+            const sickwMotherboardColor = getSickwMotherboardColor();
+            const baseManual = normalizeBaseColor(manualOutlookColor);
+            const baseSickw = normalizeBaseColor(sickwMotherboardColor);
+
+            const hasColorChecked = Boolean(manualOutlookColor && sickwMotherboardColor && baseManual && baseSickw);
+            const isColorMatch = hasColorChecked ? baseManual === baseSickw : null;
+
+            // Model number: ONLY Apple A-number (e.g. A2218, A3106) fetched from Service 12, otherwise '-'
+            const getService12ModelCode = () => {
+              const srv12 = sickwReports.find((r) => String(r.service_id) === '12');
+              if (!srv12) return '—';
+              const candidates = [
+                srv12.model_code,
+                srv12.parsed_data?.model_code,
+                srv12.parsed_data?.model_number,
+                srv12.raw_text
+              ];
+              for (const c of candidates) {
+                if (c) {
+                  const match = String(c).match(/\b(A\d{4})\b/i);
+                  if (match) return match[1].toUpperCase();
+                }
+              }
+              return '—';
+            };
+
+            const keyModelCode = getService12ModelCode();
+
+            // Highlight other key information extracted from reports or device
             const findValue = (field, parsedKeys = []) => {
               for (const r of sickwReports) {
                 if (r[field]) return r[field];
@@ -1220,8 +1286,6 @@ export default function DeviceDetailDrawer({
               return device[field] || '—';
             };
 
-            const keyColor = findValue('color', ['color']);
-            const keyModelCode = findValue('model_code', ['model_code', 'model_number', 'model']);
             const keySerial = findValue('serial_number', ['serial_number', 'serial']);
             const keyPurchaseDate = findValue('estimated_purchase_date', ['estimated_purchase_date', 'purchase_date']);
             const keySimLock = findValue('sim_lock_status', ['sim_lock_status', 'locked_carrier']);
@@ -1374,7 +1438,23 @@ export default function DeviceDetailDrawer({
                       >
                         <Box sx={{ mb: 1 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                            <Chip label="Service 12" size="small" color={hasRun12 ? 'default' : 'primary'} sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                            <Chip
+                              label="Service 12"
+                              size="small"
+                              variant={hasRun12 ? 'outlined' : 'filled'}
+                              sx={{
+                                height: 20,
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                bgcolor: hasRun12
+                                  ? (theme) => theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#e2e8f0'
+                                  : 'primary.main',
+                                color: hasRun12
+                                  ? (theme) => theme.palette.mode === 'dark' ? '#cbd5e1' : '#1e293b'
+                                  : '#ffffff',
+                                borderColor: hasRun12 ? 'divider' : 'transparent'
+                              }}
+                            />
                             {hasRun12 && (
                               <Chip icon={<ActiveCheckIcon fontSize="small" />} label="Done" size="small" color="success" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
                             )}
@@ -1483,7 +1563,7 @@ export default function DeviceDetailDrawer({
                   </Typography>
 
                   <Grid container spacing={1.5}>
-                    {/* 1. COLOR */}
+                    {/* 1. COLOR (OUTLOOK VS SICKW MOTHERBOARD COLOR COMPARISON) */}
                     <Grid item xs={6} sm={4} md={2.4}>
                       <Paper
                         variant="outlined"
@@ -1493,22 +1573,50 @@ export default function DeviceDetailDrawer({
                           height: '100%',
                           display: 'flex',
                           flexDirection: 'column',
-                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff'
+                          justifyContent: 'space-between',
+                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff',
+                          borderColor: hasColorChecked
+                            ? (isColorMatch ? 'success.main' : 'error.main')
+                            : 'divider',
+                          transition: 'all 0.2s ease-in-out'
                         }}
                       >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
-                          <ColorIcon fontSize="small" color="action" />
-                          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
-                            Color
-                          </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                            <ColorIcon fontSize="small" color={hasColorChecked ? (isColorMatch ? 'success' : 'error') : 'action'} />
+                            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
+                              Color
+                            </Typography>
+                          </Box>
+
+                          {/* Done icon if match, Cross sign if mismatch */}
+                          {hasColorChecked && (
+                            <Tooltip title={isColorMatch ? `Motherboard matches outlook color (${baseManual})` : `MISMATCH! Outlook: ${manualOutlookColor} ≠ Motherboard: ${sickwMotherboardColor}`}>
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                {isColorMatch ? (
+                                  <ActiveCheckIcon fontSize="small" sx={{ color: '#10b981' }} />
+                                ) : (
+                                  <CancelIcon fontSize="small" sx={{ color: '#ef4444' }} />
+                                )}
+                              </Box>
+                            </Tooltip>
+                          )}
                         </Box>
-                        <Typography variant="body2" fontWeight={700} noWrap title={keyColor}>
-                          {keyColor !== '—' ? keyColor : <Typography component="span" variant="caption" color="text.secondary">Not fetched</Typography>}
-                        </Typography>
+
+                        <Box>
+                          <Typography variant="body2" fontWeight={700} noWrap title={manualOutlookColor || sickwMotherboardColor || '—'}>
+                            {manualOutlookColor || sickwMotherboardColor || <Typography component="span" variant="caption" color="text.secondary">Not fetched</Typography>}
+                          </Typography>
+                          {hasColorChecked && (
+                            <Typography variant="caption" sx={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: isColorMatch ? 'success.main' : 'error.main', mt: 0.25 }} noWrap title={`Motherboard: ${sickwMotherboardColor}`}>
+                              {isColorMatch ? `MB: ${sickwMotherboardColor}` : `MB: ${sickwMotherboardColor}`}
+                            </Typography>
+                          )}
+                        </Box>
                       </Paper>
                     </Grid>
 
-                    {/* 2. MODEL NO (e.g. A2218) */}
+                    {/* 2. MODEL NO (APPLE A-CODE FROM SERVICE 12 ONLY) */}
                     <Grid item xs={6} sm={4} md={2.4}>
                       <Paper
                         variant="outlined"
@@ -1518,12 +1626,13 @@ export default function DeviceDetailDrawer({
                           height: '100%',
                           display: 'flex',
                           flexDirection: 'column',
+                          justifyContent: 'space-between',
                           backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff'
                         }}
                       >
                         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <ModelCodeIcon fontSize="small" color="primary" />
+                            <ModelCodeIcon fontSize="small" color={keyModelCode !== '—' ? 'primary' : 'action'} />
                             <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
                               Model No
                             </Typography>
@@ -1536,9 +1645,11 @@ export default function DeviceDetailDrawer({
                         </Box>
                         <Box>
                           {keyModelCode !== '—' ? (
-                            <Chip label={keyModelCode} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.75rem' }} />
+                            <Chip label={keyModelCode} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.75rem', fontFamily: 'monospace' }} />
                           ) : (
-                            <Typography component="span" variant="caption" color="text.secondary">Run Srv 12</Typography>
+                            <Typography variant="body2" fontWeight={700} color="text.secondary">
+                              —
+                            </Typography>
                           )}
                         </Box>
                       </Paper>

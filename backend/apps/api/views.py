@@ -921,9 +921,13 @@ class DeviceViewSet(viewsets.ModelViewSet):
         )
 
         updated_fields = []
-        if color:
+        if color and not device.color:
             device.color = color
             updated_fields.append('color')
+
+        if model_code and not device.model_code:
+            device.model_code = model_code
+            updated_fields.append('model_code')
 
         if serial_number and not device.serial_number:
             device.serial_number = serial_number
