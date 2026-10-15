@@ -53,6 +53,12 @@ interface ImeiApiService {
         @Body payload: Map<String, String>
     ): Response<Map<String, Any>>
 
+    @POST("api/auth/register-fcm-token/")
+    suspend fun registerFcmToken(
+        @Header("Authorization") token: String,
+        @Body payload: Map<String, String>
+    ): Response<Map<String, Any>>
+
     @POST("api/devices/")
     suspend fun createDevice(
         @Header("Authorization") token: String,

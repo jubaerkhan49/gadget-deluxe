@@ -40,3 +40,7 @@ backend/Scripts/
 # SQL restore scripts / data dumps
 generate_restore_sql.py
 restore_data.sql
+
+# Firebase credentials
+*service-account*.json
+firebase-service-account.json

@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.imei.inventory.ui.screens.SalesTab
+import com.imei.inventory.ui.theme.*
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,7 +49,7 @@ fun SalesDialog(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            color = Color(0xFF10B981).copy(alpha = 0.15f),
+                            color = AccentEmerald.copy(alpha = 0.15f),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.size(32.dp)
                         ) {
@@ -56,14 +57,14 @@ fun SalesDialog(
                                 Icon(
                                     imageVector = Icons.Default.ReceiptLong,
                                     contentDescription = null,
-                                    tint = Color(0xFF10B981),
+                                    tint = AccentEmerald,
                                     modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Commercial Sales Invoices",
+                            text = "Commercial Sales & Analytics",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.onSurface

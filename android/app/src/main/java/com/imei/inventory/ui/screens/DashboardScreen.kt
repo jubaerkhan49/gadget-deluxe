@@ -1,9 +1,13 @@
 package com.imei.inventory.ui.screens
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -13,6 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
+import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.ExpressiveSearchBar
+import com.imei.inventory.ui.components.StatusBadge
+import com.imei.inventory.ui.components.VariantBadge
 import com.imei.inventory.viewmodel.DeviceListState
 import com.imei.inventory.viewmodel.DeviceViewModel
 
@@ -33,23 +41,38 @@ fun DashboardScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gadget Deluxe", color = Color.White, fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0F172A)),
+                title = { Text("Gadget Deluxe", fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                ),
                 actions = {
                     IconButton(onClick = { deviceViewModel.fetchDevices(token, searchQuery) }) {
-                        Text("🔄", fontSize = 18.sp)
+                        Icon(
+                            imageVector = Icons.Default.Refresh,
+                            contentDescription = "Refresh",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                     }
                     Button(
                         onClick = onOpenScanner,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                        shape = RoundedCornerShape(percent = 50),
                         modifier = Modifier.padding(end = 8.dp)
                     ) {
-                        Text("Scan Barcode", color = Color.White)
+                        Icon(
+                            imageVector = Icons.Default.QrCodeScanner,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Scan Barcode", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             )
         },
-        containerColor = Color(0xFF0F172A)
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -57,21 +80,13 @@ fun DashboardScreen(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = {
+            ExpressiveSearchBar(
+                query = searchQuery,
+                onQueryChange = {
                     searchQuery = it
                     deviceViewModel.fetchDevices(token, searchQuery)
                 },
-                placeholder = { Text("Search IMEI, Model, Serial...", color = Color(0xFF64748B)) },
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    focusedBorderColor = Color(0xFF6366F1),
-                    unfocusedBorderColor = Color(0xFF334155)
-                ),
-                modifier = Modifier.fillMaxWidth()
+                placeholder = "Search IMEI, Model, Serial..."
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -79,13 +94,13 @@ fun DashboardScreen(
             when (val state = deviceState) {
                 is DeviceListState.Loading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator(color = Color(0xFF6366F1))
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     }
                 }
                 is DeviceListState.Success -> {
                     if (state.devices.isEmpty()) {
                         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No devices found", color = Color(0xFF94A3B8))
+                            Text("No devices found", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     } else {
                         LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -103,9 +118,12 @@ fun DashboardScreen(
                 is DeviceListState.Error -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(text = state.message, color = Color(0xFFF87171))
+                            Text(text = state.message, color = MaterialTheme.colorScheme.error)
                             Spacer(modifier = Modifier.height(8.dp))
-                            Button(onClick = { deviceViewModel.fetchDevices(token, searchQuery) }) {
+                            Button(
+                                onClick = { deviceViewModel.fetchDevices(token, searchQuery) },
+                                shape = RoundedCornerShape(percent = 50)
+                            ) {
                                 Text("Retry")
                             }
                         }
@@ -124,8 +142,10 @@ fun DeviceItemCard(
     var expandedMenu by remember { mutableStateOf(false) }
 
     Card(
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        shape = RoundedCornerShape(20.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -136,40 +156,25 @@ fun DeviceItemCard(
             ) {
                 Text(
                     text = device.model,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp
                 )
                 
-                val statusColor = when (device.currentStatus) {
-                    "IN_STOCK" -> Color(0xFF22C55E)
-                    "SOLD" -> Color(0xFF3B82F6)
-                    "UNDER_REPAIR" -> Color(0xFFEAB308)
-                    else -> Color(0xFF94A3B8)
-                }
-
-                Surface(
-                    color = statusColor.copy(alpha = 0.2f),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        text = device.statusDisplay ?: device.currentStatus,
-                        color = statusColor,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
+                StatusBadge(status = device.currentStatus, statusDisplay = device.statusDisplay)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text("IMEI: ${device.imei}", color = Color(0xFFCBD5E1), fontSize = 13.sp)
+            CopyableText(label = "IMEI", value = device.imei)
+
             if (!device.serialNumber.isNullOrBlank()) {
-                Text("Serial: ${device.serialNumber}", color = Color(0xFF94A3B8), fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Serial: ${device.serialNumber}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
             }
             if (!device.variant.isNullOrBlank()) {
-                Text("Variant: ${device.variant}", color = Color(0xFFF59E0B), fontSize = 12.sp)
+                Spacer(modifier = Modifier.height(4.dp))
+                VariantBadge(device.variant)
             }
 
             Spacer(modifier = Modifier.height(10.dp))
@@ -181,21 +186,22 @@ fun DeviceItemCard(
             ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     device.capacity?.let {
-                        Text(it, color = Color(0xFF818CF8), fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text(it, color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                     device.batteryHealth?.let {
-                        Text("🔋 $it%", color = Color(0xFF4ADE80), fontSize = 12.sp)
+                        Text("🔋 $it%", color = Color(0xFF10B981), fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
 
                 Box {
                     Button(
                         onClick = { expandedMenu = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155)),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                        shape = RoundedCornerShape(percent = 50),
                         modifier = Modifier.height(32.dp)
                     ) {
-                        Text("Update Status ▾", fontSize = 11.sp, color = Color.White)
+                        Text("Update Status ▾", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                     DropdownMenu(
                         expanded = expandedMenu,

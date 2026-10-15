@@ -15,6 +15,7 @@ class PreferencesManager(context: Context) {
         private const val KEY_SAVED_FIRST_NAME = "saved_first_name"
         private const val KEY_SAVED_USER_ID = "saved_user_id"
         private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
+        private const val KEY_FCM_TOKEN = "saved_fcm_token"
     }
 
     fun saveCredentials(
@@ -48,6 +49,12 @@ class PreferencesManager(context: Context) {
     fun saveToken(token: String) {
         prefs.edit().putString(KEY_SAVED_TOKEN, token).apply()
     }
+
+    fun saveFcmToken(fcmToken: String) {
+        prefs.edit().putString(KEY_FCM_TOKEN, fcmToken).apply()
+    }
+
+    fun getFcmToken(): String? = prefs.getString(KEY_FCM_TOKEN, null)
 
     fun saveUserRole(role: String, firstName: String? = null, userId: Int? = null) {
         prefs.edit().apply {

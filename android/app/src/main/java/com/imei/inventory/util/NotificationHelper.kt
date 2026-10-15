@@ -58,6 +58,7 @@ object NotificationHelper {
             .setContentText("$sellerName submitted sale for $price$imei. Tap to review & approve.")
             .setStyle(NotificationCompat.BigTextStyle().bigText("$sellerName submitted a sale request for $model$imei with proposed amount $price. Tap to review and confirm sale approval."))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
             .setAutoCancel(true)
             .setContentIntent(pendingIntent)
@@ -66,6 +67,46 @@ object NotificationHelper {
         try {
             val notificationManager = NotificationManagerCompat.from(context)
             notificationManager.notify(saleRequest.id + 10000, builder.build())
+        } catch (e: SecurityException) {
+            // Permission not granted yet on Android 13+
+        } catch (e: Exception) {
+            // Safe fallback
+        }
+    }
+
+    fun showPushNotification(context: Context, title: String, body: String, requestId: Int? = null) {
+        createNotificationChannel(context)
+
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            if (requestId != null && requestId > 0) {
+                putExtra(EXTRA_SALE_REQ_ID, requestId)
+            }
+        }
+
+        val notifyId = requestId ?: ((System.currentTimeMillis() % 100000).toInt())
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notifyId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+        )
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+            .setCategory(NotificationCompat.CATEGORY_EVENT)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .setVibrate(longArrayOf(0, 250, 150, 250))
+
+        try {
+            val notificationManager = NotificationManagerCompat.from(context)
+            notificationManager.notify(notifyId + 20000, builder.build())
         } catch (e: SecurityException) {
             // Permission not granted yet on Android 13+
         } catch (e: Exception) {

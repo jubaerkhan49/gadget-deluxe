@@ -94,12 +94,15 @@ class MainInventoryViewModel : ViewModel() {
     }
 
     private var realtimeJob: kotlinx.coroutines.Job? = null
+    private var adminSalePollJob: kotlinx.coroutines.Job? = null
+    private var appContext: android.content.Context? = null
 
     /**
      * Instantly restores all cached data from local storage into memory.
      * Guarantees 0ms UI render time on startup.
      */
     fun initCache(context: android.content.Context) {
+        appContext = context.applicationContext
         if (localDataCache == null) {
             val cache = LocalDataCache(context)
             localDataCache = cache
@@ -211,13 +214,54 @@ class MainInventoryViewModel : ViewModel() {
     }
 
     fun startRealtimeSync(token: String, context: android.content.Context? = null) {
+        if (context != null) {
+            appContext = context.applicationContext
+        }
         realtimeJob?.cancel()
-        realtimeJob = viewModelScope.launch {
+        adminSalePollJob?.cancel()
+
+        // 1. Fast Dedicated Poller for Admin Sale Approval Alerts (Polls every 3 seconds for INSTANT notifications)
+        adminSalePollJob = viewModelScope.launch {
             while (true) {
-                kotlinx.coroutines.delay(30000) // Poll sync every 30 seconds quietly in background to save battery & data
                 try {
                     val bearer = "Bearer $token"
                     val isAdminUser = _currentUser.value?.isAdmin == true
+                    if (isAdminUser) {
+                        val reqRes = ApiClient.apiService.getDeviceSaleRequests(bearer, status = "PENDING", pageSize = 100)
+                        if (reqRes.isSuccessful && reqRes.body() != null) {
+                            val requests = reqRes.body()!!.results
+                            if (_pendingSaleRequests.value != requests) {
+                                _pendingSaleRequests.value = requests
+                                localDataCache?.savePendingSaleRequests(requests)
+                            }
+
+                            val ctx = appContext ?: context
+                            if (isFirstSyncCompleted && ctx != null) {
+                                for (req in requests) {
+                                    if (!seenSaleRequestIds.contains(req.id)) {
+                                        seenSaleRequestIds.add(req.id)
+                                        com.imei.inventory.util.NotificationHelper.showSaleApprovalNotification(ctx, req)
+                                    }
+                                }
+                            } else {
+                                requests.forEach { seenSaleRequestIds.add(it.id) }
+                                isFirstSyncCompleted = true
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // silent poller
+                }
+                kotlinx.coroutines.delay(12000) // Poll every 12 seconds while on screen (gentle, safe for Neon & battery)
+            }
+        }
+
+        // 2. Regular background sync for inventory & analytics
+        realtimeJob = viewModelScope.launch {
+            while (true) {
+                kotlinx.coroutines.delay(60000) // Poll inventory sync every 60 seconds while on screen
+                try {
+                    val bearer = "Bearer $token"
 
                     // 1. Fetch real-time dashboard analytics
                     val statsRes = ApiClient.apiService.getDashboardStats(bearer)
@@ -252,31 +296,7 @@ class MainInventoryViewModel : ViewModel() {
                         }
                     }
 
-                    // 3. For Admin: Check for new pending sale approval requests and notify
-                    if (isAdminUser) {
-                        val reqRes = ApiClient.apiService.getDeviceSaleRequests(bearer, status = "PENDING", pageSize = 100)
-                        if (reqRes.isSuccessful && reqRes.body() != null) {
-                            val requests = reqRes.body()!!.results
-                            if (_pendingSaleRequests.value != requests) {
-                                _pendingSaleRequests.value = requests
-                                localDataCache?.savePendingSaleRequests(requests)
-                            }
-
-                            if (isFirstSyncCompleted && context != null) {
-                                for (req in requests) {
-                                    if (!seenSaleRequestIds.contains(req.id)) {
-                                        seenSaleRequestIds.add(req.id)
-                                        com.imei.inventory.util.NotificationHelper.showSaleApprovalNotification(context, req)
-                                    }
-                                }
-                            } else {
-                                requests.forEach { seenSaleRequestIds.add(it.id) }
-                                isFirstSyncCompleted = true
-                            }
-                        }
-                    }
-
-                    // 4. Fetch shipments
+                    // 3. Fetch shipments
                     val shipRes = ApiClient.apiService.getShipments(bearer)
                     if (shipRes.isSuccessful && shipRes.body() != null) {
                         val list = shipRes.body()!!.results
@@ -286,7 +306,7 @@ class MainInventoryViewModel : ViewModel() {
                         }
                     }
 
-                    // 5. Fetch sales
+                    // 4. Fetch sales
                     val salesRes = ApiClient.apiService.getSales(bearer)
                     if (salesRes.isSuccessful && salesRes.body() != null) {
                         val list = salesRes.body()!!.results
@@ -306,11 +326,13 @@ class MainInventoryViewModel : ViewModel() {
 
     fun stopRealtimeSync() {
         realtimeJob?.cancel()
+        adminSalePollJob?.cancel()
     }
 
     override fun onCleared() {
         super.onCleared()
         realtimeJob?.cancel()
+        adminSalePollJob?.cancel()
     }
 
     fun fetchDevices(token: String, query: String? = null) {
@@ -580,6 +602,7 @@ class MainInventoryViewModel : ViewModel() {
                 val res = ApiClient.apiService.requestDeviceSale(bearer, deviceId, payload)
                 if (res.isSuccessful) {
                     fetchDevices(token)
+                    fetchPendingSaleRequests(token)
                     onSuccess()
                 } else {
                     onError("Failed to submit sale request (${res.code()})")

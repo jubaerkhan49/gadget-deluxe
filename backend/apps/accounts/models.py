@@ -125,3 +125,24 @@ class EmployeeProfileUpdateRequest(models.Model):
 
     def __str__(self) -> str:
         return f"Update Request for @{self.user.username} ({self.get_status_display()})"
+
+
+class FCMDeviceToken(models.Model):
+    """Stores Firebase Cloud Messaging (FCM) registration tokens for users to receive real-time push notifications."""
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='fcm_tokens'
+    )
+    token = models.CharField(max_length=512, unique=True, db_index=True)
+    device_type = models.CharField(max_length=20, default='android')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+        verbose_name = 'FCM Device Token'
+        verbose_name_plural = 'FCM Device Tokens'
+
+    def __str__(self) -> str:
+        return f"{self.user.username} - {self.token[:20]}... ({self.device_type})"

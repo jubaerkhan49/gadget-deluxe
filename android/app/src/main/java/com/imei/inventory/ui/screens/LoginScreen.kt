@@ -149,54 +149,56 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .widthIn(max = 440.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(24.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                shape = RoundedCornerShape(28.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
             ) {
                 Column(
                     modifier = Modifier
-                        .padding(22.dp)
+                        .padding(24.dp)
                         .fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Top App Logo
+                    // Top App Logo (Expressive Squircle)
                     Surface(
-                        color = accentColor.copy(alpha = 0.14f),
-                        shape = RoundedCornerShape(18.dp),
-                        modifier = Modifier.size(64.dp)
+                        color = accentColor.copy(alpha = 0.16f),
+                        shape = RoundedCornerShape(22.dp),
+                        modifier = Modifier.size(68.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = if (selectedRoleIndex == 0) Icons.Default.AdminPanelSettings else Icons.Default.Badge,
                                 contentDescription = "Logo",
                                 tint = accentColor,
-                                modifier = Modifier.size(34.dp)
+                                modifier = Modifier.size(36.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     Text(
                         text = "Gadget Deluxe",
                         color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 23.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = (-0.3).sp
                     )
                     Text(
                         text = if (selectedRoleIndex == 0) "Enterprise Admin Command Center" else "Staff Custody & Field Operations",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.5.sp,
-                        modifier = Modifier.padding(top = 2.dp, bottom = 16.dp)
+                        modifier = Modifier.padding(top = 2.dp, bottom = 18.dp)
                     )
 
-                    // Role Gateway Switcher Tabs
+                    // Role Gateway Switcher Tabs (Material 3 Expressive Pill)
                     Surface(
-                        shape = RoundedCornerShape(14.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                        shape = RoundedCornerShape(percent = 50),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 18.dp)
+                            .padding(bottom = 20.dp)
                     ) {
                         Row(
                             modifier = Modifier
@@ -211,19 +213,19 @@ fun LoginScreen(
                                 label = "admin_tab_bg"
                             )
                             Surface(
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(percent = 50),
                                 color = adminBg,
                                 shadowElevation = if (adminSelected) 2.dp else 0.dp,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(RoundedCornerShape(percent = 50))
                                     .clickable {
                                         selectedRoleIndex = 0
                                         localErrorMessage = null
                                     }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(vertical = 9.dp),
+                                    modifier = Modifier.padding(vertical = 10.dp),
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -231,13 +233,13 @@ fun LoginScreen(
                                         imageVector = Icons.Default.AdminPanelSettings,
                                         contentDescription = null,
                                         tint = if (adminSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(17.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "Admin Gateway",
                                         fontSize = 12.sp,
-                                        fontWeight = if (adminSelected) FontWeight.Bold else FontWeight.Medium,
+                                        fontWeight = if (adminSelected) FontWeight.ExtraBold else FontWeight.Medium,
                                         color = if (adminSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -250,19 +252,19 @@ fun LoginScreen(
                                 label = "staff_tab_bg"
                             )
                             Surface(
-                                shape = RoundedCornerShape(10.dp),
+                                shape = RoundedCornerShape(percent = 50),
                                 color = staffBg,
                                 shadowElevation = if (staffSelected) 2.dp else 0.dp,
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(RoundedCornerShape(10.dp))
+                                    .clip(RoundedCornerShape(percent = 50))
                                     .clickable {
                                         selectedRoleIndex = 1
                                         localErrorMessage = null
                                     }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(vertical = 9.dp),
+                                    modifier = Modifier.padding(vertical = 10.dp),
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -270,13 +272,13 @@ fun LoginScreen(
                                         imageVector = Icons.Default.Badge,
                                         contentDescription = null,
                                         tint = if (staffSelected) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(16.dp)
+                                        modifier = Modifier.size(17.dp)
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
                                         text = "Staff Portal",
                                         fontSize = 12.sp,
-                                        fontWeight = if (staffSelected) FontWeight.Bold else FontWeight.Medium,
+                                        fontWeight = if (staffSelected) FontWeight.ExtraBold else FontWeight.Medium,
                                         color = if (staffSelected) Color(0xFF10B981) else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -298,11 +300,17 @@ fun LoginScreen(
                                 imageVector = Icons.Default.Person,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                            focusedBorderColor = accentColor,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        ),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Text,
                             imeAction = ImeAction.Next
@@ -310,7 +318,7 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     // Password Field
                     OutlinedTextField(
@@ -326,7 +334,7 @@ fun LoginScreen(
                                 imageVector = Icons.Default.Lock,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
+                                modifier = Modifier.size(19.dp)
                             )
                         },
                         trailingIcon = {
@@ -341,7 +349,13 @@ fun LoginScreen(
                         },
                         singleLine = true,
                         visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                        shape = RoundedCornerShape(14.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+                            focusedBorderColor = accentColor,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                        ),
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Password,
                             imeAction = ImeAction.Done
@@ -374,7 +388,7 @@ fun LoginScreen(
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(20.dp))
+                    Spacer(modifier = Modifier.height(22.dp))
 
                     if (authState is AuthState.Loading) {
                         CircularProgressIndicator(color = accentColor)
@@ -393,14 +407,15 @@ fun LoginScreen(
                                     }
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = accentColor),
-                                shape = RoundedCornerShape(14.dp),
+                                shape = RoundedCornerShape(percent = 50),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 2.dp),
                                 modifier = Modifier
                                     .weight(1f)
-                                    .height(50.dp)
+                                    .height(52.dp)
                             ) {
                                 Text(
                                     text = if (selectedRoleIndex == 0) "Sign In as Admin" else "Sign In as Staff",
-                                    fontSize = 14.5.sp,
+                                    fontSize = 15.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )
@@ -408,12 +423,12 @@ fun LoginScreen(
 
                             FilledTonalIconButton(
                                 onClick = { triggerBiometricAuth() },
-                                shape = RoundedCornerShape(14.dp),
+                                shape = CircleShape,
                                 colors = IconButtonDefaults.filledTonalIconButtonColors(
                                     containerColor = accentColor.copy(alpha = 0.15f),
                                     contentColor = accentColor
                                 ),
-                                modifier = Modifier.size(50.dp)
+                                modifier = Modifier.size(52.dp)
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Fingerprint,

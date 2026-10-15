@@ -22,10 +22,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.UserDto
+import com.imei.inventory.ui.theme.*
 import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.ui.components.StatCard
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
+import com.imei.inventory.ui.components.formatDateToDDMMYYYY
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -68,27 +70,27 @@ fun StaffDashboardTab(
     }
 
     val lastSoldDate = remember(mySales) {
-        mySales.firstOrNull()?.createdAt?.take(10) ?: "None yet"
+        formatDateToDDMMYYYY(mySales.firstOrNull()?.createdAt, "None yet")
     }
 
     val latestReceivedDate = remember(myDevices) {
-        myDevices.mapNotNull { it.receivedDateBd ?: it.createdAt?.take(10) }.maxOrNull() ?: "Recent"
+        val raw = myDevices.mapNotNull { it.receivedDateBd ?: it.createdAt }.maxOrNull()
+        formatDateToDDMMYYYY(raw, "Recent")
     }
 
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        // 1. Staff Hero Card
+        // 1. Staff Hero Card - M3 Expressive
         item {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 2.dp,
-                shadowElevation = 2.dp
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
             ) {
                 Box(
                     modifier = Modifier
@@ -96,12 +98,12 @@ fun StaffDashboardTab(
                         .background(
                             brush = Brush.linearGradient(
                                 colors = listOf(
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                                    MaterialTheme.colorScheme.surface
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                    MaterialTheme.colorScheme.surfaceContainerLow
                                 )
                             )
                         )
-                        .padding(horizontal = 14.dp, vertical = 12.dp)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -114,24 +116,24 @@ fun StaffDashboardTab(
                         ) {
                             Surface(
                                 color = MaterialTheme.colorScheme.primary,
-                                shape = CircleShape,
-                                modifier = Modifier.size(40.dp)
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.size(34.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Text(
                                         text = (currentUser?.firstName?.firstOrNull() ?: currentUser?.username?.firstOrNull() ?: 'S').uppercase(),
                                         color = Color.White,
                                         fontWeight = FontWeight.ExtraBold,
-                                        fontSize = 17.sp
+                                        fontSize = 15.sp
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
                             Column {
                                 Text(
                                     text = "Welcome, ${currentUser?.firstName ?: (currentUser?.username ?: "Staff")} 👋",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 15.5.sp,
+                                    fontSize = 14.5.sp,
                                     color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1
                                 )
@@ -147,23 +149,24 @@ fun StaffDashboardTab(
                         Spacer(modifier = Modifier.width(6.dp))
 
                         Surface(
-                            color = Color(0xFF16A34A).copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(14.dp)
+                            color = AccentEmerald.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(percent = 50),
+                            border = BorderStroke(1.dp, AccentEmerald.copy(alpha = 0.25f))
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.5.dp)
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
                                 Box(
                                     modifier = Modifier
                                         .size(5.dp)
-                                        .background(Color(0xFF16A34A), CircleShape)
+                                        .background(AccentEmerald, CircleShape)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "In Custody",
-                                    color = Color(0xFF16A34A),
-                                    fontSize = 10.5.sp,
+                                    color = AccentEmerald,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
                                     softWrap = false
@@ -175,22 +178,22 @@ fun StaffDashboardTab(
             }
         }
 
-        // 2. Focused 4 Stat Cards
+        // 2. Focused 4 Stat Cards (Original Design Preserved)
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatCard(
-                        title = "DEVICES IN CUSTODY",
+                        title = "IN CUSTODY",
                         value = "$inCustodyCount",
                         imageVector = Icons.Default.PhoneAndroid,
                         accentColor = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
-                        title = "LAST SOLD DATE",
+                        title = "LAST SOLD",
                         value = lastSoldDate,
                         imageVector = Icons.Default.CalendarToday,
-                        accentColor = Color(0xFF10B981),
+                        accentColor = AccentEmerald,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -199,14 +202,14 @@ fun StaffDashboardTab(
                         title = "LATEST RECEIVED",
                         value = latestReceivedDate,
                         imageVector = Icons.Default.LocalShipping,
-                        accentColor = Color(0xFF8B5CF6),
+                        accentColor = AccentPurple,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "PERFORMANCE",
                         value = if (mySales.size >= 5) "Top Seller" else if (mySales.isNotEmpty()) "Good" else "Active",
                         imageVector = Icons.Default.EmojiEvents,
-                        accentColor = Color(0xFFF59E0B),
+                        accentColor = AccentAmber,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -219,21 +222,30 @@ fun StaffDashboardTab(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.PhoneAndroid,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            modifier = Modifier.size(36.dp)
-                        )
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                            modifier = Modifier.size(42.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.PhoneAndroid,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    modifier = Modifier.size(22.dp)
+                                )
+                            }
+                        }
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "No devices are currently in your custody.",
@@ -257,6 +269,70 @@ fun StaffDashboardTab(
 }
 
 @Composable
+private fun StaffDashboardStatCard(
+    title: String,
+    value: String,
+    imageVector: androidx.compose.ui.graphics.vector.ImageVector,
+    accentColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        shape = RoundedCornerShape(10.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 9.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title.uppercase(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 8.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.3.sp,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
+                )
+                Surface(
+                    color = accentColor.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(6.dp),
+                    modifier = Modifier.size(20.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = imageVector,
+                            contentDescription = null,
+                            tint = accentColor,
+                            modifier = Modifier.size(12.dp)
+                        )
+                    }
+                }
+            }
+
+            Text(
+                text = value,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.ExtraBold,
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
 fun StaffDeviceCard(
     device: DeviceDto,
     onClick: () -> Unit,
@@ -269,21 +345,19 @@ fun StaffDeviceCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp,
-        shadowElevation = 2.dp,
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(
             1.dp,
-            if (isPendingSale) Color(0xFFF59E0B).copy(alpha = 0.35f)
-            else MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)
+            if (isPendingSale) Color(0xFFF59E0B).copy(alpha = 0.4f)
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
         )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(13.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             // Row 1: Model Name + Status Badge
             Row(
@@ -295,29 +369,38 @@ fun StaffDeviceCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f, fill = false)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.PhoneAndroid,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.PhoneAndroid,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = device.model,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
+                        fontSize = 13.5.sp,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
                 }
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 StatusBadge(device.currentStatus, device.statusDisplay)
             }
 
             // Row 2: Specs Pill Chips
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 device.capacity?.takeIf { it.isNotBlank() }?.let { cap ->
@@ -329,31 +412,22 @@ fun StaffDeviceCard(
                     SpecPill(text = firstColorWord, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 device.variant?.takeIf { it.isNotBlank() }?.let { v ->
-                    SpecPill(text = v.trim(), color = Color(0xFF8B5CF6))
+                    SpecPill(text = v.trim(), color = AccentPurple)
                 }
                 if (device.batteryHealth != null) {
                     SpecPill(
                         text = "🔋 ${device.batteryHealth}%" + (device.batteryCycle?.let { " ($it)" } ?: ""),
-                        color = if ((device.batteryHealth ?: 100) >= 80) Color(0xFF16A34A) else Color(0xFFEAB308)
+                        color = if ((device.batteryHealth ?: 100) >= 80) AccentEmerald else AccentAmber
                     )
                 }
             }
 
-            // Row 3: Monospace IMEI Container
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                modifier = Modifier.fillMaxWidth()
+            // Row 3: Monospace IMEI (Reduced Compact Area)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CopyableText(label = "IMEI", value = device.imei)
-                }
+                CopyableText(label = "IMEI", value = device.imei)
             }
 
             // Row 4: Assigned Date (Left) + Action Button (Right)
@@ -367,11 +441,11 @@ fun StaffDeviceCard(
                         imageVector = Icons.Default.CalendarToday,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.size(12.dp)
+                        modifier = Modifier.size(11.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
                     Text(
-                        text = device.receivedDateBd ?: device.createdAt?.take(10) ?: "Assigned",
+                        text = formatDateToDDMMYYYY(device.receivedDateBd ?: device.createdAt, "Assigned"),
                         fontSize = 11.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -379,38 +453,38 @@ fun StaffDeviceCard(
 
                 if (isPendingSale) {
                     Surface(
-                        shape = RoundedCornerShape(7.dp),
-                        color = Color(0xFFF59E0B).copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f))
+                        shape = RoundedCornerShape(percent = 50),
+                        color = AccentAmber.copy(alpha = 0.12f),
+                        border = BorderStroke(0.8.dp, AccentAmber.copy(alpha = 0.3f))
                     ) {
                         Text(
                             text = "⏳ Pending Approval",
-                            color = Color(0xFFD97706),
+                            color = AccentAmber,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.5.dp)
+                            fontSize = 10.5.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
                 } else if (!isSold) {
                     Button(
                         onClick = onMarkSold,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        modifier = Modifier.height(30.dp)
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentEmerald),
+                        shape = RoundedCornerShape(percent = 50),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
+                        modifier = Modifier.height(28.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.PointOfSale,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(13.dp)
+                            modifier = Modifier.size(12.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = "Mark as Sold",
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 11.5.sp,
+                            fontSize = 11.sp,
                             maxLines = 1,
                             softWrap = false
                         )
@@ -428,17 +502,15 @@ private fun SpecPill(
 ) {
     Surface(
         color = color.copy(alpha = 0.09f),
-        shape = RoundedCornerShape(6.dp),
-        border = BorderStroke(0.7.dp, color.copy(alpha = 0.2f))
+        shape = RoundedCornerShape(percent = 50),
+        border = BorderStroke(0.8.dp, color.copy(alpha = 0.25f))
     ) {
         Text(
             text = text,
-            fontSize = 10.5.sp,
-            fontWeight = FontWeight.SemiBold,
             color = color,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-            maxLines = 1,
-            softWrap = false
+            fontSize = 9.5.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
         )
     }
 }

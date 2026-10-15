@@ -22,7 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
+import com.imei.inventory.ui.theme.*
 import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.ExpressiveSearchBar
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
 import com.imei.inventory.viewmodel.MainInventoryViewModel
@@ -134,10 +136,10 @@ fun InventoryTab(
                     onClick = onOpenAddDevice,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.size(52.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.size(56.dp)
                 ) {
-                    Text("+", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                    Text("+", fontSize = 28.sp, fontWeight = FontWeight.Bold)
                 }
             }
         },
@@ -147,24 +149,24 @@ fun InventoryTab(
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
-                .padding(horizontal = 14.dp, vertical = 6.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
             // Top Segmented Pill Toggle: [ Active | B2B | Archive ]
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(38.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(2.5.dp),
-                horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
+                    .padding(3.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 // Active Inventory Tab
                 Box(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(percent = 50))
                         .background(
                             if (selectedTab == 0) MaterialTheme.colorScheme.primary
                             else Color.Transparent
@@ -178,7 +180,7 @@ fun InventoryTab(
                     Text(
                         text = "Active ($activeCount)",
                         color = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
                     )
                 }
@@ -188,9 +190,9 @@ fun InventoryTab(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(percent = 50))
                         .background(
-                            if (selectedTab == 1) Color(0xFF8B5CF6)
+                            if (selectedTab == 1) MaterialTheme.colorScheme.primary
                             else Color.Transparent
                         )
                         .clickable {
@@ -202,7 +204,7 @@ fun InventoryTab(
                     Text(
                         text = "B2B ($b2bCount)",
                         color = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium
                     )
                 }
@@ -212,9 +214,9 @@ fun InventoryTab(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(8.dp))
+                        .clip(RoundedCornerShape(percent = 50))
                         .background(
-                            if (selectedTab == 2) Color(0xFFF59E0B)
+                            if (selectedTab == 2) MaterialTheme.colorScheme.primary
                             else Color.Transparent
                         )
                         .clickable {
@@ -226,49 +228,22 @@ fun InventoryTab(
                     Text(
                         text = "Archive ($archiveCount)",
                         color = if (selectedTab == 2) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = if (selectedTab == 2) FontWeight.Bold else FontWeight.Medium
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-            // Search Input (Compact 44dp height)
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = {
-                    Text(
-                        if (selectedTab == 0) "Search Active IMEI, Model, Owner..."
-                        else "Search Sold Archive IMEI, Model...",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 13.sp
-                    )
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(10.dp),
-                trailingIcon = {
-                    if (searchQuery.isNotBlank()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Text("✕", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                        }
-                    }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
+            // Search Input (M3 Expressive Pill)
+            ExpressiveSearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                placeholder = if (selectedTab == 0) "Search Active IMEI, Model, Owner..." else "Search Sold Archive IMEI, Model..."
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Status Filter Row (only on Active Tab)
             if (selectedTab == 0) {
@@ -276,7 +251,7 @@ fun InventoryTab(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     activeStatusOptions.forEach { (statusKey, label) ->
                         val isSelected = selectedStatusFilter == statusKey
@@ -286,23 +261,28 @@ fun InventoryTab(
                             label = {
                                 Text(
                                     text = label,
-                                    fontSize = 11.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                    fontSize = 11.5.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                 )
                             },
-                            shape = RoundedCornerShape(6.dp),
-                            modifier = Modifier.height(28.dp),
+                            shape = RoundedCornerShape(percent = 50),
+                            modifier = Modifier.height(32.dp),
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = MaterialTheme.colorScheme.primary,
                                 selectedLabelColor = Color.White,
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                containerColor = MaterialTheme.colorScheme.surface,
                                 labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant,
+                                enabled = true,
+                                selected = isSelected
                             )
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
             }
 
             // Variant & Owner Filter Row
@@ -310,7 +290,7 @@ fun InventoryTab(
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // Owner Filters
                 ownerOptions.forEach { ownerName ->
@@ -337,17 +317,22 @@ fun InventoryTab(
                         label = {
                             Text(
                                 text = ownerName,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                fontSize = 11.5.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             )
                         },
-                        shape = RoundedCornerShape(6.dp),
-                        modifier = Modifier.height(28.dp),
+                        shape = RoundedCornerShape(percent = 50),
+                        modifier = Modifier.height(32.dp),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFF0284C7),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = Color.White,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            containerColor = MaterialTheme.colorScheme.surface,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant,
+                            enabled = true,
+                            selected = isSelected
                         )
                     )
                 }
@@ -361,17 +346,22 @@ fun InventoryTab(
                         label = {
                             Text(
                                 text = label,
-                                fontSize = 11.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                fontSize = 11.5.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                             )
                         },
-                        shape = RoundedCornerShape(6.dp),
-                        modifier = Modifier.height(28.dp),
+                        shape = RoundedCornerShape(percent = 50),
+                        modifier = Modifier.height(32.dp),
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = Color(0xFFF97316),
+                            selectedContainerColor = MaterialTheme.colorScheme.primary,
                             selectedLabelColor = Color.White,
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            containerColor = MaterialTheme.colorScheme.surface,
                             labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            borderColor = if (isSelected) Color.Transparent else MaterialTheme.colorScheme.outlineVariant,
+                            enabled = true,
+                            selected = isSelected
                         )
                     )
                 }
@@ -464,11 +454,12 @@ fun CompactDeviceCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(10.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     ) {
-        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
             // Row 1: Model Name + Variant Badge + Status Badge
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -490,7 +481,7 @@ fun CompactDeviceCard(
 
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Row 2: IMEI + Storage + Battery Health & Cycle Count
+            // Row 2: Monospace Copyable IMEI + Storage + Battery
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -500,7 +491,7 @@ fun CompactDeviceCard(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     device.capacity?.let {
-                        Text(it, color = MaterialTheme.colorScheme.primary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        Text(it, color = MaterialTheme.colorScheme.onSurface, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                     if (device.batteryHealth != null || device.batteryCycle != null) {
                         val batteryText = buildString {
@@ -511,7 +502,7 @@ fun CompactDeviceCard(
                                 append("${device.batteryCycle}c")
                             }
                         }
-                        Text(batteryText, color = Color(0xFF16A34A), fontSize = 11.sp, fontWeight = FontWeight.Medium)
+                        Text(batteryText, color = AccentEmerald, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -532,22 +523,22 @@ fun CompactDeviceCard(
                     }
                     Text(
                         text = priceDisplay,
-                        color = Color(0xFF16A34A),
-                        fontSize = 12.sp,
+                        color = AccentEmerald,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold
                     )
 
                     // Quick Un-Archive Button
                     Button(
                         onClick = onRestoreToStock,
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                        shape = RoundedCornerShape(6.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                        shape = RoundedCornerShape(percent = 50),
                         modifier = Modifier.height(26.dp)
                     ) {
                         Text(
                             text = "↺ Restore to Stock",
-                            fontSize = 10.sp,
+                            fontSize = 10.5.sp,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Bold
                         )
@@ -557,12 +548,12 @@ fun CompactDeviceCard(
                         val shopName = if (!device.b2bShopName.isNullOrBlank()) device.b2bShopName else "B2B Shop Client"
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
                         ) {
                             Text(
                                 text = "🏪 $shopName",
-                                color = Color(0xFF8B5CF6),
-                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontSize = 11.5.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -578,12 +569,12 @@ fun CompactDeviceCard(
                                 imageVector = Icons.Default.Person,
                                 contentDescription = null,
                                 modifier = Modifier.size(13.dp),
-                                tint = if (isUnassigned) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7)
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = ownerName,
-                                color = if (isUnassigned) MaterialTheme.colorScheme.onSurfaceVariant else Color(0xFF0284C7),
-                                fontSize = 11.sp,
+                                color = if (isUnassigned) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
+                                fontSize = 11.5.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }
@@ -592,15 +583,15 @@ fun CompactDeviceCard(
                     Box {
                         Button(
                             onClick = { expandedMenu = true },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
-                            shape = RoundedCornerShape(6.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                            shape = RoundedCornerShape(percent = 50),
                             modifier = Modifier.height(26.dp)
                         ) {
                             Text(
                                 text = "Status ▾",
-                                fontSize = 10.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 10.5.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 fontWeight = FontWeight.SemiBold
                             )
                         }

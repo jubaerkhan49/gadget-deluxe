@@ -1,14 +1,20 @@
 package com.imei.inventory.ui.screens
 
+import android.widget.Toast
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocalShipping
@@ -19,12 +25,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.ShipmentDto
+import com.imei.inventory.ui.components.formatDateToDDMMYYYY
+import com.imei.inventory.ui.theme.*
 import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.ExpressiveSearchBar
 import com.imei.inventory.ui.dialogs.EditShipmentDialog
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 
@@ -90,10 +102,10 @@ fun ShipmentsTab(
                     onClick = onOpenAddShipment,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = Color.White,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.size(52.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.size(56.dp)
                 ) {
-                    Text("+", fontSize = 26.sp, fontWeight = FontWeight.Bold)
+                    Text("+", fontSize = 28.sp, fontWeight = FontWeight.Bold)
                 }
             }
         },
@@ -105,13 +117,34 @@ fun ShipmentsTab(
                 .fillMaxSize()
                 .padding(horizontal = 14.dp, vertical = 8.dp)
         ) {
-            // Top Segmented Pill Toggle: [ Active Shipment | Archive ]
+            val activeBgColor by animateColorAsState(
+                targetValue = if (selectedTab == 0) MaterialTheme.colorScheme.primary else Color.Transparent,
+                animationSpec = tween(220),
+                label = "activeBg"
+            )
+            val activeContentColor by animateColorAsState(
+                targetValue = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                animationSpec = tween(220),
+                label = "activeContent"
+            )
+            val archiveBgColor by animateColorAsState(
+                targetValue = if (selectedTab == 1) MaterialTheme.colorScheme.primary else Color.Transparent,
+                animationSpec = tween(220),
+                label = "archiveBg"
+            )
+            val archiveContentColor by animateColorAsState(
+                targetValue = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                animationSpec = tween(220),
+                label = "archiveContent"
+            )
+
+            // Top Segmented Pill Toggle: [ Active Shipment | Archive ] - M3 Expressive
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .height(44.dp)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(MaterialTheme.colorScheme.surfaceContainer)
                     .padding(3.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
@@ -120,11 +153,8 @@ fun ShipmentsTab(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(
-                            if (selectedTab == 0) MaterialTheme.colorScheme.primary
-                            else Color.Transparent
-                        )
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(activeBgColor)
                         .clickable { selectedTab = 0 },
                     contentAlignment = Alignment.Center
                 ) {
@@ -136,12 +166,12 @@ fun ShipmentsTab(
                             imageVector = Icons.Default.LocalShipping,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = activeContentColor
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Active Shipment ($activeCount)",
-                            color = if (selectedTab == 0) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = activeContentColor,
                             fontSize = 12.sp,
                             fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Medium
                         )
@@ -153,11 +183,8 @@ fun ShipmentsTab(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(
-                            if (selectedTab == 1) MaterialTheme.colorScheme.primary
-                            else Color.Transparent
-                        )
+                        .clip(RoundedCornerShape(percent = 50))
+                        .background(archiveBgColor)
                         .clickable { selectedTab = 1 },
                     contentAlignment = Alignment.Center
                 ) {
@@ -169,12 +196,12 @@ fun ShipmentsTab(
                             imageVector = Icons.Default.Archive,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp),
-                            tint = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = archiveContentColor
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Archive ($archiveCount)",
-                            color = if (selectedTab == 1) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = archiveContentColor,
                             fontSize = 12.sp,
                             fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Medium
                         )
@@ -182,99 +209,71 @@ fun ShipmentsTab(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = {
-                    Text(
-                        if (selectedTab == 0) "Search active batches by tracking, supplier, agent..."
-                        else "Search archived batches...",
-                        fontSize = 13.sp
-                    )
-                },
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Search",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(18.dp)
-                    )
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotBlank()) {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Clear search",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
+            // Search Bar (M3 Expressive Compact Pill)
+            ExpressiveSearchBar(
+                query = searchQuery,
+                onQueryChange = { searchQuery = it },
+                placeholder = if (selectedTab == 0) "Search active batches by tracking, supplier, agent..." else "Search archived batches..."
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            if (isLoading && shipments.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
-                }
-            } else if (filteredShipments.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            imageVector = if (selectedTab == 0) Icons.Default.LocalShipping else Icons.Default.Archive,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            modifier = Modifier.size(48.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = if (searchQuery.isNotBlank()) "No matching shipments found"
-                            else if (selectedTab == 0) "No active shipment batches in transit"
-                            else "No archived shipment batches yet",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium
-                        )
-                        if (selectedTab == 1 && searchQuery.isBlank()) {
-                            Text(
-                                text = "Batches with all devices received into stock will appear here",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                fontSize = 12.sp,
-                                modifier = Modifier.padding(top = 4.dp)
+            AnimatedContent(
+                targetState = selectedTab,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(150, easing = FastOutSlowInEasing))
+                        .togetherWith(fadeOut(animationSpec = tween(100, easing = FastOutLinearInEasing)))
+                },
+                label = "ShipmentListTransition"
+            ) { tabIndex ->
+                if (isLoading && shipments.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                } else if (filteredShipments.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = if (tabIndex == 0) Icons.Default.LocalShipping else Icons.Default.Archive,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                modifier = Modifier.size(48.dp)
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = if (searchQuery.isNotBlank()) "No matching shipments found"
+                                else if (tabIndex == 0) "No active shipment batches in transit"
+                                else "No archived shipment batches yet",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                            if (tabIndex == 1 && searchQuery.isBlank()) {
+                                Text(
+                                    text = "Batches with all devices received into stock will appear here",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
                         }
                     }
-                }
-            } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(bottom = 80.dp)
-                ) {
-                    items(filteredShipments, key = { it.id }) { shipment ->
-                        ShipmentCard(
-                            shipment = shipment,
-                            isArchived = selectedTab == 1,
-                            onClick = { onSelectShipment(shipment) },
-                            onEdit = { shipmentToEdit = shipment },
-                            onDelete = { shipmentToDelete = shipment }
-                        )
+                } else {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        contentPadding = PaddingValues(bottom = 80.dp)
+                    ) {
+                        items(filteredShipments, key = { it.id }) { shipment ->
+                            ShipmentCard(
+                                shipment = shipment,
+                                isArchived = tabIndex == 1,
+                                onClick = { onSelectShipment(shipment) },
+                                onEdit = { shipmentToEdit = shipment },
+                                onDelete = { shipmentToDelete = shipment }
+                            )
+                        }
                     }
                 }
             }
@@ -301,8 +300,10 @@ fun ShipmentsTab(
     shipmentToDelete?.let { s ->
         AlertDialog(
             onDismissRequest = { shipmentToDelete = null },
-            title = { Text("Delete Shipment?", fontWeight = FontWeight.Bold) },
-            text = { Text("Are you sure you want to delete shipment #${s.trackingNumber}? Any linked devices will be detached from this shipment.") },
+            shape = RoundedCornerShape(20.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            title = { Text("Delete Shipment?", fontWeight = FontWeight.Bold, fontSize = 16.sp) },
+            text = { Text("Are you sure you want to delete shipment #${s.trackingNumber}? Any linked devices will be detached from this shipment.", fontSize = 13.sp) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -310,14 +311,22 @@ fun ShipmentsTab(
                         shipmentToDelete = null
                         viewModel.deleteShipment(token, toDel.id)
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                    shape = RoundedCornerShape(percent = 50),
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 2.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Delete", color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("Delete", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { shipmentToDelete = null }) {
-                    Text("Cancel")
+                TextButton(
+                    onClick = { shipmentToDelete = null },
+                    shape = RoundedCornerShape(percent = 50),
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp)
+                ) {
+                    Text("Cancel", fontSize = 12.sp)
                 }
             }
         )
@@ -335,171 +344,208 @@ fun ShipmentCard(
     val count = shipment.devicesCount
     val pendingCount = shipment.pendingDevicesCount
     val receivedCount = shipment.receivedDevicesCount
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            // Header Row: Top Title & Device Units Badge
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            // Header: Supplier Name & Units Pill
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = shipment.supplierName ?: "Supplier Order",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .padding(end = 8.dp)
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f), RoundedCornerShape(6.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocalShipping,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = shipment.supplierName ?: "Supplier Order",
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
+                // Status / Units Pill
                 if (isArchived) {
                     Surface(
-                        color = Color(0xFF10B981).copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(6.dp)
+                        color = AccentEmerald.copy(alpha = 0.12f),
+                        shape = RoundedCornerShape(percent = 50),
+                        border = BorderStroke(1.dp, AccentEmerald.copy(alpha = 0.25f))
                     ) {
                         Text(
                             text = "Received ($count)",
-                            color = Color(0xFF059669),
-                            fontSize = 11.sp,
+                            color = AccentEmerald,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
                 } else {
+                    val isPartiallyReceived = pendingCount > 0 && receivedCount > 0
                     Surface(
-                        color = if (pendingCount > 0) Color(0xFFF59E0B).copy(alpha = 0.15f) else MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(6.dp)
+                        color = if (isPartiallyReceived) AccentAmber.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        shape = RoundedCornerShape(percent = 50),
+                        border = BorderStroke(
+                            1.dp,
+                            if (isPartiallyReceived) AccentAmber.copy(alpha = 0.35f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)
+                        )
                     ) {
                         Text(
-                            text = if (pendingCount > 0 && receivedCount > 0) "$receivedCount/$count in BD" else "$count Units",
-                            color = if (pendingCount > 0) Color(0xFFD97706) else MaterialTheme.colorScheme.primary,
-                            fontSize = 11.sp,
+                            text = if (isPartiallyReceived) "$receivedCount/$count in BD" else "$count Units",
+                            color = if (isPartiallyReceived) AccentAmber else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 10.5.sp,
                             fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 1. Tracking #
-            CopyableText(label = "Tracking #", value = shipment.trackingNumber)
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // 2. Shipping Agent
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Middle: Tracking (copyable) & Shipping Agent
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerLow,
+                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)),
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Shipping Agent:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                Text(
-                    text = shipment.shippingCompany ?: "Standard Freight",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            // 3. Supplier
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Supplier:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                Text(
-                    text = shipment.supplierName ?: "Unknown",
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            // 4. Receive Date (CN) if available
-            if (!shipment.receiveDate.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Receive Date (CN):", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    // Tracking Click-to-copy
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clickable {
+                                clipboardManager.setText(AnnotatedString(shipment.trackingNumber))
+                                Toast.makeText(context, "Copied tracking: ${shipment.trackingNumber}", Toast.LENGTH_SHORT).show()
+                            }
+                    ) {
+                        Text(
+                            text = "Tracking: ",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 11.5.sp
+                        )
+                        Text(
+                            text = shipment.trackingNumber,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 11.5.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy",
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                            modifier = Modifier.size(11.dp)
+                        )
+                    }
+
+                    // Agent
                     Text(
-                        text = shipment.receiveDate.take(10),
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold
+                        text = shipment.shippingCompany ?: "Standard Freight",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // 5. Actions Row: Delete (Leftmost) | Edit & Details (Right)
+            // Bottom: Date (left) + Action Buttons (right)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Delete button at leftmost side
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Shipment",
-                        tint = Color(0xFFDC2626)
+                if (!shipment.receiveDate.isNullOrBlank()) {
+                    Text(
+                        text = "CN: ${formatDateToDDMMYYYY(shipment.receiveDate)}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                } else {
+                    Text(
+                        text = "CN: Pending",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        fontSize = 11.sp
                     )
                 }
 
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
-                        onClick = onEdit,
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                        modifier = Modifier.height(34.dp)
+                    Surface(
+                        onClick = onDelete,
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                        modifier = Modifier.size(26.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+                    }
+
+                    FilledTonalButton(
+                        onClick = onEdit,
+                        shape = RoundedCornerShape(percent = 50),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                        modifier = Modifier.height(26.dp),
+                        colors = ButtonDefaults.filledTonalButtonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            contentColor = MaterialTheme.colorScheme.onSurface
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Edit", color = MaterialTheme.colorScheme.primary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    ) {
+                        Text("Edit", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                     }
 
                     Button(
                         onClick = onClick,
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                        modifier = Modifier.height(34.dp)
+                        shape = RoundedCornerShape(percent = 50),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                        modifier = Modifier.height(26.dp)
                     ) {
-                        Text("Details", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text("Details", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

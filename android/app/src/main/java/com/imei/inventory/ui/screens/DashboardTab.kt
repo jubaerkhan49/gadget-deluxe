@@ -19,10 +19,12 @@ import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.DeviceSaleRequestDto
 import com.imei.inventory.data.model.UserDto
+import com.imei.inventory.ui.theme.*
 import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.ui.components.StatCard
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
+import com.imei.inventory.ui.components.formatDateToDDMMYYYY
 import com.imei.inventory.ui.components.formatIndianNumber
 import com.imei.inventory.viewmodel.MainInventoryViewModel
 
@@ -65,22 +67,22 @@ fun DashboardTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Pending Sale Approvals Alert Banner (Admin) - Compact & Elegant
+        // Pending Sale Approvals Alert Banner (Admin) - Harmonized M3 Expressive
         if (pendingSaleRequests.isNotEmpty()) {
             item {
                 val firstReq = pendingSaleRequests.first()
                 Surface(
                     onClick = { onOpenSaleApproval(firstReq) },
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color(0xFFFFFBEB),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.45f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 9.dp),
-                        verticalArrangement = Arrangement.spacedBy(5.dp)
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -89,19 +91,19 @@ fun DashboardTab(
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(7.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 Surface(
-                                    color = Color(0xFFD97706),
-                                    shape = RoundedCornerShape(6.dp),
-                                    modifier = Modifier.size(22.dp)
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.size(24.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             imageVector = Icons.Default.NotificationsActive,
                                             contentDescription = null,
                                             tint = Color.White,
-                                            modifier = Modifier.size(13.dp)
+                                            modifier = Modifier.size(14.dp)
                                         )
                                     }
                                 }
@@ -109,36 +111,36 @@ fun DashboardTab(
                                     text = if (pendingSaleRequests.size == 1) "Sale Approval Pending" else "${pendingSaleRequests.size} Sale Approvals Pending",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.5.sp,
-                                    color = Color(0xFF92400E)
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer
                                 )
                                 Surface(
-                                    color = Color(0xFFEF4444),
-                                    shape = RoundedCornerShape(4.dp)
+                                    color = AccentRose,
+                                    shape = RoundedCornerShape(percent = 50)
                                 ) {
                                     Text(
                                         text = "${pendingSaleRequests.size}",
                                         color = Color.White,
-                                        fontSize = 8.5.sp,
+                                        fontSize = 9.sp,
                                         fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 0.5.dp)
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
                                     )
                                 }
                             }
 
                             Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = Color(0xFFD97706),
-                                modifier = Modifier.height(24.dp)
+                                shape = RoundedCornerShape(percent = 50),
+                                color = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.height(26.dp)
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(horizontal = 8.dp)
+                                    modifier = Modifier.padding(horizontal = 10.dp)
                                 ) {
                                     Text(
                                         text = "Review →",
                                         color = Color.White,
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 10.5.sp
+                                        fontSize = 11.sp
                                     )
                                 }
                             }
@@ -153,7 +155,7 @@ fun DashboardTab(
                                 text = "${firstReq.deviceModel ?: "Device"} • ${firstReq.employeeName ?: (firstReq.employeeUsername ?: "Staff")}",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Medium,
-                                color = Color(0xFF1E293B),
+                                color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                                 modifier = Modifier.weight(1f, fill = false)
@@ -163,7 +165,7 @@ fun DashboardTab(
                                 text = "BDT ${formatIndianNumber(firstReq.proposedPrice)}",
                                 fontSize = 11.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF059669)
+                                color = AccentEmerald
                             )
                         }
                     }
@@ -203,7 +205,7 @@ fun DashboardTab(
                         title = "IN STOCK",
                         value = "${stats.inStock}",
                         imageVector = Icons.Default.CheckCircle,
-                        accentColor = Color(0xFF16A34A),
+                        accentColor = AccentEmerald,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -212,14 +214,14 @@ fun DashboardTab(
                         title = "UNDER REPAIR",
                         value = "${stats.underRepair}",
                         imageVector = Icons.Default.Build,
-                        accentColor = Color(0xFFD97706),
+                        accentColor = AccentAmber,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "SOLD UNITS",
                         value = "${stats.sold}",
                         imageVector = Icons.Default.ShoppingBag,
-                        accentColor = Color(0xFF2563EB),
+                        accentColor = AccentBlue,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -228,14 +230,14 @@ fun DashboardTab(
                         title = "TODAY'S SALES",
                         value = formatIndianNumber(stats.todaySalesAmount),
                         imageVector = Icons.Default.AttachMoney,
-                        accentColor = Color(0xFF059669),
+                        accentColor = AccentEmerald,
                         modifier = Modifier.weight(1f)
                     )
                     StatCard(
                         title = "TOTAL ASSETS",
                         value = formatIndianNumber(stats.totalAssets),
                         imageVector = Icons.Default.AccountBalance,
-                        accentColor = Color(0xFF2563EB),
+                        accentColor = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -251,36 +253,41 @@ fun DashboardTab(
                 fontWeight = FontWeight.SemiBold
             )
             Spacer(modifier = Modifier.height(8.dp))
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Button(
                     onClick = onOpenScanner,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.weight(1f)
+                    shape = RoundedCornerShape(percent = 50),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                    modifier = Modifier.weight(1f).height(42.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.QrCodeScanner,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(17.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Scan IMEI", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Scan IMEI", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
-                Button(
+                FilledTonalButton(
                     onClick = onOpenAddShipment,
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0D9488)),
-                    shape = RoundedCornerShape(10.dp),
-                    modifier = Modifier.weight(1f)
+                    colors = ButtonDefaults.filledTonalButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ),
+                    shape = RoundedCornerShape(percent = 50),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                    modifier = Modifier.weight(1f).height(42.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.LocalShipping,
                         contentDescription = null,
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(17.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("New Shipment", color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("New Shipment", color = MaterialTheme.colorScheme.primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -306,39 +313,47 @@ fun DashboardTab(
             item {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.08f))
+                    shape = RoundedCornerShape(20.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerLow,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(28.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.size(32.dp)
                             )
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = "Loading assigned inventory...",
-                                fontSize = 12.5.sp,
+                                fontSize = 13.sp,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         } else {
-                            Icon(
-                                imageVector = Icons.Default.PhoneAndroid,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                modifier = Modifier.size(36.dp)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                modifier = Modifier.size(52.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.PhoneAndroid,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = "No devices are currently assigned to your custody.",
-                                fontSize = 12.5.sp,
+                                fontSize = 13.sp,
                                 fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -368,14 +383,14 @@ fun AdminAssignedDeviceCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.5.dp),
-        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(13.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+                .padding(horizontal = 12.dp, vertical = 7.dp),
+            verticalArrangement = Arrangement.spacedBy(4.5.dp)
         ) {
             // Row 1: Model & Specs (Left) + StatusBadge (Right)
             Row(
@@ -410,22 +425,14 @@ fun AdminAssignedDeviceCard(
                 StatusBadge(device.currentStatus, device.statusDisplay)
             }
 
-            // Row 2: Monospace Copyable IMEI + Variant Badge
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
-                modifier = Modifier.fillMaxWidth()
+            // Row 2: Monospace Copyable IMEI + Variant Badge (compact inline row)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = 5.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CopyableText(label = "IMEI", value = device.imei)
-                    VariantBadge(device.variant)
-                }
+                CopyableText(label = "IMEI", value = device.imei)
+                VariantBadge(device.variant)
             }
 
             // Row 3: Battery Health & Cycle Count (Left) + Received Date (Right)
@@ -437,52 +444,52 @@ fun AdminAssignedDeviceCard(
                 // Battery Health + CC
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
                         text = "Battery:",
-                        fontSize = 11.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = device.batteryHealth?.let { "$it%" } ?: "—",
-                        fontSize = 11.5.sp,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     device.batteryCycle?.let { cc ->
                         Surface(
-                            color = Color(0xFF3B82F6).copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(4.dp),
-                            border = androidx.compose.foundation.BorderStroke(0.8.dp, Color(0xFF3B82F6).copy(alpha = 0.3f))
+                            color = AccentBlue.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(percent = 50),
+                            border = androidx.compose.foundation.BorderStroke(0.8.dp, AccentBlue.copy(alpha = 0.3f))
                         ) {
                             Text(
                                 text = "CC $cc",
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.ExtraBold,
+                                fontWeight = FontWeight.Bold,
                                 fontFamily = FontFamily.Monospace,
-                                color = Color(0xFF2563EB),
-                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                color = AccentBlue,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                             )
                         }
                     }
                 }
 
                 // Received Date
-                val recDate = device.receivedDateBd ?: device.createdAt?.take(10)
-                if (!recDate.isNullOrBlank()) {
+                val recDate = formatDateToDDMMYYYY(device.receivedDateBd ?: device.createdAt)
+                if (recDate.isNotBlank()) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.CalendarToday,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            modifier = Modifier.size(11.dp)
+                            modifier = Modifier.size(12.dp)
                         )
-                        Spacer(modifier = Modifier.width(3.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = recDate,
-                            fontSize = 11.sp,
+                            fontSize = 11.5.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

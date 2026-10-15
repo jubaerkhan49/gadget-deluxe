@@ -23,6 +23,8 @@ import com.imei.inventory.data.model.UserDto
 import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
+import com.imei.inventory.ui.components.formatDateToDDMMYYYY
+import com.imei.inventory.ui.theme.*
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -69,7 +71,7 @@ fun DeviceCheckInDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(28.dp),
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -82,15 +84,15 @@ fun DeviceCheckInDialog(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Surface(
-                        color = if (isAlreadyInStock) Color(0xFF16A34A).copy(alpha = 0.15f) else Color(0xFF3B82F6).copy(alpha = 0.15f),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.size(36.dp)
+                        color = if (isAlreadyInStock) AccentEmerald.copy(alpha = 0.15f) else AccentSky.copy(alpha = 0.15f),
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.size(38.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = if (isAlreadyInStock) Icons.Default.CheckCircle else Icons.Default.Inventory2,
                                 contentDescription = null,
-                                tint = if (isAlreadyInStock) Color(0xFF16A34A) else Color(0xFF3B82F6),
+                                tint = if (isAlreadyInStock) AccentEmerald else AccentSky,
                                 modifier = Modifier.size(20.dp)
                             )
                         }
@@ -104,7 +106,7 @@ fun DeviceCheckInDialog(
                         )
                         Text(
                             text = "Found in database",
-                            color = Color(0xFF94A3B8),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Medium
                         )
@@ -126,9 +128,9 @@ fun DeviceCheckInDialog(
                 // Notice banner if already in stock or waiting shipment
                 if (isAlreadyInStock) {
                     Surface(
-                        color = Color(0xFF16A34A).copy(alpha = 0.12f),
+                        color = AccentEmerald.copy(alpha = 0.12f),
                         shape = RoundedCornerShape(10.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF16A34A).copy(alpha = 0.35f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AccentEmerald.copy(alpha = 0.35f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -139,22 +141,22 @@ fun DeviceCheckInDialog(
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
-                                tint = Color(0xFF16A34A),
+                                tint = AccentEmerald,
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "Current Status: Already In Stock",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF16A34A)
+                                color = AccentEmerald
                             )
                         }
                     }
                 } else if (device.currentStatus.equals("WAITING_SHIPMENT", ignoreCase = true)) {
                     Surface(
-                        color = Color(0xFFF59E0B).copy(alpha = 0.12f),
+                        color = AccentAmber.copy(alpha = 0.12f),
                         shape = RoundedCornerShape(10.dp),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFF59E0B).copy(alpha = 0.35f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AccentAmber.copy(alpha = 0.35f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -165,14 +167,14 @@ fun DeviceCheckInDialog(
                             Icon(
                                 imageVector = Icons.Default.LocalShipping,
                                 contentDescription = null,
-                                tint = Color(0xFFF59E0B),
+                                tint = AccentAmber,
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
                                 text = "Current Status: Waiting Shipment",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFFF59E0B)
+                                color = AccentAmber
                             )
                         }
                     }
@@ -225,17 +227,17 @@ fun DeviceCheckInDialog(
                             ) {
                                 device.batteryHealth?.let { bh ->
                                     Surface(
-                                        color = Color(0xFF22C55E).copy(alpha = 0.12f),
+                                        color = AccentEmerald.copy(alpha = 0.12f),
                                         shape = RoundedCornerShape(6.dp),
-                                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF22C55E).copy(alpha = 0.3f))
+                                        border = androidx.compose.foundation.BorderStroke(1.dp, AccentEmerald.copy(alpha = 0.3f))
                                     ) {
                                         Row(
                                             modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                                         ) {
-                                            Icon(Icons.Default.BatteryChargingFull, contentDescription = null, modifier = Modifier.size(12.dp), tint = Color(0xFF22C55E))
-                                            Text("Battery: $bh%", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF22C55E))
+                                            Icon(Icons.Default.BatteryChargingFull, contentDescription = null, modifier = Modifier.size(12.dp), tint = AccentEmerald)
+                                            Text("Battery: $bh%", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = AccentEmerald)
                                         }
                                     }
                                 }
@@ -286,12 +288,12 @@ fun DeviceCheckInDialog(
                                 StatusBadge(device.currentStatus)
                                 if (isAlreadyInStock) {
                                     Surface(
-                                        color = Color(0xFF16A34A).copy(alpha = 0.15f),
+                                        color = AccentEmerald.copy(alpha = 0.15f),
                                         shape = RoundedCornerShape(6.dp)
                                     ) {
                                         Text(
                                             text = "✓ In Stock",
-                                            color = Color(0xFF16A34A),
+                                            color = AccentEmerald,
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -350,7 +352,7 @@ fun DeviceCheckInDialog(
                                             text = {
                                                 Text(
                                                     text = "-- Unassigned (None) --",
-                                                    color = Color(0xFFDC2626),
+                                                    color = MaterialTheme.colorScheme.error,
                                                     fontWeight = if (selectedOwnerId == null) FontWeight.Bold else FontWeight.Normal
                                                 )
                                             },
@@ -476,14 +478,14 @@ fun DeviceCheckInDialog(
                         if (isAlreadyInStock && !device.receivedDateBd.isNullOrBlank()) {
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Icon(Icons.Default.EventAvailable, contentDescription = null, modifier = Modifier.size(14.dp), tint = Color(0xFF16A34A))
+                                    Icon(Icons.Default.EventAvailable, contentDescription = null, modifier = Modifier.size(14.dp), tint = AccentEmerald)
                                     Text("Received Date (BD):", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 Text(
-                                    text = device.receivedDateBd,
+                                    text = formatDateToDDMMYYYY(device.receivedDateBd),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF16A34A)
+                                    color = AccentEmerald
                                 )
                             }
                         }
@@ -614,7 +616,7 @@ fun DeviceCheckInDialog(
                                 text = {
                                     Text(
                                         text = "-- Unassigned (None) --",
-                                        color = Color(0xFFDC2626),
+                                        color = MaterialTheme.colorScheme.error,
                                         fontWeight = if (selectedOwnerId == null) FontWeight.Bold else FontWeight.Normal
                                     )
                                 },
@@ -760,8 +762,8 @@ fun DeviceCheckInDialog(
                         onSaveCheckIn(updates)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp)
+                    shape = RoundedCornerShape(percent = 50),
+                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
                 ) {
                     Icon(Icons.Default.Save, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
@@ -771,8 +773,8 @@ fun DeviceCheckInDialog(
                 Button(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp)
+                    shape = RoundedCornerShape(percent = 50),
+                    contentPadding = PaddingValues(horizontal = 22.dp, vertical = 10.dp)
                 ) {
                     Text("Done", color = Color.White, fontWeight = FontWeight.Bold)
                 }
@@ -782,21 +784,24 @@ fun DeviceCheckInDialog(
             if (isAlreadyInStock && !isEditing) {
                 OutlinedButton(
                     onClick = { isEditing = true },
-                    shape = RoundedCornerShape(10.dp),
-                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
+                    shape = RoundedCornerShape(percent = 50),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp)
                 ) {
                     Icon(Icons.Default.Edit, contentDescription = "Edit Info", modifier = Modifier.size(15.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text("Edit Info", fontSize = 13.sp)
                 }
             } else {
-                TextButton(onClick = {
-                    if (isAlreadyInStock && isEditing) {
-                        isEditing = false
-                    } else {
-                        onDismiss()
-                    }
-                }) {
+                TextButton(
+                    onClick = {
+                        if (isAlreadyInStock && isEditing) {
+                            isEditing = false
+                        } else {
+                            onDismiss()
+                        }
+                    },
+                    shape = RoundedCornerShape(percent = 50)
+                ) {
                     Text("Cancel", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }

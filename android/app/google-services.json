@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "534432804520",
+    "project_id": "gadget-deluxe",
+    "storage_bucket": "gadget-deluxe.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:534432804520:android:c8926b06a3913e83fd9c9d",
+        "android_client_info": {
+          "package_name": "com.imei.inventory"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7_-2avqFHIk40270T3kmBfP_PlotwlAE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

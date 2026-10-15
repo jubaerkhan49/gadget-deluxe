@@ -9,7 +9,7 @@ from .views import (
     SickwParseAPIView, ExportDevicesCSVView, DashboardStatsAPIView,
     AnalyticsStatsAPIView, SyncStatusAPIView, OtherGoodsOrderViewSet, PublicOrderTrackingAPIView,
     EmployeeApplicationViewSet, EmployeeProfileUpdateRequestViewSet,
-    DeviceSaleRequestViewSet
+    DeviceSaleRequestViewSet, RegisterFCMTokenAPIView
 )
 
 app_name = 'api'
@@ -31,6 +31,7 @@ urlpatterns = [
     # JWT Auth Endpoints
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('auth/register-fcm-token/', RegisterFCMTokenAPIView.as_view(), name='register_fcm_token'),
 
     # OpenAPI / Swagger Documentation
     path('schema/', SpectacularAPIView.as_view(), name='schema'),

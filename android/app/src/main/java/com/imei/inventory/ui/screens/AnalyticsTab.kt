@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.imei.inventory.ui.theme.*
 import com.imei.inventory.data.model.AnalyticsResponseDto
 import com.imei.inventory.data.model.SellerRankingDto
 import com.imei.inventory.data.model.TopModelDto
@@ -48,8 +49,8 @@ fun AnalyticsTab(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 1. Header & Month Selector
         item {
@@ -62,13 +63,13 @@ fun AnalyticsTab(
                     Column {
                         Text(
                             text = "Business Analytics",
-                            fontSize = 22.sp,
+                            fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
                         Text(
                             text = "Monthly ROI, Team Rankings & Costs",
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -77,70 +78,82 @@ fun AnalyticsTab(
                         Surface(
                             onClick = { viewModel.resetToCurrentMonth(token) },
                             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(8.dp)
+                            shape = RoundedCornerShape(percent = 50),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
                         ) {
                             Text(
                                 text = "Current Month",
                                 color = MaterialTheme.colorScheme.primary,
-                                fontSize = 11.sp,
+                                fontSize = 10.5.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                             )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-                // Month Switcher Card
+                // Month Switcher Card - M3 Expressive Pill
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(14.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    shape = RoundedCornerShape(percent = 50),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                            .padding(horizontal = 6.dp, vertical = 2.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         IconButton(
                             onClick = { viewModel.prevMonth(token) },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(30.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ChevronLeft,
                                 contentDescription = "Previous Month",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CalendarMonth,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                modifier = Modifier.size(22.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.CalendarMonth,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                }
+                            }
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = analyticsData?.monthLabel ?: "Loading...",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 15.sp,
+                                fontSize = 13.5.sp,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
 
                         IconButton(
                             onClick = { viewModel.nextMonth(token) },
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(30.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.ChevronRight,
                                 contentDescription = "Next Month",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     }
@@ -172,11 +185,11 @@ fun AnalyticsTab(
 
             // 3. Primary KPI Cards Grid (Total Profit, Total Investment, Repair Costs, Shipping Costs)
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     // Row 1: Total Profit & Net Profit
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AnalyticsKpiCard(
                             modifier = Modifier.weight(1f),
@@ -184,7 +197,7 @@ fun AnalyticsTab(
                             value = "BDT ${formatIndianNumber(summary.totalProfit)}",
                             subValue = "Net: BDT ${formatIndianNumber(summary.netProfit)}",
                             icon = Icons.Default.TrendingUp,
-                            accentColor = Color(0xFF10B981),
+                            accentColor = AccentEmerald,
                             badge = if (summary.profitMargin > 0) "${summary.profitMargin}% Margin" else null
                         )
 
@@ -194,7 +207,7 @@ fun AnalyticsTab(
                             value = "BDT ${formatIndianNumber(summary.totalInvestment)}",
                             subValue = "${summary.totalDevicesInvested} devices (Avg ${formatIndianNumber(summary.avgInvestmentPerDevice)})",
                             icon = Icons.Default.AccountBalanceWallet,
-                            accentColor = Color(0xFF6366F1),
+                            accentColor = MaterialTheme.colorScheme.primary,
                             badge = if (summary.roiPercentage > 0) "${summary.roiPercentage}% ROI" else null
                         )
                     }
@@ -202,7 +215,7 @@ fun AnalyticsTab(
                     // Row 2: Repairs & Shipping Costs
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         AnalyticsKpiCard(
                             modifier = Modifier.weight(1f),
@@ -210,7 +223,7 @@ fun AnalyticsTab(
                             value = "BDT ${formatIndianNumber(summary.totalRepairCost)}",
                             subValue = "${summary.repairDevicesCount} units (${summary.repairsInProgress} in progress)",
                             icon = Icons.Default.Build,
-                            accentColor = Color(0xFFF59E0B)
+                            accentColor = AccentAmber
                         )
 
                         AnalyticsKpiCard(
@@ -219,7 +232,7 @@ fun AnalyticsTab(
                             value = "BDT ${formatIndianNumber(summary.totalShippingCost)}",
                             subValue = "${summary.shipmentBatchesCount} batches (${summary.shipmentDevicesCount} units)",
                             icon = Icons.Default.LocalShipping,
-                            accentColor = Color(0xFF06B6D4)
+                            accentColor = AccentSky
                         )
                     }
                 }
@@ -229,26 +242,27 @@ fun AnalyticsTab(
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                    shape = RoundedCornerShape(14.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
+                    Column(modifier = Modifier.padding(12.dp)) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Surface(
                                 color = Color(0xFFF59E0B).copy(alpha = 0.15f),
-                                shape = CircleShape,
-                                modifier = Modifier.size(32.dp)
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.size(28.dp)
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.EmojiEvents,
                                         contentDescription = null,
                                         tint = Color(0xFFF59E0B),
-                                        modifier = Modifier.size(18.dp)
+                                        modifier = Modifier.size(16.dp)
                                     )
                                 }
                             }
@@ -257,40 +271,40 @@ fun AnalyticsTab(
                                 Text(
                                     text = "Team Sales Leaderboard",
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp,
+                                    fontSize = 13.5.sp,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "Ranked by total profit & sales turnaround speed",
-                                    fontSize = 11.sp,
+                                    fontSize = 10.5.sp,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.height(14.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
                         if (data.sellersRanking.isEmpty()) {
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(vertical = 16.dp),
+                                    .padding(vertical = 12.dp),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
                                     text = "No sales recorded for this month",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 13.sp
+                                    fontSize = 12.sp
                                 )
                             }
                         } else {
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 data.sellersRanking.forEachIndexed { index, seller ->
                                     SellerLeaderboardRow(rank = index + 1, seller = seller)
                                     if (index < data.sellersRanking.size - 1) {
                                         HorizontalDivider(
-                                            modifier = Modifier.padding(vertical = 4.dp),
-                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                            modifier = Modifier.padding(vertical = 2.dp),
+                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                                         )
                                     }
                                 }
@@ -305,23 +319,24 @@ fun AnalyticsTab(
                 item {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                        shape = RoundedCornerShape(14.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
+                        Column(modifier = Modifier.padding(12.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
                                     color = Color(0xFF3B82F6).copy(alpha = 0.15f),
-                                    shape = CircleShape,
-                                    modifier = Modifier.size(32.dp)
+                                    shape = RoundedCornerShape(10.dp),
+                                    modifier = Modifier.size(28.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             imageVector = Icons.Default.PhoneAndroid,
                                             contentDescription = null,
                                             tint = Color(0xFF3B82F6),
-                                            modifier = Modifier.size(18.dp)
+                                            modifier = Modifier.size(16.dp)
                                         )
                                     }
                                 }
@@ -330,25 +345,25 @@ fun AnalyticsTab(
                                     Text(
                                         text = "Top Selling Models",
                                         fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp,
+                                        fontSize = 13.5.sp,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "High volume & high profit device types",
-                                        fontSize = 11.sp,
+                                        fontSize = 10.5.sp,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             data.topModels.forEachIndexed { index, model ->
                                 TopModelRow(model = model)
                                 if (index < data.topModels.size - 1) {
                                     HorizontalDivider(
-                                        modifier = Modifier.padding(vertical = 4.dp),
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                        modifier = Modifier.padding(vertical = 2.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                                     )
                                 }
                             }
@@ -370,19 +385,19 @@ fun BestSellerCard(bestSeller: SellerRankingDto) {
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                width = 1.5.dp,
+                width = 1.dp,
                 brush = Brush.linearGradient(
-                    colors = listOf(Color(0xFFF59E0B), Color(0xFF10B981))
+                    colors = listOf(AccentAmber, AccentEmerald)
                 ),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(14.dp)
             ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        shape = RoundedCornerShape(14.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -390,31 +405,31 @@ fun BestSellerCard(bestSeller: SellerRankingDto) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Surface(
-                        color = Color(0xFFF59E0B),
-                        shape = CircleShape,
-                        modifier = Modifier.size(36.dp)
+                        color = AccentAmber,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier.size(30.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Default.EmojiEvents,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(20.dp)
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }
-                    Spacer(modifier = Modifier.width(10.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Column {
                         Text(
                             text = "★ BEST SELLER OF THE MONTH",
-                            fontSize = 11.sp,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD97706),
+                            color = AccentAmber,
                             letterSpacing = 0.5.sp
                         )
                         Text(
                             text = bestSeller.displayName.ifBlank { bestSeller.username },
-                            fontSize = 18.sp,
+                            fontSize = 14.5.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
@@ -422,20 +437,21 @@ fun BestSellerCard(bestSeller: SellerRankingDto) {
                 }
 
                 Surface(
-                    color = Color(0xFF10B981).copy(alpha = 0.15f),
-                    shape = RoundedCornerShape(8.dp)
+                    color = AccentEmerald.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(percent = 50),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, AccentEmerald.copy(alpha = 0.3f))
                 ) {
                     Text(
                         text = "Rank #1",
-                        color = Color(0xFF059669),
-                        fontSize = 12.sp,
+                        color = AccentEmerald,
+                        fontSize = 10.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -444,33 +460,33 @@ fun BestSellerCard(bestSeller: SellerRankingDto) {
                 Column {
                     Text(
                         text = "Total Profit Generated",
-                        fontSize = 11.sp,
+                        fontSize = 9.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "BDT ${formatIndianNumber(bestSeller.totalProfit)}",
-                        fontSize = 16.sp,
+                        fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10B981)
+                        color = AccentEmerald
                     )
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = "Units Sold",
-                        fontSize = 11.sp,
+                        fontSize = 9.5.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "${bestSeller.unitsSold} devices",
-                        fontSize = 16.sp,
+                        fontSize = 13.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -478,14 +494,14 @@ fun BestSellerCard(bestSeller: SellerRankingDto) {
             ) {
                 Text(
                     text = "Turnaround: ${bestSeller.avgTurnaroundDays} days/unit",
-                    fontSize = 11.sp,
+                    fontSize = 9.5.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     text = "Consistency: ${bestSeller.consistencyScore}%",
-                    fontSize = 11.sp,
+                    fontSize = 9.5.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFF59E0B)
+                    color = AccentAmber
                 )
             }
         }
@@ -504,14 +520,15 @@ fun AnalyticsKpiCard(
 ) {
     Card(
         modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(14.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+        shape = RoundedCornerShape(12.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp)
+                .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -520,15 +537,15 @@ fun AnalyticsKpiCard(
             ) {
                 Surface(
                     color = accentColor.copy(alpha = 0.12f),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.size(30.dp)
+                    shape = RoundedCornerShape(7.dp),
+                    modifier = Modifier.size(26.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
                             imageVector = icon,
                             contentDescription = null,
                             tint = accentColor,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(14.dp)
                         )
                     }
                 }
@@ -536,24 +553,25 @@ fun AnalyticsKpiCard(
                 if (badge != null) {
                     Surface(
                         color = accentColor.copy(alpha = 0.12f),
-                        shape = RoundedCornerShape(6.dp)
+                        shape = RoundedCornerShape(percent = 50),
+                        border = androidx.compose.foundation.BorderStroke(0.8.dp, accentColor.copy(alpha = 0.25f))
                     ) {
                         Text(
                             text = badge,
                             color = accentColor,
-                            fontSize = 10.sp,
+                            fontSize = 9.sp,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.5.dp)
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(5.dp))
 
             Text(
                 text = title,
-                fontSize = 10.sp,
+                fontSize = 9.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 letterSpacing = 0.5.sp
@@ -561,18 +579,18 @@ fun AnalyticsKpiCard(
 
             Text(
                 text = value,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
+                fontSize = 13.5.sp,
+                fontWeight = FontWeight.ExtraBold,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
 
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(1.dp))
 
             Text(
                 text = subValue,
-                fontSize = 10.sp,
+                fontSize = 9.5.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -584,9 +602,9 @@ fun AnalyticsKpiCard(
 @Composable
 fun SellerLeaderboardRow(rank: Int, seller: SellerRankingDto) {
     val rankBadgeColor = when (rank) {
-        1 -> Color(0xFFF59E0B)
-        2 -> Color(0xFF94A3B8)
-        3 -> Color(0xFFB45309)
+        1 -> AccentAmber
+        2 -> MaterialTheme.colorScheme.surfaceContainerHighest
+        3 -> AccentAmber.copy(alpha = 0.7f)
         else -> MaterialTheme.colorScheme.surfaceVariant
     }
     val rankTextColor = if (rank <= 3) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
@@ -594,7 +612,7 @@ fun SellerLeaderboardRow(rank: Int, seller: SellerRankingDto) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -604,33 +622,33 @@ fun SellerLeaderboardRow(rank: Int, seller: SellerRankingDto) {
         ) {
             Surface(
                 color = rankBadgeColor,
-                shape = CircleShape,
-                modifier = Modifier.size(24.dp)
+                shape = RoundedCornerShape(percent = 50),
+                modifier = Modifier.size(22.dp)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
                         text = "#$rank",
-                        fontSize = 10.sp,
+                        fontSize = 9.5.sp,
                         fontWeight = FontWeight.Bold,
                         color = rankTextColor
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
             Column {
                 Text(
                     text = seller.displayName.ifBlank { seller.username },
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = "${seller.unitsSold} sold • ${seller.avgTurnaroundDays}d speed",
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -640,12 +658,12 @@ fun SellerLeaderboardRow(rank: Int, seller: SellerRankingDto) {
             Text(
                 text = "BDT ${formatIndianNumber(seller.totalProfit)}",
                 fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
-                color = Color(0xFF10B981)
+                fontSize = 12.sp,
+                color = AccentEmerald
             )
             Text(
                 text = "Rev: ${formatIndianNumber(seller.totalRevenue)}",
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -657,7 +675,7 @@ fun TopModelRow(model: TopModelDto) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 2.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -665,14 +683,14 @@ fun TopModelRow(model: TopModelDto) {
             Text(
                 text = model.model,
                 fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
+                fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "${model.unitsSold} units sold",
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -681,12 +699,12 @@ fun TopModelRow(model: TopModelDto) {
             Text(
                 text = "BDT ${formatIndianNumber(model.totalProfit)}",
                 fontWeight = FontWeight.Bold,
-                fontSize = 13.sp,
-                color = Color(0xFF10B981)
+                fontSize = 12.sp,
+                color = AccentEmerald
             )
             Text(
                 text = "Rev: ${formatIndianNumber(model.totalRevenue)}",
-                fontSize = 11.sp,
+                fontSize = 10.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

@@ -25,6 +25,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.imei.inventory.data.model.DeviceSaleRequestDto
 import com.imei.inventory.ui.components.formatIndianNumber
+import com.imei.inventory.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,8 +69,8 @@ fun AdminSaleApprovalDialog(
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight()
                 .padding(vertical = 10.dp),
-            shape = RoundedCornerShape(18.dp),
-            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
             shadowElevation = 12.dp
         ) {
@@ -77,10 +78,10 @@ fun AdminSaleApprovalDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                // Header (Ultra Compact)
+                // Header (Ultra Compact M3 Expressive)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -88,16 +89,16 @@ fun AdminSaleApprovalDialog(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            color = Color(0xFFF59E0B).copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.size(28.dp)
+                            color = AccentAmber.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.size(32.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.Verified,
                                     contentDescription = null,
-                                    tint = Color(0xFFD97706),
-                                    modifier = Modifier.size(16.dp)
+                                    tint = AccentAmber,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
@@ -201,18 +202,18 @@ fun AdminSaleApprovalDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             saleRequest.deviceVariant?.takeIf { it.isNotBlank() }?.let { v ->
-                                SummaryBadge(text = v, color = Color(0xFF8B5CF6))
+                                SummaryBadge(text = v, color = AccentPurple)
                             }
-                            saleRequest.deviceCapacity?.takeIf { it.isNotBlank() }?.let { c ->
+                            saleRequest.deviceCapacity?.takeIf { c -> c.isNotBlank() }?.let { c ->
                                 val cleanC = c.replace("gb", "", ignoreCase = true).trim() + "GB"
                                 SummaryBadge(text = cleanC, color = MaterialTheme.colorScheme.primary)
                             }
-                            saleRequest.deviceColor?.takeIf { it.isNotBlank() }?.let { col ->
+                            saleRequest.deviceColor?.takeIf { col -> col.isNotBlank() }?.let { col ->
                                 val cleanCol = col.trim().split(Regex("[ /,-]")).firstOrNull { it.isNotBlank() } ?: col.trim()
                                 SummaryBadge(text = cleanCol, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             if (saleRequest.deviceBatteryHealth != null) {
-                                SummaryBadge(text = "🔋 ${saleRequest.deviceBatteryHealth}%", color = Color(0xFF16A34A))
+                                SummaryBadge(text = "🔋 ${saleRequest.deviceBatteryHealth}%", color = AccentEmerald)
                             }
                         }
                     }
@@ -228,7 +229,7 @@ fun AdminSaleApprovalDialog(
                         value = employeePriceText,
                         onValueChange = { employeePriceText = it },
                         label = { Text("Sold Price *", fontSize = 10.5.sp) },
-                        prefix = { Text("৳", fontWeight = FontWeight.Bold, color = Color(0xFF059669), fontSize = 11.5.sp) },
+                        prefix = { Text("৳", fontWeight = FontWeight.Bold, color = AccentEmerald, fontSize = 11.5.sp) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(8.dp),
@@ -240,7 +241,7 @@ fun AdminSaleApprovalDialog(
                         value = commissionText,
                         onValueChange = { commissionText = it },
                         label = { Text("Commission", fontSize = 10.5.sp) },
-                        prefix = { Text("৳", fontWeight = FontWeight.Bold, color = Color(0xFFD97706), fontSize = 11.5.sp) },
+                        prefix = { Text("৳", fontWeight = FontWeight.Bold, color = AccentAmber, fontSize = 11.5.sp) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         shape = RoundedCornerShape(8.dp),
@@ -251,8 +252,8 @@ fun AdminSaleApprovalDialog(
                 // Auto-computed Final Net Amount Banner
                 Surface(
                     shape = RoundedCornerShape(8.dp),
-                    color = Color(0xFF10B981).copy(alpha = 0.10f),
-                    border = BorderStroke(0.8.dp, Color(0xFF10B981).copy(alpha = 0.35f)),
+                    color = AccentEmerald.copy(alpha = 0.10f),
+                    border = BorderStroke(0.8.dp, AccentEmerald.copy(alpha = 0.35f)),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -267,19 +268,19 @@ fun AdminSaleApprovalDialog(
                                 text = "Final Selling Amount (Net)",
                                 fontSize = 10.5.sp,
                                 fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF065F46)
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "৳${formatIndianNumber(employeePrice)} - ৳${formatIndianNumber(commissionVal)}",
                                 fontSize = 9.5.sp,
-                                color = Color(0xFF047857)
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         Text(
                             text = "BDT ${formatIndianNumber(finalSellingAmount)}",
                             fontWeight = FontWeight.ExtraBold,
                             fontSize = 14.5.sp,
-                            color = Color(0xFF059669)
+                            color = AccentEmerald
                         )
                     }
                 }
@@ -356,22 +357,22 @@ fun AdminSaleApprovalDialog(
                             onReject(saleRequest.id, notes.ifEmpty { null })
                         },
                         enabled = !isSubmitting,
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFEF4444)),
-                        border = BorderStroke(1.dp, Color(0xFFEF4444).copy(alpha = 0.5f)),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+                        shape = RoundedCornerShape(percent = 50),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                         modifier = Modifier
                             .weight(1f)
-                            .height(38.dp)
+                            .height(40.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Cancel,
                             contentDescription = null,
-                            tint = Color(0xFFEF4444),
-                            modifier = Modifier.size(14.dp)
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(15.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Reject", fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+                        Text("Reject", fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
 
                     Button(
@@ -384,12 +385,12 @@ fun AdminSaleApprovalDialog(
                             onApprove(saleRequest.id, finalSellingAmount, commissionVal, paymentMethod, notes.ifEmpty { null })
                         },
                         enabled = !isSubmitting,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentEmerald),
+                        shape = RoundedCornerShape(percent = 50),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                         modifier = Modifier
                             .weight(1.6f)
-                            .height(38.dp)
+                            .height(40.dp)
                     ) {
                         if (isSubmitting) {
                             CircularProgressIndicator(
@@ -402,13 +403,13 @@ fun AdminSaleApprovalDialog(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(15.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "Approve & Sell",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 11.5.sp,
+                                fontSize = 12.sp,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -424,15 +425,15 @@ fun AdminSaleApprovalDialog(
 private fun SummaryBadge(text: String, color: Color) {
     Surface(
         color = color.copy(alpha = 0.08f),
-        shape = RoundedCornerShape(4.dp),
-        border = BorderStroke(0.6.dp, color.copy(alpha = 0.2f))
+        shape = RoundedCornerShape(percent = 50),
+        border = BorderStroke(0.6.dp, color.copy(alpha = 0.25f))
     ) {
         Text(
             text = text,
-            fontSize = 9.5.sp,
+            fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold,
             color = color,
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
             maxLines = 1,
             softWrap = false
         )

@@ -29,6 +29,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.ui.components.StatusBadge
+import com.imei.inventory.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,8 +67,8 @@ fun MarkSoldDialog(
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight()
                 .padding(vertical = 12.dp),
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(28.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = 6.dp,
             shadowElevation = 12.dp
         ) {
@@ -75,8 +76,8 @@ fun MarkSoldDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(11.dp)
+                    .padding(18.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Header
                 Row(
@@ -86,16 +87,16 @@ fun MarkSoldDialog(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            color = Color(0xFF10B981).copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(10.dp),
-                            modifier = Modifier.size(36.dp)
+                            color = AccentEmerald.copy(alpha = 0.12f),
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.size(38.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = Icons.Default.PointOfSale,
                                     contentDescription = null,
-                                    tint = Color(0xFF10B981),
-                                    modifier = Modifier.size(19.dp)
+                                    tint = AccentEmerald,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -187,7 +188,7 @@ fun MarkSoldDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             device.variant?.takeIf { it.isNotBlank() }?.let { v ->
-                                SummaryChip(text = v.trim(), color = Color(0xFF8B5CF6))
+                                SummaryChip(text = v.trim(), color = AccentPurple)
                             }
                             device.capacity?.takeIf { it.isNotBlank() }?.let { cap ->
                                 val cleanCap = cap.replace("gb", "", ignoreCase = true).trim() + "GB"
@@ -204,8 +205,8 @@ fun MarkSoldDialog(
                 // Info Alert Banner
                 Surface(
                     shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFF3B82F6).copy(alpha = 0.08f),
-                    border = BorderStroke(1.dp, Color(0xFF3B82F6).copy(alpha = 0.2f))
+                    color = AccentSky.copy(alpha = 0.08f),
+                    border = BorderStroke(1.dp, AccentSky.copy(alpha = 0.2f))
                 ) {
                     Row(
                         modifier = Modifier
@@ -216,7 +217,7 @@ fun MarkSoldDialog(
                         Icon(
                             imageVector = Icons.Default.Info,
                             contentDescription = null,
-                            tint = Color(0xFF2563EB),
+                            tint = AccentSky,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(7.dp))
@@ -242,7 +243,7 @@ fun MarkSoldDialog(
                                 text = "BDT",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 11.sp,
-                                color = Color(0xFF10B981),
+                                color = AccentEmerald,
                                 modifier = Modifier.padding(start = 6.dp)
                             )
                         },
@@ -306,8 +307,8 @@ fun MarkSoldDialog(
                     OutlinedButton(
                         onClick = onDismiss,
                         enabled = !isSubmitting,
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        shape = RoundedCornerShape(percent = 50),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
                         modifier = Modifier
                             .weight(1f)
                             .height(42.dp)
@@ -326,9 +327,9 @@ fun MarkSoldDialog(
                             onSubmit(priceVal, paymentMethod, notes.trim().ifEmpty { null })
                         },
                         enabled = !isSubmitting,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentEmerald),
+                        shape = RoundedCornerShape(percent = 50),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
                         modifier = Modifier
                             .weight(1.4f)
                             .height(42.dp)
@@ -344,13 +345,13 @@ fun MarkSoldDialog(
                                 imageVector = Icons.Default.Payments,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(15.dp)
+                                modifier = Modifier.size(16.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = "Submit Request",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 12.sp,
+                                fontSize = 12.5.sp,
                                 maxLines = 1,
                                 softWrap = false
                             )
@@ -369,15 +370,15 @@ private fun SummaryChip(
 ) {
     Surface(
         color = color.copy(alpha = 0.09f),
-        shape = RoundedCornerShape(5.dp),
-        border = BorderStroke(0.6.dp, color.copy(alpha = 0.2f))
+        shape = RoundedCornerShape(percent = 50),
+        border = BorderStroke(0.7.dp, color.copy(alpha = 0.25f))
     ) {
         Text(
             text = text,
-            fontSize = 10.sp,
+            fontSize = 10.5.sp,
             fontWeight = FontWeight.SemiBold,
             color = color,
-            modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.5.dp),
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp),
             maxLines = 1,
             softWrap = false
         )

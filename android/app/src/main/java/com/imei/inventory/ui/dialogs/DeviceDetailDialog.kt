@@ -23,6 +23,7 @@ import com.imei.inventory.data.model.UserDto
 import com.imei.inventory.ui.components.CopyableText
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
+import com.imei.inventory.ui.theme.*
 
 @Composable
 fun DeviceDetailDialog(
@@ -43,7 +44,7 @@ fun DeviceDetailDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(20.dp),
         title = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -54,7 +55,7 @@ fun DeviceDetailDialog(
                     text = device.model,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 19.sp
+                    fontSize = 17.sp
                 )
                 VariantBadge(device.variant)
             }
@@ -64,7 +65,7 @@ fun DeviceDetailDialog(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val isSold = device.currentStatus == "SOLD"
                 Row(
@@ -72,55 +73,49 @@ fun DeviceDetailDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Current Status:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    Text("Current Status:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     StatusBadge(device.currentStatus, device.statusDisplay)
                 }
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                // Identifiers
+                // Identifiers (IMEI only, Serial Number removed)
                 CopyableText(label = "Primary IMEI", value = device.imei)
-                device.imei2?.let { CopyableText(label = "IMEI 2", value = it) }
-                device.serialNumber?.let { CopyableText(label = "Serial Number", value = it) }
-                device.meid?.let { CopyableText(label = "MEID", value = it) }
+                if (!device.imei2.isNullOrBlank()) CopyableText(label = "IMEI 2", value = device.imei2)
+                if (!device.meid.isNullOrBlank()) CopyableText(label = "MEID", value = device.meid)
 
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
-                // Specs
+                // Specs (Compact 2-column layout)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Storage Capacity:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                    Text(device.capacity ?: "N/A", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Storage:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        Text(device.capacity ?: "N/A", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Color:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        Text(device.color ?: "N/A", color = MaterialTheme.colorScheme.onSurface, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                    }
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Color:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                    Text(device.color ?: "N/A", color = MaterialTheme.colorScheme.onSurface)
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Battery Health:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                    Text(
-                        if (device.batteryHealth != null) "${device.batteryHealth}%" else "N/A",
-                        color = Color(0xFF16A34A),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Battery Cycle Count:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                    Text(
-                        if (device.batteryCycle != null) "${device.batteryCycle} Cycles" else "N/A",
-                        color = Color(0xFF16A34A),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                device.buyingPrice?.let { price ->
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Buying Price:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                        Text("BDT $price", color = Color(0xFFD97706), fontWeight = FontWeight.SemiBold)
+                    val batteryStr = if (device.batteryHealth != null) {
+                        "${device.batteryHealth}%" + if (device.batteryCycle != null) " (${device.batteryCycle}c)" else ""
+                    } else "N/A"
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Battery:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        Text(batteryStr, color = AccentEmerald, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                    }
+                    device.buyingPrice?.let { price ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Buying:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text("BDT $price", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                        }
                     }
                 }
                 device.sellingPrice?.let { sPrice ->
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Selling Price:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
-                        Text("BDT $sPrice", color = Color(0xFF2563EB), fontWeight = FontWeight.Bold)
+                        Text("Selling Price:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                        Text("BDT $sPrice", color = AccentBlue, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
 
@@ -130,17 +125,17 @@ fun DeviceDetailDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Assigned to:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    Text("Assigned to:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                     
                     if (isAdmin) {
                         Box {
                             Surface(
                                 onClick = { showOwnerDropdown = true },
-                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
                                 shape = RoundedCornerShape(8.dp)
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
@@ -148,12 +143,12 @@ fun DeviceDetailDialog(
                                         text = device.currentOwnerName ?: "Unassigned",
                                         color = if (device.currentOwnerName != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                         fontWeight = FontWeight.SemiBold,
-                                        fontSize = 13.sp
+                                        fontSize = 12.sp
                                     )
                                     Text(
                                         text = "▾",
                                         color = MaterialTheme.colorScheme.primary,
-                                        fontSize = 12.sp,
+                                        fontSize = 11.sp,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -168,7 +163,7 @@ fun DeviceDetailDialog(
                                     text = {
                                         Text(
                                             text = "-- Unassigned (None) --",
-                                            color = Color(0xFFDC2626),
+                                            color = MaterialTheme.colorScheme.error,
                                             fontWeight = if (device.currentOwnerName == null) FontWeight.Bold else FontWeight.Normal
                                         )
                                     },
@@ -218,19 +213,19 @@ fun DeviceDetailDialog(
                             text = device.currentOwnerName ?: "Unassigned",
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
+                            fontSize = 12.sp
                         )
                     }
                 }
 
                 if (isAdmin) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
 
                     // Quick Status Changer with dynamic active color feedback
                     val isStock = device.currentStatus == "IN_STOCK"
                     val isRepair = device.currentStatus in listOf("UNDER_REPAIR", "REPAIR")
 
-                    Text("Update Device Status:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Update Device Status:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -238,15 +233,15 @@ fun DeviceDetailDialog(
                         Button(
                             onClick = { onStatusChange("IN_STOCK") },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isStock) Color(0xFF16A34A) else Color(0x1822C55E)
+                                containerColor = if (isStock) AccentEmerald else AccentEmerald.copy(alpha = 0.12f)
                             ),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                            shape = RoundedCornerShape(percent = 50),
+                            modifier = Modifier.weight(1f).height(30.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = if (isStock) "✓ In Stock" else "In Stock",
-                                color = if (isStock) Color.White else Color(0xFF16A34A),
+                                color = if (isStock) Color.White else AccentEmerald,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -254,15 +249,15 @@ fun DeviceDetailDialog(
                         Button(
                             onClick = { onStatusChange("UNDER_REPAIR") },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isRepair) Color(0xFFD97706) else Color(0x18EAB308)
+                                containerColor = if (isRepair) AccentAmber else AccentAmber.copy(alpha = 0.12f)
                             ),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                            shape = RoundedCornerShape(percent = 50),
+                            modifier = Modifier.weight(1f).height(30.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = if (isRepair) "✓ Repair" else "Repair",
-                                color = if (isRepair) Color.White else Color(0xFFCA8A04),
+                                color = if (isRepair) Color.White else AccentAmber,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -270,15 +265,15 @@ fun DeviceDetailDialog(
                         Button(
                             onClick = { onStatusChange("SOLD") },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSold) Color(0xFF2563EB) else Color(0x183B82F6)
+                                containerColor = if (isSold) AccentBlue else AccentBlue.copy(alpha = 0.12f)
                             ),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                            shape = RoundedCornerShape(percent = 50),
+                            modifier = Modifier.weight(1f).height(30.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = if (isSold) "✓ Sold" else "Sold",
-                                color = if (isSold) Color.White else Color(0xFF2563EB),
+                                color = if (isSold) Color.White else AccentBlue,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -300,7 +295,7 @@ fun DeviceDetailDialog(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFF3B82F6).copy(alpha = 0.08f), RoundedCornerShape(10.dp))
+                            .background(AccentBlue.copy(alpha = 0.08f), RoundedCornerShape(10.dp))
                             .padding(10.dp),
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
@@ -322,7 +317,7 @@ fun DeviceDetailDialog(
                                     isSaved = false
                                 },
                                 placeholder = { Text("e.g. 75000") },
-                                prefix = { Text("BDT ", fontWeight = FontWeight.Bold, color = Color(0xFF2563EB), fontSize = 13.sp) },
+                                prefix = { Text("BDT ", fontWeight = FontWeight.Bold, color = AccentBlue, fontSize = 13.sp) },
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                 singleLine = true,
                                 modifier = Modifier.weight(1f),
@@ -336,7 +331,7 @@ fun DeviceDetailDialog(
                                 },
                                 shape = RoundedCornerShape(8.dp),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (isSaved) Color(0xFF16A34A) else Color(0xFF2563EB)
+                                    containerColor = if (isSaved) AccentEmerald else AccentBlue
                                 ),
                                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp)
                             ) {
@@ -381,7 +376,7 @@ fun DeviceDetailDialog(
                         if (device.isB2B && !device.b2bIssueNotes.isNullOrBlank()) {
                             Text(
                                 text = "B2B Issue: ${device.b2bIssueNotes}",
-                                color = Color(0xFFDC2626),
+                                color = MaterialTheme.colorScheme.error,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -397,14 +392,20 @@ fun DeviceDetailDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (isAdmin) {
-                    IconButton(
-                        onClick = { showDeleteConfirm = true }
+                    Surface(
+                        onClick = { showDeleteConfirm = true },
+                        shape = RoundedCornerShape(percent = 50),
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+                        modifier = Modifier.size(32.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Device",
-                            tint = Color(0xFFDC2626)
-                        )
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Delete Device",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
 
                     Row(
@@ -413,13 +414,14 @@ fun DeviceDetailDialog(
                     ) {
                         OutlinedButton(
                             onClick = { showEditSpecsDialog = true },
-                            shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                            shape = RoundedCornerShape(percent = 50),
+                            modifier = Modifier.height(32.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
                                 contentDescription = null,
-                                modifier = Modifier.size(16.dp),
+                                modifier = Modifier.size(14.dp),
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Spacer(modifier = Modifier.width(4.dp))
@@ -427,21 +429,22 @@ fun DeviceDetailDialog(
                                 text = "Edit",
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 13.sp
+                                fontSize = 12.sp
                             )
                         }
 
                         Button(
                             onClick = onDismiss,
-                            shape = RoundedCornerShape(8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A)),
-                            contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
+                            shape = RoundedCornerShape(percent = 50),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+                            modifier = Modifier.height(32.dp),
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp)
                         ) {
                             Text(
                                 text = "Done",
                                 color = Color.White,
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp
+                                fontSize = 12.sp
                             )
                         }
                     }
@@ -459,9 +462,9 @@ fun DeviceDetailDialog(
                                     onDismiss()
                                     onOpenMarkSold(device)
                                 },
-                                shape = RoundedCornerShape(8.dp),
-                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF10B981)),
-                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                                shape = RoundedCornerShape(percent = 50),
+                                colors = ButtonDefaults.buttonColors(containerColor = AccentEmerald),
+                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
                             ) {
                                 Text(
                                     text = "Mark as Sold",
@@ -474,7 +477,7 @@ fun DeviceDetailDialog(
 
                         Button(
                             onClick = onDismiss,
-                            shape = RoundedCornerShape(8.dp),
+                            shape = RoundedCornerShape(percent = 50),
                             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
                             contentPadding = PaddingValues(horizontal = 18.dp, vertical = 6.dp)
                         ) {
@@ -516,7 +519,7 @@ fun DeviceDetailDialog(
                         onDelete()
                     },
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
                     Text("Yes, Delete", color = Color.White)
                 }

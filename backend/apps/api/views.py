@@ -14,7 +14,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from django.utils import timezone
 from django.core.cache import cache
-from apps.accounts.models import User, EmployeeApplication, EmployeeProfileUpdateRequest
+from apps.accounts.models import User, EmployeeApplication, EmployeeProfileUpdateRequest, FCMDeviceToken
 from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory, DeviceAssignment
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
@@ -22,6 +22,7 @@ from apps.sales.models import Sale, DeviceSaleRequest
 from apps.repairs.models import Repair, RepairStatus
 from apps.sickw.models import SickwReport
 from apps.sickw.parser import SickwParser
+from apps.core.fcm_utils import notify_admins_new_sale_request, notify_employee_sale_result
 
 from apps.orders.models import OtherGoodsOrder, TrackingStage, ProductCategory
 
@@ -191,6 +192,60 @@ class UserViewSet(viewsets.ModelViewSet):
             "success": True,
             "message": f"Employee @{username} and all associated data/storage deleted successfully."
         })
+
+    @action(detail=False, methods=['post'], url_path='register-fcm-token')
+    def register_fcm_token(self, request):
+        """
+        Registers an FCM device push token for the currently logged-in user.
+        Body: { "token": "...", "device_type": "android" }
+        """
+        token = request.data.get('token')
+        device_type = request.data.get('device_type', 'android')
+
+        if not token or not str(token).strip():
+            return Response({"error": "Device token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = str(token).strip()
+        fcm_obj, created = FCMDeviceToken.objects.update_or_create(
+            token=token,
+            defaults={'user': request.user, 'device_type': device_type}
+        )
+
+        return Response({
+            "success": True,
+            "message": "FCM device token registered successfully.",
+            "created": created,
+            "user": request.user.username
+        }, status=status.HTTP_200_OK)
+
+
+class RegisterFCMTokenAPIView(APIView):
+    """
+    Standalone endpoint for registering an FCM push notification token.
+    POST /api/auth/register-fcm-token/
+    Body: { "token": "...", "device_type": "android" }
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('token')
+        device_type = request.data.get('device_type', 'android')
+
+        if not token or not str(token).strip():
+            return Response({"error": "Device token is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        token = str(token).strip()
+        fcm_obj, created = FCMDeviceToken.objects.update_or_create(
+            token=token,
+            defaults={'user': request.user, 'device_type': device_type}
+        )
+
+        return Response({
+            "success": True,
+            "message": "FCM device token registered successfully.",
+            "created": created,
+            "user": request.user.username
+        }, status=status.HTTP_200_OK)
 
 
 class EmployeeApplicationViewSet(viewsets.ModelViewSet):
@@ -514,6 +569,12 @@ class DeviceSaleRequestViewSet(viewsets.ModelViewSet):
         except Exception:
             pass
 
+        # Trigger real-time push notification to employee
+        try:
+            notify_employee_sale_result(sale_req, approved=True)
+        except Exception:
+            pass
+
         return Response({
             "success": True,
             "message": f"Sale for {device.model} confirmed for BDT {selling_price}! Device is now marked as Sold.",
@@ -558,6 +619,12 @@ class DeviceSaleRequestViewSet(viewsets.ModelViewSet):
         # Invalidate dashboard stats and sync cache so client updates immediately
         try:
             cache.clear()
+        except Exception:
+            pass
+
+        # Trigger real-time push notification to employee
+        try:
+            notify_employee_sale_result(sale_req, approved=False)
         except Exception:
             pass
 
@@ -666,6 +733,12 @@ class DeviceViewSet(viewsets.ModelViewSet):
             old_state='In Stock',
             new_state=f"Marked as sold by @{user.username}. Awaiting admin price confirmation and approval."
         )
+
+        # Trigger real-time push notification to admins
+        try:
+            notify_admins_new_sale_request(sale_req)
+        except Exception:
+            pass
 
         return Response({
             "success": True,
@@ -925,6 +998,12 @@ class DeviceViewSet(viewsets.ModelViewSet):
             old_state=dict(DeviceStatus.choices).get(old_status, old_status),
             new_state=f"Marked as Pending Sale by @{user.username}{price_str}. Awaiting Admin Approval."
         )
+
+        # Trigger real-time push notification to admins
+        try:
+            notify_admins_new_sale_request(sale_req)
+        except Exception:
+            pass
 
         return Response({
             "success": True,

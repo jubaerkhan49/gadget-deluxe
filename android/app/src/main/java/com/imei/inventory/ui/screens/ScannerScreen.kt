@@ -1,7 +1,12 @@
 package com.imei.inventory.ui.screens
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,6 +17,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.api.ApiClient
 import com.imei.inventory.data.model.DeviceDto
+import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.ExpressiveSearchBar
+import com.imei.inventory.ui.components.StatusBadge
+import com.imei.inventory.ui.components.VariantBadge
 import kotlinx.coroutines.launch
 
 @Composable
@@ -28,7 +37,6 @@ fun ScannerScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0F172A))
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -37,35 +45,58 @@ fun ScannerScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("IMEI / Barcode Scanner", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
-            Button(
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.QrCodeScanner,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = "IMEI / Barcode Scanner",
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 18.sp
+                    )
+                    Text(
+                        text = "Verify device status instantly",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 11.5.sp
+                    )
+                }
+            }
+
+            IconButton(
                 onClick = onBack,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF334155))
+                modifier = Modifier.size(36.dp)
             ) {
-                Text("Back", color = Color.White)
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
             }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        OutlinedTextField(
-            value = scannedCode,
-            onValueChange = { scannedCode = it },
-            label = { Text("Scan or Enter IMEI / Serial") },
-            placeholder = { Text("e.g. 356789012345678", color = Color.DarkGray) },
-            singleLine = true,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = Color.White,
-                unfocusedTextColor = Color.White,
-                focusedBorderColor = Color(0xFF6366F1),
-                unfocusedBorderColor = Color(0xFF334155),
-                focusedLabelColor = Color(0xFF818CF8),
-                unfocusedLabelColor = Color(0xFF94A3B8)
-            ),
-            modifier = Modifier.fillMaxWidth()
+        ExpressiveSearchBar(
+            query = scannedCode,
+            onQueryChange = { scannedCode = it },
+            placeholder = "Scan or Enter IMEI / Serial..."
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         Button(
             onClick = {
@@ -88,38 +119,91 @@ fun ScannerScreen(
                     }
                 }
             },
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F46E5)),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            shape = RoundedCornerShape(percent = 50),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(48.dp)
+                .height(50.dp)
         ) {
             if (isSearching) {
-                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(22.dp))
             } else {
-                Text("Search & Verify IMEI", fontSize = 15.sp, color = Color.White)
+                Text("Verify IMEI in Cloud DB", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
 
         errorMessage?.let {
             Spacer(modifier = Modifier.height(14.dp))
-            Text(text = it, color = Color(0xFFF87171), fontSize = 13.sp)
+            Surface(
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = it,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    fontSize = 12.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
         scannedDevice?.let { dev ->
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B)),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
+                shape = RoundedCornerShape(20.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(text = "✅ Device Found in Cloud DB", color = Color(0xFF4ADE80), fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(text = dev.model, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                    Text(text = "IMEI: ${dev.imei}", color = Color(0xFFCBD5E1), fontSize = 13.sp)
-                    dev.serialNumber?.let { Text(text = "Serial: $it", color = Color(0xFF94A3B8), fontSize = 12.sp) }
-                    dev.variant?.let { Text(text = "Variant: $it", color = Color(0xFFF59E0B), fontSize = 12.sp) }
-                    Text(text = "Status: ${dev.statusDisplay ?: dev.currentStatus}", color = Color(0xFF818CF8), fontSize = 13.sp)
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFF10B981),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Text(
+                            text = "Device Verified in Cloud DB",
+                            color = Color(0xFF10B981),
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.sp
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = dev.model,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 17.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        StatusBadge(status = dev.currentStatus, statusDisplay = dev.statusDisplay)
+                    }
+
+                    CopyableText(label = "IMEI", value = dev.imei)
+
+                    if (!dev.serialNumber.isNullOrBlank()) {
+                        Text("Serial: ${dev.serialNumber}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    }
+                    if (!dev.variant.isNullOrBlank()) {
+                        VariantBadge(dev.variant)
+                    }
                 }
             }
         }
