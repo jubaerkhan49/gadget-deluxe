@@ -61,7 +61,9 @@ import {
   SimCard as SimCardIcon,
   QrCode2 as ModelCodeIcon,
   Tag as TagIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  RestartAlt as ResetIcon,
+  AccountBalanceWallet as BalanceIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { formatNumber, formatDate } from '../utils/formatters';
@@ -110,6 +112,43 @@ export default function DeviceDetailDrawer({
   const [fetchingSickwService, setFetchingSickwService] = useState(null); // '92' | '12' | '103' | null
   const [copiedReportId, setCopiedReportId] = useState(null);
   const [copiedField, setCopiedField] = useState(null);
+  const [sickwBalance, setSickwBalance] = useState(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false);
+  const [resettingSickw, setResettingSickw] = useState(false);
+
+  const loadSickwBalance = async () => {
+    try {
+      setLoadingBalance(true);
+      const res = await deviceApi.getSickwBalance();
+      if (res.data?.balance !== undefined) {
+        setSickwBalance(res.data.balance);
+      }
+    } catch (err) {
+      console.error('Failed to load Sickw balance:', err);
+    } finally {
+      setLoadingBalance(false);
+    }
+  };
+
+  const handleResetSickw = async () => {
+    if (!device?.id || resettingSickw) return;
+    try {
+      setResettingSickw(true);
+      const res = await deviceApi.resetSickw(device.id);
+      enqueueSnackbar(res.data?.message || 'Sickw diagnostic reports reset successfully', { variant: 'success' });
+      setResetConfirmOpen(false);
+      if (res.data?.device && onDeviceUpdated) {
+        onDeviceUpdated(res.data.device);
+      }
+      loadSickwBalance();
+    } catch (err) {
+      console.error('Failed to reset Sickw data:', err);
+      enqueueSnackbar(err.response?.data?.error || err.response?.data?.detail || 'Failed to reset Sickw reports', { variant: 'error' });
+    } finally {
+      setResettingSickw(false);
+    }
+  };
 
   const handleFetchSickw = async (serviceId) => {
     if (!device?.id || fetchingSickwService) return;
@@ -120,6 +159,7 @@ export default function DeviceDetailDrawer({
       if (res.data?.device && onDeviceUpdated) {
         onDeviceUpdated(res.data.device);
       }
+      loadSickwBalance();
     } catch (err) {
       console.error('Sickw fetch error:', err);
       const errorMsg = err.response?.data?.error || err.response?.data?.detail || 'Failed to fetch Sickw report. Please check API key, balance, or IMEI.';
@@ -158,6 +198,12 @@ export default function DeviceDetailDrawer({
       }
     }
   }, [open, device, isAdmin]);
+
+  useEffect(() => {
+    if (open && isAdmin && currentTab === 5 && sickwBalance === null && !loadingBalance) {
+      loadSickwBalance();
+    }
+  }, [open, isAdmin, currentTab]);
 
   const fetchUsers = async () => {
     try {
@@ -1366,13 +1412,61 @@ export default function DeviceDetailDrawer({
                       Live GSX Apple specifications, warranty, serial & carrier lock lookup
                     </Typography>
                   </Box>
-                  <Chip
-                    icon={<SickwIcon fontSize="small" sx={{ color: '#f59e0b !important' }} />}
-                    label={`IMEI: ${device.imei}`}
-                    variant="outlined"
-                    size="small"
-                    sx={{ fontWeight: 600, fontFamily: 'monospace' }}
-                  />
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                    {/* Live Balance Chip */}
+                    <Tooltip title="Sickw Account Balance (Click to refresh)">
+                      <Chip
+                        icon={loadingBalance ? <CircularProgress size={13} color="inherit" /> : <BalanceIcon fontSize="small" sx={{ color: '#10b981 !important' }} />}
+                        label={sickwBalance !== null ? `Balance: $${sickwBalance} USD` : (loadingBalance ? 'Checking...' : 'Check Balance')}
+                        variant="outlined"
+                        size="small"
+                        onClick={loadSickwBalance}
+                        sx={{
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          borderColor: '#10b981',
+                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.08)',
+                          color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669',
+                          '&:hover': {
+                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.22)' : 'rgba(16, 185, 129, 0.16)'
+                          }
+                        }}
+                      />
+                    </Tooltip>
+
+                    {/* Reset Icon Button */}
+                    <Tooltip title={sickwReports.length === 0 ? "No fetch data to reset" : "Reset all Sickw fetch reports & specs for this device"}>
+                      <span>
+                        <IconButton
+                          size="small"
+                          color="warning"
+                          disabled={resettingSickw || sickwReports.length === 0}
+                          onClick={() => setResetConfirmOpen(true)}
+                          sx={{
+                            border: 1,
+                            borderColor: 'divider',
+                            borderRadius: 1.5,
+                            p: 0.6,
+                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.06)',
+                            '&:hover': {
+                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.14)'
+                            }
+                          }}
+                        >
+                          {resettingSickw ? <CircularProgress size={16} color="inherit" /> : <ResetIcon fontSize="small" />}
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+
+                    {/* IMEI Chip */}
+                    <Chip
+                      icon={<SickwIcon fontSize="small" sx={{ color: '#f59e0b !important' }} />}
+                      label={`IMEI: ${device.imei}`}
+                      variant="outlined"
+                      size="small"
+                      sx={{ fontWeight: 600, fontFamily: 'monospace' }}
+                    />
+                  </Stack>
                 </Box>
 
                 {/* 3 FETCH SERVICE BUTTONS */}
@@ -1414,7 +1508,21 @@ export default function DeviceDetailDrawer({
                           >
                             <Box sx={{ mb: 1 }}>
                               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                                <Chip label="Service 92" size="small" color={is92Disabled ? 'default' : 'primary'} variant={is92Disabled ? 'outlined' : 'filled'} sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                  <Chip label="Service 92" size="small" color={is92Disabled ? 'default' : 'primary'} variant={is92Disabled ? 'outlined' : 'filled'} sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                                  <Chip
+                                    label={hasRun92 ? "Billed: $0.022" : "$0.022 USD"}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.65rem',
+                                      fontWeight: 700,
+                                      color: hasRun92 ? 'success.main' : 'text.secondary',
+                                      borderColor: hasRun92 ? 'success.main' : 'divider'
+                                    }}
+                                  />
+                                </Box>
                                 {hasRun92 ? (
                                   <Chip icon={<ActiveCheckIcon fontSize="small" />} label="Done" size="small" color="success" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
                                 ) : is92Covered ? (
@@ -1499,23 +1607,37 @@ export default function DeviceDetailDrawer({
                       >
                         <Box sx={{ mb: 1 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                            <Chip
-                              label="Service 12"
-                              size="small"
-                              variant={hasRun12 ? 'outlined' : 'filled'}
-                              sx={{
-                                height: 20,
-                                fontSize: '0.7rem',
-                                fontWeight: 700,
-                                bgcolor: hasRun12
-                                  ? (theme) => theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#e2e8f0'
-                                  : 'primary.main',
-                                color: hasRun12
-                                  ? (theme) => theme.palette.mode === 'dark' ? '#cbd5e1' : '#1e293b'
-                                  : '#ffffff',
-                                borderColor: hasRun12 ? 'divider' : 'transparent'
-                              }}
-                            />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                              <Chip
+                                label="Service 12"
+                                size="small"
+                                variant={hasRun12 ? 'outlined' : 'filled'}
+                                sx={{
+                                  height: 20,
+                                  fontSize: '0.7rem',
+                                  fontWeight: 700,
+                                  bgcolor: hasRun12
+                                    ? (theme) => theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#e2e8f0'
+                                    : 'primary.main',
+                                  color: hasRun12
+                                    ? (theme) => theme.palette.mode === 'dark' ? '#cbd5e1' : '#1e293b'
+                                    : '#ffffff',
+                                  borderColor: hasRun12 ? 'divider' : 'transparent'
+                                }}
+                              />
+                              <Chip
+                                label={hasRun12 ? "Billed: $0.025" : "$0.025 USD"}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  height: 20,
+                                  fontSize: '0.65rem',
+                                  fontWeight: 700,
+                                  color: hasRun12 ? 'success.main' : 'text.secondary',
+                                  borderColor: hasRun12 ? 'success.main' : 'divider'
+                                }}
+                              />
+                            </Box>
                             {hasRun12 && (
                               <Chip icon={<ActiveCheckIcon fontSize="small" />} label="Done" size="small" color="success" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
                             )}
@@ -1575,7 +1697,21 @@ export default function DeviceDetailDrawer({
                       >
                         <Box sx={{ mb: 1 }}>
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                            <Chip label="Service 103" size="small" color={hasRun103 ? 'default' : 'primary'} sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                              <Chip label="Service 103" size="small" color={hasRun103 ? 'default' : 'primary'} sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                              <Chip
+                                label={hasRun103 ? "Billed: $0.060" : "$0.060 USD"}
+                                size="small"
+                                variant="outlined"
+                                sx={{
+                                  height: 20,
+                                  fontSize: '0.65rem',
+                                  fontWeight: 700,
+                                  color: hasRun103 ? 'success.main' : 'text.secondary',
+                                  borderColor: hasRun103 ? 'success.main' : 'divider'
+                                }}
+                              />
+                            </Box>
                             {hasRun103 && (
                               <Chip icon={<ActiveCheckIcon fontSize="small" />} label="Done" size="small" color="success" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
                             )}
@@ -1816,109 +1952,151 @@ export default function DeviceDetailDrawer({
 
                 {/* RAW INFORMATION SECTION */}
                 <Box sx={{ mt: 3 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                    <Box>
-                      <Typography variant="subtitle2" fontWeight={700}>
-                        Raw API Response Information
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Exact diagnostic results returned by Sickw servers
-                      </Typography>
-                    </Box>
-                    <Typography variant="caption" color="text.secondary">
-                      {sickwReports.length} {sickwReports.length === 1 ? 'report' : 'reports'} recorded
-                    </Typography>
-                  </Box>
+                  {(() => {
+                    const servicePriceMap = { '92': 0.022, '12': 0.025, '103': 0.060 };
+                    const totalBilled = sickwReports.reduce((sum, sr) => {
+                      const p = parseFloat(sr.parsed_data?.price) || servicePriceMap[String(sr.service_id)] || 0;
+                      return sum + p;
+                    }, 0);
 
-                  {sickwReports.length === 0 ? (
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 4,
-                        textAlign: 'center',
-                        borderRadius: 2,
-                        backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.3)' : 'rgba(248, 250, 252, 0.5)'
-                      }}
-                    >
-                      <SickwIcon sx={{ fontSize: 36, color: 'text.secondary', mb: 1, opacity: 0.6 }} />
-                      <Typography variant="body2" fontWeight={600} color="text.secondary">
-                        No Sickw diagnostic reports attached to this IMEI yet.
-                      </Typography>
-                      <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
-                        Click Service 12, 92, or 103 above to run a live lookup.
-                      </Typography>
-                    </Paper>
-                  ) : (
-                    <Stack spacing={2}>
-                      {sickwReports.map((sr, idx) => {
-                        const srvLabel =
-                          String(sr.service_id) === '12'
-                            ? 'Service 12 (Model No & Specs)'
-                            : String(sr.service_id) === '92'
-                            ? 'Service 92 (Color Only)'
-                            : String(sr.service_id) === '103'
-                            ? 'Service 103 (Carrier & SIM Lock)'
-                            : sr.service_id
-                            ? `Service ${sr.service_id}`
-                            : 'Diagnostic Report';
+                    return (
+                      <>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                          <Box>
+                            <Typography variant="subtitle2" fontWeight={700}>
+                              Raw API Response Information
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Exact diagnostic results returned by Sickw servers
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {totalBilled > 0 && (
+                              <Chip
+                                size="small"
+                                label={`Total Billed: $${totalBilled.toFixed(3)} USD`}
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: '0.7rem',
+                                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
+                                  color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669',
+                                  height: 22
+                                }}
+                              />
+                            )}
+                            <Typography variant="caption" color="text.secondary">
+                              {sickwReports.length} {sickwReports.length === 1 ? 'report' : 'reports'} recorded
+                            </Typography>
+                          </Box>
+                        </Box>
 
-                        return (
+                        {sickwReports.length === 0 ? (
                           <Paper
-                            key={sr.id || idx}
                             variant="outlined"
                             sx={{
-                              p: 2,
+                              p: 4,
+                              textAlign: 'center',
                               borderRadius: 2,
-                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : '#ffffff'
+                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.3)' : 'rgba(248, 250, 252, 0.5)'
                             }}
                           >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
-                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Chip label={srvLabel} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
-                                <Typography variant="caption" color="text.secondary">
-                                  {sr.created_at ? new Date(sr.created_at).toLocaleString() : '—'}
-                                </Typography>
-                              </Box>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                startIcon={copiedReportId === sr.id ? <CheckmarkIcon fontSize="small" /> : <CopyIcon fontSize="small" />}
-                                onClick={() => handleCopyRaw(sr.raw_text, sr.id)}
-                                color={copiedReportId === sr.id ? 'success' : 'inherit'}
-                                sx={{ textTransform: 'none', fontWeight: 600 }}
-                              >
-                                {copiedReportId === sr.id ? 'Copied!' : 'Copy Raw Info'}
-                              </Button>
-                            </Box>
-
-                            {sr.raw_text ? (
-                              <Paper
-                                sx={{
-                                  p: 1.75,
-                                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#090d16' : '#1e293b',
-                                  color: '#38bdf8',
-                                  borderRadius: 1.5,
-                                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                                  fontSize: '0.78rem',
-                                  lineHeight: 1.5,
-                                  whiteSpace: 'pre-wrap',
-                                  wordBreak: 'break-word',
-                                  maxHeight: 280,
-                                  overflowY: 'auto'
-                                }}
-                              >
-                                {sr.raw_text}
-                              </Paper>
-                            ) : (
-                              <Typography variant="caption" color="text.secondary">
-                                No raw payload text recorded.
-                              </Typography>
-                            )}
+                            <SickwIcon sx={{ fontSize: 36, color: 'text.secondary', mb: 1, opacity: 0.6 }} />
+                            <Typography variant="body2" fontWeight={600} color="text.secondary">
+                              No Sickw diagnostic reports attached to this IMEI yet.
+                            </Typography>
+                            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
+                              Click Service 12, 92, or 103 above to run a live lookup.
+                            </Typography>
                           </Paper>
-                        );
-                      })}
-                    </Stack>
-                  )}
+                        ) : (
+                          <Stack spacing={2}>
+                            {sickwReports.map((sr, idx) => {
+                              const srvLabel =
+                                String(sr.service_id) === '12'
+                                  ? 'Service 12 (Model No & Specs)'
+                                  : String(sr.service_id) === '92'
+                                  ? 'Service 92 (Color Only)'
+                                  : String(sr.service_id) === '103'
+                                  ? 'Service 103 (Carrier & SIM Lock)'
+                                  : sr.service_id
+                                  ? `Service ${sr.service_id}`
+                                  : 'Diagnostic Report';
+
+                              const billedAmt = sr.parsed_data?.price || servicePriceMap[String(sr.service_id)] || '0.000';
+
+                              return (
+                                <Paper
+                                  key={sr.id || idx}
+                                  variant="outlined"
+                                  sx={{
+                                    p: 2,
+                                    borderRadius: 2,
+                                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : '#ffffff'
+                                  }}
+                                >
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                                      <Chip label={srvLabel} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
+                                      <Chip
+                                        label={`Billed: $${billedAmt} USD`}
+                                        size="small"
+                                        variant="outlined"
+                                        sx={{
+                                          fontWeight: 700,
+                                          fontSize: '0.68rem',
+                                          height: 20,
+                                          color: 'success.main',
+                                          borderColor: 'success.main',
+                                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)'
+                                        }}
+                                      />
+                                      <Typography variant="caption" color="text.secondary">
+                                        {sr.created_at ? new Date(sr.created_at).toLocaleString() : '—'}
+                                      </Typography>
+                                    </Box>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      startIcon={copiedReportId === sr.id ? <CheckmarkIcon fontSize="small" /> : <CopyIcon fontSize="small" />}
+                                      onClick={() => handleCopyRaw(sr.raw_text, sr.id)}
+                                      color={copiedReportId === sr.id ? 'success' : 'inherit'}
+                                      sx={{ textTransform: 'none', fontWeight: 600 }}
+                                    >
+                                      {copiedReportId === sr.id ? 'Copied!' : 'Copy Raw Info'}
+                                    </Button>
+                                  </Box>
+
+                                  {sr.raw_text ? (
+                                    <Paper
+                                      sx={{
+                                        p: 1.75,
+                                        backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#090d16' : '#1e293b',
+                                        color: '#38bdf8',
+                                        borderRadius: 1.5,
+                                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                                        fontSize: '0.78rem',
+                                        lineHeight: 1.5,
+                                        whiteSpace: 'pre-wrap',
+                                        wordBreak: 'break-word',
+                                        maxHeight: 280,
+                                        overflowY: 'auto'
+                                      }}
+                                    >
+                                      {sr.raw_text}
+                                    </Paper>
+                                  ) : (
+                                    <Typography variant="caption" color="text.secondary">
+                                      No raw payload text recorded.
+                                    </Typography>
+                                  )}
+                                </Paper>
+                              );
+                            })}
+                          </Stack>
+                        )}
+                      </>
+                    );
+                  })()}
                 </Box>
               </Box>
             );
@@ -1989,6 +2167,39 @@ export default function DeviceDetailDrawer({
             startIcon={deleting ? <CircularProgress size={16} color="inherit" /> : <DeleteIcon />}
           >
             {deleting ? 'Deleting...' : 'Delete Permanently'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Reset Sickw Confirmation Dialog */}
+      <Dialog
+        open={resetConfirmOpen}
+        onClose={() => !resettingSickw && setResetConfirmOpen(false)}
+      >
+        <DialogTitle sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+          <ResetIcon color="warning" /> Reset Sickw Diagnostic Data?
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to reset all fetched Sickw diagnostic reports for device{' '}
+            <strong>{device.imei}</strong>?
+          </DialogContentText>
+          <DialogContentText sx={{ mt: 1, fontSize: '0.85rem', color: 'text.secondary' }}>
+            This will clear {sickwReports.length} recorded diagnostic {sickwReports.length === 1 ? 'report' : 'reports'} and reset the motherboard verification highlight, allowing you to re-fetch any service from scratch.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setResetConfirmOpen(false)} disabled={resettingSickw} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleResetSickw}
+            disabled={resettingSickw}
+            startIcon={resettingSickw ? <CircularProgress size={16} color="inherit" /> : <ResetIcon />}
+          >
+            {resettingSickw ? 'Resetting...' : 'Reset All Fetch Data'}
           </Button>
         </DialogActions>
       </Dialog>

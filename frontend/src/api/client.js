@@ -101,6 +101,8 @@ export const deviceApi = {
   exportCSV: (params) => api.get('/api/devices/export-csv/', { params, responseType: 'blob' }),
   requestSale: (id, data) => api.post(`/api/devices/${id}/request-sale/`, data),
   fetchSickw: (id, service) => api.post(`/api/devices/${id}/fetch-sickw/`, { service }),
+  getSickwBalance: () => api.get('/api/devices/sickw-balance/'),
+  resetSickw: (id) => api.post(`/api/devices/${id}/reset-sickw/`),
 };
 
 export const deviceSaleRequestApi = {

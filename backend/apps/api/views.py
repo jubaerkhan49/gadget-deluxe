@@ -904,6 +904,19 @@ class DeviceViewSet(viewsets.ModelViewSet):
             except Exception:
                 purchase_date = None
 
+        service_prices = {
+            '92': '0.022',
+            '12': '0.025',
+            '103': '0.060'
+        }
+        billed_price = None
+        if isinstance(data, dict):
+            billed_price = data.get('price') or data.get('cost') or data.get('amount')
+        if not billed_price:
+            billed_price = service_prices.get(service_id, '0.000')
+
+        parsed['price'] = billed_price
+
         report = SickwReport.objects.create(
             device=device,
             service_id=service_id,
@@ -980,7 +993,76 @@ class DeviceViewSet(viewsets.ModelViewSet):
         return Response({
             "success": True,
             "message": f"Sickw Service {service_id} check completed successfully!",
+            "price": billed_price,
             "report": SickwReportSerializer(report).data,
+            "device": DeviceSerializer(device, context={'request': request}).data
+        })
+
+    @action(detail=False, methods=['get'], url_path='sickw-balance')
+    def sickw_balance(self, request):
+        """
+        Fetches the live Sickw API account balance in USD.
+        """
+        import os
+        import urllib.request
+        api_key = os.environ.get('SICKW_API_KEY', 'P0Z-Y5S-1SU-3JW-81N-BHV-9R7-RK1')
+        api_url = f"https://sickw.com/api.php?key={api_key}&action=balance"
+
+        try:
+            req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                resp_text = resp.read().decode('utf-8', errors='ignore').strip()
+
+            balance_str = resp_text
+            try:
+                val = float(resp_text)
+                balance_str = f"{val:.3f}"
+            except Exception:
+                pass
+
+            return Response({
+                "balance": balance_str,
+                "currency": "USD",
+                "raw": resp_text
+            })
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to connect to Sickw balance API: {str(e)}"},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+
+    @action(detail=True, methods=['post'], url_path='reset-sickw')
+    def reset_sickw(self, request, pk=None):
+        """
+        Resets all Sickw fetch reports for this device, clearing reports and specs populated by fetch.
+        Allows re-fetching services cleanly.
+        """
+        device = self.get_object()
+        count = device.sickw_reports.count()
+        device.sickw_reports.all().delete()
+
+        # Reset specs that were populated by Sickw
+        clear_fields = []
+        if device.model_code:
+            device.model_code = None
+            clear_fields.append('model_code')
+        if device.sim_lock_status:
+            device.sim_lock_status = None
+            clear_fields.append('sim_lock_status')
+        if clear_fields:
+            device.save(update_fields=clear_fields + ['updated_at'])
+
+        DeviceHistory.objects.create(
+            device=device,
+            user=request.user if request.user.is_authenticated else None,
+            action_type='STATUS_UPDATE',
+            new_state=f"Sickw diagnostic data reset ({count} reports removed) by @{request.user.username if request.user.is_authenticated else 'system'}."
+        )
+
+        device.refresh_from_db()
+        return Response({
+            "success": True,
+            "message": f"Sickw diagnostic data reset successfully ({count} reports removed).",
             "device": DeviceSerializer(device, context={'request': request}).data
         })
 
