@@ -1268,57 +1268,90 @@ export default function DeviceDetailDrawer({
                   <Grid container spacing={1.5}>
                     {/* Service 92 */}
                     <Grid item xs={12} sm={4}>
-                      <Paper
-                        variant="outlined"
-                        sx={{
-                          p: 1.5,
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          borderRadius: 2,
-                          borderColor: hasRun92 || (is92Disabled && !fetchingSickwService) ? 'action.disabledBackground' : 'primary.light',
-                          backgroundColor: (theme) => (hasRun92 || (is92Disabled && !fetchingSickwService))
-                            ? (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.4)' : 'rgba(241, 245, 249, 0.6)')
-                            : (theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff'),
-                          transition: 'all 0.2s ease-in-out'
-                        }}
-                      >
-                        <Box sx={{ mb: 1 }}>
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                            <Chip label="Service 92" size="small" color={is92Disabled ? 'default' : 'primary'} variant={is92Disabled ? 'outlined' : 'filled'} sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
-                            {hasRun92 ? (
-                              <Chip icon={<ActiveCheckIcon fontSize="small" />} label="Done" size="small" color="success" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
-                            ) : (hasRun103 || hasRun12) ? (
-                              <Chip label="Covered" size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem', color: 'text.secondary' }} />
-                            ) : null}
-                          </Box>
-                          <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 0.5 }}>
-                            Color Only
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.72rem', lineHeight: 1.3, mt: 0.25 }}>
-                            Returns device color only.
-                          </Typography>
-                        </Box>
-                        <Button
-                          variant={hasRun92 ? 'outlined' : 'contained'}
-                          color="primary"
-                          size="small"
-                          fullWidth
-                          disabled={is92Disabled}
-                          onClick={() => handleFetchSickw('92')}
-                          startIcon={fetchingSickwService === '92' ? <CircularProgress size={14} color="inherit" /> : (hasRun92 ? <ActiveCheckIcon fontSize="small" /> : <ColorIcon fontSize="small" />)}
-                          sx={{ textTransform: 'none', fontWeight: 600, mt: 1 }}
-                        >
-                          {fetchingSickwService === '92'
-                            ? 'Fetching...'
-                            : hasRun92
-                            ? 'Color Fetched'
-                            : (hasRun103 || hasRun12)
-                            ? 'Covered'
-                            : 'Fetch Srv 92'}
-                        </Button>
-                      </Paper>
+                      {(() => {
+                        const is92Covered = !hasRun92 && (hasRun103 || hasRun12);
+                        return (
+                          <Paper
+                            variant="outlined"
+                            sx={{
+                              p: 1.5,
+                              height: '100%',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              justifyContent: 'space-between',
+                              borderRadius: 2,
+                              borderColor: hasRun92 || is92Covered ? 'action.disabledBackground' : 'primary.light',
+                              backgroundColor: (theme) => (hasRun92 || is92Covered)
+                                ? (theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.4)' : 'rgba(241, 245, 249, 0.6)')
+                                : (theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff'),
+                              transition: 'all 0.2s ease-in-out'
+                            }}
+                          >
+                            <Box sx={{ mb: 1 }}>
+                              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                                <Chip label="Service 92" size="small" color={is92Disabled ? 'default' : 'primary'} variant={is92Disabled ? 'outlined' : 'filled'} sx={{ height: 20, fontSize: '0.7rem', fontWeight: 700 }} />
+                                {hasRun92 ? (
+                                  <Chip icon={<ActiveCheckIcon fontSize="small" />} label="Done" size="small" color="success" variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }} />
+                                ) : is92Covered ? (
+                                  <Chip
+                                    label="Covered"
+                                    size="small"
+                                    sx={{
+                                      height: 20,
+                                      fontSize: '0.65rem',
+                                      fontWeight: 600,
+                                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(148, 163, 184, 0.15)' : '#e2e8f0',
+                                      color: (theme) => theme.palette.mode === 'dark' ? '#cbd5e1' : '#475569'
+                                    }}
+                                  />
+                                ) : null}
+                              </Box>
+                              <Typography variant="subtitle2" fontWeight={700} sx={{ mt: 0.5 }}>
+                                Color Only
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontSize: '0.72rem', lineHeight: 1.3, mt: 0.25 }}>
+                                Returns device color only.
+                              </Typography>
+                            </Box>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              fullWidth
+                              disabled={is92Disabled}
+                              onClick={() => handleFetchSickw('92')}
+                              startIcon={
+                                fetchingSickwService === '92' ? (
+                                  <CircularProgress size={14} color="inherit" />
+                                ) : hasRun92 ? (
+                                  <ActiveCheckIcon fontSize="small" color="success" />
+                                ) : is92Covered ? (
+                                  <CheckIcon fontSize="small" />
+                                ) : (
+                                  <ColorIcon fontSize="small" />
+                                )
+                              }
+                              sx={{
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                mt: 1,
+                                '&.Mui-disabled': {
+                                  color: (theme) => theme.palette.mode === 'dark' ? '#cbd5e1 !important' : '#475569 !important',
+                                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
+                                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9'
+                                }
+                              }}
+                            >
+                              {fetchingSickwService === '92'
+                                ? 'Fetching...'
+                                : hasRun92
+                                ? 'Color Fetched'
+                                : is92Covered
+                                ? `Covered (${hasRun103 ? 'Srv 103' : 'Srv 12'})`
+                                : 'Fetch Srv 92'}
+                            </Button>
+                          </Paper>
+                        );
+                      })()}
                     </Grid>
 
                     {/* Service 12 */}
@@ -1361,7 +1394,16 @@ export default function DeviceDetailDrawer({
                           disabled={is12Disabled}
                           onClick={() => handleFetchSickw('12')}
                           startIcon={fetchingSickwService === '12' ? <CircularProgress size={14} color="inherit" /> : (hasRun12 ? <ActiveCheckIcon fontSize="small" /> : <ModelCodeIcon fontSize="small" />)}
-                          sx={{ textTransform: 'none', fontWeight: 600, mt: 1 }}
+                          sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            mt: 1,
+                            '&.Mui-disabled': {
+                              color: (theme) => theme.palette.mode === 'dark' ? '#cbd5e1 !important' : '#475569 !important',
+                              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
+                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9'
+                            }
+                          }}
                         >
                           {fetchingSickwService === '12'
                             ? 'Fetching...'
@@ -1412,7 +1454,16 @@ export default function DeviceDetailDrawer({
                           disabled={is103Disabled}
                           onClick={() => handleFetchSickw('103')}
                           startIcon={fetchingSickwService === '103' ? <CircularProgress size={14} color="inherit" /> : (hasRun103 ? <ActiveCheckIcon fontSize="small" /> : <SimCardIcon fontSize="small" />)}
-                          sx={{ textTransform: 'none', fontWeight: 600, mt: 1 }}
+                          sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            mt: 1,
+                            '&.Mui-disabled': {
+                              color: (theme) => theme.palette.mode === 'dark' ? '#cbd5e1 !important' : '#475569 !important',
+                              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.15)' : '#cbd5e1',
+                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9'
+                            }
+                          }}
                         >
                           {fetchingSickwService === '103'
                             ? 'Fetching...'
