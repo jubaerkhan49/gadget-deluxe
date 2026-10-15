@@ -794,6 +794,187 @@ class DeviceViewSet(viewsets.ModelViewSet):
             "device": DeviceSerializer(device, context={'request': request}).data
         })
 
+    @action(detail=True, methods=['post'], url_path='fetch-sickw')
+    def fetch_sickw(self, request, pk=None):
+        """
+        Fetches official Sickw API diagnostic report for this device using service 92, 12, or 103.
+        Automatically updates device specs (color, serial, model code/number, purchase date, sim lock)
+        and creates a persistent SickwReport record.
+        """
+        device = self.get_object()
+        service_id = str(request.data.get('service', '103')).strip()
+
+        valid_services = {
+            '92': 'Color Only',
+            '12': 'Model No & Specs',
+            '103': 'Carrier & SIM Lock',
+            'demo': 'Demo Test'
+        }
+        if service_id not in valid_services:
+            return Response(
+                {"error": f"Invalid service '{service_id}'. Must be 92, 12, or 103."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        imei_or_sn = (device.imei or device.serial_number or '').strip()
+        if not imei_or_sn:
+            return Response(
+                {"error": "This device has no IMEI or Serial Number configured."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        import os
+        import json
+        import urllib.request
+        import urllib.error
+        from apps.sickw.parser import SickwParser
+
+        api_key = os.environ.get('SICKW_API_KEY', 'P0Z-Y5S-1SU-3JW-81N-BHV-9R7-RK1')
+        api_url = f"https://sickw.com/api.php?format=beta&key={api_key}&imei={imei_or_sn}&service={service_id}"
+
+        try:
+            req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(req, timeout=35) as resp:
+                resp_text = resp.read().decode('utf-8', errors='ignore')
+        except Exception as e:
+            return Response(
+                {"error": f"Failed to connect to Sickw API: {str(e)}"},
+                status=status.HTTP_502_BAD_GATEWAY
+            )
+
+        raw_result_data = None
+        try:
+            data = json.loads(resp_text)
+            if isinstance(data, dict):
+                error_code = data.get('result')
+                if data.get('status') == 'error' or (isinstance(error_code, str) and error_code in ['E01', 'E02', 'R01', 'B01', 'S01', 'S02', 'S03', 'A01', 'A02', 'A03']):
+                    error_map = {
+                        'E01': 'IMEI is Wrong! (Failed Luhn checksum)',
+                        'E02': 'IMEI or Serial Number is Wrong! (Invalid format/length)',
+                        'R01': 'Not Found! (Service offline or IMEI/SN not found)',
+                        'B01': 'Low Balance! (Not enough funds on Sickw account)',
+                        'S01': 'Service ID is Wrong!',
+                        'S02': 'Service ID is Wrong!',
+                        'S03': 'This service is not instant!',
+                        'A01': 'API KEY is Wrong or IP not whitelisted!',
+                        'A02': 'API KEY is Wrong or IP not whitelisted!',
+                        'A03': 'API KEY is Wrong or IP not whitelisted!',
+                    }
+                    err_msg = error_map.get(str(error_code), f"Sickw Error: {error_code}")
+                    return Response({"error": err_msg, "code": str(error_code)}, status=status.HTTP_400_BAD_REQUEST)
+
+                raw_result_data = data.get('result')
+        except Exception:
+            pass
+
+        parsed = {}
+        if isinstance(raw_result_data, dict):
+            parsed = SickwParser.parse_dict_data(raw_result_data)
+            raw_text = "\n".join([f"{k}: {v}" for k, v in raw_result_data.items() if v is not None])
+        else:
+            raw_text = str(raw_result_data or resp_text)
+            parsed = SickwParser.parse(raw_text)
+
+        if not parsed:
+            return Response(
+                {"error": f"Sickw API returned an empty or unparseable response: {resp_text[:200]}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        color = parsed.get('color')
+        model_code = parsed.get('model_code') or parsed.get('model_number')
+        serial_number = parsed.get('serial_number')
+        purchase_date_str = parsed.get('estimated_purchase_date')
+        sim_lock = parsed.get('sim_lock_status')
+        carrier = parsed.get('locked_carrier')
+        icloud = parsed.get('icloud_lock')
+        warranty = parsed.get('warranty_status')
+        purchase_country = parsed.get('purchase_country')
+
+        purchase_date = None
+        if purchase_date_str:
+            try:
+                from datetime import datetime
+                purchase_date = datetime.strptime(purchase_date_str.strip()[:10], "%Y-%m-%d").date()
+            except Exception:
+                purchase_date = None
+
+        report = SickwReport.objects.create(
+            device=device,
+            service_id=service_id,
+            raw_text=raw_text,
+            parsed_data=parsed,
+            model_description=parsed.get('model_description') or device.model_description,
+            model=parsed.get('model') or device.model,
+            imei=device.imei,
+            imei2=parsed.get('imei2') or device.imei2,
+            meid=parsed.get('meid') or device.meid,
+            serial_number=serial_number or device.serial_number,
+            color=color or device.color,
+            model_code=model_code,
+            estimated_purchase_date=purchase_date_str or (str(purchase_date) if purchase_date else None),
+            warranty_status=warranty or device.warranty_status,
+            icloud_lock=icloud or device.icloud_status,
+            purchase_country=purchase_country or device.purchase_country,
+            locked_carrier=carrier or device.carrier_policy,
+            sim_lock_status=sim_lock or device.sim_lock_status
+        )
+
+        updated_fields = []
+        if color:
+            device.color = color
+            updated_fields.append('color')
+
+        if serial_number and not device.serial_number:
+            device.serial_number = serial_number
+            updated_fields.append('serial_number')
+
+        if sim_lock:
+            device.sim_lock_status = sim_lock
+            updated_fields.append('sim_lock_status')
+
+        if carrier and not device.carrier_policy:
+            device.carrier_policy = carrier
+            updated_fields.append('carrier_policy')
+
+        if icloud:
+            device.icloud_status = icloud
+            updated_fields.append('icloud_status')
+
+        if warranty:
+            device.warranty_status = warranty
+            updated_fields.append('warranty_status')
+
+        if purchase_date and not device.estimated_purchase_date:
+            device.estimated_purchase_date = purchase_date
+            updated_fields.append('estimated_purchase_date')
+
+        if purchase_country and not device.purchase_country:
+            device.purchase_country = purchase_country
+            updated_fields.append('purchase_country')
+
+        if updated_fields:
+            device.save(update_fields=updated_fields + ['updated_at'])
+
+        history_desc = f"Sickw Service {service_id} ({valid_services.get(service_id)}) checked by @{request.user.username}."
+        if color: history_desc += f" Color: {color}."
+        if model_code: history_desc += f" Model: {model_code}."
+        if sim_lock: history_desc += f" SIM: {sim_lock}."
+
+        DeviceHistory.objects.create(
+            device=device,
+            user=request.user,
+            action_type='STATUS_UPDATE',
+            new_state=history_desc
+        )
+
+        return Response({
+            "success": True,
+            "message": f"Sickw Service {service_id} check completed successfully!",
+            "report": SickwReportSerializer(report).data,
+            "device": DeviceSerializer(device, context={'request': request}).data
+        })
+
     def perform_create(self, serializer):
         device = serializer.save()
         user = self.request.user if self.request.user.is_authenticated else None

@@ -26,6 +26,9 @@ class SickwReport(TimeStampedModel):
     purchase_country = models.CharField(max_length=100, blank=True, null=True)
     locked_carrier = models.CharField(max_length=150, blank=True, null=True)
     sim_lock_status = models.CharField(max_length=100, blank=True, null=True)
+    service_id = models.CharField(max_length=50, blank=True, null=True, help_text="Sickw service ID e.g. 12, 92, 103")
+    color = models.CharField(max_length=100, blank=True, null=True)
+    model_code = models.CharField(max_length=100, blank=True, null=True, help_text="Model code/number e.g. A2218, A3106")
 
     class Meta:
         ordering = ['-created_at']
