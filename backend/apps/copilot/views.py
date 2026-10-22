@@ -22,6 +22,18 @@ class CopilotChatAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
+        user = request.user
+        is_admin = (
+            getattr(user, 'role', '') == 'ADMIN' or
+            user.is_superuser or
+            user.username.lower() in ['jubaer', 'admin']
+        )
+        if not is_admin:
+            return Response(
+                {"error": "Access denied. AI Copilot is only accessible to administrators."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         user_message = request.data.get('message', '').strip()
         if not user_message:
             return Response(
@@ -30,7 +42,7 @@ class CopilotChatAPIView(APIView):
             )
 
         history = request.data.get('history', [])
-        username = request.user.username if request.user.is_authenticated else None
+        username = user.username if user.is_authenticated else None
 
         try:
             result = CopilotService.process_chat(

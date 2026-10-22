@@ -92,8 +92,9 @@ export default function MainLayout() {
   const [showManageEmployees, setShowManageEmployees] = useState(false);
   const [copilotOpen, setCopilotOpen] = useState(false);
 
-  // Global hotkey Ctrl+J to toggle AI Copilot
+  // Global hotkey Ctrl+J to toggle AI Copilot (Admin only)
   useEffect(() => {
+    if (!isAdmin) return;
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'j') {
         e.preventDefault();
@@ -102,7 +103,7 @@ export default function MainLayout() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isAdmin]);
 
   const cachedDevices = apiCache.get('/api/devices/');
   const cachedSales = apiCache.get('/api/sales/');
@@ -380,46 +381,50 @@ export default function MainLayout() {
               </Tooltip>
             )}
 
-            {/* AI Copilot Trigger */}
-            <Tooltip title="AI Copilot (Ctrl+J)">
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => setCopilotOpen(true)}
-                startIcon={<AutoAwesomeIcon sx={{ color: '#ec4899', fontSize: '18px !important' }} />}
-                sx={{
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  fontSize: '0.82rem',
-                  borderColor: 'rgba(168, 85, 247, 0.4)',
-                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)',
-                  color: 'primary.light',
-                  display: { xs: 'none', sm: 'inline-flex' },
-                  '&:hover': {
-                    borderColor: '#a855f7',
-                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%)',
-                    boxShadow: '0 0 14px rgba(168, 85, 247, 0.35)'
-                  }
-                }}
-              >
-                AI Copilot
-              </Button>
-            </Tooltip>
+            {/* AI Copilot Trigger (Admin Only) */}
+            {isAdmin && (
+              <>
+                <Tooltip title="AI Copilot (Ctrl+J)">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setCopilotOpen(true)}
+                    startIcon={<AutoAwesomeIcon sx={{ color: '#ec4899', fontSize: '18px !important' }} />}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      borderColor: 'rgba(168, 85, 247, 0.4)',
+                      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)',
+                      color: 'primary.light',
+                      display: { xs: 'none', sm: 'inline-flex' },
+                      '&:hover': {
+                        borderColor: '#a855f7',
+                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%)',
+                        boxShadow: '0 0 14px rgba(168, 85, 247, 0.35)'
+                      }
+                    }}
+                  >
+                    AI Copilot
+                  </Button>
+                </Tooltip>
 
-            <Tooltip title="AI Copilot">
-              <IconButton
-                size="small"
-                onClick={() => setCopilotOpen(true)}
-                sx={{
-                  display: { xs: 'inline-flex', sm: 'none' },
-                  color: '#ec4899',
-                  background: 'rgba(168, 85, 247, 0.12)'
-                }}
-              >
-                <AutoAwesomeIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
+                <Tooltip title="AI Copilot">
+                  <IconButton
+                    size="small"
+                    onClick={() => setCopilotOpen(true)}
+                    sx={{
+                      display: { xs: 'inline-flex', sm: 'none' },
+                      color: '#ec4899',
+                      background: 'rgba(168, 85, 247, 0.12)'
+                    }}
+                  >
+                    <AutoAwesomeIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
 
             <Tooltip title={`Switch to ${colorMode.mode === 'dark' ? 'Light' : 'Dark'} mode`}>
               <IconButton onClick={colorMode.toggleColorMode} color="inherit" size="small">
@@ -596,11 +601,13 @@ export default function MainLayout() {
         />
       )}
 
-      {/* Admin AI Copilot Drawer */}
-      <AdminCopilotDrawer
-        open={copilotOpen}
-        onClose={() => setCopilotOpen(false)}
-      />
+      {/* Admin AI Copilot Drawer (Admin Only) */}
+      {isAdmin && (
+        <AdminCopilotDrawer
+          open={copilotOpen}
+          onClose={() => setCopilotOpen(false)}
+        />
+      )}
     </Box>
   );
 }
