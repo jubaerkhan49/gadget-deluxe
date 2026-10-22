@@ -511,6 +511,47 @@ def fetch_live_sickw_report(imei: str, service_id: Optional[str] = None, user_us
 
     device = Device.objects.filter(Q(imei=clean_imei) | Q(serial_number=clean_imei) | Q(imei2=clean_imei)).first()
 
+    # If already performed and user didn't request a forced refresh, return existing result to save API credits
+    force_refresh = bool(kwargs.get('force_refresh', False))
+    if not force_refresh and device:
+        existing_report = device.sickw_reports.filter(service_id=chosen_service).order_by('-created_at').first()
+        if not existing_report and chosen_service == '92':
+            # Service 12 also contains motherboard color
+            existing_report = device.sickw_reports.filter(service_id='12').order_by('-created_at').first()
+
+        if existing_report:
+            color_match = _check_color_match(device.color, existing_report.color)
+            color_warning = None
+            if device.color and existing_report.color:
+                if color_match is False:
+                    color_warning = f"⚠️ CRITICAL HOUSING / MOTHERBOARD MISMATCH: Device physical housing is '{device.color}', but official Apple motherboard is '{existing_report.color}'. This indicates the housing, back glass, or body has been swapped or replaced!"
+                elif color_match is True:
+                    color_warning = f"✅ Color verified: Physical outlook color '{device.color}' matches official Apple motherboard '{existing_report.color}'."
+
+            return {
+                "success": True,
+                "is_cached": True,
+                "note": f"Verified Sickw Service {chosen_service} report is already logged in the system database (logged on {existing_report.created_at.strftime('%Y-%m-%d %I:%M %p') if existing_report.created_at else 'earlier'}). Returning existing result to save Sickw API credits.",
+                "imei": device.imei,
+                "device_found_in_inventory": True,
+                "service_used": f"Service {chosen_service} ({valid_services.get(chosen_service, '')})",
+                "model": device.model or existing_report.model or "Unknown",
+                "model_description": existing_report.model_description or device.model_description or "N/A",
+                "motherboard_color": existing_report.color or "Unknown",
+                "outlook_color": device.color or "Unknown",
+                "color_match": color_match,
+                "color_check_status": color_warning or "Color verification complete.",
+                "sim_lock_status": existing_report.sim_lock_status or device.sim_lock_status or "Unknown",
+                "carrier": existing_report.locked_carrier or device.carrier_policy or "Unknown",
+                "icloud_lock": existing_report.icloud_lock or device.icloud_status or "Unknown",
+                "serial_number": existing_report.serial_number or device.serial_number or "N/A",
+                "warranty_status": existing_report.warranty_status or device.warranty_status or "N/A",
+                "purchase_country": existing_report.purchase_country or device.purchase_country or "N/A",
+                "purchase_date": str(existing_report.estimated_purchase_date or "N/A"),
+                "report_id": existing_report.id,
+                "report_saved_to_database": True
+            }
+
     try:
         req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
         with urllib.request.urlopen(req, timeout=35) as resp:

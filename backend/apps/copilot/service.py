@@ -237,7 +237,7 @@ GEMINI_TOOLS_DECLARATION = [{
         },
         {
             "name": "fetch_live_sickw_report",
-            "description": "Fetch a live official Sickw API diagnostic report for any device IMEI or Serial Number on demand. Automatically queries Sickw, updates device specs (motherboard color, carrier, sim lock, icloud, serial, model), stores a permanent SickwReport, checks for color mismatches against the physical housing, and returns real-time diagnostic results.",
+            "description": "Fetch a live official Sickw API diagnostic report for any device IMEI or Serial Number on demand. If a verified report was already logged in the system, it returns the existing report instantly to save API credits unless force_refresh is requested.",
             "parameters": {
                 "type": "OBJECT",
                 "properties": {
@@ -248,6 +248,10 @@ GEMINI_TOOLS_DECLARATION = [{
                     "service_id": {
                         "type": "STRING",
                         "description": "Optional service ID: '12' (Model & Motherboard Color & Specs - default), '103' (Carrier & SIM Lock), or '92' (Color Only)."
+                    },
+                    "force_refresh": {
+                        "type": "BOOLEAN",
+                        "description": "Set to true only if the user explicitly asks to 're-fetch', 're-check live', or 'force refresh' an already logged Sickw report."
                     }
                 },
                 "required": ["imei"]
@@ -273,6 +277,7 @@ def execute_tool_call(func_name: str, args: Dict[str, Any], user_username: str =
             return tools.fetch_live_sickw_report(
                 imei=args.get("imei"),
                 service_id=args.get("service_id"),
+                force_refresh=args.get("force_refresh", False),
                 user_username=user_username
             )
         elif func_name == "get_sickw_account_balance":
