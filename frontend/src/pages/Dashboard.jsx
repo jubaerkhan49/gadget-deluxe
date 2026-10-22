@@ -1215,7 +1215,7 @@ export default function Dashboard() {
                   My Assigned Devices in Physical Custody
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
-                  {myAssignedDevices.length} device{myAssignedDevices.length === 1 ? '' : 's'} currently assigned to your account
+                  Showing {Math.min(myAssignedDevices.length, 10)} of {myAssignedDevices.length} device{myAssignedDevices.length === 1 ? '' : 's'} currently assigned to your account
                 </Typography>
               </Box>
             </Box>
@@ -1256,6 +1256,7 @@ export default function Dashboard() {
                     d.color?.toLowerCase().includes(q)
                   );
                 })
+                .slice(0, 10)
                 .map((dev) => (
                   <Card
                     key={dev.id}
@@ -1387,6 +1388,7 @@ export default function Dashboard() {
                         d.color?.toLowerCase().includes(q)
                       );
                     })
+                    .slice(0, 10)
                     .map((dev) => (
                       <TableRow
                         key={dev.id}
@@ -1453,6 +1455,18 @@ export default function Dashboard() {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {myAssignedDevices.length > 10 && (
+            <Box sx={{ p: 1.5, textAlign: 'center', borderTop: '1px solid', borderColor: 'divider' }}>
+              <Button
+                size="small"
+                onClick={() => navigate('/inventory')}
+                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.82rem' }}
+              >
+                View all {myAssignedDevices.length} assigned devices in Inventory →
+              </Button>
+            </Box>
+          )}
         </Paper>
       )}
 
