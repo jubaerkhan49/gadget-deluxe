@@ -490,6 +490,9 @@ export default function AdminCopilotDrawer({ open, onClose }) {
         PaperProps={{
           sx: {
             width: { xs: '100%', sm: 480, md: 520 },
+            maxWidth: '100vw',
+            height: '100dvh',
+            maxHeight: '100dvh',
             background: isDark
               ? 'linear-gradient(180deg, #0b0f19 0%, #111827 100%)'
               : '#ffffff',
@@ -499,42 +502,47 @@ export default function AdminCopilotDrawer({ open, onClose }) {
               ? '-8px 0 32px rgba(0,0,0,0.7)'
               : '-8px 0 32px rgba(15,23,42,0.12)',
             borderLeft: '1px solid',
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
+            overflow: 'hidden'
           }
         }}
       >
         {/* Header */}
         <Box
           sx={{
-            p: 2,
+            p: { xs: 1.2, sm: 2 },
             borderBottom: '1px solid',
             borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: isDark ? 'rgba(15, 23, 42, 0.9)' : '#ffffff',
+            background: isDark ? 'rgba(15, 23, 42, 0.95)' : '#ffffff',
             position: 'sticky',
             top: 0,
-            zIndex: 10
+            zIndex: 10,
+            flexShrink: 0
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 1.5 }, minWidth: 0 }}>
             <Avatar
               sx={{
-                width: 40,
-                height: 40,
+                width: { xs: 34, sm: 40 },
+                height: { xs: 34, sm: 40 },
                 background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)',
-                boxShadow: '0 2px 10px rgba(168, 85, 247, 0.35)'
+                boxShadow: '0 2px 10px rgba(168, 85, 247, 0.35)',
+                flexShrink: 0
               }}
             >
-              <SparkleIcon sx={{ fontSize: 22, color: '#ffffff' }} />
+              <SparkleIcon sx={{ fontSize: { xs: 18, sm: 22 }, color: '#ffffff' }} />
             </Avatar>
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ minWidth: 0 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
                 <Typography
                   variant="subtitle1"
                   fontWeight={800}
+                  noWrap
                   sx={{
+                    fontSize: { xs: '0.92rem', sm: '1rem' },
                     letterSpacing: -0.2,
                     color: isDark ? '#ffffff' : '#0f172a'
                   }}
@@ -545,15 +553,15 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                   label="Gemini AI"
                   size="small"
                   sx={{
-                    height: 20,
-                    fontSize: '0.68rem',
+                    height: 18,
+                    fontSize: '0.62rem',
                     fontWeight: 800,
                     bgcolor: isDark ? 'rgba(168, 85, 247, 0.2)' : '#ede9fe',
                     color: isDark ? '#c084fc' : '#6d28d9',
                     border: '1px solid',
                     borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : '#ddd6fe',
                     '& .MuiChip-label': {
-                      px: 0.8,
+                      px: 0.6,
                       color: isDark ? '#c084fc' : '#6d28d9'
                     }
                   }}
@@ -561,30 +569,34 @@ export default function AdminCopilotDrawer({ open, onClose }) {
               </Box>
               <Typography
                 variant="caption"
+                noWrap
                 sx={{
                   color: isDark ? '#94a3b8' : '#475569',
-                  fontWeight: 500
+                  fontWeight: 500,
+                  fontSize: { xs: '0.68rem', sm: '0.75rem' },
+                  display: 'block'
                 }}
               >
-                Autonomous Inventory & Operations Assistant
+                Autonomous Inventory Assistant
               </Typography>
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.5, sm: 1 }, flexShrink: 0 }}>
             <Tooltip title="Start a new chat conversation">
               <Button
                 size="small"
                 variant="outlined"
                 onClick={handleClearHistory}
-                startIcon={<AddIcon sx={{ fontSize: '15px !important' }} />}
+                startIcon={<AddIcon sx={{ fontSize: '14px !important', mr: { xs: -0.4, sm: 0 } }} />}
                 sx={{
                   borderRadius: 2,
-                  fontSize: '0.74rem',
+                  fontSize: { xs: '0.7rem', sm: '0.74rem' },
                   fontWeight: 700,
                   textTransform: 'none',
-                  px: 1.2,
-                  py: 0.35,
+                  px: { xs: 0.8, sm: 1.2 },
+                  py: 0.3,
+                  minWidth: { xs: 'auto', sm: 64 },
                   color: isDark ? '#93c5fd' : '#1d4ed8',
                   borderColor: isDark ? 'rgba(59, 130, 246, 0.4)' : '#bfdbfe',
                   bgcolor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff',
@@ -600,9 +612,9 @@ export default function AdminCopilotDrawer({ open, onClose }) {
             <IconButton
               size="small"
               onClick={onClose}
-              sx={{ color: isDark ? '#94a3b8' : '#64748b', '&:hover': { color: isDark ? '#ffffff' : '#0f172a' } }}
+              sx={{ color: isDark ? '#94a3b8' : '#64748b', p: { xs: 0.5, sm: 1 }, '&:hover': { color: isDark ? '#ffffff' : '#0f172a' } }}
             >
-              <CloseIcon fontSize="small" />
+              <CloseIcon sx={{ fontSize: { xs: 20, sm: 22 } }} />
             </IconButton>
           </Box>
         </Box>
@@ -611,12 +623,14 @@ export default function AdminCopilotDrawer({ open, onClose }) {
         <Box
           sx={{
             flex: 1,
+            minHeight: 0,
             overflowY: 'auto',
-            p: 2.2,
+            p: { xs: 1.2, sm: 2.2 },
             display: 'flex',
             flexDirection: 'column',
-            gap: 2.2,
-            bgcolor: isDark ? 'transparent' : '#f8fafc'
+            gap: { xs: 1.5, sm: 2.2 },
+            bgcolor: isDark ? 'transparent' : '#f8fafc',
+            overscrollBehavior: 'contain'
           }}
         >
           {messages.map((msg, index) => {
@@ -634,9 +648,9 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                 {/* Bubble Container (Merged, Clean & Lightweight) */}
                 <Box
                   sx={{
-                    p: 1.8,
+                    p: { xs: 1.4, sm: 1.8 },
                     borderRadius: isUser ? '18px 18px 4px 18px' : '16px 16px 16px 4px',
-                    maxWidth: '92%',
+                    maxWidth: { xs: '96%', sm: '92%' },
                     bgcolor: isUser
                       ? '#2563eb'
                       : isDark
@@ -653,7 +667,7 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                     <Typography
                       variant="body2"
                       sx={{
-                        fontSize: '0.88rem',
+                        fontSize: { xs: '0.84rem', sm: '0.88rem' },
                         whiteSpace: 'pre-wrap',
                         lineHeight: 1.5,
                         color: '#ffffff',
@@ -663,7 +677,7 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                       {msg.text}
                     </Typography>
                   ) : (
-                    <Box sx={{ wordBreak: 'break-word' }}>
+                    <Box sx={{ wordBreak: 'break-word', fontSize: { xs: '0.84rem', sm: '0.88rem' } }}>
                       {renderMarkdown(msg.text, isDark, (txt) => handleCopy(txt, index))}
                     </Box>
                   )}
@@ -676,6 +690,7 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                         sx={{
                           color: isDark ? '#94a3b8' : '#64748b',
                           fontWeight: 700,
+                          fontSize: '0.7rem',
                           display: 'flex',
                           alignItems: 'center',
                           gap: 0.5
@@ -692,7 +707,7 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                           onClick={() => handleOpenDevice(imei)}
                           sx={{
                             height: 24,
-                            fontSize: '0.74rem',
+                            fontSize: '0.72rem',
                             fontFamily: 'monospace',
                             fontWeight: 700,
                             bgcolor: isDark ? 'rgba(99, 102, 241, 0.2)' : '#ede9fe',
@@ -718,7 +733,22 @@ export default function AdminCopilotDrawer({ open, onClose }) {
 
                 {/* Intelligent Follow-up Suggestion Chips */}
                 {!isUser && msg.suggestions && msg.suggestions.length > 0 && index === messages.length - 1 && (
-                  <Box sx={{ mt: 1.4, display: 'flex', flexWrap: 'wrap', gap: 0.8, pl: 0.5 }}>
+                  <Box
+                    sx={{
+                      mt: 1.2,
+                      display: 'flex',
+                      flexDirection: 'row',
+                      flexWrap: { xs: 'nowrap', sm: 'wrap' },
+                      overflowX: { xs: 'auto', sm: 'visible' },
+                      pb: { xs: 0.5, sm: 0 },
+                      gap: 0.8,
+                      pl: 0.5,
+                      maxWidth: '100%',
+                      WebkitOverflowScrolling: 'touch',
+                      '&::-webkit-scrollbar': { display: 'none' },
+                      scrollbarWidth: 'none'
+                    }}
+                  >
                     {msg.suggestions.map((sug, sIdx) => (
                       <Chip
                         key={sIdx}
@@ -728,8 +758,10 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                         onClick={() => handleSendMessage(sug)}
                         sx={{
                           height: 28,
-                          fontSize: '0.78rem',
+                          fontSize: '0.75rem',
                           fontWeight: 600,
+                          flexShrink: 0,
+                          whiteSpace: 'nowrap',
                           bgcolor: isDark ? 'rgba(30, 41, 59, 0.8)' : '#eff6ff',
                           color: isDark ? '#93c5fd' : '#1d4ed8',
                           border: '1px solid',
@@ -757,18 +789,19 @@ export default function AdminCopilotDrawer({ open, onClose }) {
           {/* Reasoning / Loading Indicator */}
           {loading && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pl: 1, my: 1 }}>
-              <CircularProgress size={18} thickness={5} sx={{ color: '#6366f1' }} />
+              <CircularProgress size={16} thickness={5} sx={{ color: '#6366f1' }} />
               <Typography
                 variant="caption"
                 sx={{
                   color: isDark ? '#94a3b8' : '#475569',
                   fontWeight: 600,
+                  fontSize: '0.74rem',
                   display: 'flex',
                   alignItems: 'center',
                   gap: 0.5
                 }}
               >
-                <SparkleIcon sx={{ fontSize: 14, color: '#6366f1' }} />
+                <SparkleIcon sx={{ fontSize: 13, color: '#6366f1' }} />
                 Copilot is reasoning and querying database...
               </Typography>
             </Box>
@@ -777,15 +810,16 @@ export default function AdminCopilotDrawer({ open, onClose }) {
           <div ref={messagesEndRef} />
         </Box>
 
-        {/* Quick starter prompts (Suggested Actions) */}
+        {/* Quick starter prompts (Suggested Actions) - horizontal single row on mobile */}
         {messages.length <= 2 && (
           <Box
             sx={{
-              px: 2,
-              py: 1.2,
+              px: { xs: 1.2, sm: 2 },
+              py: { xs: 0.8, sm: 1.2 },
               borderTop: '1px solid',
               borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
-              bgcolor: isDark ? 'rgba(15, 23, 42, 0.4)' : '#ffffff'
+              bgcolor: isDark ? 'rgba(15, 23, 42, 0.6)' : '#ffffff',
+              flexShrink: 0
             }}
           >
             <Typography
@@ -794,14 +828,27 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                 color: isDark ? '#94a3b8' : '#475569',
                 fontWeight: 800,
                 textTransform: 'uppercase',
+                fontSize: '0.64rem',
                 letterSpacing: 0.6,
-                mb: 1,
+                mb: 0.6,
                 display: 'block'
               }}
             >
               Suggested Actions
             </Typography>
-            <Stack direction="row" spacing={0.8} sx={{ flexWrap: 'wrap', gap: 0.8 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row',
+                flexWrap: { xs: 'nowrap', sm: 'wrap' },
+                overflowX: { xs: 'auto', sm: 'visible' },
+                pb: { xs: 0.5, sm: 0 },
+                gap: 0.8,
+                WebkitOverflowScrolling: 'touch',
+                '&::-webkit-scrollbar': { display: 'none' },
+                scrollbarWidth: 'none'
+              }}
+            >
               {QUICK_PROMPTS.map((qp, qIdx) => (
                 <Chip
                   key={qIdx}
@@ -811,15 +858,17 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                   onClick={() => handleSendMessage(qp.query)}
                   sx={{
                     height: 28,
-                    fontSize: '0.78rem',
+                    fontSize: '0.75rem',
                     fontWeight: 700,
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
                     bgcolor: isDark ? '#1e293b' : '#f1f5f9',
                     color: isDark ? '#f1f5f9' : '#1e293b',
                     border: '1px solid',
                     borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
                     boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
                     '& .MuiChip-label': {
-                      px: 1.2,
+                      px: 1.1,
                       color: isDark ? '#f1f5f9' : '#1e293b'
                     },
                     '&:hover': {
@@ -831,24 +880,26 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                   }}
                 />
               ))}
-            </Stack>
+            </Box>
           </Box>
         )}
 
         {/* Input Bar */}
         <Box
           sx={{
-            p: 2,
+            p: { xs: 1.2, sm: 2 },
             borderTop: '1px solid',
             borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
-            background: isDark ? 'rgba(15, 23, 42, 0.95)' : '#ffffff'
+            background: isDark ? 'rgba(15, 23, 42, 0.95)' : '#ffffff',
+            flexShrink: 0,
+            pb: { xs: 'max(10px, env(safe-area-inset-bottom))', sm: 2 }
           }}
         >
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <TextField
               fullWidth
               multiline
-              maxRows={4}
+              maxRows={3}
               placeholder="Ask Copilot (e.g. Give me total devices count)"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
@@ -860,9 +911,10 @@ export default function AdminCopilotDrawer({ open, onClose }) {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2.5,
-                  fontSize: '0.88rem',
+                  fontSize: { xs: '0.84rem', sm: '0.88rem' },
                   bgcolor: isDark ? '#1e293b' : '#f8fafc',
                   color: isDark ? '#ffffff' : '#0f172a',
+                  py: { xs: 0.3, sm: 0.6 },
                   '& fieldset': {
                     borderColor: isDark ? 'rgba(255,255,255,0.18)' : '#cbd5e1'
                   },
@@ -886,11 +938,12 @@ export default function AdminCopilotDrawer({ open, onClose }) {
               onClick={() => handleSendMessage()}
               disabled={!inputMessage.trim() || loading}
               sx={{
-                minWidth: 44,
-                width: 44,
-                height: 42,
+                minWidth: { xs: 40, sm: 44 },
+                width: { xs: 40, sm: 44 },
+                height: { xs: 38, sm: 42 },
                 borderRadius: 2.5,
                 p: 0,
+                flexShrink: 0,
                 background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
                 boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
                 '&:hover': {
@@ -902,14 +955,29 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                 }
               }}
             >
-              <SendIcon sx={{ fontSize: 18, color: '#ffffff' }} />
+              <SendIcon sx={{ fontSize: { xs: 16, sm: 18 }, color: '#ffffff' }} />
             </Button>
           </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1.2, px: 0.5 }}>
-            <Typography variant="caption" sx={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '0.72rem' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 0.8, px: 0.5 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: isDark ? '#94a3b8' : '#64748b',
+                fontSize: '0.7rem',
+                display: { xs: 'none', sm: 'block' }
+              }}
+            >
               Press <strong>Enter</strong> to send • <strong>Shift+Enter</strong> for newline
             </Typography>
-            <Typography variant="caption" sx={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '0.72rem', fontWeight: 600 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: isDark ? '#94a3b8' : '#64748b',
+                fontSize: { xs: '0.66rem', sm: '0.72rem' },
+                fontWeight: 600,
+                ml: 'auto'
+              }}
+            >
               Google Gemini 3.5
             </Typography>
           </Box>
