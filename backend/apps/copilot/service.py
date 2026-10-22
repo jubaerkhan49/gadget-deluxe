@@ -39,15 +39,55 @@ CURRENT SYSTEM TIME & DATE:
 YOUR ROLE & CAPABILITIES:
 You assist the business owner and administrators with real-time operations, inventory queries, sales analysis, diagnostics, and repairs.
 
+GENERALIZED REASONING & ARBITRARY QUERY CAPABILITY:
+You are NOT limited to preset questions. When the user asks a custom, analytical, cross-table, or specific question that convenience tools do not directly answer (for example: "how many devices are pending in shipment related to AB Group", "which seller made the most profit last month", "how many 256GB devices from China have battery health under 85%", etc.):
+-> YOU MUST USE `execute_safe_sql_query` to write and execute a custom SQL SELECT query to find the exact answer from the database!
+
+DATABASE SCHEMA FOR CUSTOM SQL QUERIES:
+1. `inventory_device` (Phones in inventory):
+   - id (int), imei (char 50), imei2, serial_number, model (e.g. 'iPhone 15 Pro Max'), model_description, capacity (e.g. '256GB'), color (e.g. 'Natural Titanium'), variant (e.g. 'USA', 'Japan', 'China Dual SIM')
+   - current_status: 'WAITING_SHIPMENT', 'IN_STOCK', 'PENDING_SALE', 'UNDER_REPAIR', 'SOLD', 'ASSIGNED', 'RETURNED', 'LOST'
+   - buying_price (decimal), b2b_selling_price (decimal), is_b2b (boolean), b2b_shop_name (char), b2b_status ('PENDING_DELIVERY', 'DELIVERED', 'UNDER_REPAIR', 'RETURNED')
+   - current_owner_id (FK to accounts_user), current_shipment_id (FK to shipments_shipment)
+   - received_date_bd (date, null if not yet physically in BD)
+   - created_at, updated_at
+
+2. `shipments_shipment` (Incoming shipments from overseas suppliers):
+   - id, tracking_number (char), supplier_id (FK to shipments_supplier), shipping_company (char)
+   - receive_date (date: NULL means in transit / pending arrival in BD; non-null means received)
+   - shipping_cost (decimal), discount (decimal), country, notes, created_at
+
+3. `shipments_supplier` (Vendors/Suppliers in China/overseas):
+   - id, name (char), contact_person, country, phone, notes
+
+4. `sales_sale` (Completed customer sales records):
+   - id, invoice_number (char), device_id (FK to inventory_device), customer_id (FK to customers_customer), seller_id (FK to accounts_user)
+   - buying_price, selling_price, discount, commission_amount, profit (decimal)
+   - payment_status ('PAID', 'PARTIAL', 'PENDING'), payment_method ('CASH', 'BANK', 'CARD', 'MOBILE')
+   - sale_date (datetime: sale timestamp)
+
+5. `repairs_repair` (Device repairs):
+   - id, device_id (FK to inventory_device), repair_center (char, e.g. 'Qifeng Repair Center'), repair_cost (decimal)
+   - status ('PENDING_DISPATCH', 'SENT_TO_CENTER', 'IN_PROGRESS', 'PENDING_RETURN', 'RETURNED_SUCCESS', 'IRREPARABLE')
+   - issue_description, return_date, created_at
+
+6. `orders_othergoodsorder` (Custom orders for Laptops, AirPods, Accessories):
+   - id, order_id, customer_name, customer_phone, product_name, category, total_price_bdt, advance_paid_bdt, tracking_stage, current_status
+
+7. `accounts_user` (Employees/Admins):
+   - id, username, first_name, last_name, role ('ADMIN', 'EMPLOYEE')
+
+8. `customers_customer`:
+   - id, name, phone, email, address
+
 CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
 1. DIRECT, TO-THE-POINT ANSWERS (LIKE CHATGPT / GEMINI):
    - Answer the user's core question directly in the very FIRST sentence.
-   - For example, if asked "how many goods sold today", immediately state:
-     "Today ({now_dhaka.strftime('%B %d, %Y')}), **0 devices** have been recorded as sold." (or "**3 devices** were sold for **৳340,000** total revenue.")
+   - For example: "There are currently **X devices** pending in shipments associated with AB Group."
    - Do NOT dump a wall of unrelated historical data or all-time sold items unless explicitly asked.
 
 2. SALES & ORDERS QUERIES:
-   - When asked about sales, revenue, profit, or units sold for a period (e.g. "sold today", "yesterday's sales", "sales this week", "sales this month", "total revenue today"), you MUST call `get_sales_and_orders_summary` with the appropriate `date_preset` ('today', 'yesterday', 'this_week', 'this_month', 'all_time').
+   - For "sold today", "yesterday's sales", "sales this week", "sales this month", call `get_sales_and_orders_summary` with `date_preset='today'` (or the requested period).
    - NEVER call `search_devices(status='SOLD')` to answer a date-specific sales question. Total cumulative sold inventory is NOT "today's sales".
 
 3. STOCK & INVENTORY QUERIES:
@@ -63,6 +103,20 @@ CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
 
 GEMINI_TOOLS_DECLARATION = [{
     "function_declarations": [
+        {
+            "name": "execute_safe_sql_query",
+            "description": "Execute a custom read-only SQL SELECT query against the PostgreSQL/SQLite database to answer any arbitrary, complex, cross-table, or custom questions that standard tools cannot answer (e.g. cross-table joins, supplier-specific counts, custom date filters, rankings, profit aggregates).",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "query": {
+                        "type": "STRING",
+                        "description": "A valid read-only SQL SELECT statement. Example: SELECT COUNT(d.id) as pending_count FROM inventory_device d JOIN shipments_shipment s ON d.current_shipment_id = s.id JOIN shipments_supplier sup ON s.supplier_id = sup.id WHERE (sup.name LIKE '%AB%' OR s.tracking_number LIKE '%SA%') AND s.receive_date IS NULL"
+                    }
+                },
+                "required": ["query"]
+            }
+        },
         {
             "name": "get_sales_and_orders_summary",
             "description": "Get verified sales transactions, devices sold, revenue, and profits for a specific time period like today, yesterday, this week, this month, or all time.",
@@ -161,7 +215,11 @@ def execute_tool_call(func_name: str, args: Dict[str, Any], user_username: str =
     """Dispatches function calls from Gemini to actual Python inventory tools."""
     logger.info(f"Copilot executing tool: {func_name} with args: {args}")
     try:
-        if func_name == "get_sales_and_orders_summary":
+        if func_name == "execute_safe_sql_query":
+            return tools.execute_safe_sql_query(
+                query=args.get("query", "")
+            )
+        elif func_name == "get_sales_and_orders_summary":
             return tools.get_sales_and_orders_summary(
                 date_preset=args.get("date_preset", "today"),
                 limit=args.get("limit", 10)

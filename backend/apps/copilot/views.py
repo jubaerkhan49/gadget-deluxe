@@ -32,10 +32,23 @@ class CopilotChatAPIView(APIView):
         history = request.data.get('history', [])
         username = request.user.username if request.user.is_authenticated else None
 
-        result = CopilotService.process_chat(
-            user_message=user_message,
-            history=history,
-            user_username=username
-        )
+        try:
+            result = CopilotService.process_chat(
+                user_message=user_message,
+                history=history,
+                user_username=username
+            )
+            return Response(result, status=status.HTTP_200_OK)
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).exception("Error in CopilotChatAPIView")
+            return Response(
+                {
+                    "reply": f"⚠️ I encountered an error while analyzing your request: {str(e)}. Please try rephrasing or asking again.",
+                    "actions_taken": [],
+                    "referenced_devices": [],
+                    "suggestions": ["Check inventory summary", "Show in-stock devices"]
+                },
+                status=status.HTTP_200_OK
+            )
 
-        return Response(result, status=status.HTTP_200_OK)

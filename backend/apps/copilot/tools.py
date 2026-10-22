@@ -5,6 +5,7 @@ Each tool is equipped with a docstring, robust error handling, and structured di
 import logging
 from datetime import timedelta
 from typing import Dict, Any, List, Optional
+from django.db import connection
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
 from apps.inventory.models import Device, DeviceHistory, DeviceAssignment
@@ -375,4 +376,58 @@ def get_sales_and_orders_summary(date_preset: str = 'today', limit: int = 10, **
     except Exception as e:
         logger.exception("Error in get_sales_and_orders_summary")
         return {"error": str(e)}
+
+def execute_safe_sql_query(query: str, **kwargs) -> Dict[str, Any]:
+    """
+    Execute a read-only SQL SELECT query against the PostgreSQL/SQLite database to answer any custom, cross-table, or arbitrary analytical questions.
+    Only SELECT or WITH statements are allowed.
+    """
+    try:
+        clean_q = query.strip().rstrip(';')
+        if not (clean_q.upper().startswith('SELECT') or clean_q.upper().startswith('WITH')):
+            return {"error": "Security validation failed: Only read-only SELECT or WITH statements are permitted."}
+
+        # Check for forbidden mutation keywords
+        forbidden = [
+            'INSERT', 'UPDATE', 'DELETE', 'DROP', 'ALTER', 'TRUNCATE',
+            'RENAME', 'GRANT', 'REVOKE', 'EXEC', 'CREATE', 'REPLACE'
+        ]
+        tokens = [t.strip(';,()"`\'') for t in clean_q.upper().split()]
+        for f in forbidden:
+            if f in tokens:
+                return {"error": f"Security validation failed: Forbidden keyword '{f}' detected."}
+
+        # Ensure reasonable LIMIT if not specified
+        if 'LIMIT' not in clean_q.upper():
+            clean_q += " LIMIT 50"
+
+        with connection.cursor() as cursor:
+            cursor.execute(clean_q)
+            if not cursor.description:
+                return {"rows": [], "count": 0}
+            columns = [col[0] for col in cursor.description]
+            raw_rows = cursor.fetchall()
+            
+            # Serialize rows cleanly
+            formatted_rows = []
+            for r in raw_rows[:50]:
+                row_dict = {}
+                for col_name, val in zip(columns, r):
+                    if hasattr(val, 'isoformat'):
+                        row_dict[col_name] = val.isoformat()
+                    elif isinstance(val, (int, float, str, bool)) or val is None:
+                        row_dict[col_name] = val
+                    else:
+                        row_dict[col_name] = str(val)
+                formatted_rows.append(row_dict)
+
+            return {
+                "columns": columns,
+                "count": len(formatted_rows),
+                "rows": formatted_rows
+            }
+    except Exception as e:
+        logger.warning(f"Error in execute_safe_sql_query: {e}")
+        return {"error": f"SQL execution error: {str(e)}. Please correct your query syntax."}
+
 
