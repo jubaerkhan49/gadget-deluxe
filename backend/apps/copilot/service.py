@@ -481,27 +481,27 @@ class CopilotService:
     @classmethod
     def _generate_suggestions(cls, query: str, actions_taken: List[Dict[str, Any]], reply: str) -> List[str]:
         q_lower = query.lower()
-        if "stat" in q_lower or "inventory" in q_lower or "how many" in q_lower:
+        if "profit" in q_lower or "employee" in q_lower or "sale" in q_lower or "sold" in q_lower:
             return [
-                "Show devices currently under repair",
-                "Which devices are waiting for shipment?",
-                "List all iPhone 15 Pro Max in stock"
+                "Which employee generated most profits this month?",
+                "How many goods sold today?",
+                "Give me an inventory summary"
             ]
         elif "repair" in q_lower:
             return [
                 "What is our total active repair cost?",
-                "Show shipments currently in transit",
-                "View overall inventory statistics"
+                "Which employee generated most profits this month?",
+                "Show in-stock iPhone 15 models"
             ]
-        elif "shipment" in q_lower:
+        elif "inventory" in q_lower or "stock" in q_lower or "how many" in q_lower:
             return [
-                "How many devices arrived in BD this month?",
-                "Show devices waiting shipment",
-                "View inventory valuation summary"
+                "Which employee generated most profits this month?",
+                "How many goods sold today?",
+                "List all iPhone 15 Pro Max in stock"
             ]
         else:
             return [
-                "What is our current inventory status?",
-                "Are there any motherboard color mismatches?",
-                "Show active shipments from China"
+                "Which employee generated most profits this month?",
+                "How many goods sold today?",
+                "Give me an inventory summary"
             ]

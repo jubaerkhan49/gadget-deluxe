@@ -36,8 +36,8 @@ import DeviceDetailDrawer from './DeviceDetailDrawer';
 
 const QUICK_PROMPTS = [
   { label: '📊 Live Valuation & Stats', query: 'Give me a live overview of our current inventory valuation and stock counts.' },
-  { label: '🔧 Active Repairs & Costs', query: 'Show all devices currently under repair, the repair centers, and total repair expenses.' },
-  { label: '🚚 In-Transit Shipments', query: 'Are there any incoming international shipments currently in transit from China?' },
+  { label: '🏆 Top Employee Profits', query: 'Tell me which employee generated the most profits this month.' },
+  { label: '💰 Today Sales Summary', query: 'How many goods sold today and what is today’s total sales revenue and profit?' },
   { label: '📱 In-Stock iPhone 15 Models', query: 'List all iPhone 15 models currently in stock with their colors and capacities.' }
 ];
 
@@ -272,8 +272,8 @@ const INITIAL_MESSAGES = [
     referenced_devices: [],
     suggestions: [
       'Give me an inventory summary',
-      'Show active repair costs',
-      'Which shipments are arriving soon?'
+      'Which employee generated most profits this month?',
+      'How many goods sold today?'
     ]
   }
 ];
@@ -388,8 +388,8 @@ export default function AdminCopilotDrawer({ open, onClose }) {
         referenced_devices: [],
         suggestions: [
           'Give me an inventory summary',
-          'Show active repair costs',
-          'Which shipments are arriving soon?'
+          'Which employee generated most profits this month?',
+          'How many goods sold today?'
         ]
       }
     ]);
@@ -594,32 +594,6 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                     position: 'relative'
                   }}
                 >
-                  {/* Actions Taken Badges */}
-                  {!isUser && msg.actions && msg.actions.length > 0 && (
-                    <Box sx={{ mb: 1.2, display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
-                      {msg.actions.map((act, aIdx) => (
-                        <Chip
-                          key={aIdx}
-                          icon={<TerminalIcon sx={{ fontSize: '14px !important', color: isDark ? '#34d399 !important' : '#047857 !important' }} />}
-                          label={act.tool}
-                          size="small"
-                          sx={{
-                            height: 22,
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            bgcolor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
-                            color: isDark ? '#34d399' : '#047857',
-                            border: '1px solid',
-                            borderColor: isDark ? 'rgba(16, 185, 129, 0.3)' : '#a7f3d0',
-                            '& .MuiChip-label': {
-                              color: isDark ? '#34d399' : '#047857'
-                            }
-                          }}
-                        />
-                      ))}
-                    </Box>
-                  )}
-
                   {/* Message Content */}
                   {isUser ? (
                     <Typography
