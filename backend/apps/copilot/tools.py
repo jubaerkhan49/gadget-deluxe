@@ -436,5 +436,296 @@ def execute_safe_sql_query(query: str, **kwargs) -> Dict[str, Any]:
             "error": f"SQL execution error: {str(e)}. (Note: The database is PostgreSQL. Use standard date ranges like s.sale_date >= '2026-10-01' instead of strftime)."
         }
 
+def _check_color_match(c1_str: Optional[str], c2_str: Optional[str]) -> Optional[bool]:
+    """Helper to detect if physical housing color matches factory motherboard color."""
+    if not c1_str or not c2_str:
+        return None
+    c1 = str(c1_str).lower().strip()
+    c2 = str(c2_str).lower().strip()
+
+    def get_color_family(text: str) -> Optional[str]:
+        t = text.lower()
+        if "natural" in t or "natur" in t:
+            return "natural"
+        if "black" in t or "space black" in t or "midnight" in t:
+            return "black"
+        if "white" in t or "starlight" in t or "silver" in t:
+            return "white_silver"
+        if "blue" in t:
+            return "blue"
+        if "gold" in t or "desert" in t:
+            return "gold"
+        if "green" in t or "alpine" in t:
+            return "green"
+        if "purple" in t or "deep purple" in t:
+            return "purple"
+        if "red" in t or "product" in t:
+            return "red"
+        if "gray" in t or "grey" in t or "space gray" in t:
+            return "gray"
+        return None
+
+    fam1 = get_color_family(c1)
+    fam2 = get_color_family(c2)
+
+    if fam1 and fam2:
+        return fam1 == fam2
+    return c1 == c2
+
+def fetch_live_sickw_report(imei: str, service_id: Optional[str] = None, user_username: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    """
+    Fetch a live official Sickw API diagnostic report for any device IMEI or Serial Number on demand.
+    Supports Service 12 (Apple Model & Specs + Motherboard Color), Service 92 (Color Only), and Service 103 (Carrier & SIM Lock).
+    Automatically saves the report in the database, updates device specs, detects housing/motherboard color mismatches, and returns comprehensive diagnostic data.
+    """
+    import os
+    import json
+    import urllib.request
+    import urllib.error
+    from apps.sickw.parser import SickwParser
+
+    clean_imei = str(imei or '').strip().replace('-', '').replace(' ', '')
+    if not clean_imei:
+        return {"error": "A valid 15-digit IMEI or Serial Number is required to fetch Sickw report."}
+
+    # Normalize service_id
+    service_str = str(service_id or '').strip().lower()
+    if 'color' in service_str or service_str == '92':
+        chosen_service = '92'
+    elif 'carrier' in service_str or 'sim' in service_str or 'lock' in service_str or service_str == '103':
+        chosen_service = '103'
+    elif '12' in service_str or 'spec' in service_str or 'model' in service_str:
+        chosen_service = '12'
+    else:
+        # Default to 12 as it provides Model, Motherboard Color, Capacity, Serial, and Specs
+        chosen_service = '12'
+
+    valid_services = {
+        '92': 'Color Only',
+        '12': 'Model No & Specs (Motherboard Color, Serial, Model)',
+        '103': 'Carrier & SIM Lock (Network, FMI, iCloud)'
+    }
+
+    api_key = os.environ.get('SICKW_API_KEY', 'P0Z-Y5S-1SU-3JW-81N-BHV-9R7-RK1')
+    api_url = f"https://sickw.com/api.php?format=beta&key={api_key}&imei={clean_imei}&service={chosen_service}"
+
+    device = Device.objects.filter(Q(imei=clean_imei) | Q(serial_number=clean_imei) | Q(imei2=clean_imei)).first()
+
+    try:
+        req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        with urllib.request.urlopen(req, timeout=35) as resp:
+            resp_text = resp.read().decode('utf-8', errors='ignore')
+    except Exception as e:
+        logger.exception("Sickw API connection failed")
+        return {"error": f"Failed to connect to Sickw API: {str(e)}"}
+
+    raw_result_data = None
+    data = None
+    try:
+        data = json.loads(resp_text)
+        if isinstance(data, dict):
+            error_code = data.get('result')
+            is_err = data.get('status') == 'error' or (
+                isinstance(error_code, str) and (
+                    error_code in ['E01', 'E02', 'R01', 'B01', 'S01', 'S02', 'S03', 'A01', 'A02', 'A03'] or
+                    'R02' in error_code or 'duplicate' in error_code.lower()
+                )
+            )
+            if is_err:
+                error_map = {
+                    'E01': 'IMEI Luhn check failed (invalid IMEI digits)',
+                    'E02': 'IMEI or Serial Number format is invalid',
+                    'R01': 'IMEI or Serial Number not found on Apple servers or service offline',
+                    'B01': 'Low Sickw API account balance',
+                    'S01': 'Invalid Service ID',
+                    'A01': 'Sickw API key is invalid or server IP not whitelisted',
+                }
+                if 'duplicate' in str(error_code).lower() or '2 minutes' in str(error_code).lower() or 'R02' in str(error_code):
+                    # Duplicate check: return cached report if available in DB
+                    if device and device.sickw_reports.exists():
+                        latest_r = device.sickw_reports.order_by('-created_at').first()
+                        color_match = _check_color_match(device.color, latest_r.color)
+                        return {
+                            "success": True,
+                            "is_cached": True,
+                            "note": "Sickw requires a 2-minute waiting period between requests for the same IMEI on the same service. Returning latest verified report from database.",
+                            "imei": device.imei,
+                            "model": device.model,
+                            "motherboard_color": latest_r.color or "Unknown",
+                            "outlook_color": device.color or "Unknown",
+                            "color_match": color_match,
+                            "color_mismatch_warning": None if color_match is not False else f"⚠️ MISMATCH: Housing is '{device.color}' but Sickw motherboard is '{latest_r.color}'.",
+                            "sim_lock_status": latest_r.sim_lock_status or device.sim_lock_status or "Unknown",
+                            "carrier": latest_r.locked_carrier or device.carrier_policy or "Unknown",
+                            "icloud_lock": latest_r.icloud_lock or device.icloud_status or "Unknown",
+                            "serial_number": latest_r.serial_number or device.serial_number or "N/A",
+                            "warranty_status": latest_r.warranty_status or device.warranty_status or "N/A",
+                            "report_id": latest_r.id
+                        }
+                    return {"error": f"Duplicate order: Sickw requires waiting 2 minutes before re-checking this IMEI on service {chosen_service}. Please try again shortly."}
+
+                return {"error": error_map.get(str(error_code), f"Sickw API Error: {error_code}")}
+
+            raw_result_data = data.get('result')
+    except Exception:
+        pass
+
+    if isinstance(raw_result_data, dict):
+        parsed = SickwParser.parse_dict_data(raw_result_data)
+        raw_text = "\n".join([f"{k}: {v}" for k, v in raw_result_data.items() if v is not None])
+    else:
+        raw_text = str(raw_result_data or resp_text)
+        parsed = SickwParser.parse(raw_text)
+
+    if not parsed:
+        return {"error": f"Sickw API returned an empty or unparseable response: {resp_text[:200]}"}
+
+    color = parsed.get('color')
+    model = parsed.get('model')
+    model_description = parsed.get('model_description')
+    model_code = parsed.get('model_code') or parsed.get('model_number')
+    serial_number = parsed.get('serial_number')
+    purchase_date_str = parsed.get('estimated_purchase_date')
+    sim_lock = parsed.get('sim_lock_status')
+    carrier = parsed.get('locked_carrier')
+    icloud = parsed.get('icloud_lock')
+    warranty = parsed.get('warranty_status')
+    purchase_country = parsed.get('purchase_country')
+
+    purchase_date = None
+    if purchase_date_str:
+        try:
+            from datetime import datetime
+            purchase_date = datetime.strptime(purchase_date_str.strip()[:10], "%Y-%m-%d").date()
+        except Exception:
+            purchase_date = None
+
+    service_prices = {'92': '0.022', '12': '0.025', '103': '0.060'}
+    billed_price = None
+    if isinstance(data, dict):
+        billed_price = data.get('price') or data.get('cost') or data.get('amount')
+    if not billed_price:
+        billed_price = service_prices.get(chosen_service, '0.000')
+
+    parsed['price'] = billed_price
+    color = str(color)[:100] if color else None
+    model_code = str(model_code)[:100] if model_code else None
+
+    # Save SickwReport if device exists
+    report_obj = None
+    if device:
+        report_obj = SickwReport.objects.create(
+            device=device,
+            service_id=chosen_service,
+            raw_text=raw_text,
+            parsed_data=parsed,
+            model_description=str(model_description or device.model_description or '')[:255] or None,
+            model=str(model or device.model or '')[:150] or None,
+            imei=device.imei,
+            imei2=str(parsed.get('imei2') or device.imei2 or '')[:50] or None,
+            meid=str(parsed.get('meid') or device.meid or '')[:50] or None,
+            serial_number=str(serial_number or device.serial_number or '')[:100] or None,
+            color=color,
+            model_code=model_code,
+            estimated_purchase_date=purchase_date_str or (str(purchase_date) if purchase_date else None),
+            warranty_status=str(warranty or device.warranty_status or '')[:150] or None,
+            icloud_lock=str(icloud or device.icloud_status or '')[:100] or None,
+            purchase_country=str(purchase_country or device.purchase_country or '')[:100] or None,
+            locked_carrier=str(carrier or device.carrier_policy or '')[:150] or None,
+            sim_lock_status=str(sim_lock or device.sim_lock_status or '')[:100] or None
+        )
+
+        updated_fields = []
+        if serial_number and not device.serial_number:
+            device.serial_number = serial_number
+            updated_fields.append('serial_number')
+        if sim_lock:
+            device.sim_lock_status = sim_lock
+            updated_fields.append('sim_lock_status')
+        if carrier and not device.carrier_policy:
+            device.carrier_policy = carrier
+            updated_fields.append('carrier_policy')
+        if icloud:
+            device.icloud_status = icloud
+            updated_fields.append('icloud_status')
+        if warranty:
+            device.warranty_status = warranty
+            updated_fields.append('warranty_status')
+        if purchase_date and not device.estimated_purchase_date:
+            device.estimated_purchase_date = purchase_date
+            updated_fields.append('estimated_purchase_date')
+        if purchase_country and not device.purchase_country:
+            device.purchase_country = purchase_country
+            updated_fields.append('purchase_country')
+        if not device.color and color:
+            device.color = color
+            updated_fields.append('color')
+
+        if updated_fields:
+            device.save(update_fields=updated_fields + ['updated_at'])
+
+        actor = User.objects.filter(username=user_username).first() if user_username else None
+        DeviceHistory.objects.create(
+            device=device,
+            user=actor,
+            action_type='STATUS_UPDATE',
+            new_state=f"Sickw Service {chosen_service} checked via AI Copilot. Motherboard Color: {color or 'N/A'}. Carrier: {carrier or 'N/A'}. SIM: {sim_lock or 'N/A'}."
+        )
+
+    # Check color match between manual device outlook color and motherboard color
+    outlook_color = device.color if device else None
+    color_match = _check_color_match(outlook_color, color)
+    color_warning = None
+    if outlook_color and color:
+        if color_match is False:
+            color_warning = f"⚠️ CRITICAL HOUSING / MOTHERBOARD MISMATCH: Device physical housing is '{outlook_color}', but official Apple motherboard is '{color}'. This indicates the housing, back glass, or body has been swapped or replaced!"
+        elif color_match is True:
+            color_warning = f"✅ Color verified: Physical outlook color '{outlook_color}' matches official Apple motherboard '{color}'."
+
+    return {
+        "success": True,
+        "imei": clean_imei,
+        "device_found_in_inventory": bool(device),
+        "service_used": f"Service {chosen_service} ({valid_services.get(chosen_service, '')})",
+        "model": model or (device.model if device else "Unknown"),
+        "model_description": model_description or "N/A",
+        "motherboard_color": color or "Not specified",
+        "outlook_color": outlook_color or "Unknown",
+        "color_match": color_match,
+        "color_check_status": color_warning or "Color verification complete.",
+        "sim_lock_status": sim_lock or (device.sim_lock_status if device else "Unknown"),
+        "carrier": carrier or (device.carrier_policy if device else "Unknown"),
+        "icloud_lock": icloud or (device.icloud_status if device else "Unknown"),
+        "serial_number": serial_number or (device.serial_number if device else "N/A"),
+        "warranty_status": warranty or (device.warranty_status if device else "N/A"),
+        "purchase_country": purchase_country or (device.purchase_country if device else "N/A"),
+        "purchase_date": str(purchase_date or purchase_date_str or "N/A"),
+        "report_saved_to_database": bool(report_obj)
+    }
+
+def get_sickw_account_balance(**kwargs) -> Dict[str, Any]:
+    """
+    Fetch the live Sickw API account balance and credits in USD.
+    """
+    import os
+    import urllib.request
+    try:
+        api_key = os.environ.get('SICKW_API_KEY', 'P0Z-Y5S-1SU-3JW-81N-BHV-9R7-RK1')
+        api_url = f"https://sickw.com/api.php?key={api_key}&action=balance"
+        req = urllib.request.Request(api_url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            balance_str = resp.read().decode('utf-8', errors='ignore').strip()
+        balance_val = float(balance_str)
+        return {
+            "success": True,
+            "balance_usd": balance_val,
+            "currency": "USD",
+            "status": "Active" if balance_val > 0.5 else "Low Balance Warning"
+        }
+    except Exception as e:
+        logger.exception("Error checking Sickw balance")
+        return {"error": str(e)}
+
+
 
 

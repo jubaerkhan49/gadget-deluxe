@@ -112,8 +112,17 @@ CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
 4. STOCK & INVENTORY QUERIES:
    - For stock counts, available devices, or asset valuations, call `get_inventory_stats` or `search_devices(status='IN_STOCK')`.
 
-5. DIAGNOSTICS & COLOR MISMATCH:
-   - If an IMEI is asked about, call `get_device_detail` and check if the manual outlook color matches the Sickw motherboard color. If they mismatch (e.g. Blue Titanium motherboard vs Natural Titanium housing), prominently warn that this device has likely had its housing, back glass, or body modified.
+5. SICKW & GSX LIVE API DIAGNOSTICS (CRITICAL):
+   - You HAVE direct, active integration with the official Sickw API via `fetch_live_sickw_report` and `get_sickw_account_balance`.
+   - NEVER tell the user "The system does not have an active Sickw API integration" or "I cannot perform external lookups on demand". That is completely FALSE. You HAVE direct API access and you MUST use it!
+   - When the user asks to "fetch sickw", "check sickw", "run diagnostic", "get motherboard color", "check carrier/sim lock", or "do it through the system and give me the result", call `fetch_live_sickw_report(imei=...)`.
+   - If the user does not repeat the IMEI in their current message (e.g. "fetch the sickw for me", "you do it through the system and give me the result"), locate the 15-digit IMEI discussed in recent conversation turns and use that IMEI!
+   - After fetching, report:
+     1. Official Apple Model & Capacity
+     2. Motherboard Color vs Physical Outlook Color: If they mismatch (e.g. Blue Titanium motherboard vs Natural Titanium housing), prominently highlight a ⚠️ WARNING that this device's housing or motherboard has been swapped/replaced!
+     3. Carrier & SIM Lock status (Locked / Unlocked)
+     4. Serial Number, Purchase Country & Warranty status
+   - To check Sickw account funds/credits, call `get_sickw_account_balance`.
 
 6. CLEAN MARKDOWN FORMATTING:
    - Bold key numbers, currency in ৳ (BDT), and use concise tables or clean bullet points.
@@ -225,6 +234,32 @@ GEMINI_TOOLS_DECLARATION = [{
                 },
                 "required": ["imei", "employee_username"]
             }
+        },
+        {
+            "name": "fetch_live_sickw_report",
+            "description": "Fetch a live official Sickw API diagnostic report for any device IMEI or Serial Number on demand. Automatically queries Sickw, updates device specs (motherboard color, carrier, sim lock, icloud, serial, model), stores a permanent SickwReport, checks for color mismatches against the physical housing, and returns real-time diagnostic results.",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "imei": {
+                        "type": "STRING",
+                        "description": "The 15-digit IMEI or Serial Number of the device to inspect. If the user does not specify an IMEI in their current message (e.g. 'fetch the sickw for me'), extract the IMEI from the recent conversation context."
+                    },
+                    "service_id": {
+                        "type": "STRING",
+                        "description": "Optional service ID: '12' (Model & Motherboard Color & Specs - default), '103' (Carrier & SIM Lock), or '92' (Color Only)."
+                    }
+                },
+                "required": ["imei"]
+            }
+        },
+        {
+            "name": "get_sickw_account_balance",
+            "description": "Fetch the current live Sickw API account balance and credits in USD.",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {}
+            }
         }
     ]
 }]
@@ -234,7 +269,15 @@ def execute_tool_call(func_name: str, args: Dict[str, Any], user_username: str =
     """Dispatches function calls from Gemini to actual Python inventory tools."""
     logger.info(f"Copilot executing tool: {func_name} with args: {args}")
     try:
-        if func_name == "execute_safe_sql_query":
+        if func_name == "fetch_live_sickw_report":
+            return tools.fetch_live_sickw_report(
+                imei=args.get("imei"),
+                service_id=args.get("service_id"),
+                user_username=user_username
+            )
+        elif func_name == "get_sickw_account_balance":
+            return tools.get_sickw_account_balance()
+        elif func_name == "execute_safe_sql_query":
             return tools.execute_safe_sql_query(
                 query=args.get("query", "")
             )
@@ -355,8 +398,8 @@ class CopilotService:
         last_error = None
         start_time = time.time()
         for model_name in CANDIDATE_MODELS:
-            # Prevent cumulative attempts from approaching Gunicorn worker timeout
-            if time.time() - start_time > 20:
+            # Prevent cumulative attempts from approaching request deadline
+            if time.time() - start_time > 45:
                 logger.warning("Approaching request deadline, stopping candidate model loop")
                 break
 
@@ -411,8 +454,8 @@ class CopilotService:
     def _run_agent_loop(cls, model_name: str, api_key: str, contents: List[Dict[str, Any]], actions_taken: List[Dict[str, Any]], referenced_imeis: set, user_username: str) -> str:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
 
-        # Up to 2 tool iterations (Execute Tool -> Formulate Final Answer)
-        for iteration in range(2):
+        # Up to 3 tool iterations (Execute Tool -> Follow-up/Diagnostics -> Formulate Final Answer)
+        for iteration in range(3):
             payload = {
                 "contents": contents,
                 "system_instruction": {
@@ -424,7 +467,7 @@ class CopilotService:
             body = json.dumps(payload).encode('utf-8')
             req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
 
-            with urllib.request.urlopen(req, timeout=12) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
 
             candidate = data.get("candidates", [{}])[0]
@@ -448,6 +491,23 @@ class CopilotService:
             func_name = function_call.get("name")
             func_args = function_call.get("args", {})
             call_id = function_call.get("id")
+
+            # Fallback IMEI extraction if missing in arguments for fetch_live_sickw_report or get_device_detail
+            if func_name in ["fetch_live_sickw_report", "get_device_detail"]:
+                arg_key = "imei" if func_name == "fetch_live_sickw_report" else "imei_or_id"
+                if not func_args.get(arg_key):
+                    if referenced_imeis:
+                        func_args[arg_key] = list(referenced_imeis)[-1]
+                    else:
+                        for c in reversed(contents):
+                            for p in c.get("parts", []):
+                                txt = p.get("text", "")
+                                found = re.findall(r'\b(35\d{13}|86\d{13}|99\d{13})\b', txt)
+                                if found:
+                                    func_args[arg_key] = found[-1]
+                                    break
+                            if func_args.get(arg_key):
+                                break
 
             tool_result = execute_tool_call(func_name, func_args, user_username=user_username)
 
