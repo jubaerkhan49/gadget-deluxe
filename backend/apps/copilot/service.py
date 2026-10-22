@@ -85,8 +85,10 @@ POSTGRESQL SYNTAX RULES FOR SQL QUERIES (CRITICAL):
 - Always use standard PostgreSQL date syntax:
   * For this month: `s.sale_date >= '2026-10-01' AND s.sale_date < '2026-11-01'` or `EXTRACT(MONTH FROM s.sale_date) = 10`
   * For today: `s.sale_date >= CURRENT_DATE` or `s.sale_date >= '2026-10-22'`
-  * To rank employees by profit:
+  * To rank employees by highest profit:
     `SELECT u.username, u.first_name, SUM(s.profit) as total_profit, COUNT(s.id) as total_sales FROM sales_sale s JOIN accounts_user u ON s.seller_id = u.id WHERE s.sale_date >= '2026-10-01' GROUP BY u.id, u.username, u.first_name ORDER BY total_profit DESC LIMIT 1;`
+  * To rank employees by lowest or least profit:
+    `SELECT u.username, u.first_name, SUM(s.profit) as total_profit, COUNT(s.id) as total_sales FROM sales_sale s JOIN accounts_user u ON s.seller_id = u.id WHERE s.sale_date >= '2026-10-01' GROUP BY u.id, u.username, u.first_name ORDER BY total_profit ASC LIMIT 1;`
 - NEVER use SQLite `strftime()` functions! They do not exist in PostgreSQL and will fail.
 
 CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
@@ -292,16 +294,35 @@ class CopilotService:
                 "suggestions": ["Check API Key in Render settings"]
             }
 
-        # Build contents array with conversation history
-        contents = []
+        # Build sanitized contents array with conversation history
+        # Gemini strictly requires:
+        # 1. Must start with a 'user' turn
+        # 2. Strict alternation between 'user' and 'model'
+        # 3. Must end with 'user'
+        sanitized_history = []
         if history and isinstance(history, list):
-            for h in history[-8:]:  # keep last 8 turns for context window efficiency
+            for h in history[-8:]:
+                raw_text = (h.get("text") or h.get("content") or "").strip()
+                if not raw_text:
+                    continue
+                # Skip error messages from history so past failures don't poison subsequent turns
+                if "Unable to complete request" in raw_text or raw_text.startswith("⚠️"):
+                    continue
                 role = "user" if h.get("role") == "user" else "model"
-                text = h.get("text") or h.get("content") or ""
-                if text:
-                    contents.append({"role": role, "parts": [{"text": text}]})
+                if sanitized_history and sanitized_history[-1]["role"] == role:
+                    sanitized_history[-1]["parts"][0]["text"] += f"\n{raw_text}"
+                else:
+                    sanitized_history.append({"role": role, "parts": [{"text": raw_text}]})
 
-        contents.append({"role": "user", "parts": [{"text": user_message}]})
+        # Ensure first turn is from user
+        while sanitized_history and sanitized_history[0]["role"] != "user":
+            sanitized_history.pop(0)
+
+        # Ensure last turn in history is model so appending new user turn alternates strictly
+        while sanitized_history and sanitized_history[-1]["role"] == "user":
+            sanitized_history.pop()
+
+        contents = sanitized_history + [{"role": "user", "parts": [{"text": user_message}]}]
 
         actions_taken = []
         referenced_imeis = set()
@@ -423,12 +444,18 @@ class CopilotService:
             })
 
         # If loop ended after executing tools but model didn't return final text yet,
-        # make one final request without tools so Gemini is forced to formulate the final answer immediately
+        # make one final request with tools and mode NONE so Gemini is forced to formulate the final answer immediately
         if not text_part.strip():
             final_payload = {
                 "contents": contents,
                 "system_instruction": {
                     "parts": [{"text": get_system_prompt()}]
+                },
+                "tools": GEMINI_TOOLS_DECLARATION,
+                "tool_config": {
+                    "function_calling_config": {
+                        "mode": "NONE"
+                    }
                 }
             }
             final_body = json.dumps(final_payload).encode('utf-8')

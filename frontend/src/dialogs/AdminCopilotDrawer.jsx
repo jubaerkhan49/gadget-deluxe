@@ -30,6 +30,7 @@ import {
   Build as RepairIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
+import { useLocation } from 'react-router-dom';
 import { copilotApi, deviceApi } from '../api/client';
 import DeviceDetailDrawer from './DeviceDetailDrawer';
 
@@ -263,6 +264,20 @@ function formatInline(text, isDark) {
   });
 }
 
+const INITIAL_MESSAGES = [
+  {
+    role: 'model',
+    text: "👋 Hello! I am your **Gadget Deluxe AI Copilot**, powered by Google Gemini.\n\nI have direct, real-time access to your database to query devices, check GSX motherboard color mismatches, track shipments, check repairs, or update statuses.\n\nHow can I help you today?",
+    actions: [],
+    referenced_devices: [],
+    suggestions: [
+      'Give me an inventory summary',
+      'Show active repair costs',
+      'Which shipments are arriving soon?'
+    ]
+  }
+];
+
 export default function AdminCopilotDrawer({ open, onClose }) {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
@@ -272,22 +287,9 @@ export default function AdminCopilotDrawer({ open, onClose }) {
   const [loading, setLoading] = useState(false);
   const [messages, setMessages] = useState(() => {
     try {
-      const saved = localStorage.getItem('copilot_chat_history');
-      if (saved) return JSON.parse(saved);
+      localStorage.removeItem('copilot_chat_history');
     } catch (e) {}
-    return [
-      {
-        role: 'model',
-        text: "👋 Hello! I am your **Gadget Deluxe AI Copilot**, powered by Google Gemini.\n\nI have direct, real-time access to your database to query devices, check GSX motherboard color mismatches, track shipments, check repairs, or update statuses.\n\nHow can I help you today?",
-        actions: [],
-        referenced_devices: [],
-        suggestions: [
-          'Give me an inventory summary',
-          'Show active repair costs',
-          'Which shipments are arriving soon?'
-        ]
-      }
-    ];
+    return INITIAL_MESSAGES;
   });
 
   const [selectedDevice, setSelectedDevice] = useState(null);
@@ -297,11 +299,13 @@ export default function AdminCopilotDrawer({ open, onClose }) {
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
+  const location = useLocation();
+
   useEffect(() => {
-    try {
-      localStorage.setItem('copilot_chat_history', JSON.stringify(messages));
-    } catch (e) {}
-  }, [messages]);
+    if (location.pathname === '/dashboard') {
+      setMessages(INITIAL_MESSAGES);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (open) {
