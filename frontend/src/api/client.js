@@ -184,5 +184,9 @@ export const otherGoodsApi = {
   trackPublic: (query) => api.get('/api/public/track-order/', { params: { query } }),
 };
 
+export const copilotApi = {
+  chat: (message, history = []) => api.post('/api/copilot/chat/', { message, history }),
+};
+
 export default api;
 

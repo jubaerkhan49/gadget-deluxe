@@ -50,6 +50,7 @@ urlpatterns = [
     path('sync/status/', SyncStatusAPIView.as_view(), name='sync_status'),
     path('sickw/parse-raw/', SickwParseAPIView.as_view(), name='sickw_parse_raw'),
     path('export/devices/csv/', ExportDevicesCSVView.as_view(), name='export_devices_csv'),
+    path('copilot/', include('apps.copilot.urls')),
 
     # ViewSet Router URLs
     path('', include(router.urls)),

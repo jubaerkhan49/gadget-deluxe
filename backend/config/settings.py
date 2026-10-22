@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'apps.dashboard',
     'apps.orders',
     'apps.api',
+    'apps.copilot',
 ]
 
 MIDDLEWARE = [
