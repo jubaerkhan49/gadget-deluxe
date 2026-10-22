@@ -136,7 +136,7 @@ export const getAppTheme = (mode = 'dark') => {
             borderRadius: 8,
           },
           filled: {
-            color: '#ffffff',
+            color: isDark ? '#ffffff' : '#0f172a',
           },
           filledPrimary: {
             color: '#ffffff',

@@ -13,7 +13,6 @@ import {
   Tooltip,
   Divider,
   Avatar,
-  Fade,
   useTheme
 } from '@mui/material';
 import {
@@ -34,14 +33,14 @@ import { copilotApi, deviceApi } from '../api/client';
 import DeviceDetailDrawer from './DeviceDetailDrawer';
 
 const QUICK_PROMPTS = [
-  { label: '📊 Live Inventory Valuation', query: 'Give me a live overview of our current inventory valuation and stock counts.' },
+  { label: '📊 Live Valuation & Stats', query: 'Give me a live overview of our current inventory valuation and stock counts.' },
   { label: '🔧 Active Repairs & Costs', query: 'Show all devices currently under repair, the repair centers, and total repair expenses.' },
   { label: '🚚 In-Transit Shipments', query: 'Are there any incoming international shipments currently in transit from China?' },
   { label: '📱 In-Stock iPhone 15 Models', query: 'List all iPhone 15 models currently in stock with their colors and capacities.' }
 ];
 
-// Simple Markdown renderer for tables, lists, bold text, and code
-function renderMarkdown(content) {
+// Markdown renderer with full light/dark theme contrast
+function renderMarkdown(content, isDark) {
   if (!content) return null;
 
   const lines = content.split('\n');
@@ -54,12 +53,31 @@ function renderMarkdown(content) {
       const header = tableRows[0];
       const rows = tableRows.slice(1).filter(r => !r.every(c => /^:?-+:?$/.test(c.trim())));
       elements.push(
-        <Box key={`table-${key}`} sx={{ overflowX: 'auto', my: 1.5, borderRadius: 1.5, border: '1px solid rgba(255,255,255,0.1)' }}>
+        <Box
+          key={`table-${key}`}
+          sx={{
+            overflowX: 'auto',
+            my: 1.5,
+            borderRadius: 2,
+            border: '1px solid',
+            borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
+            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)'
+          }}
+        >
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
             <thead>
-              <tr style={{ background: 'rgba(255, 255, 255, 0.06)' }}>
+              <tr style={{ background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9' }}>
                 {header.map((col, idx) => (
-                  <th key={idx} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.12)' }}>
+                  <th
+                    key={idx}
+                    style={{
+                      padding: '8px 12px',
+                      textAlign: 'left',
+                      fontWeight: 700,
+                      color: isDark ? '#f8fafc' : '#0f172a',
+                      borderBottom: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid #cbd5e1'
+                    }}
+                  >
                     {col.trim()}
                   </th>
                 ))}
@@ -67,10 +85,24 @@ function renderMarkdown(content) {
             </thead>
             <tbody>
               {rows.map((row, rIdx) => (
-                <tr key={rIdx} style={{ background: rIdx % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)' }}>
+                <tr
+                  key={rIdx}
+                  style={{
+                    background: rIdx % 2 === 0
+                      ? 'transparent'
+                      : isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc'
+                  }}
+                >
                   {row.map((cell, cIdx) => (
-                    <td key={cIdx} style={{ padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                      {cell.trim()}
+                    <td
+                      key={cIdx}
+                      style={{
+                        padding: '7px 12px',
+                        color: isDark ? '#e2e8f0' : '#1e293b',
+                        borderBottom: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #e2e8f0'
+                      }}
+                    >
+                      {formatInline(cell.trim(), isDark)}
                     </td>
                   ))}
                 </tr>
@@ -99,31 +131,85 @@ function renderMarkdown(content) {
 
     if (trimmed.startsWith('### ')) {
       elements.push(
-        <Typography key={index} variant="subtitle2" sx={{ fontWeight: 700, mt: 1.5, mb: 0.5, color: 'primary.light' }}>
+        <Typography
+          key={index}
+          variant="subtitle2"
+          sx={{
+            fontWeight: 800,
+            mt: 1.8,
+            mb: 0.6,
+            color: isDark ? '#93c5fd' : '#1d4ed8',
+            fontSize: '0.9rem'
+          }}
+        >
           {trimmed.replace('### ', '')}
         </Typography>
       );
     } else if (trimmed.startsWith('## ')) {
       elements.push(
-        <Typography key={index} variant="subtitle1" sx={{ fontWeight: 800, mt: 2, mb: 0.5, color: 'text.primary' }}>
+        <Typography
+          key={index}
+          variant="subtitle1"
+          sx={{
+            fontWeight: 800,
+            mt: 2,
+            mb: 0.8,
+            color: isDark ? '#ffffff' : '#0f172a',
+            fontSize: '1rem'
+          }}
+        >
           {trimmed.replace('## ', '')}
         </Typography>
       );
     } else if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
       elements.push(
-        <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start', my: 0.3, pl: 1 }}>
-          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main', mt: 0.9, mr: 1, flexShrink: 0 }} />
-          <Typography variant="body2" sx={{ fontSize: '0.85rem', lineHeight: 1.45 }}>
-            {formatInline(trimmed.slice(2))}
+        <Box key={index} sx={{ display: 'flex', alignItems: 'flex-start', my: 0.4, pl: 0.5 }}>
+          <Box
+            sx={{
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              bgcolor: isDark ? '#60a5fa' : '#2563eb',
+              mt: 0.85,
+              mr: 1.2,
+              flexShrink: 0
+            }}
+          />
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: '0.86rem',
+              lineHeight: 1.5,
+              color: isDark ? '#e2e8f0' : '#1e293b'
+            }}
+          >
+            {formatInline(trimmed.slice(2), isDark)}
           </Typography>
         </Box>
       );
     } else if (trimmed === '---') {
-      elements.push(<Divider key={index} sx={{ my: 1.5, opacity: 0.3 }} />);
+      elements.push(
+        <Divider
+          key={index}
+          sx={{
+            my: 1.8,
+            borderColor: isDark ? 'rgba(255,255,255,0.12)' : '#e2e8f0'
+          }}
+        />
+      );
     } else if (trimmed.length > 0) {
       elements.push(
-        <Typography key={index} variant="body2" sx={{ my: 0.5, fontSize: '0.85rem', lineHeight: 1.5 }}>
-          {formatInline(trimmed)}
+        <Typography
+          key={index}
+          variant="body2"
+          sx={{
+            my: 0.6,
+            fontSize: '0.86rem',
+            lineHeight: 1.55,
+            color: isDark ? '#e2e8f0' : '#1e293b'
+          }}
+        >
+          {formatInline(trimmed, isDark)}
         </Typography>
       );
     }
@@ -136,24 +222,36 @@ function renderMarkdown(content) {
   return elements;
 }
 
-function formatInline(text) {
-  // Bold **text**
+function formatInline(text, isDark) {
+  // Bold **text** and code `code`
   const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} style={{ color: 'inherit', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+      return (
+        <strong
+          key={i}
+          style={{
+            fontWeight: 700,
+            color: isDark ? '#ffffff' : '#0f172a'
+          }}
+        >
+          {part.slice(2, -2)}
+        </strong>
+      );
     }
     if (part.startsWith('`') && part.endsWith('`')) {
       return (
         <code
           key={i}
           style={{
-            background: 'rgba(99, 102, 241, 0.15)',
-            color: '#a5b4fc',
-            padding: '2px 5px',
-            borderRadius: '4px',
+            background: isDark ? 'rgba(99, 102, 241, 0.25)' : '#e0e7ff',
+            color: isDark ? '#c7d2fe' : '#3730a3',
+            border: isDark ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid #c7d2fe',
+            padding: '2px 6px',
+            borderRadius: '5px',
             fontSize: '0.82rem',
-            fontFamily: 'monospace'
+            fontFamily: 'monospace',
+            fontWeight: 600
           }}
         >
           {part.slice(1, -1)}
@@ -166,6 +264,7 @@ function formatInline(text) {
 
 export default function AdminCopilotDrawer({ open, onClose }) {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const { enqueueSnackbar } = useSnackbar();
 
   const [inputMessage, setInputMessage] = useState('');
@@ -174,9 +273,7 @@ export default function AdminCopilotDrawer({ open, onClose }) {
     try {
       const saved = localStorage.getItem('copilot_chat_history');
       if (saved) return JSON.parse(saved);
-    } catch (e) {
-      // fallback
-    }
+    } catch (e) {}
     return [
       {
         role: 'model',
@@ -225,7 +322,6 @@ export default function AdminCopilotDrawer({ open, onClose }) {
     setLoading(true);
 
     try {
-      // Send conversation history (last 6 items)
       const historyPayload = messages.slice(-6).map(m => ({
         role: m.role === 'model' ? 'model' : 'user',
         text: m.text
@@ -318,12 +414,16 @@ export default function AdminCopilotDrawer({ open, onClose }) {
         PaperProps={{
           sx: {
             width: { xs: '100%', sm: 480, md: 520 },
-            background: theme.palette.mode === 'dark'
-              ? 'linear-gradient(180deg, #0e1322 0%, #111827 100%)'
-              : 'linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)',
+            background: isDark
+              ? 'linear-gradient(180deg, #0b0f19 0%, #111827 100%)'
+              : '#ffffff',
             display: 'flex',
             flexDirection: 'column',
-            boxShadow: theme.palette.mode === 'dark' ? '-8px 0 32px rgba(0,0,0,0.6)' : '-8px 0 32px rgba(0,0,0,0.1)'
+            boxShadow: isDark
+              ? '-8px 0 32px rgba(0,0,0,0.7)'
+              : '-8px 0 32px rgba(15,23,42,0.12)',
+            borderLeft: '1px solid',
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0'
           }
         }}
       >
@@ -332,12 +432,11 @@ export default function AdminCopilotDrawer({ open, onClose }) {
           sx={{
             p: 2,
             borderBottom: '1px solid',
-            borderColor: 'divider',
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.7)' : 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(10px)',
+            background: isDark ? 'rgba(15, 23, 42, 0.9)' : '#ffffff',
             position: 'sticky',
             top: 0,
             zIndex: 10
@@ -346,33 +445,51 @@ export default function AdminCopilotDrawer({ open, onClose }) {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
             <Avatar
               sx={{
-                width: 38,
-                height: 38,
+                width: 40,
+                height: 40,
                 background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)',
-                boxShadow: '0 0 16px rgba(168, 85, 247, 0.4)'
+                boxShadow: '0 2px 10px rgba(168, 85, 247, 0.35)'
               }}
             >
-              <SparkleIcon sx={{ fontSize: 22, color: '#fff' }} />
+              <SparkleIcon sx={{ fontSize: 22, color: '#ffffff' }} />
             </Avatar>
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="subtitle1" fontWeight={700} sx={{ letterSpacing: -0.3 }}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight={800}
+                  sx={{
+                    letterSpacing: -0.2,
+                    color: isDark ? '#ffffff' : '#0f172a'
+                  }}
+                >
                   Admin Copilot
                 </Typography>
                 <Chip
                   label="Gemini AI"
                   size="small"
                   sx={{
-                    height: 18,
-                    fontSize: '0.65rem',
+                    height: 20,
+                    fontSize: '0.68rem',
                     fontWeight: 800,
-                    bgcolor: 'rgba(99, 102, 241, 0.15)',
-                    color: '#818cf8',
-                    border: '1px solid rgba(99, 102, 241, 0.3)'
+                    bgcolor: isDark ? 'rgba(168, 85, 247, 0.2)' : '#ede9fe',
+                    color: isDark ? '#c084fc' : '#6d28d9',
+                    border: '1px solid',
+                    borderColor: isDark ? 'rgba(168, 85, 247, 0.4)' : '#ddd6fe',
+                    '& .MuiChip-label': {
+                      px: 0.8,
+                      color: isDark ? '#c084fc' : '#6d28d9'
+                    }
                   }}
                 />
               </Box>
-              <Typography variant="caption" color="text.secondary">
+              <Typography
+                variant="caption"
+                sx={{
+                  color: isDark ? '#94a3b8' : '#475569',
+                  fontWeight: 500
+                }}
+              >
                 Autonomous Inventory & Operations Assistant
               </Typography>
             </Box>
@@ -380,11 +497,19 @@ export default function AdminCopilotDrawer({ open, onClose }) {
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
             <Tooltip title="Clear chat history">
-              <IconButton size="small" onClick={handleClearHistory} sx={{ color: 'text.secondary' }}>
+              <IconButton
+                size="small"
+                onClick={handleClearHistory}
+                sx={{ color: isDark ? '#94a3b8' : '#64748b', '&:hover': { color: isDark ? '#ffffff' : '#0f172a' } }}
+              >
                 <ClearIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <IconButton size="small" onClick={onClose} sx={{ color: 'text.secondary' }}>
+            <IconButton
+              size="small"
+              onClick={onClose}
+              sx={{ color: isDark ? '#94a3b8' : '#64748b', '&:hover': { color: isDark ? '#ffffff' : '#0f172a' } }}
+            >
               <CloseIcon fontSize="small" />
             </IconButton>
           </Box>
@@ -395,10 +520,11 @@ export default function AdminCopilotDrawer({ open, onClose }) {
           sx={{
             flex: 1,
             overflowY: 'auto',
-            p: 2,
+            p: 2.2,
             display: 'flex',
             flexDirection: 'column',
-            gap: 2
+            gap: 2.2,
+            bgcolor: isDark ? 'transparent' : '#f8fafc'
           }}
         >
           {messages.map((msg, index) => {
@@ -417,36 +543,47 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                 <Paper
                   elevation={0}
                   sx={{
-                    p: 1.8,
-                    borderRadius: isUser ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                    p: 2,
+                    borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                     maxWidth: '92%',
                     bgcolor: isUser
-                      ? 'primary.main'
-                      : theme.palette.mode === 'dark'
-                      ? 'rgba(30, 41, 59, 0.7)'
-                      : '#f1f5f9',
-                    color: isUser ? '#fff' : 'text.primary',
-                    border: isUser ? 'none' : '1px solid',
-                    borderColor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
+                      ? '#2563eb'
+                      : isDark
+                      ? '#1e293b'
+                      : '#ffffff',
+                    color: isUser ? '#ffffff' : isDark ? '#f8fafc' : '#0f172a',
+                    border: '1px solid',
+                    borderColor: isUser
+                      ? '#1d4ed8'
+                      : isDark
+                      ? 'rgba(255,255,255,0.12)'
+                      : '#e2e8f0',
+                    boxShadow: isUser
+                      ? '0 4px 12px rgba(37, 99, 235, 0.25)'
+                      : '0 2px 8px rgba(0,0,0,0.04)',
                     position: 'relative'
                   }}
                 >
                   {/* Actions Taken Badges */}
                   {!isUser && msg.actions && msg.actions.length > 0 && (
-                    <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
+                    <Box sx={{ mb: 1.2, display: 'flex', flexWrap: 'wrap', gap: 0.8 }}>
                       {msg.actions.map((act, aIdx) => (
                         <Chip
                           key={aIdx}
-                          icon={<TerminalIcon sx={{ fontSize: '14px !important', color: '#10b981 !important' }} />}
+                          icon={<TerminalIcon sx={{ fontSize: '14px !important', color: isDark ? '#34d399 !important' : '#047857 !important' }} />}
                           label={act.tool}
                           size="small"
                           sx={{
-                            height: 20,
-                            fontSize: '0.68rem',
+                            height: 22,
+                            fontSize: '0.72rem',
                             fontWeight: 700,
-                            bgcolor: 'rgba(16, 185, 129, 0.12)',
-                            color: '#34d399',
-                            border: '1px solid rgba(16, 185, 129, 0.25)'
+                            bgcolor: isDark ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5',
+                            color: isDark ? '#34d399' : '#047857',
+                            border: '1px solid',
+                            borderColor: isDark ? 'rgba(16, 185, 129, 0.3)' : '#a7f3d0',
+                            '& .MuiChip-label': {
+                              color: isDark ? '#34d399' : '#047857'
+                            }
                           }}
                         />
                       ))}
@@ -455,27 +592,40 @@ export default function AdminCopilotDrawer({ open, onClose }) {
 
                   {/* Message Content */}
                   {isUser ? (
-                    <Typography variant="body2" sx={{ fontSize: '0.88rem', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontSize: '0.88rem',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.5,
+                        color: '#ffffff',
+                        fontWeight: 500
+                      }}
+                    >
                       {msg.text}
                     </Typography>
                   ) : (
                     <Box sx={{ wordBreak: 'break-word' }}>
-                      {renderMarkdown(msg.text)}
+                      {renderMarkdown(msg.text, isDark)}
                     </Box>
                   )}
 
                   {/* Copy Button for Assistant */}
                   {!isUser && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.2 }}>
                       <IconButton
                         size="small"
                         onClick={() => handleCopy(msg.text, index)}
-                        sx={{ p: 0.3, opacity: 0.6, '&:hover': { opacity: 1 } }}
+                        sx={{
+                          p: 0.4,
+                          color: isDark ? '#94a3b8' : '#64748b',
+                          '&:hover': { color: isDark ? '#ffffff' : '#0f172a', bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9' }
+                        }}
                       >
                         {copiedIndex === index ? (
-                          <CheckIcon sx={{ fontSize: 14, color: 'success.main' }} />
+                          <CheckIcon sx={{ fontSize: 15, color: '#10b981' }} />
                         ) : (
-                          <CopyIcon sx={{ fontSize: 14 }} />
+                          <CopyIcon sx={{ fontSize: 15 }} />
                         )}
                       </IconButton>
                     </Box>
@@ -484,9 +634,18 @@ export default function AdminCopilotDrawer({ open, onClose }) {
 
                 {/* Referenced IMEIs / Devices Pills */}
                 {!isUser && msg.referenced_devices && msg.referenced_devices.length > 0 && (
-                  <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.8, pl: 0.5 }}>
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <DeviceIcon sx={{ fontSize: 13 }} /> Click to inspect:
+                  <Box sx={{ mt: 1.2, display: 'flex', flexWrap: 'wrap', gap: 0.8, pl: 0.5 }}>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: isDark ? '#94a3b8' : '#475569',
+                        fontWeight: 700,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.5
+                      }}
+                    >
+                      <DeviceIcon sx={{ fontSize: 14 }} /> Click to inspect:
                     </Typography>
                     {msg.referenced_devices.map((imei, dIdx) => (
                       <Chip
@@ -496,14 +655,22 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                         clickable
                         onClick={() => handleOpenDevice(imei)}
                         sx={{
-                          height: 22,
-                          fontSize: '0.72rem',
+                          height: 24,
+                          fontSize: '0.74rem',
                           fontFamily: 'monospace',
                           fontWeight: 700,
-                          bgcolor: 'rgba(99, 102, 241, 0.15)',
-                          color: '#a5b4fc',
-                          border: '1px solid rgba(99, 102, 241, 0.35)',
-                          '&:hover': { bgcolor: 'rgba(99, 102, 241, 0.25)' }
+                          bgcolor: isDark ? 'rgba(99, 102, 241, 0.2)' : '#ede9fe',
+                          color: isDark ? '#c7d2fe' : '#5b21b6',
+                          border: '1px solid',
+                          borderColor: isDark ? '#6366f1' : '#c4b5fd',
+                          '& .MuiChip-label': {
+                            color: isDark ? '#c7d2fe' : '#5b21b6'
+                          },
+                          '&:hover': {
+                            bgcolor: isDark ? '#4f46e5' : '#7c3aed',
+                            color: '#ffffff',
+                            '& .MuiChip-label': { color: '#ffffff' }
+                          }
                         }}
                       />
                     ))}
@@ -512,7 +679,7 @@ export default function AdminCopilotDrawer({ open, onClose }) {
 
                 {/* Intelligent Follow-up Suggestion Chips */}
                 {!isUser && msg.suggestions && msg.suggestions.length > 0 && index === messages.length - 1 && (
-                  <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 0.8, pl: 0.5 }}>
+                  <Box sx={{ mt: 1.4, display: 'flex', flexWrap: 'wrap', gap: 0.8, pl: 0.5 }}>
                     {msg.suggestions.map((sug, sIdx) => (
                       <Chip
                         key={sIdx}
@@ -521,15 +688,23 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                         clickable
                         onClick={() => handleSendMessage(sug)}
                         sx={{
-                          fontSize: '0.75rem',
-                          bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                          color: 'text.secondary',
+                          height: 28,
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          bgcolor: isDark ? 'rgba(30, 41, 59, 0.8)' : '#eff6ff',
+                          color: isDark ? '#93c5fd' : '#1d4ed8',
                           border: '1px solid',
-                          borderColor: 'divider',
+                          borderColor: isDark ? 'rgba(59, 130, 246, 0.4)' : '#bfdbfe',
+                          boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                          '& .MuiChip-label': {
+                            px: 1,
+                            color: isDark ? '#93c5fd' : '#1d4ed8'
+                          },
                           '&:hover': {
-                            bgcolor: 'primary.main',
-                            color: '#fff',
-                            borderColor: 'primary.main'
+                            bgcolor: '#2563eb',
+                            borderColor: '#2563eb',
+                            color: '#ffffff',
+                            '& .MuiChip-label': { color: '#ffffff' }
                           }
                         }}
                       />
@@ -543,9 +718,18 @@ export default function AdminCopilotDrawer({ open, onClose }) {
           {/* Reasoning / Loading Indicator */}
           {loading && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pl: 1, my: 1 }}>
-              <CircularProgress size={18} thickness={5} sx={{ color: '#818cf8' }} />
-              <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                <SparkleIcon sx={{ fontSize: 13, color: '#818cf8' }} />
+              <CircularProgress size={18} thickness={5} sx={{ color: '#6366f1' }} />
+              <Typography
+                variant="caption"
+                sx={{
+                  color: isDark ? '#94a3b8' : '#475569',
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 0.5
+                }}
+              >
+                <SparkleIcon sx={{ fontSize: 14, color: '#6366f1' }} />
                 Copilot is reasoning and querying database...
               </Typography>
             </Box>
@@ -554,10 +738,28 @@ export default function AdminCopilotDrawer({ open, onClose }) {
           <div ref={messagesEndRef} />
         </Box>
 
-        {/* Quick starter prompts (if few messages) */}
+        {/* Quick starter prompts (Suggested Actions) */}
         {messages.length <= 2 && (
-          <Box sx={{ px: 2, pb: 1 }}>
-            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', letterSpacing: 0.5, mb: 0.8, display: 'block' }}>
+          <Box
+            sx={{
+              px: 2,
+              py: 1.2,
+              borderTop: '1px solid',
+              borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+              bgcolor: isDark ? 'rgba(15, 23, 42, 0.4)' : '#ffffff'
+            }}
+          >
+            <Typography
+              variant="caption"
+              sx={{
+                color: isDark ? '#94a3b8' : '#475569',
+                fontWeight: 800,
+                textTransform: 'uppercase',
+                letterSpacing: 0.6,
+                mb: 1,
+                display: 'block'
+              }}
+            >
               Suggested Actions
             </Typography>
             <Stack direction="row" spacing={0.8} sx={{ flexWrap: 'wrap', gap: 0.8 }}>
@@ -569,12 +771,24 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                   clickable
                   onClick={() => handleSendMessage(qp.query)}
                   sx={{
-                    fontSize: '0.74rem',
-                    fontWeight: 600,
-                    bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
+                    height: 28,
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    bgcolor: isDark ? '#1e293b' : '#f1f5f9',
+                    color: isDark ? '#f1f5f9' : '#1e293b',
                     border: '1px solid',
-                    borderColor: 'divider',
-                    '&:hover': { bgcolor: 'rgba(99, 102, 241, 0.15)', borderColor: '#818cf8', color: '#818cf8' }
+                    borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
+                    '& .MuiChip-label': {
+                      px: 1.2,
+                      color: isDark ? '#f1f5f9' : '#1e293b'
+                    },
+                    '&:hover': {
+                      bgcolor: isDark ? '#334155' : '#e2e8f0',
+                      borderColor: '#94a3b8',
+                      color: isDark ? '#ffffff' : '#0f172a',
+                      '& .MuiChip-label': { color: isDark ? '#ffffff' : '#0f172a' }
+                    }
                   }}
                 />
               ))}
@@ -587,12 +801,11 @@ export default function AdminCopilotDrawer({ open, onClose }) {
           sx={{
             p: 2,
             borderTop: '1px solid',
-            borderColor: 'divider',
-            background: theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(10px)'
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#e2e8f0',
+            background: isDark ? 'rgba(15, 23, 42, 0.95)' : '#ffffff'
           }}
         >
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
             <TextField
               fullWidth
               multiline
@@ -609,11 +822,23 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2.5,
                   fontSize: '0.88rem',
-                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.5)' : '#fff',
+                  bgcolor: isDark ? '#1e293b' : '#f8fafc',
+                  color: isDark ? '#ffffff' : '#0f172a',
+                  '& fieldset': {
+                    borderColor: isDark ? 'rgba(255,255,255,0.18)' : '#cbd5e1'
+                  },
+                  '&:hover fieldset': {
+                    borderColor: isDark ? '#818cf8' : '#3b82f6'
+                  },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#818cf8',
-                    boxShadow: '0 0 10px rgba(129, 140, 248, 0.25)'
+                    borderColor: isDark ? '#818cf8' : '#2563eb',
+                    borderWidth: 2,
+                    boxShadow: isDark ? '0 0 10px rgba(129, 140, 248, 0.3)' : '0 0 8px rgba(37, 99, 235, 0.2)'
                   }
+                },
+                '& .MuiOutlinedInput-input::placeholder': {
+                  color: isDark ? '#94a3b8' : '#64748b',
+                  opacity: 1
                 }
               }}
             />
@@ -624,24 +849,28 @@ export default function AdminCopilotDrawer({ open, onClose }) {
               sx={{
                 minWidth: 44,
                 width: 44,
-                height: 40,
+                height: 42,
                 borderRadius: 2.5,
                 p: 0,
-                background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                boxShadow: '0 4px 12px rgba(99, 102, 241, 0.35)',
+                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)',
                 '&:hover': {
-                  background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)'
+                  background: 'linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%)'
+                },
+                '&.Mui-disabled': {
+                  background: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+                  color: isDark ? 'rgba(255,255,255,0.3)' : '#94a3b8'
                 }
               }}
             >
-              <SendIcon sx={{ fontSize: 18 }} />
+              <SendIcon sx={{ fontSize: 18, color: '#ffffff' }} />
             </Button>
           </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1, px: 0.5 }}>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1.2, px: 0.5 }}>
+            <Typography variant="caption" sx={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '0.72rem' }}>
               Press <strong>Enter</strong> to send • <strong>Shift+Enter</strong> for newline
             </Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.7rem' }}>
+            <Typography variant="caption" sx={{ color: isDark ? '#94a3b8' : '#64748b', fontSize: '0.72rem', fontWeight: 600 }}>
               Google Gemini 3.5
             </Typography>
           </Box>
