@@ -106,10 +106,19 @@ function renderMarkdown(content, isDark, onCopy) {
             borderRadius: 2,
             border: '1px solid',
             borderColor: isDark ? 'rgba(255,255,255,0.15)' : '#cbd5e1',
-            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)'
+            boxShadow: isDark ? 'none' : '0 1px 3px rgba(0,0,0,0.05)',
+            maxWidth: '100%',
+            WebkitOverflowScrolling: 'touch',
+            '&::-webkit-scrollbar': {
+              height: 5
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.2)',
+              borderRadius: 3
+            }
           }}
         >
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.82rem' }}>
+          <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
             <thead>
               <tr style={{ background: isDark ? 'rgba(255, 255, 255, 0.08)' : '#f1f5f9' }}>
                 {header.map((col, idx) => (
@@ -119,11 +128,12 @@ function renderMarkdown(content, isDark, onCopy) {
                       padding: '8px 12px',
                       textAlign: 'left',
                       fontWeight: 700,
+                      whiteSpace: 'nowrap',
                       color: isDark ? '#f8fafc' : '#0f172a',
                       borderBottom: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid #cbd5e1'
                     }}
                   >
-                    {col.trim()}
+                    {formatInline(col.trim(), isDark)}
                   </th>
                 ))}
               </tr>
@@ -142,7 +152,8 @@ function renderMarkdown(content, isDark, onCopy) {
                     <td
                       key={cIdx}
                       style={{
-                        padding: '7px 12px',
+                        padding: '8px 12px',
+                        whiteSpace: 'nowrap',
                         color: isDark ? '#e2e8f0' : '#1e293b',
                         borderBottom: isDark ? '1px solid rgba(255,255,255,0.06)' : '1px solid #e2e8f0'
                       }}
@@ -287,42 +298,55 @@ function renderMarkdown(content, isDark, onCopy) {
 }
 
 function formatInline(text, isDark) {
-  // Bold **text** and code `code`
-  const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
-  return parts.map((part, i) => {
-    if (part.startsWith('**') && part.endsWith('**')) {
-      return (
-        <strong
-          key={i}
-          style={{
-            fontWeight: 700,
-            color: isDark ? '#ffffff' : '#0f172a'
-          }}
-        >
-          {part.slice(2, -2)}
-        </strong>
-      );
-    }
-    if (part.startsWith('`') && part.endsWith('`')) {
-      return (
-        <code
-          key={i}
-          style={{
-            background: isDark ? 'rgba(99, 102, 241, 0.25)' : '#e0e7ff',
-            color: isDark ? '#c7d2fe' : '#3730a3',
-            border: isDark ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid #c7d2fe',
-            padding: '2px 6px',
-            borderRadius: '5px',
-            fontSize: '0.82rem',
-            fontFamily: 'monospace',
-            fontWeight: 600
-          }}
-        >
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-    return part;
+  if (!text) return null;
+  // First split on <br>, <br/>, <br />
+  const lines = text.split(/<br\s*\/?>/gi);
+  return lines.map((line, lIdx) => {
+    // Bold **text** and code `code`
+    const parts = line.split(/(\*\*.*?\*\*|`.*?`)/g);
+    const content = parts.map((part, i) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return (
+          <strong
+            key={i}
+            style={{
+              fontWeight: 700,
+              color: isDark ? '#ffffff' : '#0f172a'
+            }}
+          >
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      if (part.startsWith('`') && part.endsWith('`')) {
+        return (
+          <code
+            key={i}
+            style={{
+              background: isDark ? 'rgba(99, 102, 241, 0.25)' : '#e0e7ff',
+              color: isDark ? '#c7d2fe' : '#3730a3',
+              border: isDark ? '1px solid rgba(99, 102, 241, 0.4)' : '1px solid #c7d2fe',
+              padding: '1px 5px',
+              borderRadius: '4px',
+              fontSize: '0.8rem',
+              fontFamily: 'monospace',
+              fontWeight: 600,
+              display: 'inline-block'
+            }}
+          >
+            {part.slice(1, -1)}
+          </code>
+        );
+      }
+      return part;
+    });
+
+    return (
+      <React.Fragment key={lIdx}>
+        {content}
+        {lIdx < lines.length - 1 && <br />}
+      </React.Fragment>
+    );
   });
 }
 

@@ -124,9 +124,15 @@ CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
      4. Serial Number, Purchase Country & Warranty status
    - To check Sickw account funds/credits, call `get_sickw_account_balance`.
 
-6. CLEAN MARKDOWN FORMATTING:
-   - Bold key numbers, currency in ৳ (BDT), and use concise tables or clean bullet points.
+6. CLEAN, MOBILE-FRIENDLY MARKDOWN FORMATTING (CRITICAL):
+   - Bold key numbers, currency in ৳ (BDT), and model names.
    - When mentioning IMEIs, output the exact 15-digit number so the UI renders it as an interactive clickable chip.
+   - NEVER create wide 5+ column markdown tables for transaction history or device lists! Wide tables get severely crushed and unreadable on phone screens.
+   - For lists of sales, transactions, or devices, ALWAYS format them as clean, elegant card bullets:
+     Example:
+     * **iPhone 15 Pro Max** (IMEI: `359824371933763`)
+       - Selling Price: **৳41,500** | Profit: **৳10,900** | Seller: **ochi**
+       - Invoice: `INV-06135152` | Date: 22 Oct 2026, 05:57 PM
 """
 
 GEMINI_TOOLS_DECLARATION = [{
