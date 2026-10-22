@@ -17,31 +17,66 @@ logger = logging.getLogger(__name__)
 # API Key from environment or Render secret
 DEFAULT_GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
 
-# Candidate models in priority order
+# Candidate models in priority order (flash-lite has high rate limits & sub-second latency)
 CANDIDATE_MODELS = [
-    'gemini-3.5-flash',
+    'gemini-3.5-flash-lite',
     'gemini-3.1-flash-lite',
+    'gemini-3.5-flash',
     'gemini-flash-latest'
 ]
 
-SYSTEM_PROMPT = """You are the intelligent Inventory & Operations Copilot for "Gadget Deluxe", a premium Apple smartphone inventory and electronics business.
-You assist administrators and operations managers with:
-1. Instant inventory queries (IMEI, model, color, stock status, valuation).
-2. Diagnostic verification (checking Sickw GSX reports, motherboard color vs housing color mismatches, SIM lock status).
-3. Shipments in-transit from international suppliers (tracking numbers, arrival status).
-4. Repairs tracking (devices in Chinese/local repair centers, costs).
-5. Operational actions (updating device status, assigning devices to staff).
+def get_system_prompt() -> str:
+    from django.utils import timezone
+    now_dhaka = timezone.localtime(timezone.now())
+    today_str = now_dhaka.strftime("%A, %B %d, %Y (%I:%M %p %Z)")
+    
+    return f"""You are the intelligent Inventory & Operations Copilot for "Gadget Deluxe", a premium Apple smartphone inventory and electronics business.
 
-GUIDELINES:
-- When the user asks about stock, devices, or shipments, ALWAYS call the appropriate tool to retrieve real-time facts from the database.
-- Be concise, professional, and authoritative. Format answers using GitHub markdown (tables, bullet points, bold numbers, emoji).
-- When mentioning IMEIs, output the exact 15-digit number so the UI can link directly to the device.
-- If a device has a motherboard color mismatch (e.g., housing is Natural Titanium but motherboard is Blue Titanium), highlight this as a potential modified or refurbished housing.
-- If performing a state-changing action (like changing status or assigning), confirm the exact device and previous state in your final response.
+CURRENT SYSTEM TIME & DATE:
+- Current Date & Time: {today_str}
+- Local Timezone: Asia/Dhaka (GMT+6)
+
+YOUR ROLE & CAPABILITIES:
+You assist the business owner and administrators with real-time operations, inventory queries, sales analysis, diagnostics, and repairs.
+
+CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
+1. DIRECT, TO-THE-POINT ANSWERS (LIKE CHATGPT / GEMINI):
+   - Answer the user's core question directly in the very FIRST sentence.
+   - For example, if asked "how many goods sold today", immediately state:
+     "Today ({now_dhaka.strftime('%B %d, %Y')}), **0 devices** have been recorded as sold." (or "**3 devices** were sold for **৳340,000** total revenue.")
+   - Do NOT dump a wall of unrelated historical data or all-time sold items unless explicitly asked.
+
+2. SALES & ORDERS QUERIES:
+   - When asked about sales, revenue, profit, or units sold for a period (e.g. "sold today", "yesterday's sales", "sales this week", "sales this month", "total revenue today"), you MUST call `get_sales_and_orders_summary` with the appropriate `date_preset` ('today', 'yesterday', 'this_week', 'this_month', 'all_time').
+   - NEVER call `search_devices(status='SOLD')` to answer a date-specific sales question. Total cumulative sold inventory is NOT "today's sales".
+
+3. STOCK & INVENTORY QUERIES:
+   - For stock counts, available devices, or asset valuations, call `get_inventory_stats` or `search_devices(status='IN_STOCK')`.
+
+4. DIAGNOSTICS & COLOR MISMATCH:
+   - If an IMEI is asked about, call `get_device_detail` and check if the manual outlook color matches the Sickw motherboard color. If they mismatch (e.g. Blue Titanium motherboard vs Natural Titanium housing), prominently warn that this device has likely had its housing, back glass, or body modified.
+
+5. CLEAN MARKDOWN FORMATTING:
+   - Bold key numbers, currency in ৳ (BDT), and use concise tables or clean bullet points.
+   - When mentioning IMEIs, output the exact 15-digit number so the UI renders it as an interactive clickable chip.
 """
 
 GEMINI_TOOLS_DECLARATION = [{
     "function_declarations": [
+        {
+            "name": "get_sales_and_orders_summary",
+            "description": "Get verified sales transactions, devices sold, revenue, and profits for a specific time period like today, yesterday, this week, this month, or all time.",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "date_preset": {
+                        "type": "STRING",
+                        "description": "Time period to query: 'today', 'yesterday', 'this_week', 'this_month', or 'all_time'. Default is 'today'."
+                    },
+                    "limit": {"type": "INTEGER", "description": "Max recent sales to return (default 10)"}
+                }
+            }
+        },
         {
             "name": "search_devices",
             "description": "Search devices in inventory by query (IMEI, serial, model, color) or current status.",
@@ -126,7 +161,12 @@ def execute_tool_call(func_name: str, args: Dict[str, Any], user_username: str =
     """Dispatches function calls from Gemini to actual Python inventory tools."""
     logger.info(f"Copilot executing tool: {func_name} with args: {args}")
     try:
-        if func_name == "search_devices":
+        if func_name == "get_sales_and_orders_summary":
+            return tools.get_sales_and_orders_summary(
+                date_preset=args.get("date_preset", "today"),
+                limit=args.get("limit", 10)
+            )
+        elif func_name == "search_devices":
             return tools.search_devices(
                 query=args.get("query"),
                 status=args.get("status"),
@@ -241,7 +281,7 @@ class CopilotService:
             payload = {
                 "contents": contents,
                 "system_instruction": {
-                    "parts": [{"text": SYSTEM_PROMPT}]
+                    "parts": [{"text": get_system_prompt()}]
                 },
                 "tools": GEMINI_TOOLS_DECLARATION
             }
@@ -249,7 +289,7 @@ class CopilotService:
             body = json.dumps(payload).encode('utf-8')
             req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
 
-            with urllib.request.urlopen(req, timeout=25) as resp:
+            with urllib.request.urlopen(req, timeout=50) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
 
             candidate = data.get("candidates", [{}])[0]

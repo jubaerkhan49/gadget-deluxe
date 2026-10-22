@@ -3,12 +3,16 @@ Copilot Tools: Python functions executed by Gemini during autonomous tool callin
 Each tool is equipped with a docstring, robust error handling, and structured dictionary output.
 """
 import logging
+from datetime import timedelta
 from typing import Dict, Any, List, Optional
 from django.db.models import Q, Count, Sum
+from django.utils import timezone
 from apps.inventory.models import Device, DeviceHistory, DeviceAssignment
 from apps.shipments.models import Shipment
 from apps.repairs.models import Repair
 from apps.sickw.models import SickwReport
+from apps.sales.models import Sale
+from apps.orders.models import OtherGoodsOrder
 from apps.accounts.models import User
 
 logger = logging.getLogger(__name__)
@@ -292,3 +296,83 @@ def assign_device_to_employee(imei: str, employee_username: str, notes: Optional
     except Exception as e:
         logger.exception("Error in assign_device_to_employee")
         return {"error": str(e)}
+
+def get_sales_and_orders_summary(date_preset: str = 'today', limit: int = 10, **kwargs) -> Dict[str, Any]:
+    """
+    Get actual sales transactions, items sold, revenue, and profits for a specific period (today, yesterday, this_week, this_month, all_time).
+    """
+    try:
+        now = timezone.localtime(timezone.now())
+        preset = str(date_preset or 'today').lower().strip()
+        
+        if preset == 'today':
+            start_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now
+            label = f"Today ({now.strftime('%Y-%m-%d')})"
+        elif preset == 'yesterday':
+            yesterday = now - timedelta(days=1)
+            start_dt = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
+            label = f"Yesterday ({yesterday.strftime('%Y-%m-%d')})"
+        elif preset in ['this_week', 'week']:
+            start_dt = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now
+            label = f"This Week (since {start_dt.strftime('%Y-%m-%d')})"
+        elif preset in ['this_month', 'month']:
+            start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now
+            label = f"This Month ({now.strftime('%B %Y')})"
+        else: # all_time
+            start_dt = None
+            end_dt = None
+            label = "All Time"
+
+        sales_qs = Sale.objects.select_related('device', 'customer', 'seller').all()
+        if start_dt and end_dt:
+            sales_qs = sales_qs.filter(sale_date__gte=start_dt, sale_date__lte=end_dt)
+            
+        sales_count = sales_qs.count()
+        total_revenue = sales_qs.aggregate(val=Sum('selling_price'))['val'] or 0
+        total_profit = sales_qs.aggregate(val=Sum('profit'))['val'] or 0
+
+        # B2B Delivered
+        b2b_qs = Device.objects.filter(is_b2b=True, b2b_status='DELIVERED')
+        if start_dt and end_dt:
+            b2b_qs = b2b_qs.filter(b2b_delivery_date__gte=start_dt.date(), b2b_delivery_date__lte=end_dt.date())
+        b2b_count = b2b_qs.count()
+        b2b_revenue = b2b_qs.aggregate(val=Sum('b2b_selling_price'))['val'] or 0
+
+        # Other goods orders delivered or processed
+        og_qs = OtherGoodsOrder.objects.all()
+        if start_dt and end_dt:
+            og_qs = og_qs.filter(created_at__gte=start_dt, created_at__lte=end_dt)
+        og_count = og_qs.count()
+
+        sales_items = []
+        for s in sales_qs.order_by('-sale_date')[:min(limit, 20)]:
+            sales_items.append({
+                "invoice_number": s.invoice_number,
+                "device_model": s.device.model if s.device else "Unknown",
+                "imei": s.device.imei if s.device else "N/A",
+                "color": s.device.color if s.device else "N/A",
+                "selling_price_bdt": float(s.selling_price) if s.selling_price else 0,
+                "profit_bdt": float(s.profit) if s.profit else 0,
+                "seller": s.seller.username if s.seller else "N/A",
+                "customer": s.customer.name if s.customer else "Walk-in Customer",
+                "sale_time": timezone.localtime(s.sale_date).strftime('%I:%M %p') if s.sale_date else "N/A"
+            })
+
+        return {
+            "period": label,
+            "total_items_sold": sales_count + b2b_count,
+            "retail_devices_sold_count": sales_count,
+            "b2b_devices_delivered_count": b2b_count,
+            "other_goods_orders_count": og_count,
+            "total_revenue_bdt": float(total_revenue) + float(b2b_revenue),
+            "total_profit_bdt": float(total_profit),
+            "sales_list": sales_items
+        }
+    except Exception as e:
+        logger.exception("Error in get_sales_and_orders_summary")
+        return {"error": str(e)}
+
