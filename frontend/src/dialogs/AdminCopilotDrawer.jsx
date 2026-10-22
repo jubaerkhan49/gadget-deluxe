@@ -814,7 +814,7 @@ export default function AdminCopilotDrawer({ open, onClose }) {
               fullWidth
               multiline
               maxRows={4}
-              placeholder="Ask Copilot (e.g. Check IMEI 35027..., or show stock stats)..."
+              placeholder="Ask Copilot (e.g. Give me total devices count)"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyDown={handleKeyDown}

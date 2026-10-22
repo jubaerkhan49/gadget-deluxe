@@ -69,8 +69,8 @@ DATABASE SCHEMA FOR CUSTOM SQL QUERIES:
 
 5. `repairs_repair` (Device repairs):
    - id, device_id (FK to inventory_device), repair_center (char, e.g. 'Qifeng Repair Center'), repair_cost (decimal)
-   - status ('PENDING_DISPATCH', 'SENT_TO_CENTER', 'IN_PROGRESS', 'PENDING_RETURN', 'RETURNED_SUCCESS', 'IRREPARABLE')
-   - issue_description, return_date, created_at
+   - status ('IN_PROGRESS', 'SENT_TO_CHINA', 'COMPLETED', 'UNREPAIRABLE')
+   - issue_description, sent_date, returned_date, created_at
 
 6. `orders_othergoodsorder` (Custom orders for Laptops, AirPods, Accessories):
    - id, order_id, customer_name, customer_phone, product_name, category, total_price_bdt, advance_paid_bdt, tracking_stage, current_status
@@ -90,6 +90,8 @@ POSTGRESQL SYNTAX RULES FOR SQL QUERIES (CRITICAL):
     `SELECT u.username, u.first_name, SUM(s.profit) as total_profit, COUNT(s.id) as total_sales FROM sales_sale s JOIN accounts_user u ON s.seller_id = u.id WHERE s.sale_date >= '2026-10-01' GROUP BY u.id, u.username, u.first_name ORDER BY total_profit DESC LIMIT 1;`
   * To rank employees by lowest or least profit:
     `SELECT u.username, u.first_name, SUM(s.profit) as total_profit, COUNT(s.id) as total_sales FROM sales_sale s JOIN accounts_user u ON s.seller_id = u.id WHERE s.sale_date >= '2026-10-01' GROUP BY u.id, u.username, u.first_name ORDER BY total_profit ASC LIMIT 1;`
+  * To check devices that finished repair today:
+    `SELECT r.id, d.imei, d.model, r.repair_center, r.repair_cost, r.status, r.returned_date FROM repairs_repair r JOIN inventory_device d ON r.device_id = d.id WHERE r.returned_date >= CURRENT_DATE OR (r.status = 'COMPLETED' AND r.returned_date >= CURRENT_DATE);`
 - NEVER use SQLite `strftime()` functions! They do not exist in PostgreSQL and will fail.
 
 CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
@@ -327,7 +329,8 @@ class CopilotService:
 
         actions_taken = []
         referenced_imeis = set()
-
+        final_reply = ""
+        last_error = None
         start_time = time.time()
         for model_name in CANDIDATE_MODELS:
             # Prevent cumulative attempts from approaching Gunicorn worker timeout
