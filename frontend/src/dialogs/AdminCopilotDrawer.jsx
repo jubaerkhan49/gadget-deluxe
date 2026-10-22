@@ -346,7 +346,16 @@ export default function AdminCopilotDrawer({ open, onClose }) {
       setMessages(prev => [...prev, aiMsg]);
     } catch (err) {
       console.error('Copilot API error:', err);
-      const errorText = err.response?.data?.reply || err.response?.data?.error || err.message || 'Error communicating with AI service.';
+      let errorText = err.response?.data?.reply || err.response?.data?.error;
+      if (!errorText) {
+        if (err.response?.status === 500) {
+          errorText = 'Server took too long to complete AI reasoning or database was busy. Please try asking again in a few moments.';
+        } else if (err.response?.status === 429) {
+          errorText = 'Gemini API free tier rate limit was reached (15 requests/min). Please wait 10 seconds and try again.';
+        } else {
+          errorText = err.message || 'Error communicating with AI service.';
+        }
+      }
       enqueueSnackbar(errorText, { variant: 'error' });
       setMessages(prev => [
         ...prev,
@@ -355,7 +364,7 @@ export default function AdminCopilotDrawer({ open, onClose }) {
           text: `⚠️ **Unable to complete request**: ${errorText}`,
           actions: [],
           referenced_devices: [],
-          suggestions: ['Check Render environment variables', 'Try again']
+          suggestions: ['Try again', 'Give me an inventory summary']
         }
       ]);
     } finally {

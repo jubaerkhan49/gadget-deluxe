@@ -9,6 +9,7 @@ import re
 import logging
 import urllib.request
 import urllib.error
+import time
 from typing import Dict, Any, List, Optional
 from . import tools
 
@@ -19,10 +20,10 @@ DEFAULT_GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
 
 # Candidate models in priority order (flash-lite has high rate limits & sub-second latency)
 CANDIDATE_MODELS = [
+    'gemini-3-flash-preview',
     'gemini-3.5-flash-lite',
-    'gemini-3.1-flash-lite',
-    'gemini-3.5-flash',
-    'gemini-flash-latest'
+    'gemini-flash-latest',
+    'gemini-3.1-flash-lite-preview'
 ]
 
 def get_system_prompt() -> str:
@@ -327,11 +328,13 @@ class CopilotService:
         actions_taken = []
         referenced_imeis = set()
 
-        # Multi-turn tool execution loop (max 4 iterations to prevent infinite loops)
-        final_reply = ""
-        last_error = None
-
+        start_time = time.time()
         for model_name in CANDIDATE_MODELS:
+            # Prevent cumulative attempts from approaching Gunicorn worker timeout
+            if time.time() - start_time > 20:
+                logger.warning("Approaching request deadline, stopping candidate model loop")
+                break
+
             try:
                 model_contents = json.loads(json.dumps(contents))
                 final_reply = cls._run_agent_loop(
@@ -344,6 +347,13 @@ class CopilotService:
                 )
                 if final_reply:
                     break
+            except urllib.error.HTTPError as e:
+                logger.warning(f"Model {model_name} HTTP {e.code}: {e}")
+                if e.code == 429:
+                    last_error = "Gemini API free tier rate limit was temporarily reached (15 requests/min). Please wait a few seconds and try again."
+                else:
+                    last_error = e
+                continue
             except Exception as e:
                 logger.warning(f"Model {model_name} failed: {e}. Trying next candidate...")
                 last_error = e
@@ -383,7 +393,7 @@ class CopilotService:
             body = json.dumps(payload).encode('utf-8')
             req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
 
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=12) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
 
             candidate = data.get("candidates", [{}])[0]
@@ -460,7 +470,7 @@ class CopilotService:
             }
             final_body = json.dumps(final_payload).encode('utf-8')
             final_req = urllib.request.Request(url, data=final_body, headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(final_req, timeout=25) as resp:
+            with urllib.request.urlopen(final_req, timeout=10) as resp:
                 final_data = json.loads(resp.read().decode('utf-8'))
             for part in final_data.get("candidates", [{}])[0].get("content", {}).get("parts", []):
                 if "text" in part:
