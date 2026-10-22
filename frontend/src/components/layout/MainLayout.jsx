@@ -318,46 +318,6 @@ export default function MainLayout() {
 
           {/* Header Action Buttons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-            {isAdmin && (
-              <>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={() => setShowAddShipment(true)}
-                  sx={{ display: { xs: 'none', sm: 'inline-flex' }, borderRadius: 2 }}
-                >
-                  New Shipment
-                </Button>
-                <Button
-                  variant="contained"
-                  size="small"
-                  startIcon={<AddIcon />}
-                  onClick={() => setShowAddDevice(true)}
-                  sx={{ display: { xs: 'none', sm: 'inline-flex' }, borderRadius: 2 }}
-                >
-                  Add Device
-                </Button>
-                <Tooltip title="Add Device">
-                  <IconButton
-                    size="small"
-                    color="primary"
-                    onClick={() => setShowAddDevice(true)}
-                    sx={{
-                      display: { xs: 'inline-flex', sm: 'none' },
-                      bgcolor: 'primary.main',
-                      color: '#fff',
-                      width: 32,
-                      height: 32,
-                      borderRadius: 2,
-                      '&:hover': { bgcolor: 'primary.dark' }
-                    }}
-                  >
-                    <AddIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </>
-            )}
 
             {!isAdmin && (
               <Tooltip title="Notifications & Automated Alerts">
