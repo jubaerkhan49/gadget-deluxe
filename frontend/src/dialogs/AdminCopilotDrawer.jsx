@@ -19,6 +19,7 @@ import {
   Close as CloseIcon,
   Send as SendIcon,
   AutoAwesome as SparkleIcon,
+  Add as AddIcon,
   DeleteOutline as ClearIcon,
   ContentCopy as CopyIcon,
   Check as CheckIcon,
@@ -495,15 +496,31 @@ export default function AdminCopilotDrawer({ open, onClose }) {
             </Box>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            <Tooltip title="Clear chat history">
-              <IconButton
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Tooltip title="Start a new chat conversation">
+              <Button
                 size="small"
+                variant="outlined"
                 onClick={handleClearHistory}
-                sx={{ color: isDark ? '#94a3b8' : '#64748b', '&:hover': { color: isDark ? '#ffffff' : '#0f172a' } }}
+                startIcon={<AddIcon sx={{ fontSize: '15px !important' }} />}
+                sx={{
+                  borderRadius: 2,
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  textTransform: 'none',
+                  px: 1.2,
+                  py: 0.35,
+                  color: isDark ? '#93c5fd' : '#1d4ed8',
+                  borderColor: isDark ? 'rgba(59, 130, 246, 0.4)' : '#bfdbfe',
+                  bgcolor: isDark ? 'rgba(59, 130, 246, 0.1)' : '#eff6ff',
+                  '&:hover': {
+                    bgcolor: isDark ? 'rgba(59, 130, 246, 0.2)' : '#dbeafe',
+                    borderColor: '#2563eb'
+                  }
+                }}
               >
-                <ClearIcon fontSize="small" />
-              </IconButton>
+                New Chat
+              </Button>
             </Tooltip>
             <IconButton
               size="small"

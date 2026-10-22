@@ -80,23 +80,37 @@ DATABASE SCHEMA FOR CUSTOM SQL QUERIES:
 8. `customers_customer`:
    - id, name, phone, email, address
 
+POSTGRESQL SYNTAX RULES FOR SQL QUERIES (CRITICAL):
+- The database is PostgreSQL.
+- Always use standard PostgreSQL date syntax:
+  * For this month: `s.sale_date >= '2026-10-01' AND s.sale_date < '2026-11-01'` or `EXTRACT(MONTH FROM s.sale_date) = 10`
+  * For today: `s.sale_date >= CURRENT_DATE` or `s.sale_date >= '2026-10-22'`
+  * To rank employees by profit:
+    `SELECT u.username, u.first_name, SUM(s.profit) as total_profit, COUNT(s.id) as total_sales FROM sales_sale s JOIN accounts_user u ON s.seller_id = u.id WHERE s.sale_date >= '2026-10-01' GROUP BY u.id, u.username, u.first_name ORDER BY total_profit DESC LIMIT 1;`
+- NEVER use SQLite `strftime()` functions! They do not exist in PostgreSQL and will fail.
+
 CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
 1. DIRECT, TO-THE-POINT ANSWERS (LIKE CHATGPT / GEMINI):
    - Answer the user's core question directly in the very FIRST sentence.
-   - For example: "There are currently **X devices** pending in shipments associated with AB Group."
+   - For example: "This month, the employee with the highest profit is **emon** with **৳120,000**." (or "No sales records were found for this month, so no employee has recorded profits yet.")
    - Do NOT dump a wall of unrelated historical data or all-time sold items unless explicitly asked.
 
-2. SALES & ORDERS QUERIES:
+2. DO NOT LOOP OR QUERY REPEATEDLY:
+   - Execute at most ONE relevant tool or SQL query per user message.
+   - If a query returns 0 rows, empty results, or no matches, that is a factual answer! Immediately state that clearly to the user (e.g. "No sales have been recorded for this month yet.").
+   - NEVER query database metadata tables (like sqlite_master or pg_tables).
+
+3. SALES & ORDERS QUERIES:
    - For "sold today", "yesterday's sales", "sales this week", "sales this month", call `get_sales_and_orders_summary` with `date_preset='today'` (or the requested period).
    - NEVER call `search_devices(status='SOLD')` to answer a date-specific sales question. Total cumulative sold inventory is NOT "today's sales".
 
-3. STOCK & INVENTORY QUERIES:
+4. STOCK & INVENTORY QUERIES:
    - For stock counts, available devices, or asset valuations, call `get_inventory_stats` or `search_devices(status='IN_STOCK')`.
 
-4. DIAGNOSTICS & COLOR MISMATCH:
+5. DIAGNOSTICS & COLOR MISMATCH:
    - If an IMEI is asked about, call `get_device_detail` and check if the manual outlook color matches the Sickw motherboard color. If they mismatch (e.g. Blue Titanium motherboard vs Natural Titanium housing), prominently warn that this device has likely had its housing, back glass, or body modified.
 
-5. CLEAN MARKDOWN FORMATTING:
+6. CLEAN MARKDOWN FORMATTING:
    - Bold key numbers, currency in ৳ (BDT), and use concise tables or clean bullet points.
    - When mentioning IMEIs, output the exact 15-digit number so the UI renders it as an interactive clickable chip.
 """
@@ -298,10 +312,11 @@ class CopilotService:
 
         for model_name in CANDIDATE_MODELS:
             try:
+                model_contents = json.loads(json.dumps(contents))
                 final_reply = cls._run_agent_loop(
                     model_name=model_name,
                     api_key=api_key,
-                    contents=contents,
+                    contents=model_contents,
                     actions_taken=actions_taken,
                     referenced_imeis=referenced_imeis,
                     user_username=user_username
@@ -334,8 +349,8 @@ class CopilotService:
     def _run_agent_loop(cls, model_name: str, api_key: str, contents: List[Dict[str, Any]], actions_taken: List[Dict[str, Any]], referenced_imeis: set, user_username: str) -> str:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
 
-        # Up to 4 tool iterations
-        for iteration in range(4):
+        # Up to 2 tool iterations (Execute Tool -> Formulate Final Answer)
+        for iteration in range(2):
             payload = {
                 "contents": contents,
                 "system_instruction": {
@@ -347,7 +362,7 @@ class CopilotService:
             body = json.dumps(payload).encode('utf-8')
             req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
 
-            with urllib.request.urlopen(req, timeout=50) as resp:
+            with urllib.request.urlopen(req, timeout=30) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
 
             candidate = data.get("candidates", [{}])[0]
@@ -406,6 +421,23 @@ class CopilotService:
                 "role": "user",
                 "parts": [{"functionResponse": resp_body}]
             })
+
+        # If loop ended after executing tools but model didn't return final text yet,
+        # make one final request without tools so Gemini is forced to formulate the final answer immediately
+        if not text_part.strip():
+            final_payload = {
+                "contents": contents,
+                "system_instruction": {
+                    "parts": [{"text": get_system_prompt()}]
+                }
+            }
+            final_body = json.dumps(final_payload).encode('utf-8')
+            final_req = urllib.request.Request(url, data=final_body, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(final_req, timeout=25) as resp:
+                final_data = json.loads(resp.read().decode('utf-8'))
+            for part in final_data.get("candidates", [{}])[0].get("content", {}).get("parts", []):
+                if "text" in part:
+                    text_part += part["text"]
 
         return text_part.strip()
 

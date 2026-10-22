@@ -427,7 +427,14 @@ def execute_safe_sql_query(query: str, **kwargs) -> Dict[str, Any]:
                 "rows": formatted_rows
             }
     except Exception as e:
+        try:
+            connection.rollback()
+        except Exception:
+            pass
         logger.warning(f"Error in execute_safe_sql_query: {e}")
-        return {"error": f"SQL execution error: {str(e)}. Please correct your query syntax."}
+        return {
+            "error": f"SQL execution error: {str(e)}. (Note: The database is PostgreSQL. Use standard date ranges like s.sale_date >= '2026-10-01' instead of strftime)."
+        }
+
 
 
