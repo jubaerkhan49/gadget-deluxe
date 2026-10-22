@@ -42,13 +42,56 @@ const QUICK_PROMPTS = [
 ];
 
 // Markdown renderer with full light/dark theme contrast
-function renderMarkdown(content, isDark) {
+function renderMarkdown(content, isDark, onCopy) {
   if (!content) return null;
 
   const lines = content.split('\n');
   const elements = [];
   let tableRows = [];
   let inTable = false;
+  let inCodeBlock = false;
+  let codeBlockLines = [];
+
+  const flushCodeBlock = (key) => {
+    if (codeBlockLines.length > 0) {
+      const codeText = codeBlockLines.join('\n');
+      elements.push(
+        <Box
+          key={`code-${key}`}
+          sx={{
+            my: 1.5,
+            p: 1.5,
+            borderRadius: 2,
+            bgcolor: isDark ? '#0f172a' : '#1e293b',
+            color: '#f8fafc',
+            fontFamily: 'monospace',
+            fontSize: '0.82rem',
+            overflowX: 'auto',
+            border: '1px solid',
+            borderColor: isDark ? 'rgba(255,255,255,0.1)' : '#334155'
+          }}
+        >
+          {onCopy && (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 0.5 }}>
+              <Tooltip title="Copy code">
+                <IconButton
+                  size="small"
+                  onClick={() => onCopy(codeText)}
+                  sx={{ color: '#94a3b8', p: 0.3, '&:hover': { color: '#ffffff' } }}
+                >
+                  <CopyIcon sx={{ fontSize: 13 }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
+          <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'inherit' }}>
+            {codeText}
+          </pre>
+        </Box>
+      );
+      codeBlockLines = [];
+    }
+  };
 
   const flushTable = (key) => {
     if (tableRows.length > 0) {
@@ -119,6 +162,22 @@ function renderMarkdown(content, isDark) {
 
   lines.forEach((line, index) => {
     const trimmed = line.trim();
+
+    // Check code blocks
+    if (trimmed.startsWith('```')) {
+      if (inCodeBlock) {
+        flushCodeBlock(index);
+        inCodeBlock = false;
+      } else {
+        inCodeBlock = true;
+        codeBlockLines = [];
+      }
+      return;
+    }
+    if (inCodeBlock) {
+      codeBlockLines.push(line);
+      return;
+    }
 
     // Check table row
     if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
@@ -219,6 +278,9 @@ function renderMarkdown(content, isDark) {
 
   if (inTable) {
     flushTable('last');
+  }
+  if (inCodeBlock) {
+    flushCodeBlock('last');
   }
 
   return elements;
@@ -569,28 +631,20 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                   maxWidth: '100%'
                 }}
               >
-                {/* Bubble Container */}
-                <Paper
-                  elevation={0}
+                {/* Bubble Container (Merged, Clean & Lightweight) */}
+                <Box
                   sx={{
-                    p: 2,
-                    borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                    p: 1.8,
+                    borderRadius: isUser ? '18px 18px 4px 18px' : '16px 16px 16px 4px',
                     maxWidth: '92%',
                     bgcolor: isUser
                       ? '#2563eb'
                       : isDark
-                      ? '#1e293b'
-                      : '#ffffff',
+                      ? 'rgba(30, 41, 59, 0.75)'
+                      : '#f1f5f9',
                     color: isUser ? '#ffffff' : isDark ? '#f8fafc' : '#0f172a',
-                    border: '1px solid',
-                    borderColor: isUser
-                      ? '#1d4ed8'
-                      : isDark
-                      ? 'rgba(255,255,255,0.12)'
-                      : '#e2e8f0',
-                    boxShadow: isUser
-                      ? '0 4px 12px rgba(37, 99, 235, 0.25)'
-                      : '0 2px 8px rgba(0,0,0,0.04)',
+                    border: isUser ? '1px solid #1d4ed8' : 'none',
+                    boxShadow: isUser ? '0 4px 12px rgba(37, 99, 235, 0.25)' : 'none',
                     position: 'relative'
                   }}
                 >
@@ -610,76 +664,57 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                     </Typography>
                   ) : (
                     <Box sx={{ wordBreak: 'break-word' }}>
-                      {renderMarkdown(msg.text, isDark)}
+                      {renderMarkdown(msg.text, isDark, (txt) => handleCopy(txt, index))}
                     </Box>
                   )}
 
-                  {/* Copy Button for Assistant */}
-                  {!isUser && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.2 }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleCopy(msg.text, index)}
+                  {/* Merged Referenced IMEIs / Devices Pills inside bubble */}
+                  {!isUser && msg.referenced_devices && msg.referenced_devices.length > 0 && (
+                    <Box sx={{ mt: 1.5, pt: 1.2, borderTop: '1px solid', borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 0.8 }}>
+                      <Typography
+                        variant="caption"
                         sx={{
-                          p: 0.4,
                           color: isDark ? '#94a3b8' : '#64748b',
-                          '&:hover': { color: isDark ? '#ffffff' : '#0f172a', bgcolor: isDark ? 'rgba(255,255,255,0.06)' : '#f1f5f9' }
+                          fontWeight: 700,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5
                         }}
                       >
-                        {copiedIndex === index ? (
-                          <CheckIcon sx={{ fontSize: 15, color: '#10b981' }} />
-                        ) : (
-                          <CopyIcon sx={{ fontSize: 15 }} />
-                        )}
-                      </IconButton>
+                        <DeviceIcon sx={{ fontSize: 13 }} /> Click to inspect:
+                      </Typography>
+                      {msg.referenced_devices.map((imei, dIdx) => (
+                        <Chip
+                          key={dIdx}
+                          label={imei}
+                          size="small"
+                          clickable
+                          onClick={() => handleOpenDevice(imei)}
+                          sx={{
+                            height: 24,
+                            fontSize: '0.74rem',
+                            fontFamily: 'monospace',
+                            fontWeight: 700,
+                            bgcolor: isDark ? 'rgba(99, 102, 241, 0.2)' : '#ede9fe',
+                            color: isDark ? '#c7d2fe' : '#5b21b6',
+                            border: '1px solid',
+                            borderColor: isDark ? '#6366f1' : '#c4b5fd',
+                            '& .MuiChip-label': {
+                              color: isDark ? '#c7d2fe' : '#5b21b6',
+                              px: 0.9
+                            },
+                            '&:hover': {
+                              bgcolor: isDark ? '#4f46e5' : '#7c3aed',
+                              color: '#ffffff',
+                              borderColor: '#7c3aed',
+                              '& .MuiChip-label': { color: '#ffffff' }
+                            }
+                          }}
+                        />
+                      ))}
                     </Box>
                   )}
-                </Paper>
-
-                {/* Referenced IMEIs / Devices Pills */}
-                {!isUser && msg.referenced_devices && msg.referenced_devices.length > 0 && (
-                  <Box sx={{ mt: 1.2, display: 'flex', flexWrap: 'wrap', gap: 0.8, pl: 0.5 }}>
-                    <Typography
-                      variant="caption"
-                      sx={{
-                        color: isDark ? '#94a3b8' : '#475569',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 0.5
-                      }}
-                    >
-                      <DeviceIcon sx={{ fontSize: 14 }} /> Click to inspect:
-                    </Typography>
-                    {msg.referenced_devices.map((imei, dIdx) => (
-                      <Chip
-                        key={dIdx}
-                        label={imei}
-                        size="small"
-                        clickable
-                        onClick={() => handleOpenDevice(imei)}
-                        sx={{
-                          height: 24,
-                          fontSize: '0.74rem',
-                          fontFamily: 'monospace',
-                          fontWeight: 700,
-                          bgcolor: isDark ? 'rgba(99, 102, 241, 0.2)' : '#ede9fe',
-                          color: isDark ? '#c7d2fe' : '#5b21b6',
-                          border: '1px solid',
-                          borderColor: isDark ? '#6366f1' : '#c4b5fd',
-                          '& .MuiChip-label': {
-                            color: isDark ? '#c7d2fe' : '#5b21b6'
-                          },
-                          '&:hover': {
-                            bgcolor: isDark ? '#4f46e5' : '#7c3aed',
-                            color: '#ffffff',
-                            '& .MuiChip-label': { color: '#ffffff' }
-                          }
-                        }}
-                      />
-                    ))}
-                  </Box>
-                )}
+                </Box>
 
                 {/* Intelligent Follow-up Suggestion Chips */}
                 {!isUser && msg.suggestions && msg.suggestions.length > 0 && index === messages.length - 1 && (

@@ -20,10 +20,10 @@ DEFAULT_GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
 
 # Candidate models in priority order (flash-lite has high rate limits & sub-second latency)
 CANDIDATE_MODELS = [
-    'gemini-3-flash-preview',
     'gemini-3.5-flash-lite',
-    'gemini-flash-latest',
-    'gemini-3.1-flash-lite-preview'
+    'gemini-flash-lite-latest',
+    'gemini-3-flash-preview',
+    'gemini-flash-latest'
 ]
 
 def get_system_prompt() -> str:
@@ -297,6 +297,28 @@ class CopilotService:
                 "suggestions": ["Check API Key in Render settings"]
             }
 
+        # Fast conversational pleasantry response (avoids burning model quota on pure greetings/thanks)
+        clean_msg = user_message.lower().strip()
+        pure_pleasantries = [
+            "very good", "good job", "thank you", "thanks", "thanks a lot",
+            "im satisfied", "i'm satisfied", "satisfied", "well done", "great job",
+            "awesome", "perfect", "good", "nice", "ok", "okay"
+        ]
+        is_pure_pleasantry = any(p in clean_msg for p in pure_pleasantries) and not any(
+            k in clean_msg for k in ["how", "what", "which", "who", "show", "list", "check", "tell", "count", "profit", "device", "sale", "imei", "repair", "stock", "cost", "shipment"]
+        )
+        if is_pure_pleasantry:
+            return {
+                "reply": "You're very welcome! I'm glad I could assist. Let me know whenever you'd like to check device inventory, sales stats, or employee profits!",
+                "actions_taken": [],
+                "referenced_devices": [],
+                "suggestions": [
+                    "Which employee generated most profits this month?",
+                    "How many goods sold today?",
+                    "Give me an inventory summary"
+                ]
+            }
+
         # Build sanitized contents array with conversation history
         # Gemini strictly requires:
         # 1. Must start with a 'user' turn
@@ -363,7 +385,13 @@ class CopilotService:
                 continue
 
         if not final_reply:
-            final_reply = f"Sorry, I encountered an issue communicating with the AI service: {last_error or 'Unknown error'}"
+            lower_msg = user_message.lower().strip()
+            if any(w in lower_msg for w in ["thank", "good", "satisfied", "great", "nice", "awesome", "perfect"]):
+                final_reply = "You're very welcome! I'm glad I could help. Let me know whenever you'd like to check device inventory, sales stats, or employee profits!"
+            elif "503" in str(last_error) or "Service Unavailable" in str(last_error):
+                final_reply = "The AI service is currently experiencing high demand. Please try asking again in a few moments."
+            else:
+                final_reply = f"Sorry, I encountered an issue communicating with the AI service: {last_error or 'Unknown error'}"
 
         # Extract any 15-digit IMEIs in the final reply text as referenced devices
         found_in_text = re.findall(r'\b(35\d{13}|86\d{13}|99\d{13})\b', final_reply)
