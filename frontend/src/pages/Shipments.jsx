@@ -22,7 +22,15 @@ import {
   DialogActions,
   ToggleButtonGroup,
   ToggleButton,
-  Divider
+  Divider,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  TablePagination,
+  LinearProgress
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -46,7 +54,9 @@ import {
   InfoOutlined as InfoIcon,
   OpenInNew as OpenInNewIcon,
   ReceiptLong as ReceiptIcon,
-  Insights as InsightsIcon
+  Insights as InsightsIcon,
+  TableRows as TableViewIcon,
+  GridView as GridViewIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { shipmentApi, deviceApi } from '../api/client';
@@ -72,6 +82,9 @@ export default function Shipments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchMode, setSearchMode] = useState('NAME'); // 'NAME' | 'IMEI' | 'TRACKING'
   const [viewTab, setViewTab] = useState('ACTIVE'); // 'ACTIVE' | 'ARCHIVED'
+  const [displayLayout, setDisplayLayout] = useState('TABLE'); // 'TABLE' | 'GRID'
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(25);
 
   // IMEI Search State
   const [imeiDevice, setImeiDevice] = useState(null);
@@ -95,6 +108,11 @@ export default function Shipments() {
   useEffect(() => {
     fetchShipments(Boolean(cachedShipments));
   }, []);
+
+  // Reset pagination when search query, search mode, or view tab changes
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, searchMode, viewTab]);
 
   // Live smart polling every 30s (pauses automatically when tab is minimized/hidden)
   useSmartPolling(() => {
@@ -334,6 +352,41 @@ export default function Shipments() {
 
           {viewMode === 'BATCHES' && (
             <>
+              {/* Layout Switcher (Table default) */}
+              <ToggleButtonGroup
+                value={displayLayout}
+                exclusive
+                onChange={(_, val) => val && setDisplayLayout(val)}
+                size="small"
+                sx={{
+                  bgcolor: 'action.hover',
+                  p: 0.35,
+                  borderRadius: '10px',
+                  '& .MuiToggleButton-root': {
+                    border: 'none',
+                    borderRadius: '8px',
+                    px: 1.25,
+                    py: 0.6,
+                    fontWeight: 700,
+                    fontSize: '0.82rem',
+                    textTransform: 'none',
+                    '&.Mui-selected': {
+                      bgcolor: 'primary.main',
+                      color: '#fff',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                      '&:hover': { bgcolor: 'primary.dark' }
+                    }
+                  }
+                }}
+              >
+                <ToggleButton value="TABLE">
+                  <TableViewIcon sx={{ fontSize: 16, mr: 0.6 }} /> Table
+                </ToggleButton>
+                <ToggleButton value="GRID">
+                  <GridViewIcon sx={{ fontSize: 16, mr: 0.6 }} /> Cards
+                </ToggleButton>
+              </ToggleButtonGroup>
+
               {/* Archive Toggle Button */}
               <Button
                 variant={viewTab === 'ARCHIVED' ? 'contained' : 'outlined'}
@@ -1115,6 +1168,311 @@ export default function Shipments() {
               </Button>
             </>
           )}
+        </Paper>
+      ) : displayLayout === 'TABLE' ? (
+        <Paper
+          variant="outlined"
+          sx={{
+            borderRadius: 3,
+            overflow: 'hidden',
+            borderColor: 'divider',
+            boxShadow: (theme) =>
+              theme.palette.mode === 'dark'
+                ? '0 4px 20px rgba(0, 0, 0, 0.35)'
+                : '0 4px 20px rgba(0, 0, 0, 0.03)'
+          }}
+        >
+          <TableContainer sx={{ minWidth: '100%', overflowX: 'auto' }}>
+            <Table sx={{ minWidth: 850 }}>
+              <TableHead
+                sx={{
+                  bgcolor: (theme) =>
+                    theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.03)' : '#F8FAFC'
+                }}
+              >
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
+                    Batch / Tracking Number
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
+                    Supplier
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
+                    Shipping Agent
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
+                    Received Date (CN)
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8, minWidth: 220 }}>
+                    Devices Progress
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
+                    Status
+                  </TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
+                    Actions
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredShipments
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((shipment) => {
+                    const isArchived = isShipmentArchived(shipment);
+                    const totalDevices = shipment.devices_count || 0;
+                    const deliveredDevices = isArchived
+                      ? totalDevices
+                      : (shipment.received_devices_count || 0);
+                    const pendingDevices = isArchived ? 0 : (shipment.pending_devices_count || 0);
+                    const progressPct = totalDevices > 0
+                      ? Math.round((deliveredDevices / totalDevices) * 100)
+                      : 0;
+
+                    return (
+                      <TableRow
+                        key={shipment.id}
+                        hover
+                        sx={{
+                          cursor: 'pointer',
+                          transition: 'background-color 0.15s ease',
+                          '&:hover': {
+                            bgcolor: (theme) =>
+                              theme.palette.mode === 'dark'
+                                ? 'rgba(255, 255, 255, 0.04)'
+                                : 'rgba(241, 245, 249, 0.7)'
+                          }
+                        }}
+                        onClick={() => {
+                          setSelectedShipment(shipment);
+                          setDetailDialogOpen(true);
+                        }}
+                      >
+                        {/* Batch / Tracking */}
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Stack direction="row" spacing={0.75} alignItems="center">
+                            <Typography variant="body2" fontWeight={800} color="primary.main">
+                              #{shipment.tracking_number}
+                            </Typography>
+                            <CopyableText text={shipment.tracking_number} />
+                          </Stack>
+                        </TableCell>
+
+                        {/* Supplier */}
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <SupplierIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: 18 }} />
+                            <Typography variant="body2" fontWeight={600} noWrap>
+                              {shipment.supplier_name || 'Unknown'}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+
+                        {/* Shipping Agent */}
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <ShippingIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: 18 }} />
+                            <Typography variant="body2" fontWeight={600} noWrap>
+                              {shipment.shipping_company || 'None'}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+
+                        {/* Received Date (CN) */}
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <DateIcon fontSize="small" sx={{ color: 'text.secondary', fontSize: 18 }} />
+                            <Typography
+                              variant="body2"
+                              fontWeight={700}
+                              color={shipment.receive_date ? 'primary.main' : 'text.secondary'}
+                            >
+                              {shipment.receive_date || 'Pending'}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+
+                        {/* Devices Progress */}
+                        <TableCell>
+                          <Box sx={{ minWidth: 180 }}>
+                            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.75 }} flexWrap="wrap">
+                              <Chip
+                                icon={<PhoneIcon sx={{ fontSize: '13px !important' }} />}
+                                label={`${totalDevices} Total`}
+                                size="small"
+                                sx={{
+                                  fontWeight: 700,
+                                  fontSize: '0.72rem',
+                                  height: 22,
+                                  borderRadius: '6px',
+                                  bgcolor: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                      ? 'rgba(255,255,255,0.06)'
+                                      : '#F1F5F9',
+                                  color: 'text.secondary'
+                                }}
+                              />
+                              {deliveredDevices > 0 && (
+                                <Chip
+                                  icon={<CheckCircleIcon sx={{ fontSize: '12px !important', color: '#16A34A !important' }} />}
+                                  label={`${deliveredDevices} Delivered`}
+                                  size="small"
+                                  sx={{
+                                    fontWeight: 700,
+                                    fontSize: '0.72rem',
+                                    height: 22,
+                                    borderRadius: '6px',
+                                    bgcolor: (theme) =>
+                                      theme.palette.mode === 'dark'
+                                        ? 'rgba(22, 163, 74, 0.15)'
+                                        : '#DCFCE7',
+                                    color: '#16A34A'
+                                  }}
+                                />
+                              )}
+                              {!isArchived && pendingDevices > 0 && (
+                                <Chip
+                                  label={`${pendingDevices} Pending`}
+                                  size="small"
+                                  sx={{
+                                    fontWeight: 700,
+                                    fontSize: '0.72rem',
+                                    height: 22,
+                                    borderRadius: '6px',
+                                    bgcolor: (theme) =>
+                                      theme.palette.mode === 'dark'
+                                        ? 'rgba(234, 88, 12, 0.15)'
+                                        : '#FFEDD5',
+                                    color: '#EA580C'
+                                  }}
+                                />
+                              )}
+                            </Stack>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: '100%', mr: 1 }}>
+                                <LinearProgress
+                                  variant="determinate"
+                                  value={progressPct}
+                                  sx={{
+                                    height: 6,
+                                    borderRadius: 3,
+                                    bgcolor: (theme) =>
+                                      theme.palette.mode === 'dark'
+                                        ? 'rgba(255, 255, 255, 0.1)'
+                                        : '#E2E8F0',
+                                    '& .MuiLinearProgress-bar': {
+                                      borderRadius: 3,
+                                      bgcolor: progressPct === 100 ? '#16A34A' : '#2563EB'
+                                    }
+                                  }}
+                                />
+                              </Box>
+                              <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ minWidth: 32 }}>
+                                {progressPct}%
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell>
+                          {isArchived ? (
+                            <Chip
+                              icon={<CheckCircleIcon sx={{ fontSize: '13px !important', color: '#16A34A !important' }} />}
+                              label="Archived / Stocked"
+                              size="small"
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: '0.72rem',
+                                height: 24,
+                                borderRadius: '8px',
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === 'dark'
+                                    ? 'rgba(22, 163, 74, 0.15)'
+                                    : '#DCFCE7',
+                                color: '#16A34A'
+                              }}
+                            />
+                          ) : (
+                            <Chip
+                              icon={<ShippingIcon sx={{ fontSize: '13px !important', color: '#2563EB !important' }} />}
+                              label="In Transit (Active)"
+                              size="small"
+                              sx={{
+                                fontWeight: 700,
+                                fontSize: '0.72rem',
+                                height: 24,
+                                borderRadius: '8px',
+                                bgcolor: (theme) =>
+                                  theme.palette.mode === 'dark'
+                                    ? 'rgba(37, 99, 235, 0.15)'
+                                    : '#EFF6FF',
+                                color: '#2563EB'
+                              }}
+                            />
+                          )}
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell align="right" onClick={(e) => e.stopPropagation()}>
+                          <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              startIcon={<EditIcon fontSize="small" />}
+                              onClick={() => {
+                                setSelectedShipment(shipment);
+                                setEditDialogOpen(true);
+                              }}
+                              sx={{
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontWeight: 600,
+                                fontSize: '0.75rem',
+                                px: 1.25,
+                                py: 0.5
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              endIcon={<ArrowForwardIcon fontSize="small" />}
+                              onClick={() => {
+                                setSelectedShipment(shipment);
+                                setDetailDialogOpen(true);
+                              }}
+                              sx={{
+                                borderRadius: 2,
+                                textTransform: 'none',
+                                fontWeight: 700,
+                                fontSize: '0.75rem',
+                                px: 1.25,
+                                py: 0.5
+                              }}
+                            >
+                              View Batch
+                            </Button>
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            component="div"
+            count={filteredShipments.length}
+            rowsPerPage={rowsPerPage}
+            page={page}
+            onPageChange={(_, newPage) => setPage(newPage)}
+            onRowsPerPageChange={(e) => {
+              setRowsPerPage(parseInt(e.target.value, 10));
+              setPage(0);
+            }}
+          />
         </Paper>
       ) : (
         <Grid container spacing={2.5}>
