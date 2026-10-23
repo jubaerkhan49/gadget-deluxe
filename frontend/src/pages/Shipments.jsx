@@ -1192,7 +1192,7 @@ export default function Shipments() {
               >
                 <TableRow>
                   <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
-                    Batch / Tracking Number
+                    Tracking Number
                   </TableCell>
                   <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
                     Supplier
@@ -1247,14 +1247,9 @@ export default function Shipments() {
                           setDetailDialogOpen(true);
                         }}
                       >
-                        {/* Batch / Tracking */}
+                        {/* Tracking Number */}
                         <TableCell onClick={(e) => e.stopPropagation()}>
-                          <Stack direction="row" spacing={0.75} alignItems="center">
-                            <Typography variant="body2" fontWeight={800} color="primary.main">
-                              #{shipment.tracking_number}
-                            </Typography>
-                            <CopyableText text={shipment.tracking_number} />
-                          </Stack>
+                          <CopyableText text={shipment.tracking_number} />
                         </TableCell>
 
                         {/* Supplier */}
