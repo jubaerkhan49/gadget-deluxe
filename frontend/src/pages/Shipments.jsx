@@ -1209,9 +1209,6 @@ export default function Shipments() {
                   <TableCell sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
                     Status
                   </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 800, fontSize: '0.82rem', py: 1.8 }}>
-                    Actions
-                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -1405,50 +1402,6 @@ export default function Shipments() {
                               }}
                             />
                           )}
-                        </TableCell>
-
-                        {/* Actions */}
-                        <TableCell align="right" onClick={(e) => e.stopPropagation()}>
-                          <Stack direction="row" spacing={1} justifyContent="flex-end">
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<EditIcon fontSize="small" />}
-                              onClick={() => {
-                                setSelectedShipment(shipment);
-                                setEditDialogOpen(true);
-                              }}
-                              sx={{
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                fontWeight: 600,
-                                fontSize: '0.75rem',
-                                px: 1.25,
-                                py: 0.5
-                              }}
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              endIcon={<ArrowForwardIcon fontSize="small" />}
-                              onClick={() => {
-                                setSelectedShipment(shipment);
-                                setDetailDialogOpen(true);
-                              }}
-                              sx={{
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                fontWeight: 700,
-                                fontSize: '0.75rem',
-                                px: 1.25,
-                                py: 0.5
-                              }}
-                            >
-                              View Batch
-                            </Button>
-                          </Stack>
                         </TableCell>
                       </TableRow>
                     );
