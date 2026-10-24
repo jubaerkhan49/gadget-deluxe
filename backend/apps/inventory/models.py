@@ -206,10 +206,19 @@ class DeviceHistory(TimeStampedModel):
 class Photo(TimeStampedModel):
     """Photos linked to devices (Front, Back, Display, IMEI Sticker, Repair Photos, Invoice, etc)."""
     PHOTO_TYPES = [
-        ('FRONT', 'Front'),
-        ('BACK', 'Back'),
-        ('DISPLAY', 'Display'),
+        ('ABOUT', 'About'),
         ('BATTERY', 'Battery'),
+        ('LEFT', 'Left'),
+        ('RIGHT', 'Right'),
+        ('TOP', 'Top'),
+        ('BOTTOM', 'Bottom'),
+        ('FRONT', 'Front'),
+        ('REAR', 'Rear'),
+        ('HOME', 'Home'),
+        ('CAMERA', 'Camera'),
+        # Backward compatibility aliases
+        ('BACK', 'Rear'),
+        ('DISPLAY', 'Front'),
         ('IMEI_STICKER', 'IMEI Sticker'),
         ('REPAIR', 'Repair Photo'),
         ('INVOICE', 'Invoice'),
@@ -218,7 +227,7 @@ class Photo(TimeStampedModel):
     ]
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='photos')
-    photo_type = models.CharField(max_length=30, choices=PHOTO_TYPES, default='FRONT')
+    photo_type = models.CharField(max_length=30, choices=PHOTO_TYPES, default='ABOUT')
     image = models.ImageField(upload_to='device_photos/%Y/%m/', blank=True, null=True)
     image_url = models.URLField(max_length=600, blank=True, null=True, help_text="Cloudinary or CDN image URL")
     public_id = models.CharField(max_length=255, blank=True, null=True, help_text="Cloudinary public ID")

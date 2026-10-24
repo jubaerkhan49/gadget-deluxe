@@ -1094,7 +1094,7 @@ class DeviceViewSet(viewsets.ModelViewSet):
             )
 
         caption = request.data.get('caption', '').strip()
-        photo_type = request.data.get('photo_type', 'FRONT').upper()
+        photo_type = request.data.get('photo_type', 'ABOUT').upper()
         is_primary = request.data.get('is_primary', 'false').lower() in ['true', '1']
 
         import cloudinary
@@ -1144,7 +1144,7 @@ class DeviceViewSet(viewsets.ModelViewSet):
                     device=device,
                     image_url=secure_url,
                     public_id=c_public_id,
-                    photo_type=photo_type if photo_type in dict(Photo.PHOTO_TYPES) else 'FRONT',
+                    photo_type=photo_type if photo_type in dict(Photo.PHOTO_TYPES) else 'ABOUT',
                     caption=caption or (file_obj.name.split('.')[0] if len(files) > 1 else ''),
                     is_primary=photo_is_primary,
                     uploaded_by=user

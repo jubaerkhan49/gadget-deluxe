@@ -32,14 +32,16 @@ import { useSnackbar } from 'notistack';
 import { deviceApi } from '../../api/client';
 
 const PHOTO_TYPE_OPTIONS = [
-  { value: 'FRONT', label: 'Front' },
-  { value: 'BACK', label: 'Back' },
-  { value: 'DISPLAY', label: 'Display' },
+  { value: 'ABOUT', label: 'About' },
   { value: 'BATTERY', label: 'Battery' },
-  { value: 'IMEI_STICKER', label: 'IMEI Sticker' },
-  { value: 'REPAIR', label: 'Repair' },
-  { value: 'PACKAGING', label: 'Box / Accs' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'LEFT', label: 'Left' },
+  { value: 'RIGHT', label: 'Right' },
+  { value: 'TOP', label: 'Top' },
+  { value: 'BOTTOM', label: 'Bottom' },
+  { value: 'FRONT', label: 'Front' },
+  { value: 'REAR', label: 'Rear' },
+  { value: 'HOME', label: 'Home' },
+  { value: 'CAMERA', label: 'Camera' },
 ];
 
 export default function DevicePhotoGallery({
@@ -55,7 +57,7 @@ export default function DevicePhotoGallery({
 
   // Upload state
   const [uploading, setUploading] = useState(false);
-  const [selectedPhotoType, setSelectedPhotoType] = useState('FRONT');
+  const [selectedPhotoType, setSelectedPhotoType] = useState('ABOUT');
 
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -249,7 +251,7 @@ export default function DevicePhotoGallery({
           <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ fontSize: '0.68rem' }}>
             Tag:
           </Typography>
-          {PHOTO_TYPE_OPTIONS.slice(0, 5).map((opt) => (
+          {PHOTO_TYPE_OPTIONS.map((opt) => (
             <Chip
               key={opt.value}
               label={opt.label}
@@ -260,7 +262,7 @@ export default function DevicePhotoGallery({
               variant={selectedPhotoType === opt.value ? 'filled' : 'outlined'}
               sx={{
                 fontSize: '0.66rem',
-                fontWeight: 700,
+                fontWeight: selectedPhotoType === opt.value ? 800 : 600,
                 height: 20,
                 borderRadius: '5px'
               }}
