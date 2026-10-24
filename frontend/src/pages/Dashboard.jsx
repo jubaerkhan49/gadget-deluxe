@@ -1783,7 +1783,9 @@ export default function Dashboard() {
         device={selectedDevice}
         onDeviceUpdated={(updated) => {
           setSelectedDevice(updated);
-          fetchDashboardData();
+          setMyAssignedDevices((prev) => prev.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)));
+          setRecentDevices((prev) => prev.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)));
+          fetchDashboardData(true);
         }}
         onEditRequested={(dev) => {
           setEditDevice(dev);

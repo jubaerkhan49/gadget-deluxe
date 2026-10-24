@@ -1105,7 +1105,8 @@ export default function Inventory() {
         device={selectedDevice}
         onDeviceUpdated={(updated) => {
           setSelectedDevice(updated);
-          fetchInventory();
+          setDevices((prev) => prev.map((d) => (d.id === updated.id ? { ...d, ...updated } : d)));
+          fetchInventory(true);
         }}
         onEditRequested={(dev) => {
           setEditDevice(dev);

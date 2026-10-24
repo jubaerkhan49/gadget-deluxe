@@ -360,22 +360,6 @@ export default function DevicePhotoGallery({
                   maxWidth: '90%'
                 }}
               >
-                {photo.is_primary && (
-                  <Chip
-                    icon={<StarFilledIcon sx={{ fontSize: '10px !important', color: '#F59E0B !important' }} />}
-                    label="Primary"
-                    size="small"
-                    sx={{
-                      bgcolor: 'rgba(0, 0, 0, 0.75)',
-                      color: '#FBBF24',
-                      fontWeight: 800,
-                      fontSize: '0.58rem',
-                      height: 16,
-                      px: 0.2,
-                      backdropFilter: 'blur(4px)'
-                    }}
-                  />
-                )}
                 {photo.photo_type_display && (
                   <Chip
                     label={photo.photo_type_display}
@@ -530,14 +514,6 @@ export default function DevicePhotoGallery({
                 label={currentPhoto.photo_type_display}
                 size="small"
                 sx={{ bgcolor: 'primary.main', color: '#fff', fontWeight: 700 }}
-              />
-            )}
-            {currentPhoto?.is_primary && (
-              <Chip
-                icon={<StarFilledIcon sx={{ fontSize: '13px !important', color: '#F59E0B !important' }} />}
-                label="Primary Photo"
-                size="small"
-                sx={{ bgcolor: 'rgba(245, 158, 11, 0.2)', color: '#FBBF24', fontWeight: 800 }}
               />
             )}
           </Box>
