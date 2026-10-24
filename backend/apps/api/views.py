@@ -15,7 +15,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.utils import timezone
 from django.core.cache import cache
 from apps.accounts.models import User, EmployeeApplication, EmployeeProfileUpdateRequest, FCMDeviceToken
-from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory, DeviceAssignment
+from apps.inventory.models import Device, DeviceStatus, DeviceVariant, DeviceHistory, DeviceAssignment, Photo
 from apps.shipments.models import Shipment, Supplier
 from apps.customers.models import Customer
 from apps.sales.models import Sale, DeviceSaleRequest
@@ -30,7 +30,7 @@ from .serializers import (
     UserSerializer, DeviceSerializer, ShipmentSerializer, SupplierSerializer,
     CustomerSerializer, SaleSerializer, RepairSerializer, SickwReportSerializer,
     OtherGoodsOrderSerializer, PublicOrderTrackingSerializer, EmployeeApplicationSerializer,
-    EmployeeProfileUpdateRequestSerializer, DeviceSaleRequestSerializer
+    EmployeeProfileUpdateRequestSerializer, DeviceSaleRequestSerializer, DevicePhotoSerializer
 )
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -1059,6 +1059,175 @@ class DeviceViewSet(viewsets.ModelViewSet):
         return Response({
             "success": True,
             "message": f"Sickw diagnostic data reset successfully ({count} reports removed).",
+            "device": DeviceSerializer(device, context={'request': request}).data
+        })
+
+    @action(detail=True, methods=['post'], url_path='upload-photo')
+    def upload_photo(self, request, pk=None):
+        """
+        Uploads one or multiple device photos to Cloudinary and saves Photo records.
+        Restricted to Admin / Manager users.
+        """
+        user = request.user
+        is_admin = user.role in [User.Role.ADMIN, User.Role.MANAGER] or user.is_superuser or user.username.lower() in ['jubaer', 'admin']
+        if not is_admin:
+            return Response(
+                {"error": "Only administrators can upload device photos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        device = self.get_object()
+        files = request.FILES.getlist('images') or request.FILES.getlist('photos') or request.FILES.getlist('image') or request.FILES.getlist('file')
+        if not files and 'image' in request.FILES:
+            files = [request.FILES['image']]
+
+        if not files:
+            return Response(
+                {"error": "No image files provided for upload."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        caption = request.data.get('caption', '').strip()
+        photo_type = request.data.get('photo_type', 'FRONT').upper()
+        is_primary = request.data.get('is_primary', 'false').lower() in ['true', '1']
+
+        import cloudinary
+        import cloudinary.uploader
+
+        uploaded_photos = []
+        errors = []
+        has_existing = device.photos.exists()
+
+        for idx, file_obj in enumerate(files):
+            try:
+                timestamp = int(timezone.now().timestamp())
+                public_id_prefix = f"dev_{device.imei}_{timestamp}_{idx}"
+                upload_res = cloudinary.uploader.upload(
+                    file_obj,
+                    folder=f"gadget_deluxe/devices/{device.imei}",
+                    public_id=public_id_prefix,
+                    resource_type="image",
+                    overwrite=True
+                )
+                secure_url = upload_res.get('secure_url')
+                c_public_id = upload_res.get('public_id')
+
+                photo_is_primary = False
+                if is_primary and idx == 0:
+                    device.photos.update(is_primary=False)
+                    photo_is_primary = True
+                elif not has_existing and idx == 0:
+                    photo_is_primary = True
+
+                photo = Photo.objects.create(
+                    device=device,
+                    image_url=secure_url,
+                    public_id=c_public_id,
+                    photo_type=photo_type if photo_type in dict(Photo.PHOTO_TYPES) else 'FRONT',
+                    caption=caption or (file_obj.name.split('.')[0] if len(files) > 1 else ''),
+                    is_primary=photo_is_primary,
+                    uploaded_by=user
+                )
+                uploaded_photos.append(photo)
+            except Exception as e:
+                errors.append(f"Failed to upload {file_obj.name}: {str(e)}")
+
+        if not uploaded_photos and errors:
+            return Response(
+                {"error": f"Upload failed: {'; '.join(errors)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+        DeviceHistory.objects.create(
+            device=device,
+            user=user,
+            action_type='STATUS_UPDATE',
+            new_state=f"Uploaded {len(uploaded_photos)} device photo(s) by @{user.username}."
+        )
+
+        device.refresh_from_db()
+        return Response({
+            "success": True,
+            "message": f"Successfully uploaded {len(uploaded_photos)} photo(s).",
+            "uploaded": DevicePhotoSerializer(uploaded_photos, many=True).data,
+            "photos": DevicePhotoSerializer(device.photos.all(), many=True).data,
+            "device": DeviceSerializer(device, context={'request': request}).data,
+            "errors": errors if errors else None
+        }, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['delete'], url_path=r'photos/(?P<photo_id>\d+)')
+    def delete_photo(self, request, pk=None, photo_id=None):
+        """
+        Deletes a specific photo from Cloudinary and database.
+        Restricted to Admin / Manager users.
+        """
+        user = request.user
+        is_admin = user.role in [User.Role.ADMIN, User.Role.MANAGER] or user.is_superuser or user.username.lower() in ['jubaer', 'admin']
+        if not is_admin:
+            return Response(
+                {"error": "Only administrators can delete device photos."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        device = self.get_object()
+        try:
+            photo = device.photos.get(id=photo_id)
+        except Photo.DoesNotExist:
+            return Response({"error": "Photo not found for this device."}, status=status.HTTP_404_NOT_FOUND)
+
+        if photo.public_id:
+            try:
+                import cloudinary
+                import cloudinary.uploader
+                cloudinary.uploader.destroy(photo.public_id)
+            except Exception:
+                pass
+
+        was_primary = photo.is_primary
+        photo.delete()
+
+        if was_primary:
+            next_photo = device.photos.order_by('-created_at').first()
+            if next_photo:
+                next_photo.is_primary = True
+                next_photo.save(update_fields=['is_primary'])
+
+        device.refresh_from_db()
+        return Response({
+            "success": True,
+            "message": "Photo deleted successfully.",
+            "photos": DevicePhotoSerializer(device.photos.all(), many=True).data,
+            "device": DeviceSerializer(device, context={'request': request}).data
+        })
+
+    @action(detail=True, methods=['post'], url_path=r'photos/(?P<photo_id>\d+)/set-primary')
+    def set_primary_photo(self, request, pk=None, photo_id=None):
+        """
+        Sets a specific photo as primary for this device.
+        """
+        user = request.user
+        is_admin = user.role in [User.Role.ADMIN, User.Role.MANAGER] or user.is_superuser or user.username.lower() in ['jubaer', 'admin']
+        if not is_admin:
+            return Response(
+                {"error": "Only administrators can set primary device photo."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        device = self.get_object()
+        try:
+            photo = device.photos.get(id=photo_id)
+        except Photo.DoesNotExist:
+            return Response({"error": "Photo not found for this device."}, status=status.HTTP_404_NOT_FOUND)
+
+        device.photos.update(is_primary=False)
+        photo.is_primary = True
+        photo.save(update_fields=['is_primary'])
+
+        device.refresh_from_db()
+        return Response({
+            "success": True,
+            "message": "Primary photo updated.",
+            "photos": DevicePhotoSerializer(device.photos.all(), many=True).data,
             "device": DeviceSerializer(device, context={'request': request}).data
         })
 

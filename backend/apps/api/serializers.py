@@ -167,6 +167,19 @@ class DeviceHistorySerializer(serializers.ModelSerializer):
         model = DeviceHistory
         fields = '__all__'
 
+class DevicePhotoSerializer(serializers.ModelSerializer):
+    url = serializers.CharField(source='url', read_only=True)
+    photo_type_display = serializers.CharField(source='get_photo_type_display', read_only=True)
+    uploaded_by_name = serializers.CharField(source='uploaded_by.username', read_only=True, default='Admin')
+
+    class Meta:
+        model = Photo
+        fields = [
+            'id', 'device', 'photo_type', 'photo_type_display',
+            'url', 'image_url', 'public_id', 'is_primary',
+            'caption', 'created_at', 'uploaded_by_name'
+        ]
+
 class DeviceNoteSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True, default='Admin')
 
@@ -195,6 +208,8 @@ class DeviceSerializer(serializers.ModelSerializer):
     sales = SaleSerializer(many=True, read_only=True)
     sickw_reports = SickwReportSerializer(many=True, read_only=True)
     device_notes = DeviceNoteSerializer(many=True, read_only=True)
+    photos = DevicePhotoSerializer(many=True, read_only=True)
+    images = DevicePhotoSerializer(source='photos', many=True, read_only=True)
 
     class Meta:
         model = Device

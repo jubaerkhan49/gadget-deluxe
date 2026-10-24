@@ -43,7 +43,8 @@ import {
   HourglassEmpty as HourglassIcon,
   EventAvailable as EventIcon,
   EmojiEvents as TrophyIcon,
-  Stars as StarsIcon
+  Stars as StarsIcon,
+  CameraAlt as CameraIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
@@ -541,13 +542,55 @@ export default function Dashboard() {
                 >
                   {/* Card Top: Model, Specs & Status */}
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1.2 }}>
-                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                      <Typography variant="subtitle2" fontWeight={800} noWrap>
-                        {dev.model}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
-                        {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
-                      </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, minWidth: 0, flex: 1 }}>
+                      {(() => {
+                        const devPhotos = (dev.photos || dev.images || []).filter(p => Boolean(p.url));
+                        const primaryPhoto = devPhotos.find(p => p.is_primary) || devPhotos[0];
+                        return (
+                          <>
+                            {primaryPhoto && (
+                              <Box
+                                component="img"
+                                src={primaryPhoto.url}
+                                alt={dev.model}
+                                sx={{
+                                  width: 38,
+                                  height: 38,
+                                  borderRadius: 1.5,
+                                  objectFit: 'cover',
+                                  flexShrink: 0,
+                                  border: '1px solid',
+                                  borderColor: 'divider'
+                                }}
+                              />
+                            )}
+                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+                                <Typography variant="subtitle2" fontWeight={800} noWrap>
+                                  {dev.model}
+                                </Typography>
+                                {devPhotos.length > 0 && (
+                                  <Chip
+                                    label={`📷 ${devPhotos.length}`}
+                                    size="small"
+                                    sx={{
+                                      height: 18,
+                                      fontSize: '0.62rem',
+                                      fontWeight: 800,
+                                      bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+                                      color: 'primary.main',
+                                      borderRadius: '5px'
+                                    }}
+                                  />
+                                )}
+                              </Box>
+                              <Typography variant="caption" color="text.secondary" noWrap sx={{ display: 'block' }}>
+                                {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
+                              </Typography>
+                            </Box>
+                          </>
+                        );
+                      })()}
                     </Box>
                     <StatusBadge status={dev.current_status} />
                   </Box>
@@ -695,12 +738,59 @@ export default function Dashboard() {
                       }}
                     >
                       <TableCell>
-                        <Typography variant="body2" fontWeight={600}>
-                          {dev.model}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
-                        </Typography>
+                        {(() => {
+                          const devPhotos = (dev.photos || dev.images || []).filter(p => Boolean(p.url));
+                          const primaryPhoto = devPhotos.find(p => p.is_primary) || devPhotos[0];
+                          return (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+                              {primaryPhoto && (
+                                <Box
+                                  component="img"
+                                  src={primaryPhoto.url}
+                                  alt={dev.model}
+                                  sx={{
+                                    width: 34,
+                                    height: 34,
+                                    borderRadius: 1.5,
+                                    objectFit: 'cover',
+                                    flexShrink: 0,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                                  }}
+                                />
+                              )}
+                              <Box sx={{ minWidth: 0 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
+                                  <Typography variant="body2" fontWeight={700}>
+                                    {dev.model}
+                                  </Typography>
+                                  {devPhotos.length > 0 && (
+                                    <Chip
+                                      icon={<CameraIcon sx={{ fontSize: '11px !important', color: '#2563EB !important' }} />}
+                                      label={`${devPhotos.length}`}
+                                      size="small"
+                                      sx={{
+                                        height: 18,
+                                        fontSize: '0.65rem',
+                                        fontWeight: 800,
+                                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+                                        color: '#2563EB',
+                                        borderRadius: '6px',
+                                        border: '1px solid',
+                                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
+                                        px: 0.2
+                                      }}
+                                    />
+                                  )}
+                                </Box>
+                                <Typography variant="caption" color="text.secondary">
+                                  {dev.capacity || ''} {dev.color ? `• ${dev.color}` : ''}
+                                </Typography>
+                              </Box>
+                            </Box>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <CopyableText text={dev.imei} />

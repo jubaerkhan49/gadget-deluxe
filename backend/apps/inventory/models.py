@@ -219,11 +219,26 @@ class Photo(TimeStampedModel):
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE, related_name='photos')
     photo_type = models.CharField(max_length=30, choices=PHOTO_TYPES, default='FRONT')
-    image = models.ImageField(upload_to='device_photos/%Y/%m/')
+    image = models.ImageField(upload_to='device_photos/%Y/%m/', blank=True, null=True)
+    image_url = models.URLField(max_length=600, blank=True, null=True, help_text="Cloudinary or CDN image URL")
+    public_id = models.CharField(max_length=255, blank=True, null=True, help_text="Cloudinary public ID")
+    is_primary = models.BooleanField(default=False, help_text="Primary display photo")
     caption = models.CharField(max_length=255, blank=True, null=True)
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='uploaded_photos')
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-is_primary', '-created_at']
+
+    @property
+    def url(self):
+        if self.image_url:
+            return self.image_url
+        if self.image:
+            try:
+                return self.image.url
+            except Exception:
+                return ''
+        return ''
 
     def __str__(self) -> str:
         return f"Photo ({self.get_photo_type_display()}) for {self.device.imei}"

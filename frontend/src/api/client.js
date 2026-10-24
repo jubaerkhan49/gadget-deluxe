@@ -103,6 +103,11 @@ export const deviceApi = {
   fetchSickw: (id, service) => api.post(`/api/devices/${id}/fetch-sickw/`, { service }),
   getSickwBalance: () => api.get('/api/devices/sickw-balance/'),
   resetSickw: (id) => api.post(`/api/devices/${id}/reset-sickw/`),
+  uploadPhoto: (id, formData) => api.post(`/api/devices/${id}/upload-photo/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deletePhoto: (deviceId, photoId) => api.delete(`/api/devices/${deviceId}/photos/${photoId}/`),
+  setPrimaryPhoto: (deviceId, photoId) => api.post(`/api/devices/${deviceId}/photos/${photoId}/set-primary/`),
 };
 
 export const deviceSaleRequestApi = {

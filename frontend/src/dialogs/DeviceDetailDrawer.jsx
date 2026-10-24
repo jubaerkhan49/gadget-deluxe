@@ -73,6 +73,7 @@ import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
 import AddRepairDialog from './AddRepairDialog';
+import DevicePhotoGallery from '../components/devices/DevicePhotoGallery';
 
 const STATUS_CHOICES = [
   { value: 'WAITING_SHIPMENT', label: 'Waiting Shipment' },
@@ -97,6 +98,11 @@ export default function DeviceDetailDrawer({
   const { enqueueSnackbar } = useSnackbar();
   const { isAdmin, user: authUser } = useAuth();
   const [currentTab, setCurrentTab] = useState(0);
+  const [activeDevice, setActiveDevice] = useState(device);
+
+  useEffect(() => {
+    setActiveDevice(device);
+  }, [device]);
 
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -747,6 +753,16 @@ export default function DeviceDetailDrawer({
                   )}
                 </Paper>
               )}
+
+              {/* Device Physical Condition Photos */}
+              <DevicePhotoGallery
+                device={activeDevice || device}
+                isAdmin={isAdmin}
+                onPhotosUpdated={(updatedDev) => {
+                  setActiveDevice(updatedDev);
+                  if (onDeviceUpdated) onDeviceUpdated(updatedDev);
+                }}
+              />
 
               {/* Side-by-Side Main Info (Hardware Specs on Left, Pricing & Logistics on Right) */}
               <Grid container spacing={1.5}>

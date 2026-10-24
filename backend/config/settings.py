@@ -208,3 +208,16 @@ CACHES = {
     }
 }
 
+# Cloudinary Configuration
+CLOUDINARY_URL = os.environ.get(
+    'CLOUDINARY_URL',
+    'cloudinary://846937929155231:7QF3PpnoIq204z0XldK0ql2NS_o@pznjjf9y'
+)
+if CLOUDINARY_URL:
+    os.environ['CLOUDINARY_URL'] = CLOUDINARY_URL
+    try:
+        import cloudinary
+        cloudinary.config(cloudinary_url=CLOUDINARY_URL)
+    except Exception as e:
+        pass
+
