@@ -139,54 +139,74 @@ export default function Dashboard() {
   const fetchDashboardData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const [statsRes, devsRes, salesRes] = await Promise.all([
+      const [statsRes, devsRes, salesRes] = await Promise.allSettled([
         dashboardApi.getStats(),
         deviceApi.getAll(),
         saleApi.getAll()
       ]);
 
-      const freshStats = statsRes.data;
-      const freshDevs = devsRes.data.results || devsRes.data || [];
-      const freshSales = salesRes.data.results || salesRes.data || [];
+      let anySucceeded = false;
 
-      // Save to cache
-      apiCache.set('/api/dashboard/stats/', freshStats);
-      apiCache.set('/api/devices/', freshDevs);
-      apiCache.set('/api/sales/', freshSales);
+      if (statsRes.status === 'fulfilled') {
+        const freshStats = statsRes.value.data;
+        apiCache.set('/api/dashboard/stats/', freshStats);
+        setStats(freshStats);
+        anySucceeded = true;
+      } else {
+        console.warn('Dashboard stats fetch failed:', statsRes.reason);
+      }
 
-      setStats(freshStats);
-      setRecentDevices(freshDevs.slice(0, 6));
+      if (devsRes.status === 'fulfilled') {
+        const freshDevs = devsRes.value.data.results || devsRes.value.data || [];
+        apiCache.set('/api/devices/', freshDevs);
+        setRecentDevices(freshDevs.slice(0, 6));
 
-      // Filter devices assigned to current user and exclude SOLD devices
-      const activeDevs = freshDevs.filter((d) => d.current_status !== 'SOLD');
-      const myDevs = activeDevs.filter((d) => {
-        if (!d.current_owner) return false;
-        if (typeof d.current_owner === 'object') {
-          return d.current_owner.id === user?.id || d.current_owner.username === user?.username;
-        }
-        return d.current_owner === user?.id || d.current_owner === user?.username;
-      });
-      const targetDevs = myDevs.length > 0 ? myDevs : activeDevs;
+        // Filter devices assigned to current user and exclude SOLD devices
+        const activeDevs = freshDevs.filter((d) => d.current_status !== 'SOLD');
+        const myDevs = activeDevs.filter((d) => {
+          if (!d.current_owner) return false;
+          if (typeof d.current_owner === 'object') {
+            return d.current_owner.id === user?.id || d.current_owner.username === user?.username;
+          }
+          return d.current_owner === user?.id || d.current_owner === user?.username;
+        });
+        const targetDevs = myDevs.length > 0 ? myDevs : activeDevs;
 
-      // Sort by date (latest date first)
-      const getDeviceTimestamp = (d) => {
-        const raw = d.received_date_bd || d.assigned_date || d.created_at;
-        if (!raw) return 0;
-        const t = new Date(raw).getTime();
-        return isNaN(t) ? 0 : t;
-      };
+        // Sort by date (latest date first)
+        const getDeviceTimestamp = (d) => {
+          const raw = d.received_date_bd || d.assigned_date || d.created_at;
+          if (!raw) return 0;
+          const t = new Date(raw).getTime();
+          return isNaN(t) ? 0 : t;
+        };
 
-      const sortedDevs = [...targetDevs].sort((a, b) => {
-        const diff = getDeviceTimestamp(b) - getDeviceTimestamp(a);
-        if (diff !== 0) return diff;
-        const createdA = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        if (createdB !== createdA) return createdB - createdA;
-        return (b.id || 0) - (a.id || 0);
-      });
+        const sortedDevs = [...targetDevs].sort((a, b) => {
+          const diff = getDeviceTimestamp(b) - getDeviceTimestamp(a);
+          if (diff !== 0) return diff;
+          const createdA = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const createdB = b.created_at ? new Date(b.created_at).getTime() : 0;
+          if (createdB !== createdA) return createdB - createdA;
+          return (b.id || 0) - (a.id || 0);
+        });
 
-      setMyAssignedDevices(sortedDevs);
-      setRecentSales(freshSales.slice(0, 5));
+        setMyAssignedDevices(sortedDevs);
+        anySucceeded = true;
+      } else {
+        console.warn('Devices fetch failed:', devsRes.reason);
+      }
+
+      if (salesRes.status === 'fulfilled') {
+        const freshSales = salesRes.value.data.results || salesRes.value.data || [];
+        apiCache.set('/api/sales/', freshSales);
+        setRecentSales(freshSales.slice(0, 5));
+        anySucceeded = true;
+      } else {
+        console.warn('Sales fetch failed:', salesRes.reason);
+      }
+
+      if (!anySucceeded && !silent) {
+        enqueueSnackbar('Failed to load dashboard metrics', { variant: 'error' });
+      }
     } catch (err) {
       console.error(err);
       if (!silent) {
@@ -544,7 +564,7 @@ export default function Dashboard() {
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1, mb: 1.2 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2, minWidth: 0, flex: 1 }}>
                       {(() => {
-                        const devPhotos = (dev.photos || dev.images || []).filter(p => Boolean(p.url));
+                        const devPhotos = (dev.photos || dev.images || []).filter(p => Boolean(p && p.url));
                         const primaryPhoto = devPhotos.find(p => p.is_primary) || devPhotos[0];
                         return (
                           <>
@@ -739,7 +759,7 @@ export default function Dashboard() {
                     >
                       <TableCell>
                         {(() => {
-                          const devPhotos = (dev.photos || dev.images || []).filter(p => Boolean(p.url));
+                          const devPhotos = (dev.photos || dev.images || []).filter(p => Boolean(p && p.url));
                           const primaryPhoto = devPhotos.find(p => p.is_primary) || devPhotos[0];
                           return (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>

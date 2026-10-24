@@ -168,9 +168,9 @@ class DeviceHistorySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class DevicePhotoSerializer(serializers.ModelSerializer):
-    url = serializers.CharField(source='url', read_only=True)
+    url = serializers.SerializerMethodField()
     photo_type_display = serializers.CharField(source='get_photo_type_display', read_only=True)
-    uploaded_by_name = serializers.CharField(source='uploaded_by.username', read_only=True, default='Admin')
+    uploaded_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Photo
@@ -179,6 +179,18 @@ class DevicePhotoSerializer(serializers.ModelSerializer):
             'url', 'image_url', 'public_id', 'is_primary',
             'caption', 'created_at', 'uploaded_by_name'
         ]
+
+    def get_url(self, obj):
+        try:
+            return obj.url or ''
+        except Exception:
+            return ''
+
+    def get_uploaded_by_name(self, obj):
+        try:
+            return obj.uploaded_by.username if obj.uploaded_by else 'Admin'
+        except Exception:
+            return 'Admin'
 
 class DeviceNoteSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True, default='Admin')
