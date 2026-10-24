@@ -7,6 +7,7 @@ import uuid
 from django.db import models
 from django.http import HttpResponse
 from rest_framework import viewsets, filters, permissions, status
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -1062,7 +1063,12 @@ class DeviceViewSet(viewsets.ModelViewSet):
             "device": DeviceSerializer(device, context={'request': request}).data
         })
 
-    @action(detail=True, methods=['post'], url_path='upload-photo')
+    @action(
+        detail=True,
+        methods=['post'],
+        url_path='upload-photo',
+        parser_classes=[MultiPartParser, FormParser, JSONParser]
+    )
     def upload_photo(self, request, pk=None):
         """
         Uploads one or multiple device photos to Cloudinary and saves Photo records.
@@ -1093,6 +1099,19 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
         import cloudinary
         import cloudinary.uploader
+        from urllib.parse import urlparse
+        from django.conf import settings
+
+        # Guarantee Cloudinary credentials are fully configured
+        c_url = getattr(settings, 'CLOUDINARY_URL', None) or os.environ.get('CLOUDINARY_URL', 'cloudinary://846937929155231:7QF3PpnoIq204z0XldK0ql2NS_o@pznjjf9y')
+        if c_url:
+            u = urlparse(c_url)
+            cloudinary.config(
+                cloud_name=u.hostname,
+                api_key=u.username,
+                api_secret=u.password,
+                secure=True
+            )
 
         uploaded_photos = []
         errors = []
@@ -1100,6 +1119,8 @@ class DeviceViewSet(viewsets.ModelViewSet):
 
         for idx, file_obj in enumerate(files):
             try:
+                if hasattr(file_obj, 'seek'):
+                    file_obj.seek(0)
                 timestamp = int(timezone.now().timestamp())
                 public_id_prefix = f"dev_{device.imei}_{timestamp}_{idx}"
                 upload_res = cloudinary.uploader.upload(
@@ -1179,9 +1200,20 @@ class DeviceViewSet(viewsets.ModelViewSet):
             try:
                 import cloudinary
                 import cloudinary.uploader
+                from urllib.parse import urlparse
+                from django.conf import settings
+                c_url = getattr(settings, 'CLOUDINARY_URL', None) or os.environ.get('CLOUDINARY_URL', 'cloudinary://846937929155231:7QF3PpnoIq204z0XldK0ql2NS_o@pznjjf9y')
+                if c_url:
+                    u = urlparse(c_url)
+                    cloudinary.config(
+                        cloud_name=u.hostname,
+                        api_key=u.username,
+                        api_secret=u.password,
+                        secure=True
+                    )
                 cloudinary.uploader.destroy(photo.public_id)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Cloudinary destroy error: {e}")
 
         was_primary = photo.is_primary
         photo.delete()

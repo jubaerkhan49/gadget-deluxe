@@ -114,7 +114,8 @@ export default function DevicePhotoGallery({
       }
     } catch (err) {
       console.error('Photo upload failed:', err);
-      enqueueSnackbar(err.response?.data?.error || 'Failed to upload photo to Cloudinary.', { variant: 'error' });
+      const msg = err.response?.data?.error || err.response?.data?.detail || err.message || 'Failed to upload photo to Cloudinary.';
+      enqueueSnackbar(msg, { variant: 'error' });
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';

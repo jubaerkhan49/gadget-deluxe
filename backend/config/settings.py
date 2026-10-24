@@ -216,8 +216,15 @@ CLOUDINARY_URL = os.environ.get(
 if CLOUDINARY_URL:
     os.environ['CLOUDINARY_URL'] = CLOUDINARY_URL
     try:
+        from urllib.parse import urlparse
         import cloudinary
-        cloudinary.config(cloudinary_url=CLOUDINARY_URL)
+        u = urlparse(CLOUDINARY_URL)
+        cloudinary.config(
+            cloud_name=u.hostname,
+            api_key=u.username,
+            api_secret=u.password,
+            secure=True
+        )
     except Exception as e:
-        pass
+        print(f"Cloudinary config error: {e}")
 
