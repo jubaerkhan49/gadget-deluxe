@@ -568,7 +568,7 @@ export default function Dashboard() {
                         const primaryPhoto = devPhotos.find(p => p.is_primary) || devPhotos[0];
                         return (
                           <>
-                            {primaryPhoto && (
+                            {isAdmin && primaryPhoto && (
                               <Box
                                 component="img"
                                 src={primaryPhoto.url}
@@ -763,7 +763,7 @@ export default function Dashboard() {
                           const primaryPhoto = devPhotos.find(p => p.is_primary) || devPhotos[0];
                           return (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
-                              {primaryPhoto && (
+                              {isAdmin && primaryPhoto && (
                                 <Box
                                   component="img"
                                   src={primaryPhoto.url}

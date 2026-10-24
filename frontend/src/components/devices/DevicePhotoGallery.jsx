@@ -166,22 +166,22 @@ export default function DevicePhotoGallery({
     <Paper
       variant="outlined"
       sx={{
-        p: { xs: 2, sm: 2.5 },
-        borderRadius: 2.5,
-        mb: 2.5,
+        p: { xs: 1.25, sm: 1.5 },
+        borderRadius: 2,
+        mb: 1.5,
         bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#FAFCFF',
         border: '1px solid',
         borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.25)' : '#DBEAFE',
       }}
     >
       {/* Header Row */}
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, flexWrap: 'wrap', gap: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.2 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1, flexWrap: 'wrap', gap: 1 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Box
             sx={{
-              width: 32,
-              height: 32,
-              borderRadius: 2,
+              width: 26,
+              height: 26,
+              borderRadius: 1.5,
               bgcolor: 'primary.main',
               color: '#fff',
               display: 'flex',
@@ -189,17 +189,25 @@ export default function DevicePhotoGallery({
               justifyContent: 'center'
             }}
           >
-            <GalleryIcon sx={{ fontSize: 18 }} />
+            <GalleryIcon sx={{ fontSize: 15 }} />
           </Box>
-          <Box>
-            <Typography variant="subtitle2" fontWeight={800} letterSpacing={-0.2}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+            <Typography variant="subtitle2" fontWeight={800} fontSize="0.84rem">
               {title}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {photos.length === 0
-                ? 'No photos uploaded yet.'
-                : `${photos.length} verified physical ${photos.length === 1 ? 'photo' : 'photos'} attached`}
-            </Typography>
+            {photos.length > 0 && (
+              <Chip
+                label={`${photos.length} photo${photos.length === 1 ? '' : 's'}`}
+                size="small"
+                sx={{
+                  height: 18,
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+                  color: 'primary.main'
+                }}
+              />
+            )}
           </Box>
         </Box>
 
@@ -217,18 +225,19 @@ export default function DevicePhotoGallery({
             <Button
               variant="contained"
               size="small"
-              startIcon={uploading ? <CircularProgress size={16} color="inherit" /> : <AddPhotoIcon />}
+              startIcon={uploading ? <CircularProgress size={13} color="inherit" /> : <AddPhotoIcon sx={{ fontSize: 15 }} />}
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               sx={{
-                borderRadius: 2,
+                borderRadius: 1.5,
                 textTransform: 'none',
                 fontWeight: 700,
-                fontSize: '0.8rem',
-                px: 1.75
+                fontSize: '0.74rem',
+                py: 0.3,
+                px: 1.2
               }}
             >
-              {uploading ? 'Uploading to Cloudinary...' : 'Add Photos'}
+              {uploading ? 'Uploading...' : 'Add Photos'}
             </Button>
           </Box>
         )}
@@ -236,9 +245,9 @@ export default function DevicePhotoGallery({
 
       {/* Admin Quick Upload Tag Selector */}
       {isAdmin && (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, mb: 2, flexWrap: 'wrap' }}>
-          <Typography variant="caption" fontWeight={700} color="text.secondary">
-            Next Upload Tag:
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, mb: 1, flexWrap: 'wrap' }}>
+          <Typography variant="caption" fontWeight={700} color="text.secondary" sx={{ fontSize: '0.68rem' }}>
+            Tag:
           </Typography>
           {PHOTO_TYPE_OPTIONS.slice(0, 5).map((opt) => (
             <Chip
@@ -250,10 +259,10 @@ export default function DevicePhotoGallery({
               color={selectedPhotoType === opt.value ? 'primary' : 'default'}
               variant={selectedPhotoType === opt.value ? 'filled' : 'outlined'}
               sx={{
-                fontSize: '0.72rem',
+                fontSize: '0.66rem',
                 fontWeight: 700,
-                height: 22,
-                borderRadius: '6px'
+                height: 20,
+                borderRadius: '5px'
               }}
             />
           ))}
@@ -262,43 +271,40 @@ export default function DevicePhotoGallery({
 
       {/* Photo Gallery Grid */}
       {photos.length === 0 ? (
-        // Admin Empty State Dropzone
+        // Admin Empty State Dropzone (Compact)
         <Box
           onClick={() => fileInputRef.current?.click()}
           sx={{
-            py: 3,
+            py: 1.5,
             px: 2,
-            textAlign: 'center',
-            borderRadius: 2,
-            border: '2px dashed',
+            borderRadius: 1.5,
+            border: '1.5px dashed',
             borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.15)' : '#CBD5E1',
             bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.01)' : 'rgba(241, 245, 249, 0.5)',
             cursor: 'pointer',
             transition: 'all 0.2s ease',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1.2,
             '&:hover': {
               borderColor: 'primary.main',
               bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : '#EFF6FF'
             }
           }}
         >
-          <CloudUploadIcon sx={{ fontSize: 36, color: 'text.secondary', mb: 0.8 }} />
-          <Typography variant="body2" fontWeight={700}>
-            Click to upload device photos (front, back, screen, defects)
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Supports multiple JPG, PNG, WEBP files. Stored securely on Cloudinary.
+          <CloudUploadIcon sx={{ fontSize: 22, color: 'primary.main' }} />
+          <Typography variant="caption" fontWeight={700} color="text.secondary">
+            Click here to upload device photos (front, back, screen, defects)
           </Typography>
         </Box>
       ) : (
         <Box
           sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: 'repeat(2, 1fr)',
-              sm: 'repeat(3, 1fr)',
-              md: 'repeat(4, 1fr)'
-            },
-            gap: 1.5
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 1,
+            alignItems: 'center'
           }}
         >
           {photos.map((photo, index) => (
@@ -307,18 +313,20 @@ export default function DevicePhotoGallery({
               onClick={() => openLightbox(index)}
               sx={{
                 position: 'relative',
-                borderRadius: 2,
+                width: { xs: 80, sm: 94 },
+                height: { xs: 80, sm: 94 },
+                borderRadius: 1.5,
                 overflow: 'hidden',
-                aspectRatio: '1 / 1',
                 bgcolor: '#000',
                 cursor: 'pointer',
                 border: photo.is_primary ? '2px solid' : '1px solid',
                 borderColor: photo.is_primary ? 'primary.main' : 'divider',
                 boxShadow: photo.is_primary ? '0 0 0 2px rgba(37, 99, 235, 0.2)' : 'none',
                 transition: 'transform 0.2s, box-shadow 0.2s',
+                flexShrink: 0,
                 '&:hover': {
-                  transform: 'scale(1.02)',
-                  boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+                  transform: 'scale(1.03)',
+                  boxShadow: '0 6px 16px rgba(0,0,0,0.2)',
                   '& .photo-overlay': { opacity: 1 }
                 }
               }}
@@ -341,25 +349,27 @@ export default function DevicePhotoGallery({
               <Box
                 sx={{
                   position: 'absolute',
-                  top: 6,
-                  left: 6,
+                  top: 4,
+                  left: 4,
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 0.5,
-                  zIndex: 2
+                  gap: 0.3,
+                  zIndex: 2,
+                  maxWidth: '90%'
                 }}
               >
                 {photo.is_primary && (
                   <Chip
-                    icon={<StarFilledIcon sx={{ fontSize: '12px !important', color: '#F59E0B !important' }} />}
+                    icon={<StarFilledIcon sx={{ fontSize: '10px !important', color: '#F59E0B !important' }} />}
                     label="Primary"
                     size="small"
                     sx={{
                       bgcolor: 'rgba(0, 0, 0, 0.75)',
                       color: '#FBBF24',
                       fontWeight: 800,
-                      fontSize: '0.65rem',
-                      height: 20,
+                      fontSize: '0.58rem',
+                      height: 16,
+                      px: 0.2,
                       backdropFilter: 'blur(4px)'
                     }}
                   />
@@ -372,8 +382,9 @@ export default function DevicePhotoGallery({
                       bgcolor: 'rgba(0, 0, 0, 0.65)',
                       color: '#fff',
                       fontWeight: 700,
-                      fontSize: '0.65rem',
-                      height: 18,
+                      fontSize: '0.58rem',
+                      height: 16,
+                      px: 0.2,
                       backdropFilter: 'blur(4px)'
                     }}
                   />
@@ -387,53 +398,53 @@ export default function DevicePhotoGallery({
                   position: 'absolute',
                   inset: 0,
                   bgcolor: 'rgba(0,0,0,0.5)',
-                  opacity: { xs: 1, sm: 0 },
+                  opacity: 0,
                   transition: 'opacity 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 1,
+                  gap: 0.5,
                   zIndex: 3
                 }}
               >
                 {/* View Zoom */}
                 <IconButton
                   size="small"
-                  sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', '&:hover': { bgcolor: 'primary.main' } }}
+                  sx={{ p: 0.5, bgcolor: 'rgba(255,255,255,0.2)', color: '#fff', '&:hover': { bgcolor: 'primary.main' } }}
                   onClick={(e) => {
                     e.stopPropagation();
                     openLightbox(index);
                   }}
                 >
-                  <ZoomInIcon fontSize="small" />
+                  <ZoomInIcon sx={{ fontSize: 15 }} />
                 </IconButton>
 
                 {/* Admin Set Primary */}
                 {isAdmin && !photo.is_primary && (
-                  <Tooltip title="Set as primary photo">
+                  <Tooltip title="Set primary">
                     <IconButton
                       size="small"
-                      sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#FBBF24', '&:hover': { bgcolor: 'rgba(251, 191, 36, 0.4)' } }}
+                      sx={{ p: 0.5, bgcolor: 'rgba(255,255,255,0.2)', color: '#FBBF24', '&:hover': { bgcolor: 'rgba(251, 191, 36, 0.4)' } }}
                       onClick={(e) => handleSetPrimary(photo.id, e)}
                     >
-                      <StarOutlineIcon fontSize="small" />
+                      <StarOutlineIcon sx={{ fontSize: 15 }} />
                     </IconButton>
                   </Tooltip>
                 )}
 
                 {/* Admin Delete */}
                 {isAdmin && (
-                  <Tooltip title="Delete photo">
+                  <Tooltip title="Delete">
                     <IconButton
                       size="small"
-                      sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: '#EF4444', '&:hover': { bgcolor: 'error.main', color: '#fff' } }}
+                      sx={{ p: 0.5, bgcolor: 'rgba(255,255,255,0.2)', color: '#EF4444', '&:hover': { bgcolor: 'error.main', color: '#fff' } }}
                       onClick={(e) => handleDeletePhoto(photo.id, e)}
                       disabled={deletingId === photo.id}
                     >
                       {deletingId === photo.id ? (
-                        <CircularProgress size={16} color="inherit" />
+                        <CircularProgress size={12} color="inherit" />
                       ) : (
-                        <DeleteIcon fontSize="small" />
+                        <DeleteIcon sx={{ fontSize: 15 }} />
                       )}
                     </IconButton>
                   </Tooltip>
@@ -441,6 +452,37 @@ export default function DevicePhotoGallery({
               </Box>
             </Box>
           ))}
+
+          {/* Quick Add Photo Button for Admin at end of list */}
+          {isAdmin && (
+            <Box
+              onClick={() => fileInputRef.current?.click()}
+              sx={{
+                width: { xs: 80, sm: 94 },
+                height: { xs: 80, sm: 94 },
+                borderRadius: 1.5,
+                border: '1.5px dashed',
+                borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : '#93C5FD',
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#F0F9FF',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'all 0.2s',
+                '&:hover': {
+                  borderColor: 'primary.main',
+                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.15)' : '#DBEAFE'
+                }
+              }}
+            >
+              <AddPhotoIcon sx={{ fontSize: 18, color: 'primary.main', mb: 0.2 }} />
+              <Typography variant="caption" sx={{ fontSize: '0.65rem', fontWeight: 700, color: 'primary.main' }}>
+                Add More
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 
