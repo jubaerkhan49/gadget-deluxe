@@ -17,6 +17,9 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
     return config;
   },
   (error) => Promise.reject(error)
@@ -103,7 +106,9 @@ export const deviceApi = {
   fetchSickw: (id, service) => api.post(`/api/devices/${id}/fetch-sickw/`, { service }),
   getSickwBalance: () => api.get('/api/devices/sickw-balance/'),
   resetSickw: (id) => api.post(`/api/devices/${id}/reset-sickw/`),
-  uploadPhoto: (id, formData) => api.post(`/api/devices/${id}/upload-photo/`, formData),
+  uploadPhoto: (id, formData) => api.post(`/api/devices/${id}/upload-photo/`, formData, {
+    headers: { 'Content-Type': undefined }
+  }),
   deletePhoto: (deviceId, photoId) => api.delete(`/api/devices/${deviceId}/photos/${photoId}/`),
   setPrimaryPhoto: (deviceId, photoId) => api.post(`/api/devices/${deviceId}/photos/${photoId}/set-primary/`),
 };

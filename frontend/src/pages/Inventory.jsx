@@ -40,7 +40,8 @@ import {
   Refresh as RefreshIcon,
   SwapVert as SortIcon,
   ArrowDownward as ArrowDownwardIcon,
-  ArrowUpward as ArrowUpwardIcon
+  ArrowUpward as ArrowUpwardIcon,
+  CameraAlt as CameraIcon
 } from '@mui/icons-material';
 import { formatNumber, formatDate, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { useSnackbar } from 'notistack';
@@ -671,9 +672,33 @@ export default function Inventory() {
                 {/* Top Row: Model, Specs & Status Badge */}
                 <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
                   <Box sx={{ minWidth: 0, flex: 1 }}>
-                    <Typography variant="subtitle2" fontWeight={800} noWrap sx={{ fontSize: '0.92rem' }}>
-                      {dev.model}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
+                      <Typography variant="subtitle2" fontWeight={800} noWrap sx={{ fontSize: '0.92rem' }}>
+                        {dev.model}
+                      </Typography>
+                      {(() => {
+                        const devPhotos = (dev.photos || dev.images || []).filter(p => Boolean(p && p.url));
+                        if (devPhotos.length === 0) return null;
+                        return (
+                          <Chip
+                            icon={<CameraIcon sx={{ fontSize: '11px !important', color: '#2563EB !important' }} />}
+                            label={`${devPhotos.length}`}
+                            size="small"
+                            sx={{
+                              height: 18,
+                              fontSize: '0.65rem',
+                              fontWeight: 800,
+                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+                              color: '#2563EB',
+                              borderRadius: '6px',
+                              border: '1px solid',
+                              borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
+                              px: 0.2
+                            }}
+                          />
+                        );
+                      })()}
+                    </Box>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.3 }}>
                       {specs && (
                         <Typography variant="caption" color="text.secondary" fontWeight={500}>
@@ -885,9 +910,33 @@ export default function Inventory() {
                     >
                       {/* Device Model & Specs with Inline Variant Chip */}
                       <TableCell>
-                        <Typography variant="body2" fontWeight={700}>
-                          {dev.model}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8, flexWrap: 'wrap' }}>
+                          <Typography variant="body2" fontWeight={700}>
+                            {dev.model}
+                          </Typography>
+                          {(() => {
+                            const devPhotos = (dev.photos || dev.images || []).filter(p => Boolean(p && p.url));
+                            if (devPhotos.length === 0) return null;
+                            return (
+                              <Chip
+                                icon={<CameraIcon sx={{ fontSize: '11px !important', color: '#2563EB !important' }} />}
+                                label={`${devPhotos.length}`}
+                                size="small"
+                                sx={{
+                                  height: 18,
+                                  fontSize: '0.65rem',
+                                  fontWeight: 800,
+                                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#EFF6FF',
+                                  color: '#2563EB',
+                                  borderRadius: '6px',
+                                  border: '1px solid',
+                                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.4)' : '#BFDBFE',
+                                  px: 0.2
+                                }}
+                              />
+                            );
+                          })()}
+                        </Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, flexWrap: 'wrap', mt: 0.3 }}>
                           {specs && (
                             <Typography variant="caption" color="text.secondary" fontWeight={500}>
