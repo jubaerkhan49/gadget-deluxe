@@ -12,10 +12,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -332,7 +334,7 @@ fun DevicePhotoStrip(
 }
 
 /**
- * Zoomable Image component with two-finger pinch-to-zoom, pan, and double-tap zoom
+ * Zoomable Image component with two-finger pinch-to-zoom, pan, and non-consuming double-tap zoom
  */
 @Composable
 fun ZoomableAsyncImage(
@@ -370,7 +372,7 @@ fun ZoomableAsyncImage(
             .clipToBounds()
             .then(
                 if (isZoomed) {
-                    Modifier.pointerInput(Unit) {
+                    Modifier.pointerInput(imageUrl, isZoomed) {
                         detectDragGestures { change, dragAmount ->
                             change.consume()
                             val maxPanX = (scale - 1f) * 600f
@@ -389,17 +391,41 @@ fun ZoomableAsyncImage(
                 state = transformState,
                 lockRotationOnZoomPan = true
             )
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onDoubleTap = {
-                        if (scale > 1.05f) {
-                            scale = 1f
-                            offset = Offset.Zero
-                        } else {
-                            scale = 2.5f
+            .pointerInput(imageUrl) {
+                var lastTapTime = 0L
+                awaitEachGesture {
+                    val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
+                    val startTime = System.currentTimeMillis()
+                    val startPos = down.position
+                    var isTap = true
+
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val change = event.changes.firstOrNull { it.id == down.id }
+                        if (change == null || !change.pressed) {
+                            break
+                        }
+                        if ((change.position - startPos).getDistance() > viewConfiguration.touchSlop) {
+                            isTap = false
+                            break
                         }
                     }
-                )
+
+                    if (isTap && (System.currentTimeMillis() - startTime) < viewConfiguration.longPressTimeoutMillis) {
+                        val now = System.currentTimeMillis()
+                        if (now - lastTapTime < viewConfiguration.doubleTapTimeoutMillis) {
+                            if (scale > 1.05f) {
+                                scale = 1f
+                                offset = Offset.Zero
+                            } else {
+                                scale = 2.5f
+                            }
+                            lastTapTime = 0L
+                        } else {
+                            lastTapTime = now
+                        }
+                    }
+                }
             },
         contentAlignment = Alignment.Center
     ) {
@@ -497,7 +523,7 @@ fun PhotoLightboxDialog(
                         }
                     }
 
-                    // Right: Tag Chip, Download, Delete, Close
+                    // Right: Tag Chip, Delete (Admin)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -515,35 +541,6 @@ fun PhotoLightboxDialog(
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
                             }
-                        }
-
-                        // Download Photo
-                        IconButton(
-                            onClick = {
-                                currentPhoto?.url?.let { url ->
-                                    try {
-                                        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
-                                        val request = android.app.DownloadManager.Request(Uri.parse(url))
-                                            .setTitle("${deviceModel}_photo_${currentIndex + 1}.jpg")
-                                            .setDescription("Downloading photo")
-                                            .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                                            .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "${deviceModel}_photo_${currentIndex + 1}.jpg")
-                                            .setAllowedOverMetered(true)
-                                            .setAllowedOverRoaming(true)
-                                        dm.enqueue(request)
-                                        Toast.makeText(context, "Download started...", Toast.LENGTH_SHORT).show()
-                                    } catch (e: Exception) {
-                                        try {
-                                            val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url))
-                                            context.startActivity(browserIntent)
-                                        } catch (ex: Exception) {
-                                            Toast.makeText(context, "Cannot download: ${ex.localizedMessage}", Toast.LENGTH_SHORT).show()
-                                        }
-                                    }
-                                }
-                            }
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = "Download Photo", tint = Color.White.copy(alpha = 0.9f))
                         }
 
                         if (isAdmin && currentPhoto != null) {
@@ -574,10 +571,6 @@ fun PhotoLightboxDialog(
                                     Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color(0xFFEF4444))
                                 }
                             }
-                        }
-
-                        IconButton(onClick = onDismiss) {
-                            Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
                         }
                     }
                 }
