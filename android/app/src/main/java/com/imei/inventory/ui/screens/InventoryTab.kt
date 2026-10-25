@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.ui.theme.*
 import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.DeviceCameraBadge
 import com.imei.inventory.ui.components.ExpressiveSearchBar
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
@@ -466,13 +467,22 @@ fun CompactDeviceCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = device.model,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    modifier = Modifier.weight(1f)
-                )
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = device.model,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    val photoCount = device.allPhotos.size
+                    if (photoCount > 0) {
+                        DeviceCameraBadge(count = photoCount)
+                    }
+                }
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     VariantBadge(device.variant)
                     StatusBadge(device.currentStatus, device.statusDisplay)

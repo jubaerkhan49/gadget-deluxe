@@ -1,6 +1,8 @@
 package com.imei.inventory.data.api
 
 import com.imei.inventory.data.model.*
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -84,6 +86,32 @@ interface ImeiApiService {
         @Header("Authorization") token: String,
         @Path("id") id: Int
     ): Response<Unit>
+
+    // Device Photos Endpoints
+    @Multipart
+    @POST("api/devices/{id}/upload-photo/")
+    suspend fun uploadDevicePhoto(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Part images: MultipartBody.Part,
+        @Part("photo_type") photoType: RequestBody,
+        @Part("is_primary") isPrimary: RequestBody? = null,
+        @Part("caption") caption: RequestBody? = null
+    ): Response<UploadPhotoResponseDto>
+
+    @DELETE("api/devices/{device_id}/photos/{photo_id}/")
+    suspend fun deleteDevicePhoto(
+        @Header("Authorization") token: String,
+        @Path("device_id") deviceId: Int,
+        @Path("photo_id") photoId: Int
+    ): Response<Map<String, Any>>
+
+    @POST("api/devices/{device_id}/photos/{photo_id}/set-primary/")
+    suspend fun setPrimaryDevicePhoto(
+        @Header("Authorization") token: String,
+        @Path("device_id") deviceId: Int,
+        @Path("photo_id") photoId: Int
+    ): Response<Map<String, Any>>
 
     // Shipments Endpoint
     @GET("api/shipments/")

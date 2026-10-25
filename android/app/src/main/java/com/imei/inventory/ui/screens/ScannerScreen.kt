@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.api.ApiClient
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.DeviceCameraBadge
+import com.imei.inventory.ui.components.DevicePhotoStrip
 import com.imei.inventory.ui.components.ExpressiveSearchBar
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
@@ -186,13 +188,22 @@ fun ScannerScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = dev.model,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 17.sp,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.weight(1f)
-                        )
+                        ) {
+                            Text(
+                                text = dev.model,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 17.sp
+                            )
+                            val photoCount = (dev.photos ?: dev.images ?: emptyList()).filter { it.url.isNotBlank() }.size
+                            if (photoCount > 0) {
+                                DeviceCameraBadge(count = photoCount)
+                            }
+                        }
                         StatusBadge(status = dev.currentStatus, statusDisplay = dev.statusDisplay)
                     }
 
@@ -204,6 +215,16 @@ fun ScannerScreen(
                     if (!dev.variant.isNullOrBlank()) {
                         VariantBadge(dev.variant)
                     }
+
+                    // Condition Photos Strip for Scanned Device
+                    DevicePhotoStrip(
+                        device = dev,
+                        token = token,
+                        isAdmin = true,
+                        onDeviceUpdated = { updated ->
+                            scannedDevice = updated
+                        }
+                    )
                 }
             }
         }

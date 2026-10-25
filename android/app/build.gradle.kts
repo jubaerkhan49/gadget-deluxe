@@ -118,6 +118,12 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    // Coil for modern async image loading in Jetpack Compose
+    implementation("io.coil-kt:coil-compose:2.6.0")
+
+    // ExifInterface for camera image rotation handling
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
 }

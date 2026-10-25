@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.UserDto
 import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.DeviceCameraBadge
+import com.imei.inventory.ui.components.DevicePhotoStrip
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
 import com.imei.inventory.ui.theme.*
@@ -30,6 +32,8 @@ fun DeviceDetailDialog(
     device: DeviceDto,
     users: List<UserDto> = emptyList(),
     isAdmin: Boolean = true,
+    token: String = "",
+    onDeviceUpdated: ((DeviceDto) -> Unit)? = null,
     onDismiss: () -> Unit,
     onStatusChange: (String) -> Unit = {},
     onOwnerChange: (newOwnerId: Int?, newOwnerName: String?) -> Unit = { _, _ -> },
@@ -37,6 +41,7 @@ fun DeviceDetailDialog(
     onDelete: () -> Unit = {},
     onOpenMarkSold: ((DeviceDto) -> Unit)? = null
 ) {
+    var currentDevice by remember(device) { mutableStateOf(device) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showOwnerDropdown by remember { mutableStateOf(false) }
     var showEditSpecsDialog by remember { mutableStateOf(false) }
@@ -51,13 +56,23 @@ fun DeviceDetailDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = device.model,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 17.sp
-                )
-                VariantBadge(device.variant)
+                Row(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = currentDevice.model,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp
+                    )
+                    val photoCount = currentDevice.allPhotos.size
+                    if (photoCount > 0) {
+                        DeviceCameraBadge(count = photoCount)
+                    }
+                }
+                VariantBadge(currentDevice.variant)
             }
         },
         text = {
@@ -383,6 +398,17 @@ fun DeviceDetailDialog(
                         }
                     }
                 }
+
+                // Condition Photos Section
+                DevicePhotoStrip(
+                    device = currentDevice,
+                    token = token,
+                    isAdmin = isAdmin,
+                    onDeviceUpdated = { updated ->
+                        currentDevice = updated
+                        onDeviceUpdated?.invoke(updated)
+                    }
+                )
             }
         },
         confirmButton = {

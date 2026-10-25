@@ -49,7 +49,35 @@ data class DeviceDto(
     @SerializedName("b2b_profit") val b2bProfit: Double? = null,
     @SerializedName("assigned_date") val assignedDate: String? = null,
     val assignments: List<DeviceAssignmentDto>? = null,
+    val photos: List<DevicePhotoDto>? = null,
+    val images: List<DevicePhotoDto>? = null,
     @SerializedName("created_at") val createdAt: String? = null
+) {
+    val allPhotos: List<DevicePhotoDto>
+        get() = (photos ?: images ?: emptyList()).filter { it.url.isNotBlank() }
+}
+
+data class DevicePhotoDto(
+    val id: Int = 0,
+    val device: Int = 0,
+    @SerializedName("photo_type") val photoType: String = "ABOUT",
+    @SerializedName("photo_type_display") val photoTypeDisplay: String? = null,
+    val url: String = "",
+    @SerializedName("image_url") val imageUrl: String? = null,
+    @SerializedName("public_id") val publicId: String? = null,
+    @SerializedName("is_primary") val isPrimary: Boolean = false,
+    val caption: String? = null,
+    @SerializedName("created_at") val createdAt: String? = null,
+    @SerializedName("uploaded_by_name") val uploadedByName: String? = null
+)
+
+data class UploadPhotoResponseDto(
+    val success: Boolean = false,
+    val message: String? = null,
+    val uploaded: List<DevicePhotoDto>? = null,
+    val photos: List<DevicePhotoDto>? = null,
+    val device: DeviceDto? = null,
+    val error: String? = null
 )
 
 data class DeviceAssignmentDto(

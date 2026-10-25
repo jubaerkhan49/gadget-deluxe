@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.sp
 import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.UserDto
 import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.DeviceCameraBadge
+import com.imei.inventory.ui.components.DevicePhotoStrip
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
 import com.imei.inventory.ui.components.formatDateToDDMMYYYY
@@ -33,11 +35,14 @@ import java.util.*
 fun DeviceCheckInDialog(
     device: DeviceDto,
     users: List<UserDto> = emptyList(),
+    token: String = "",
+    onDeviceUpdated: ((DeviceDto) -> Unit)? = null,
     onDismiss: () -> Unit,
     onSaveCheckIn: (updates: Map<String, Any?>) -> Unit
 ) {
+    var currentDev by remember(device) { mutableStateOf(device) }
     val todayStr = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
-    val isAlreadyInStock = device.currentStatus.equals("IN_STOCK", ignoreCase = true)
+    val isAlreadyInStock = currentDev.currentStatus.equals("IN_STOCK", ignoreCase = true)
 
     var isEditing by remember { mutableStateOf(!isAlreadyInStock) }
     var currentStatus by remember { mutableStateOf(device.currentStatus) }
@@ -98,12 +103,18 @@ fun DeviceCheckInDialog(
                         }
                     }
                     Column {
-                        Text(
-                            text = if (isAlreadyInStock) "Device Details" else "Device Check-In",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text(
+                                text = if (isAlreadyInStock) "Device Details" else "Device Check-In",
+                                color = MaterialTheme.colorScheme.onSurface,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 18.sp
+                            )
+                            val photoCount = currentDev.allPhotos.size
+                            if (photoCount > 0) {
+                                DeviceCameraBadge(count = photoCount)
+                            }
+                        }
                         Text(
                             text = "Found in database",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -735,6 +746,19 @@ fun DeviceCheckInDialog(
                             unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                         ),
                         modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Condition Photos Strip
+                if (token.isNotBlank()) {
+                    DevicePhotoStrip(
+                        device = currentDev,
+                        token = token,
+                        isAdmin = true,
+                        onDeviceUpdated = { updated ->
+                            currentDev = updated
+                            onDeviceUpdated?.invoke(updated)
+                        }
                     )
                 }
             }

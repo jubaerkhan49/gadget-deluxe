@@ -24,6 +24,7 @@ import com.imei.inventory.data.model.DeviceDto
 import com.imei.inventory.data.model.UserDto
 import com.imei.inventory.ui.theme.*
 import com.imei.inventory.ui.components.CopyableText
+import com.imei.inventory.ui.components.DeviceCameraBadge
 import com.imei.inventory.ui.components.StatCard
 import com.imei.inventory.ui.components.StatusBadge
 import com.imei.inventory.ui.components.VariantBadge
@@ -392,6 +393,11 @@ fun StaffDeviceCard(
                         maxLines = 1,
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                     )
+                    val photoCount = device.allPhotos.size
+                    if (photoCount > 0) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        DeviceCameraBadge(count = photoCount)
+                    }
                 }
                 Spacer(modifier = Modifier.width(6.dp))
                 StatusBadge(device.currentStatus, device.statusDisplay)

@@ -1148,6 +1148,11 @@ class MainActivity : FragmentActivity() {
                             DeviceCheckInDialog(
                                 device = dev,
                                 users = users,
+                                token = token,
+                                onDeviceUpdated = { updated ->
+                                    scannedDeviceForCheckIn = updated
+                                    mainViewModel.fetchDevices(token)
+                                },
                                 onDismiss = { scannedDeviceForCheckIn = null },
                                 onSaveCheckIn = { updates ->
                                     mainViewModel.updateDevice(
@@ -1316,6 +1321,11 @@ class MainActivity : FragmentActivity() {
                                 device = device,
                                 users = users,
                                 isAdmin = isAdmin,
+                                token = token,
+                                onDeviceUpdated = { updated ->
+                                    selectedDeviceForDetail = updated
+                                    mainViewModel.fetchDevices(token)
+                                },
                                 onDismiss = { selectedDeviceForDetail = null },
                                 onStatusChange = { newStatus ->
                                     mainViewModel.updateDevice(
