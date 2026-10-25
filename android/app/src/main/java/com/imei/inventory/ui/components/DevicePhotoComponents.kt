@@ -336,6 +336,7 @@ fun DevicePhotoStrip(
 /**
  * Zoomable Image component with two-finger pinch-to-zoom, pan, and non-consuming double-tap zoom
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ZoomableAsyncImage(
     imageUrl: String,
@@ -389,44 +390,9 @@ fun ZoomableAsyncImage(
             )
             .transformable(
                 state = transformState,
+                canPan = { scale > 1.05f },
                 lockRotationOnZoomPan = true
-            )
-            .pointerInput(imageUrl) {
-                var lastTapTime = 0L
-                awaitEachGesture {
-                    val down = awaitFirstDown(pass = PointerEventPass.Initial, requireUnconsumed = false)
-                    val startTime = System.currentTimeMillis()
-                    val startPos = down.position
-                    var isTap = true
-
-                    while (true) {
-                        val event = awaitPointerEvent(PointerEventPass.Initial)
-                        val change = event.changes.firstOrNull { it.id == down.id }
-                        if (change == null || !change.pressed) {
-                            break
-                        }
-                        if ((change.position - startPos).getDistance() > viewConfiguration.touchSlop) {
-                            isTap = false
-                            break
-                        }
-                    }
-
-                    if (isTap && (System.currentTimeMillis() - startTime) < viewConfiguration.longPressTimeoutMillis) {
-                        val now = System.currentTimeMillis()
-                        if (now - lastTapTime < viewConfiguration.doubleTapTimeoutMillis) {
-                            if (scale > 1.05f) {
-                                scale = 1f
-                                offset = Offset.Zero
-                            } else {
-                                scale = 2.5f
-                            }
-                            lastTapTime = 0L
-                        } else {
-                            lastTapTime = now
-                        }
-                    }
-                }
-            },
+            ),
         contentAlignment = Alignment.Center
     ) {
         AsyncImage(
