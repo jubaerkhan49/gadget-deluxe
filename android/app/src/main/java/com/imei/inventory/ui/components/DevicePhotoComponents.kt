@@ -12,8 +12,10 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
@@ -152,7 +154,7 @@ fun DevicePhotoStrip(
                         modifier = Modifier.size(16.dp)
                     )
                     Text(
-                        text = "Condition Photos",
+                        text = "Photos",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -337,17 +339,55 @@ fun ZoomableAsyncImage(
     contentDescription: String?,
     onIsZoomedChanged: (Boolean) -> Unit
 ) {
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
+    var scale by remember(imageUrl) { mutableFloatStateOf(1f) }
+    var offset by remember(imageUrl) { mutableStateOf(Offset.Zero) }
 
     LaunchedEffect(scale) {
         onIsZoomedChanged(scale > 1.05f)
     }
 
+    val transformState = rememberTransformableState { zoomChange, panChange, _ ->
+        val newScale = (scale * zoomChange).coerceIn(1f, 5f)
+        scale = newScale
+        if (newScale > 1.05f) {
+            val maxPanX = (newScale - 1f) * 600f
+            val maxPanY = (newScale - 1f) * 600f
+            offset = Offset(
+                x = (offset.x + panChange.x).coerceIn(-maxPanX, maxPanX),
+                y = (offset.y + panChange.y).coerceIn(-maxPanY, maxPanY)
+            )
+        } else {
+            offset = Offset.Zero
+        }
+    }
+
+    val isZoomed = scale > 1.05f
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .clipToBounds()
+            .then(
+                if (isZoomed) {
+                    Modifier.pointerInput(Unit) {
+                        detectDragGestures { change, dragAmount ->
+                            change.consume()
+                            val maxPanX = (scale - 1f) * 600f
+                            val maxPanY = (scale - 1f) * 600f
+                            offset = Offset(
+                                x = (offset.x + dragAmount.x).coerceIn(-maxPanX, maxPanX),
+                                y = (offset.y + dragAmount.y).coerceIn(-maxPanY, maxPanY)
+                            )
+                        }
+                    }
+                } else {
+                    Modifier
+                }
+            )
+            .transformable(
+                state = transformState,
+                lockRotationOnZoomPan = true
+            )
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
@@ -359,23 +399,6 @@ fun ZoomableAsyncImage(
                         }
                     }
                 )
-            }
-            .pointerInput(Unit) {
-                detectTransformGestures { _, pan, zoom, _ ->
-                    val newScale = (scale * zoom).coerceIn(1f, 5f)
-                    scale = newScale
-
-                    if (newScale > 1f) {
-                        val maxPanX = (newScale - 1f) * 600f
-                        val maxPanY = (newScale - 1f) * 600f
-                        offset = Offset(
-                            x = (offset.x + pan.x).coerceIn(-maxPanX, maxPanX),
-                            y = (offset.y + pan.y).coerceIn(-maxPanY, maxPanY)
-                        )
-                    } else {
-                        offset = Offset.Zero
-                    }
-                }
             },
         contentAlignment = Alignment.Center
     ) {
