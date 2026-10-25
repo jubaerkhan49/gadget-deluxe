@@ -63,69 +63,122 @@ export default function DevicePhotoGallery({
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Deleting state
   const [deletingId, setDeletingId] = useState(null);
+
+  // Open / Close Lightbox with browser history integration (handles Android back navigation)
+  const openLightbox = (index) => {
+    setActivePhotoIndex(index);
+    setLightboxOpen(true);
+    setDragOffset(0);
+    setIsDragging(false);
+    try {
+      window.history.pushState({ devicePhotoLightbox: true }, '');
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const closeLightbox = () => {
+    setLightboxOpen(false);
+    setDragOffset(0);
+    setIsDragging(false);
+    if (window.history.state?.devicePhotoLightbox) {
+      window.history.back();
+    }
+  };
+
+  // Android back button / swipe back gesture closes the lightbox
+  useEffect(() => {
+    const handlePopState = () => {
+      if (lightboxOpen) {
+        setLightboxOpen(false);
+        setDragOffset(0);
+        setIsDragging(false);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [lightboxOpen]);
 
   // Keyboard navigation for Lightbox
   useEffect(() => {
     if (!lightboxOpen) return;
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowRight') {
-        setActivePhotoIndex((prev) => (prev + 1) % photos.length);
+        setActivePhotoIndex((prev) => Math.min(photos.length - 1, prev + 1));
       } else if (e.key === 'ArrowLeft') {
-        setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+        setActivePhotoIndex((prev) => Math.max(0, prev - 1));
       } else if (e.key === 'Escape') {
-        setLightboxOpen(false);
+        closeLightbox();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxOpen, photos.length]);
 
-  // Touch swipe navigation for mobile Lightbox
+  // Touch swipe with animated dragging for mobile Lightbox
   const touchStartXRef = useRef(null);
   const touchStartYRef = useRef(null);
-  const lastTouchXRef = useRef(null);
-  const lastTouchYRef = useRef(null);
-  const touchStartTimeRef = useRef(0);
+  const isHorizontalSwipeRef = useRef(null);
 
   const handleTouchStart = (e) => {
     if (!e.touches || e.touches.length === 0) return;
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
-    lastTouchXRef.current = e.touches[0].clientX;
-    lastTouchYRef.current = e.touches[0].clientY;
-    touchStartTimeRef.current = Date.now();
+    isHorizontalSwipeRef.current = null;
+    setIsDragging(true);
   };
 
   const handleTouchMove = (e) => {
-    if (!e.touches || e.touches.length === 0) return;
-    lastTouchXRef.current = e.touches[0].clientX;
-    lastTouchYRef.current = e.touches[0].clientY;
-  };
+    if (touchStartXRef.current === null || !e.touches || e.touches.length === 0) return;
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const diffX = currentX - touchStartXRef.current;
+    const diffY = currentY - touchStartYRef.current;
 
-  const handleTouchEnd = (e) => {
-    if (touchStartXRef.current === null) return;
-    const endX = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : lastTouchXRef.current) ?? 0;
-    const endY = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : lastTouchYRef.current) ?? 0;
-    const deltaX = endX - touchStartXRef.current;
-    const deltaY = endY - (touchStartYRef.current || 0);
-
-    // If horizontal swipe is dominant and moved at least 25px
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 25) {
-      if (deltaX < 0) {
-        // Swiped Left -> Next photo
-        setActivePhotoIndex((prev) => (prev + 1) % photos.length);
-      } else {
-        // Swiped Right -> Previous photo
-        setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+    // Detect direction
+    if (isHorizontalSwipeRef.current === null) {
+      if (Math.abs(diffX) > 6 || Math.abs(diffY) > 6) {
+        isHorizontalSwipeRef.current = Math.abs(diffX) >= Math.abs(diffY);
       }
     }
+
+    if (isHorizontalSwipeRef.current) {
+      // Rubber-band resistance at boundaries
+      let offset = diffX;
+      if (
+        (activePhotoIndex === 0 && diffX > 0) ||
+        (activePhotoIndex === photos.length - 1 && diffX < 0)
+      ) {
+        offset = diffX * 0.25;
+      }
+      setDragOffset(offset);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    const finalOffset = dragOffset;
+    setIsDragging(false);
+
+    if (isHorizontalSwipeRef.current && Math.abs(finalOffset) > 40) {
+      if (finalOffset < -40 && activePhotoIndex < photos.length - 1) {
+        // Swiped Left -> Next photo
+        setActivePhotoIndex((prev) => prev + 1);
+      } else if (finalOffset > 40 && activePhotoIndex > 0) {
+        // Swiped Right -> Previous photo
+        setActivePhotoIndex((prev) => prev - 1);
+      }
+    }
+
+    setDragOffset(0);
     touchStartXRef.current = null;
     touchStartYRef.current = null;
-    lastTouchXRef.current = null;
-    lastTouchYRef.current = null;
+    isHorizontalSwipeRef.current = null;
   };
 
   // Direct download photo to device
@@ -226,11 +279,6 @@ export default function DevicePhotoGallery({
       console.error('Set primary failed:', err);
       enqueueSnackbar('Failed to update primary photo.', { variant: 'error' });
     }
-  };
-
-  const openLightbox = (index) => {
-    setActivePhotoIndex(index);
-    setLightboxOpen(true);
   };
 
   const currentPhoto = photos[activePhotoIndex] || photos[0];
@@ -546,7 +594,7 @@ export default function DevicePhotoGallery({
       {/* FULLSCREEN LIGHTBOX DIALOG */}
       <Dialog
         open={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
+        onClose={closeLightbox}
         maxWidth="lg"
         fullWidth
         PaperProps={{
@@ -609,7 +657,7 @@ export default function DevicePhotoGallery({
             </Box>
           </Box>
 
-          {/* Right: Tag Chip + Download Icon + Close Button */}
+          {/* Right: Tag Chip + Download Icon + Close Button (Hidden on mobile, visible on laptop/desktop) */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1.2 }, flexShrink: 0 }}>
             {currentPhoto?.photo_type_display && (
               <Chip
@@ -646,11 +694,12 @@ export default function DevicePhotoGallery({
               </IconButton>
             </Tooltip>
 
-            {/* Close Button */}
+            {/* Close Button: Hidden on mobile (Android back gesture closes), visible on laptop/desktop */}
             <IconButton
-              onClick={() => setLightboxOpen(false)}
+              onClick={closeLightbox}
               size="small"
               sx={{
+                display: { xs: 'none', md: 'inline-flex' },
                 color: 'rgba(255,255,255,0.85)',
                 bgcolor: 'rgba(255,255,255,0.08)',
                 p: { xs: 0.6, sm: 0.8 },
@@ -666,7 +715,7 @@ export default function DevicePhotoGallery({
           </Box>
         </Box>
 
-        {/* Lightbox Main Stage */}
+        {/* Lightbox Main Stage with Animated Sliding Track */}
         <DialogContent
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -675,36 +724,61 @@ export default function DevicePhotoGallery({
           sx={{
             p: 0,
             position: 'relative',
+            overflow: 'hidden',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
             minHeight: { xs: 350, sm: 550 },
             maxHeight: '80vh',
             bgcolor: '#030712',
             touchAction: 'none',
             userSelect: 'none',
             WebkitUserSelect: 'none',
-            cursor: 'grab'
+            cursor: isDragging ? 'grabbing' : 'grab'
           }}
         >
-          {/* Active Image */}
-          {currentPhoto && (
-            <Box
-              component="img"
-              src={currentPhoto.url}
-              alt={currentPhoto.caption || device?.model}
-              draggable={false}
-              sx={{
-                maxWidth: '100%',
-                maxHeight: '75vh',
-                objectFit: 'contain',
-                display: 'block',
-                transition: 'opacity 0.2s ease',
-                userSelect: 'none',
-                pointerEvents: 'none'
-              }}
-            />
-          )}
+          {/* Animated Carousel Sliding Track */}
+          <Box
+            sx={{
+              display: 'flex',
+              width: '100%',
+              height: '100%',
+              transform: `translateX(calc(-${activePhotoIndex * 100}% + ${dragOffset}px))`,
+              transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.25, 1, 0.5, 1)',
+              willChange: 'transform'
+            }}
+          >
+            {photos.map((photo, idx) => (
+              <Box
+                key={photo.id || idx}
+                sx={{
+                  minWidth: '100%',
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  p: { xs: 1, sm: 2 }
+                }}
+              >
+                <Box
+                  component="img"
+                  src={photo.url}
+                  alt={photo.caption || device?.model}
+                  draggable={false}
+                  loading={Math.abs(idx - activePhotoIndex) <= 1 ? 'eager' : 'lazy'}
+                  sx={{
+                    maxWidth: '100%',
+                    maxHeight: '75vh',
+                    objectFit: 'contain',
+                    display: 'block',
+                    userSelect: 'none',
+                    pointerEvents: 'none'
+                  }}
+                />
+              </Box>
+            ))}
+          </Box>
         </DialogContent>
 
         {/* Lightbox Bottom Thumbnails Strip */}
