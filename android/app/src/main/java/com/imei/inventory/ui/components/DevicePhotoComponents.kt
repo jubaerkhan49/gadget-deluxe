@@ -620,6 +620,7 @@ fun DevicePhotoCaptureDialog(
             }
         },
         text = {
+            val isCurrentTagUploaded = uploadedTags.contains(selectedTag.uppercase())
             Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -627,10 +628,10 @@ fun DevicePhotoCaptureDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Select Tag for Next Photo:",
+                        text = if (isCurrentTagUploaded) "Selected: $selectedTag (Replace)" else "Select Tag for Next Photo:",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = if (isCurrentTagUploaded) Color(0xFFD97706) else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
                         text = "${uploadedTags.size}/${PHOTO_TAG_CHOICES.size} Done",
@@ -642,7 +643,7 @@ fun DevicePhotoCaptureDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Tag Chips with Green Indicator for Already-Uploaded Tags
+                // Tag Chips with Green Indicator for Already-Uploaded Tags & Clear Borders for Missing Tags
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -659,21 +660,21 @@ fun DevicePhotoCaptureDialog(
                                 Text(
                                     text = if (isUploaded) "✓ $label" else label,
                                     fontSize = 11.5.sp,
-                                    fontWeight = if (isSelected || isUploaded) FontWeight.Bold else FontWeight.Normal
+                                    fontWeight = if (isSelected || isUploaded) FontWeight.Bold else FontWeight.Medium
                                 )
                             },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = if (isUploaded) Color(0xFF10B981) else MaterialTheme.colorScheme.primary,
                                 selectedLabelColor = Color.White,
-                                containerColor = if (isUploaded) Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
-                                labelColor = if (isUploaded) Color(0xFF047857) else MaterialTheme.colorScheme.onSurfaceVariant
+                                containerColor = if (isUploaded) Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                labelColor = if (isUploaded) Color(0xFF047857) else MaterialTheme.colorScheme.onSurface
                             ),
                             border = FilterChipDefaults.filterChipBorder(
-                                borderColor = if (isSelected) Color.Transparent
-                                    else if (isUploaded) Color(0xFF10B981).copy(alpha = 0.5f)
-                                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                                 enabled = true,
-                                selected = isSelected
+                                selected = isSelected,
+                                borderColor = if (isUploaded) Color(0xFF10B981).copy(alpha = 0.65f) else Color(0xFF94A3B8),
+                                selectedBorderColor = Color.Transparent,
+                                borderWidth = 1.dp
                             ),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.height(28.dp)
@@ -693,7 +694,7 @@ fun DevicePhotoCaptureDialog(
                     ) {
                         CircularProgressIndicator(modifier = Modifier.size(24.dp))
                         Spacer(modifier = Modifier.width(12.dp))
-                        Text("Uploading photo to Cloudinary...", fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                        Text(if (isCurrentTagUploaded) "Replacing photo on Cloudinary..." else "Uploading photo to Cloudinary...", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
                 } else {
                     // Action Buttons: Direct Camera vs Gallery (Single-line, unclipped)
@@ -726,7 +727,7 @@ fun DevicePhotoCaptureDialog(
                                 Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Take Photo",
+                                    text = if (isCurrentTagUploaded) "Replace Photo" else "Take Photo",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,

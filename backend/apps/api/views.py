@@ -1133,18 +1133,31 @@ class DeviceViewSet(viewsets.ModelViewSet):
                 secure_url = upload_res.get('secure_url')
                 c_public_id = upload_res.get('public_id')
 
+                clean_photo_type = photo_type if photo_type in dict(Photo.PHOTO_TYPES) else 'ABOUT'
+
+                # If photo(s) with this tag already exist for this device, clean them up to replace with new photo
+                old_photos = list(device.photos.filter(photo_type=clean_photo_type))
+                was_primary = any(p.is_primary for p in old_photos)
+                for old_p in old_photos:
+                    if old_p.public_id:
+                        try:
+                            cloudinary.uploader.destroy(old_p.public_id)
+                        except Exception:
+                            pass
+                    old_p.delete()
+
                 photo_is_primary = False
                 if is_primary and idx == 0:
                     device.photos.update(is_primary=False)
                     photo_is_primary = True
-                elif not has_existing and idx == 0:
+                elif (not has_existing or was_primary) and idx == 0:
                     photo_is_primary = True
 
                 photo = Photo.objects.create(
                     device=device,
                     image_url=secure_url,
                     public_id=c_public_id,
-                    photo_type=photo_type if photo_type in dict(Photo.PHOTO_TYPES) else 'ABOUT',
+                    photo_type=clean_photo_type,
                     caption=caption or (file_obj.name.split('.')[0] if len(files) > 1 else ''),
                     is_primary=photo_is_primary,
                     uploaded_by=user
