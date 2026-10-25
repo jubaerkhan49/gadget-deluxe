@@ -38,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -459,36 +460,48 @@ fun PhotoLightboxDialog(
             modifier = Modifier.fillMaxSize()
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                // Top Action Bar
+                // Top Action Bar (Redesigned for mobile)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 14.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    // Left: Title + Counter below it
+                    Column(
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .padding(end = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Text(
                             text = deviceModel,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            fontSize = 13.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Surface(
-                            color = Color.White.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(4.dp)
+                            color = Color.White.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(3.dp)
                         ) {
                             Text(
                                 text = "${currentIndex + 1} of ${photos.size}",
-                                color = Color.White,
-                                fontSize = 11.sp,
+                                color = Color.White.copy(alpha = 0.85f),
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
                             )
                         }
+                    }
+
+                    // Right: Tag Chip, Download, Delete, Close
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         currentPhoto?.let { p ->
                             Surface(
                                 color = Color(0xFF2563EB),
@@ -503,9 +516,36 @@ fun PhotoLightboxDialog(
                                 )
                             }
                         }
-                    }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Download Photo
+                        IconButton(
+                            onClick = {
+                                currentPhoto?.url?.let { url ->
+                                    try {
+                                        val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+                                        val request = android.app.DownloadManager.Request(Uri.parse(url))
+                                            .setTitle("${deviceModel}_photo_${currentIndex + 1}.jpg")
+                                            .setDescription("Downloading photo")
+                                            .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                            .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "${deviceModel}_photo_${currentIndex + 1}.jpg")
+                                            .setAllowedOverMetered(true)
+                                            .setAllowedOverRoaming(true)
+                                        dm.enqueue(request)
+                                        Toast.makeText(context, "Download started...", Toast.LENGTH_SHORT).show()
+                                    } catch (e: Exception) {
+                                        try {
+                                            val browserIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, Uri.parse(url))
+                                            context.startActivity(browserIntent)
+                                        } catch (ex: Exception) {
+                                            Toast.makeText(context, "Cannot download: ${ex.localizedMessage}", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                }
+                            }
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = "Download Photo", tint = Color.White.copy(alpha = 0.9f))
+                        }
+
                         if (isAdmin && currentPhoto != null) {
                             IconButton(
                                 onClick = {

@@ -26,7 +26,8 @@ import {
   ZoomIn as ZoomInIcon,
   CloudUpload as CloudUploadIcon,
   Collections as GalleryIcon,
-  CameraAlt as CameraIcon
+  CameraAlt as CameraIcon,
+  FileDownload as DownloadIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { deviceApi } from '../../api/client';
@@ -85,19 +86,34 @@ export default function DevicePhotoGallery({
   // Touch swipe navigation for mobile Lightbox
   const touchStartXRef = useRef(null);
   const touchStartYRef = useRef(null);
+  const lastTouchXRef = useRef(null);
+  const lastTouchYRef = useRef(null);
+  const touchStartTimeRef = useRef(0);
 
   const handleTouchStart = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
+    lastTouchXRef.current = e.touches[0].clientX;
+    lastTouchYRef.current = e.touches[0].clientY;
+    touchStartTimeRef.current = Date.now();
+  };
+
+  const handleTouchMove = (e) => {
+    if (!e.touches || e.touches.length === 0) return;
+    lastTouchXRef.current = e.touches[0].clientX;
+    lastTouchYRef.current = e.touches[0].clientY;
   };
 
   const handleTouchEnd = (e) => {
-    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
-    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
-    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+    if (touchStartXRef.current === null) return;
+    const endX = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientX : lastTouchXRef.current) ?? 0;
+    const endY = (e.changedTouches && e.changedTouches[0] ? e.changedTouches[0].clientY : lastTouchYRef.current) ?? 0;
+    const deltaX = endX - touchStartXRef.current;
+    const deltaY = endY - (touchStartYRef.current || 0);
 
-    // Check if horizontal swipe is dominant and exceeds threshold
-    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+    // If horizontal swipe is dominant and moved at least 25px
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 25) {
       if (deltaX < 0) {
         // Swiped Left -> Next photo
         setActivePhotoIndex((prev) => (prev + 1) % photos.length);
@@ -108,6 +124,33 @@ export default function DevicePhotoGallery({
     }
     touchStartXRef.current = null;
     touchStartYRef.current = null;
+    lastTouchXRef.current = null;
+    lastTouchYRef.current = null;
+  };
+
+  // Direct download photo to device
+  const handleDownloadPhoto = async (e) => {
+    e?.stopPropagation?.();
+    if (!currentPhoto?.url) return;
+    try {
+      const res = await fetch(currentPhoto.url);
+      const blob = await res.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      const ext = currentPhoto.url.split('.').pop()?.split('?')[0] || 'jpg';
+      const cleanModel = (device?.model || 'device').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const cleanType = (currentPhoto.photo_type || 'photo').toLowerCase();
+      link.download = `${cleanModel}_${cleanType}_${activePhotoIndex + 1}.${ext}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      enqueueSnackbar('Photo download started', { variant: 'success' });
+    } catch (err) {
+      // Fallback: open image in new tab if CORS prevents direct blob
+      window.open(currentPhoto.url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   // If not admin and no photos, render nothing (Zero Clutter Rule)
@@ -518,44 +561,117 @@ export default function DevicePhotoGallery({
           }
         }}
       >
-        {/* Lightbox Topbar */}
+        {/* Lightbox Topbar (Redesigned for Mobile & Desktop) */}
         <Box
           sx={{
-            p: 2,
+            py: 1.25,
+            px: { xs: 1.5, sm: 2 },
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             borderBottom: '1px solid rgba(255,255,255,0.08)',
-            color: '#fff'
+            color: '#fff',
+            bgcolor: 'rgba(10, 15, 30, 0.98)'
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Typography variant="subtitle1" fontWeight={800}>
+          {/* Left: Title + Counter below it */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25, minWidth: 0, pr: 1 }}>
+            <Typography
+              sx={{
+                fontSize: { xs: '0.85rem', sm: '1rem' },
+                fontWeight: 700,
+                color: '#fff',
+                lineHeight: 1.2,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+              title={device?.model}
+            >
               {device?.model}
             </Typography>
-            <Chip
-              label={`${activePhotoIndex + 1} of ${photos.length}`}
-              size="small"
-              sx={{ bgcolor: 'rgba(255,255,255,0.15)', color: '#fff', fontWeight: 700 }}
-            />
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box
+                component="span"
+                sx={{
+                  bgcolor: 'rgba(255,255,255,0.12)',
+                  px: 0.7,
+                  py: 0.15,
+                  borderRadius: '3px',
+                  fontSize: '0.66rem',
+                  fontWeight: 700,
+                  color: 'rgba(255,255,255,0.85)',
+                  letterSpacing: '0.2px'
+                }}
+              >
+                {activePhotoIndex + 1} of {photos.length}
+              </Box>
+            </Box>
+          </Box>
+
+          {/* Right: Tag Chip + Download Icon + Close Button */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0.75, sm: 1.2 }, flexShrink: 0 }}>
             {currentPhoto?.photo_type_display && (
               <Chip
                 label={currentPhoto.photo_type_display}
                 size="small"
-                sx={{ bgcolor: 'primary.main', color: '#fff', fontWeight: 700 }}
+                sx={{
+                  bgcolor: 'primary.main',
+                  color: '#fff',
+                  fontWeight: 700,
+                  fontSize: { xs: '0.68rem', sm: '0.75rem' },
+                  height: { xs: 22, sm: 24 },
+                  borderRadius: '4px'
+                }}
               />
             )}
-          </Box>
 
-          <IconButton onClick={() => setLightboxOpen(false)} sx={{ color: '#fff' }}>
-            <CloseIcon />
-          </IconButton>
+            {/* Download Photo Button */}
+            <Tooltip title="Download Photo">
+              <IconButton
+                onClick={handleDownloadPhoto}
+                size="small"
+                sx={{
+                  color: 'rgba(255,255,255,0.9)',
+                  bgcolor: 'rgba(255,255,255,0.08)',
+                  p: { xs: 0.6, sm: 0.8 },
+                  borderRadius: '6px',
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.18)',
+                    color: '#fff'
+                  }
+                }}
+              >
+                <DownloadIcon sx={{ fontSize: { xs: 17, sm: 19 } }} />
+              </IconButton>
+            </Tooltip>
+
+            {/* Close Button */}
+            <IconButton
+              onClick={() => setLightboxOpen(false)}
+              size="small"
+              sx={{
+                color: 'rgba(255,255,255,0.85)',
+                bgcolor: 'rgba(255,255,255,0.08)',
+                p: { xs: 0.6, sm: 0.8 },
+                borderRadius: '6px',
+                '&:hover': {
+                  bgcolor: 'rgba(239, 68, 68, 0.25)',
+                  color: '#EF4444'
+                }
+              }}
+            >
+              <CloseIcon sx={{ fontSize: { xs: 18, sm: 20 } }} />
+            </IconButton>
+          </Box>
         </Box>
 
         {/* Lightbox Main Stage */}
         <DialogContent
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
           sx={{
             p: 0,
             position: 'relative',
@@ -565,8 +681,10 @@ export default function DevicePhotoGallery({
             minHeight: { xs: 350, sm: 550 },
             maxHeight: '80vh',
             bgcolor: '#030712',
-            touchAction: 'pan-y',
-            userSelect: 'none'
+            touchAction: 'none',
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            cursor: 'grab'
           }}
         >
           {/* Active Image */}
