@@ -82,6 +82,34 @@ export default function DevicePhotoGallery({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxOpen, photos.length]);
 
+  // Touch swipe navigation for mobile Lightbox
+  const touchStartXRef = useRef(null);
+  const touchStartYRef = useRef(null);
+
+  const handleTouchStart = (e) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartXRef.current;
+    const deltaY = e.changedTouches[0].clientY - touchStartYRef.current;
+
+    // Check if horizontal swipe is dominant and exceeds threshold
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 40) {
+      if (deltaX < 0) {
+        // Swiped Left -> Next photo
+        setActivePhotoIndex((prev) => (prev + 1) % photos.length);
+      } else {
+        // Swiped Right -> Previous photo
+        setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
   // If not admin and no photos, render nothing (Zero Clutter Rule)
   if (!isAdmin && photos.length === 0) {
     return null;
@@ -317,7 +345,7 @@ export default function DevicePhotoGallery({
                 position: 'relative',
                 width: { xs: 80, sm: 94 },
                 height: { xs: 80, sm: 94 },
-                borderRadius: 1.5,
+                borderRadius: '6px',
                 overflow: 'hidden',
                 bgcolor: '#000',
                 cursor: 'pointer',
@@ -446,7 +474,7 @@ export default function DevicePhotoGallery({
               sx={{
                 width: { xs: 80, sm: 94 },
                 height: { xs: 80, sm: 94 },
-                borderRadius: 1.5,
+                borderRadius: '6px',
                 border: '1.5px dashed',
                 borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.2)' : '#93C5FD',
                 bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : '#F0F9FF',
@@ -482,10 +510,11 @@ export default function DevicePhotoGallery({
           sx: {
             bgcolor: 'rgba(10, 15, 30, 0.96)',
             backgroundImage: 'none',
-            borderRadius: 3,
+            borderRadius: '6px',
             overflow: 'hidden',
             boxShadow: '0 24px 60px rgba(0,0,0,0.8)',
-            border: '1px solid rgba(255,255,255,0.1)'
+            border: '1px solid rgba(255,255,255,0.1)',
+            m: { xs: 1, sm: 2 }
           }
         }}
       >
@@ -525,6 +554,8 @@ export default function DevicePhotoGallery({
 
         {/* Lightbox Main Stage */}
         <DialogContent
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           sx={{
             p: 0,
             position: 'relative',
@@ -533,7 +564,9 @@ export default function DevicePhotoGallery({
             justifyContent: 'center',
             minHeight: { xs: 350, sm: 550 },
             maxHeight: '80vh',
-            bgcolor: '#030712'
+            bgcolor: '#030712',
+            touchAction: 'pan-y',
+            userSelect: 'none'
           }}
         >
           {/* Previous Arrow */}
@@ -560,12 +593,15 @@ export default function DevicePhotoGallery({
               component="img"
               src={currentPhoto.url}
               alt={currentPhoto.caption || device?.model}
+              draggable={false}
               sx={{
                 maxWidth: '100%',
                 maxHeight: '75vh',
                 objectFit: 'contain',
                 display: 'block',
-                transition: 'opacity 0.2s ease'
+                transition: 'opacity 0.2s ease',
+                userSelect: 'none',
+                pointerEvents: 'none'
               }}
             />
           )}
@@ -593,14 +629,16 @@ export default function DevicePhotoGallery({
         {photos.length > 1 && (
           <Box
             sx={{
-              p: 1.5,
+              p: 1.25,
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
+              justifyContent: photos.length > 5 ? 'flex-start' : 'center',
               gap: 1,
               overflowX: 'auto',
               borderTop: '1px solid rgba(255,255,255,0.08)',
-              bgcolor: 'rgba(0,0,0,0.4)'
+              bgcolor: 'rgba(0,0,0,0.5)',
+              '&::-webkit-scrollbar': { height: 4 },
+              '&::-webkit-scrollbar-thumb': { bgcolor: 'rgba(255,255,255,0.2)', borderRadius: 1 }
             }}
           >
             {photos.map((p, idx) => (
@@ -608,15 +646,16 @@ export default function DevicePhotoGallery({
                 key={p.id || idx}
                 onClick={() => setActivePhotoIndex(idx)}
                 sx={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 1.5,
+                  width: { xs: 46, sm: 54 },
+                  height: { xs: 46, sm: 54 },
+                  borderRadius: '4px',
                   overflow: 'hidden',
                   cursor: 'pointer',
                   border: idx === activePhotoIndex ? '2px solid' : '1px solid',
-                  borderColor: idx === activePhotoIndex ? 'primary.main' : 'rgba(255,255,255,0.2)',
+                  borderColor: idx === activePhotoIndex ? 'primary.main' : 'rgba(255,255,255,0.25)',
                   opacity: idx === activePhotoIndex ? 1 : 0.6,
                   transition: 'all 0.15s ease',
+                  flexShrink: 0,
                   '&:hover': { opacity: 1 }
                 }}
               >

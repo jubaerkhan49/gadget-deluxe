@@ -10,12 +10,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -219,7 +222,7 @@ fun DevicePhotoStrip(
                         Box(
                             modifier = Modifier
                                 .size(82.dp)
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(6.dp))
                                 .background(Color.Black)
                                 .clickable { lightboxIndex = index }
                         ) {
@@ -433,11 +436,30 @@ fun PhotoLightboxDialog(
                     }
                 }
 
-                // Photo Display & Navigation
+                // Photo Display & Navigation with Touch Drag Swipe
+                var totalDrag by remember { mutableFloatStateOf(0f) }
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .pointerInput(photos.size) {
+                            if (photos.size <= 1) return@pointerInput
+                            detectHorizontalDragGestures(
+                                onDragStart = { totalDrag = 0f },
+                                onDragEnd = {
+                                    if (totalDrag < -50f) {
+                                        // Swiped Left -> Next photo
+                                        currentIndex = (currentIndex + 1) % photos.size
+                                    } else if (totalDrag > 50f) {
+                                        // Swiped Right -> Previous photo
+                                        currentIndex = (currentIndex - 1 + photos.size) % photos.size
+                                    }
+                                    totalDrag = 0f
+                                }
+                            ) { _, dragAmount ->
+                                totalDrag += dragAmount
+                            }
+                        },
                     contentAlignment = Alignment.Center
                 ) {
                     currentPhoto?.let { photo ->
@@ -474,6 +496,41 @@ fun PhotoLightboxDialog(
                                 .background(Color.Black.copy(alpha = 0.5f), CircleShape)
                         ) {
                             Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next", tint = Color.White)
+                        }
+                    }
+                }
+
+                // Rectangular Bottom Thumbnails Strip
+                if (photos.size > 1) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.6f))
+                            .padding(horizontal = 12.dp, vertical = 8.dp)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        photos.forEachIndexed { idx, p ->
+                            val isSelected = idx == currentIndex
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .border(
+                                        width = if (isSelected) 2.dp else 1.dp,
+                                        color = if (isSelected) Color(0xFF2563EB) else Color.White.copy(alpha = 0.25f),
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                                    .clickable { currentIndex = idx }
+                            ) {
+                                AsyncImage(
+                                    model = p.url,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            }
                         }
                     }
                 }
