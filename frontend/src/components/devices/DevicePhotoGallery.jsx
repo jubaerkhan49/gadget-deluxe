@@ -65,11 +65,7 @@ export default function DevicePhotoGallery({
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [slideDir, setSlideDir] = useState(null); // 'left' | 'right' | null
-
-  // Indices for continuous infinite looping (wraps 8 -> 1 and 1 -> 8)
-  const prevIndex = photos.length > 0 ? (activePhotoIndex - 1 + photos.length) % photos.length : 0;
-  const nextIndex = photos.length > 0 ? (activePhotoIndex + 1) % photos.length : 0;
+  const [slideDir, setSlideDir] = useState(null); // 'from-right' | 'from-left' | null
 
   // Deleting state
   const [deletingId, setDeletingId] = useState(null);
@@ -118,8 +114,10 @@ export default function DevicePhotoGallery({
     if (!lightboxOpen) return;
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowRight') {
+        setSlideDir('from-right');
         setActivePhotoIndex((prev) => (prev + 1) % photos.length);
       } else if (e.key === 'ArrowLeft') {
+        setSlideDir('from-left');
         setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
       } else if (e.key === 'Escape') {
         closeLightbox();
@@ -135,7 +133,7 @@ export default function DevicePhotoGallery({
   const isHorizontalSwipeRef = useRef(null);
 
   const handleTouchStart = (e) => {
-    if (!e.touches || e.touches.length === 0 || slideDir !== null) return;
+    if (!e.touches || e.touches.length === 0) return;
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
     isHorizontalSwipeRef.current = null;
@@ -144,7 +142,7 @@ export default function DevicePhotoGallery({
   };
 
   const handleTouchMove = (e) => {
-    if (touchStartXRef.current === null || !e.touches || e.touches.length === 0 || slideDir !== null) return;
+    if (touchStartXRef.current === null || !e.touches || e.touches.length === 0) return;
     const currentX = e.touches[0].clientX;
     const currentY = e.touches[0].clientY;
     const diffX = currentX - touchStartXRef.current;
@@ -165,27 +163,18 @@ export default function DevicePhotoGallery({
   const handleTouchEnd = () => {
     const finalOffset = dragOffset;
     setIsDragging(false);
+    setDragOffset(0);
 
     if (isHorizontalSwipeRef.current && Math.abs(finalOffset) > 40 && photos.length > 1) {
       if (finalOffset < -40) {
-        // Swiped Left -> continuous loop to next photo
-        setSlideDir('left');
-        setTimeout(() => {
-          setActivePhotoIndex(nextIndex);
-          setSlideDir(null);
-          setDragOffset(0);
-        }, 280);
+        // Swiped Left -> continuous loop to next photo (8 of 8 -> 1 of 8)
+        setSlideDir('from-right');
+        setActivePhotoIndex((prev) => (prev + 1) % photos.length);
       } else if (finalOffset > 40) {
-        // Swiped Right -> continuous loop to previous photo
-        setSlideDir('right');
-        setTimeout(() => {
-          setActivePhotoIndex(prevIndex);
-          setSlideDir(null);
-          setDragOffset(0);
-        }, 280);
+        // Swiped Right -> continuous loop to previous photo (1 of 8 -> 8 of 8)
+        setSlideDir('from-left');
+        setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
       }
-    } else {
-      setDragOffset(0);
     }
 
     touchStartXRef.current = null;
@@ -727,7 +716,7 @@ export default function DevicePhotoGallery({
           </Box>
         </Box>
 
-        {/* Lightbox Main Stage with Animated Sliding Track */}
+        {/* Lightbox Main Stage (Single Photo, Full-Size, Centered) */}
         <DialogContent
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
@@ -736,103 +725,52 @@ export default function DevicePhotoGallery({
           sx={{
             p: 0,
             position: 'relative',
-            overflow: 'hidden',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             minHeight: { xs: 350, sm: 550 },
             maxHeight: '80vh',
             bgcolor: '#030712',
             touchAction: 'none',
             userSelect: 'none',
             WebkitUserSelect: 'none',
+            overflow: 'hidden',
             cursor: isDragging ? 'grabbing' : 'grab'
           }}
         >
-          {/* Continuous Animated Carousel Sliding Track */}
-          <Box
-            sx={{
-              display: 'flex',
-              width: photos.length > 1 ? '300%' : '100%',
-              height: '100%',
-              transform: photos.length > 1
-                ? isDragging
-                  ? `translateX(calc(-33.333333% + ${dragOffset}px))`
-                  : slideDir === 'left'
-                    ? 'translateX(-66.666667%)'
-                    : slideDir === 'right'
-                      ? 'translateX(0%)'
-                      : 'translateX(-33.333333%)'
-                : `translateX(${dragOffset * 0.3}px)`,
-              transition: isDragging
-                ? 'none'
-                : slideDir !== null
-                  ? 'transform 0.28s cubic-bezier(0.25, 1, 0.5, 1)'
-                  : dragOffset !== 0
-                    ? 'transform 0.22s ease-out'
+          {/* Active Image */}
+          {currentPhoto && (
+            <Box
+              key={currentPhoto.id || activePhotoIndex}
+              component="img"
+              src={currentPhoto.url}
+              alt={currentPhoto.caption || device?.model}
+              draggable={false}
+              sx={{
+                maxWidth: '100%',
+                maxHeight: '75vh',
+                objectFit: 'contain',
+                display: 'block',
+                userSelect: 'none',
+                pointerEvents: 'none',
+                transform: `translateX(${dragOffset}px)`,
+                transition: isDragging ? 'none' : 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.25s ease',
+                animation: slideDir === 'from-right'
+                  ? 'slideInFromRight 0.25s cubic-bezier(0.25, 1, 0.5, 1)'
+                  : slideDir === 'from-left'
+                    ? 'slideInFromLeft 0.25s cubic-bezier(0.25, 1, 0.5, 1)'
                     : 'none',
-              willChange: 'transform'
-            }}
-          >
-            {photos.length > 1 ? (
-              [photos[prevIndex], photos[activePhotoIndex], photos[nextIndex]].map((photo, i) => (
-                <Box
-                  key={i}
-                  sx={{
-                    width: '33.333333%',
-                    minWidth: '33.333333%',
-                    height: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    p: { xs: 1, sm: 2 }
-                  }}
-                >
-                  <Box
-                    component="img"
-                    src={photo.url}
-                    alt={photo.caption || device?.model}
-                    draggable={false}
-                    loading="eager"
-                    sx={{
-                      maxWidth: '100%',
-                      maxHeight: '75vh',
-                      objectFit: 'contain',
-                      display: 'block',
-                      userSelect: 'none',
-                      pointerEvents: 'none'
-                    }}
-                  />
-                </Box>
-              ))
-            ) : (
-              <Box
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  p: { xs: 1, sm: 2 }
-                }}
-              >
-                <Box
-                  component="img"
-                  src={photos[0]?.url}
-                  alt={photos[0]?.caption || device?.model}
-                  draggable={false}
-                  sx={{
-                    maxWidth: '100%',
-                    maxHeight: '75vh',
-                    objectFit: 'contain',
-                    display: 'block',
-                    userSelect: 'none',
-                    pointerEvents: 'none'
-                  }}
-                />
-              </Box>
-            )}
-          </Box>
+                '@keyframes slideInFromRight': {
+                  '0%': { transform: 'translateX(60px)', opacity: 0.3 },
+                  '100%': { transform: 'translateX(0)', opacity: 1 }
+                },
+                '@keyframes slideInFromLeft': {
+                  '0%': { transform: 'translateX(-60px)', opacity: 0.3 },
+                  '100%': { transform: 'translateX(0)', opacity: 1 }
+                }
+              }}
+            />
+          )}
         </DialogContent>
 
         {/* Lightbox Bottom Thumbnails Strip */}
