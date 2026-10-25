@@ -12,16 +12,20 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -325,8 +329,76 @@ fun DevicePhotoStrip(
 }
 
 /**
+ * Zoomable Image component with two-finger pinch-to-zoom, pan, and double-tap zoom
+ */
+@Composable
+fun ZoomableAsyncImage(
+    imageUrl: String,
+    contentDescription: String?,
+    onIsZoomedChanged: (Boolean) -> Unit
+) {
+    var scale by remember { mutableFloatStateOf(1f) }
+    var offset by remember { mutableStateOf(Offset.Zero) }
+
+    LaunchedEffect(scale) {
+        onIsZoomedChanged(scale > 1.05f)
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .clipToBounds()
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        if (scale > 1.05f) {
+                            scale = 1f
+                            offset = Offset.Zero
+                        } else {
+                            scale = 2.5f
+                        }
+                    }
+                )
+            }
+            .pointerInput(Unit) {
+                detectTransformGestures { _, pan, zoom, _ ->
+                    val newScale = (scale * zoom).coerceIn(1f, 5f)
+                    scale = newScale
+
+                    if (newScale > 1f) {
+                        val maxPanX = (newScale - 1f) * 600f
+                        val maxPanY = (newScale - 1f) * 600f
+                        offset = Offset(
+                            x = (offset.x + pan.x).coerceIn(-maxPanX, maxPanX),
+                            y = (offset.y + pan.y).coerceIn(-maxPanY, maxPanY)
+                        )
+                    } else {
+                        offset = Offset.Zero
+                    }
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        AsyncImage(
+            model = imageUrl,
+            contentDescription = contentDescription,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    translationX = offset.x
+                    translationY = offset.y
+                }
+        )
+    }
+}
+
+/**
  * Fullscreen Interactive Lightbox
  */
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun PhotoLightboxDialog(
     photos: List<DevicePhotoDto>,
@@ -338,11 +410,22 @@ fun PhotoLightboxDialog(
     onDismiss: () -> Unit,
     onPhotoDeleted: (Int) -> Unit
 ) {
-    var currentIndex by remember { mutableStateOf(initialIndex.coerceIn(0, (photos.size - 1).coerceAtLeast(0))) }
+    val pagerState = rememberPagerState(
+        initialPage = initialIndex.coerceIn(0, (photos.size - 1).coerceAtLeast(0)),
+        pageCount = { photos.size }
+    )
+    val currentIndex = pagerState.currentPage
     val currentPhoto = photos.getOrNull(currentIndex)
+    var isCurrentPageZoomed by remember { mutableStateOf(false) }
+
     var isDeleting by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+
+    // Reset zoom state when navigating to another page
+    LaunchedEffect(currentIndex) {
+        isCurrentPageZoomed = false
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -436,67 +519,25 @@ fun PhotoLightboxDialog(
                     }
                 }
 
-                // Photo Display & Navigation with Touch Drag Swipe
-                var totalDrag by remember { mutableFloatStateOf(0f) }
-                Box(
+                // Photo Display & Navigation with HorizontalPager animated sliding & pinch-to-zoom
+                HorizontalPager(
+                    state = pagerState,
+                    userScrollEnabled = !isCurrentPageZoomed,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .pointerInput(photos.size) {
-                            if (photos.size <= 1) return@pointerInput
-                            detectHorizontalDragGestures(
-                                onDragStart = { totalDrag = 0f },
-                                onDragEnd = {
-                                    if (totalDrag < -50f) {
-                                        // Swiped Left -> Next photo
-                                        currentIndex = (currentIndex + 1) % photos.size
-                                    } else if (totalDrag > 50f) {
-                                        // Swiped Right -> Previous photo
-                                        currentIndex = (currentIndex - 1 + photos.size) % photos.size
-                                    }
-                                    totalDrag = 0f
-                                }
-                            ) { _, dragAmount ->
-                                totalDrag += dragAmount
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    currentPhoto?.let { photo ->
-                        AsyncImage(
-                            model = photo.url,
+                ) { page ->
+                    val photo = photos.getOrNull(page)
+                    if (photo != null) {
+                        ZoomableAsyncImage(
+                            imageUrl = photo.url,
                             contentDescription = photo.caption,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize()
+                            onIsZoomedChanged = { isZoomed ->
+                                if (page == pagerState.currentPage) {
+                                    isCurrentPageZoomed = isZoomed
+                                }
+                            }
                         )
-                    }
-
-                    // Left arrow
-                    if (photos.size > 1) {
-                        IconButton(
-                            onClick = {
-                                currentIndex = (currentIndex - 1 + photos.size) % photos.size
-                            },
-                            modifier = Modifier
-                                .align(Alignment.CenterStart)
-                                .padding(12.dp)
-                                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous", tint = Color.White)
-                        }
-
-                        // Right arrow
-                        IconButton(
-                            onClick = {
-                                currentIndex = (currentIndex + 1) % photos.size
-                            },
-                            modifier = Modifier
-                                .align(Alignment.CenterEnd)
-                                .padding(12.dp)
-                                .background(Color.Black.copy(alpha = 0.5f), CircleShape)
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next", tint = Color.White)
-                        }
                     }
                 }
 
@@ -522,7 +563,11 @@ fun PhotoLightboxDialog(
                                         color = if (isSelected) Color(0xFF2563EB) else Color.White.copy(alpha = 0.25f),
                                         shape = RoundedCornerShape(4.dp)
                                     )
-                                    .clickable { currentIndex = idx }
+                                    .clickable {
+                                        scope.launch {
+                                            pagerState.animateScrollToPage(idx)
+                                        }
+                                    }
                             ) {
                                 AsyncImage(
                                     model = p.url,

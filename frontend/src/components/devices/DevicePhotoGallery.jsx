@@ -569,24 +569,6 @@ export default function DevicePhotoGallery({
             userSelect: 'none'
           }}
         >
-          {/* Previous Arrow */}
-          {photos.length > 1 && (
-            <IconButton
-              onClick={() => setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length)}
-              sx={{
-                position: 'absolute',
-                left: 16,
-                zIndex: 10,
-                bgcolor: 'rgba(0,0,0,0.6)',
-                color: '#fff',
-                backdropFilter: 'blur(4px)',
-                '&:hover': { bgcolor: 'primary.main' }
-              }}
-            >
-              <PrevIcon />
-            </IconButton>
-          )}
-
           {/* Active Image */}
           {currentPhoto && (
             <Box
@@ -604,24 +586,6 @@ export default function DevicePhotoGallery({
                 pointerEvents: 'none'
               }}
             />
-          )}
-
-          {/* Next Arrow */}
-          {photos.length > 1 && (
-            <IconButton
-              onClick={() => setActivePhotoIndex((prev) => (prev + 1) % photos.length)}
-              sx={{
-                position: 'absolute',
-                right: 16,
-                zIndex: 10,
-                bgcolor: 'rgba(0,0,0,0.6)',
-                color: '#fff',
-                backdropFilter: 'blur(4px)',
-                '&:hover': { bgcolor: 'primary.main' }
-              }}
-            >
-              <NextIcon />
-            </IconButton>
           )}
         </DialogContent>
 
