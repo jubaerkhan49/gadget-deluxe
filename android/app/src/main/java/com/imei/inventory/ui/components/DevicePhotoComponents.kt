@@ -496,7 +496,17 @@ fun DevicePhotoCaptureDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var selectedTag by remember { mutableStateOf("ABOUT") }
+    var currentDevice by remember(device) { mutableStateOf(device) }
+    val uploadedTags = remember(currentDevice.allPhotos) {
+        currentDevice.allPhotos.map { it.photoType.uppercase() }.toSet()
+    }
+
+    // Default to the first missing tag if available
+    val initialTag = remember(device.id) {
+        PHOTO_TAG_CHOICES.firstOrNull { (value, _) -> !device.allPhotos.any { it.photoType.equals(value, ignoreCase = true) } }?.first ?: "ABOUT"
+    }
+    var selectedTag by remember { mutableStateOf(initialTag) }
+
     var isUploading by remember { mutableStateOf(false) }
     var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
     var tempCameraFile by remember { mutableStateOf<File?>(null) }
@@ -517,7 +527,7 @@ fun DevicePhotoCaptureDialog(
 
                 val res = ApiClient.apiService.uploadDevicePhoto(
                     token = "Bearer $token",
-                    id = device.id,
+                    id = currentDevice.id,
                     images = body,
                     photoType = tagBody,
                     isPrimary = isPrimaryBody
@@ -526,12 +536,20 @@ fun DevicePhotoCaptureDialog(
                 if (res.isSuccessful && res.body()?.device != null) {
                     Toast.makeText(context, "Uploaded $tag photo!", Toast.LENGTH_SHORT).show()
                     val updated = res.body()?.device!!
+                    currentDevice = updated
                     onPhotosUploaded(updated)
 
-                    // Auto-advance tag for guided rapid capture flow
-                    val currentIndex = PHOTO_TAG_CHOICES.indexOfFirst { it.first == tag }
-                    if (currentIndex != -1 && currentIndex < PHOTO_TAG_CHOICES.size - 1) {
-                        selectedTag = PHOTO_TAG_CHOICES[currentIndex + 1].first
+                    // Auto-advance to the next missing tag for guided rapid capture flow
+                    val nextMissing = PHOTO_TAG_CHOICES.firstOrNull { (valKey, _) ->
+                        !updated.allPhotos.any { it.photoType.equals(valKey, ignoreCase = true) }
+                    }?.first
+                    if (nextMissing != null) {
+                        selectedTag = nextMissing
+                    } else {
+                        val currentIndex = PHOTO_TAG_CHOICES.indexOfFirst { it.first == tag }
+                        if (currentIndex != -1 && currentIndex < PHOTO_TAG_CHOICES.size - 1) {
+                            selectedTag = PHOTO_TAG_CHOICES[currentIndex + 1].first
+                        }
                     }
                 } else {
                     val errMsg = res.errorBody()?.string() ?: res.body()?.error ?: "Upload failed"
@@ -579,13 +597,19 @@ fun DevicePhotoCaptureDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Text(
+                            text = "Snap Condition Photo",
+                            fontSize = 17.sp,
+                            fontWeight = FontWeight.ExtraBold
+                        )
+                        val count = currentDevice.allPhotos.size
+                        if (count > 0) {
+                            DeviceCameraBadge(count = count)
+                        }
+                    }
                     Text(
-                        text = "Snap Condition Photo",
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.ExtraBold
-                    )
-                    Text(
-                        text = device.model,
+                        text = currentDevice.model,
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -597,16 +621,28 @@ fun DevicePhotoCaptureDialog(
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = "Select Tag for Next Photo:",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Select Tag for Next Photo:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "${uploadedTags.size}/${PHOTO_TAG_CHOICES.size} Done",
+                        fontSize = 11.5.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (uploadedTags.size == PHOTO_TAG_CHOICES.size) Color(0xFF10B981) else Color(0xFF2563EB)
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Tag Chips
+                // Tag Chips with Green Indicator for Already-Uploaded Tags
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -614,13 +650,30 @@ fun DevicePhotoCaptureDialog(
                 ) {
                     PHOTO_TAG_CHOICES.forEach { (value, label) ->
                         val isSelected = selectedTag == value
+                        val isUploaded = uploadedTags.contains(value.uppercase())
+
                         FilterChip(
                             selected = isSelected,
                             onClick = { selectedTag = value },
-                            label = { Text(label, fontSize = 11.5.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                            label = {
+                                Text(
+                                    text = if (isUploaded) "✓ $label" else label,
+                                    fontSize = 11.5.sp,
+                                    fontWeight = if (isSelected || isUploaded) FontWeight.Bold else FontWeight.Normal
+                                )
+                            },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primary,
-                                selectedLabelColor = Color.White
+                                selectedContainerColor = if (isUploaded) Color(0xFF10B981) else MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = Color.White,
+                                containerColor = if (isUploaded) Color(0xFF10B981).copy(alpha = 0.15f) else MaterialTheme.colorScheme.surface,
+                                labelColor = if (isUploaded) Color(0xFF047857) else MaterialTheme.colorScheme.onSurfaceVariant
+                            ),
+                            border = FilterChipDefaults.filterChipBorder(
+                                borderColor = if (isSelected) Color.Transparent
+                                    else if (isUploaded) Color(0xFF10B981).copy(alpha = 0.5f)
+                                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                                enabled = true,
+                                selected = isSelected
                             ),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.height(28.dp)
@@ -643,14 +696,14 @@ fun DevicePhotoCaptureDialog(
                         Text("Uploading photo to Cloudinary...", fontSize = 13.sp, fontWeight = FontWeight.Medium)
                     }
                 } else {
-                    // Action Buttons: Direct Camera vs Gallery
+                    // Action Buttons: Direct Camera vs Gallery (Single-line, unclipped)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Button(
                             onClick = {
-                                val photoFile = File.createTempFile("dev_${device.id}_${selectedTag}_", ".jpg", context.cacheDir)
+                                val photoFile = File.createTempFile("dev_${currentDevice.id}_${selectedTag}_", ".jpg", context.cacheDir)
                                 tempCameraFile = photoFile
                                 val uri = FileProvider.getUriForFile(
                                     context,
@@ -660,26 +713,50 @@ fun DevicePhotoCaptureDialog(
                                 tempCameraUri = uri
                                 cameraLauncher.launch(uri)
                             },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .weight(1f)
                                 .height(46.dp)
                         ) {
-                            Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Take Photo", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Take Photo",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
 
                         OutlinedButton(
                             onClick = { galleryLauncher.launch("image/*") },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .weight(1f)
                                 .height(46.dp)
                         ) {
-                            Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Gallery", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Gallery",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    softWrap = false
+                                )
+                            }
                         }
                     }
                 }
