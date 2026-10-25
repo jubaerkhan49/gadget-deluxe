@@ -65,6 +65,11 @@ export default function DevicePhotoGallery({
   const [activePhotoIndex, setActivePhotoIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [slideDir, setSlideDir] = useState(null); // 'left' | 'right' | null
+
+  // Indices for continuous infinite looping (wraps 8 -> 1 and 1 -> 8)
+  const prevIndex = photos.length > 0 ? (activePhotoIndex - 1 + photos.length) % photos.length : 0;
+  const nextIndex = photos.length > 0 ? (activePhotoIndex + 1) % photos.length : 0;
 
   // Deleting state
   const [deletingId, setDeletingId] = useState(null);
@@ -75,6 +80,7 @@ export default function DevicePhotoGallery({
     setLightboxOpen(true);
     setDragOffset(0);
     setIsDragging(false);
+    setSlideDir(null);
     try {
       window.history.pushState({ devicePhotoLightbox: true }, '');
     } catch (e) {
@@ -86,6 +92,7 @@ export default function DevicePhotoGallery({
     setLightboxOpen(false);
     setDragOffset(0);
     setIsDragging(false);
+    setSlideDir(null);
     if (window.history.state?.devicePhotoLightbox) {
       window.history.back();
     }
@@ -98,6 +105,7 @@ export default function DevicePhotoGallery({
         setLightboxOpen(false);
         setDragOffset(0);
         setIsDragging(false);
+        setSlideDir(null);
       }
     };
 
@@ -105,14 +113,14 @@ export default function DevicePhotoGallery({
     return () => window.removeEventListener('popstate', handlePopState);
   }, [lightboxOpen]);
 
-  // Keyboard navigation for Lightbox
+  // Keyboard navigation for Lightbox (continuous looping)
   useEffect(() => {
     if (!lightboxOpen) return;
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowRight') {
-        setActivePhotoIndex((prev) => Math.min(photos.length - 1, prev + 1));
+        setActivePhotoIndex((prev) => (prev + 1) % photos.length);
       } else if (e.key === 'ArrowLeft') {
-        setActivePhotoIndex((prev) => Math.max(0, prev - 1));
+        setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
       } else if (e.key === 'Escape') {
         closeLightbox();
       }
@@ -121,21 +129,22 @@ export default function DevicePhotoGallery({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxOpen, photos.length]);
 
-  // Touch swipe with animated dragging for mobile Lightbox
+  // Continuous infinite touch swipe with animated sliding
   const touchStartXRef = useRef(null);
   const touchStartYRef = useRef(null);
   const isHorizontalSwipeRef = useRef(null);
 
   const handleTouchStart = (e) => {
-    if (!e.touches || e.touches.length === 0) return;
+    if (!e.touches || e.touches.length === 0 || slideDir !== null) return;
     touchStartXRef.current = e.touches[0].clientX;
     touchStartYRef.current = e.touches[0].clientY;
     isHorizontalSwipeRef.current = null;
     setIsDragging(true);
+    setDragOffset(0);
   };
 
   const handleTouchMove = (e) => {
-    if (touchStartXRef.current === null || !e.touches || e.touches.length === 0) return;
+    if (touchStartXRef.current === null || !e.touches || e.touches.length === 0 || slideDir !== null) return;
     const currentX = e.touches[0].clientX;
     const currentY = e.touches[0].clientY;
     const diffX = currentX - touchStartXRef.current;
@@ -149,15 +158,7 @@ export default function DevicePhotoGallery({
     }
 
     if (isHorizontalSwipeRef.current) {
-      // Rubber-band resistance at boundaries
-      let offset = diffX;
-      if (
-        (activePhotoIndex === 0 && diffX > 0) ||
-        (activePhotoIndex === photos.length - 1 && diffX < 0)
-      ) {
-        offset = diffX * 0.25;
-      }
-      setDragOffset(offset);
+      setDragOffset(diffX);
     }
   };
 
@@ -165,17 +166,28 @@ export default function DevicePhotoGallery({
     const finalOffset = dragOffset;
     setIsDragging(false);
 
-    if (isHorizontalSwipeRef.current && Math.abs(finalOffset) > 40) {
-      if (finalOffset < -40 && activePhotoIndex < photos.length - 1) {
-        // Swiped Left -> Next photo
-        setActivePhotoIndex((prev) => prev + 1);
-      } else if (finalOffset > 40 && activePhotoIndex > 0) {
-        // Swiped Right -> Previous photo
-        setActivePhotoIndex((prev) => prev - 1);
+    if (isHorizontalSwipeRef.current && Math.abs(finalOffset) > 40 && photos.length > 1) {
+      if (finalOffset < -40) {
+        // Swiped Left -> continuous loop to next photo
+        setSlideDir('left');
+        setTimeout(() => {
+          setActivePhotoIndex(nextIndex);
+          setSlideDir(null);
+          setDragOffset(0);
+        }, 280);
+      } else if (finalOffset > 40) {
+        // Swiped Right -> continuous loop to previous photo
+        setSlideDir('right');
+        setTimeout(() => {
+          setActivePhotoIndex(prevIndex);
+          setSlideDir(null);
+          setDragOffset(0);
+        }, 280);
       }
+    } else {
+      setDragOffset(0);
     }
 
-    setDragOffset(0);
     touchStartXRef.current = null;
     touchStartYRef.current = null;
     isHorizontalSwipeRef.current = null;
@@ -736,37 +748,79 @@ export default function DevicePhotoGallery({
             cursor: isDragging ? 'grabbing' : 'grab'
           }}
         >
-          {/* Animated Carousel Sliding Track */}
+          {/* Continuous Animated Carousel Sliding Track */}
           <Box
             sx={{
               display: 'flex',
-              width: '100%',
+              width: photos.length > 1 ? '300%' : '100%',
               height: '100%',
-              transform: `translateX(calc(-${activePhotoIndex * 100}% + ${dragOffset}px))`,
-              transition: isDragging ? 'none' : 'transform 0.32s cubic-bezier(0.25, 1, 0.5, 1)',
+              transform: photos.length > 1
+                ? isDragging
+                  ? `translateX(calc(-33.333333% + ${dragOffset}px))`
+                  : slideDir === 'left'
+                    ? 'translateX(-66.666667%)'
+                    : slideDir === 'right'
+                      ? 'translateX(0%)'
+                      : 'translateX(-33.333333%)'
+                : `translateX(${dragOffset * 0.3}px)`,
+              transition: isDragging
+                ? 'none'
+                : slideDir !== null
+                  ? 'transform 0.28s cubic-bezier(0.25, 1, 0.5, 1)'
+                  : dragOffset !== 0
+                    ? 'transform 0.22s ease-out'
+                    : 'none',
               willChange: 'transform'
             }}
           >
-            {photos.map((photo, idx) => (
+            {photos.length > 1 ? (
+              [photos[prevIndex], photos[activePhotoIndex], photos[nextIndex]].map((photo, i) => (
+                <Box
+                  key={i}
+                  sx={{
+                    width: '33.333333%',
+                    minWidth: '33.333333%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    p: { xs: 1, sm: 2 }
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src={photo.url}
+                    alt={photo.caption || device?.model}
+                    draggable={false}
+                    loading="eager"
+                    sx={{
+                      maxWidth: '100%',
+                      maxHeight: '75vh',
+                      objectFit: 'contain',
+                      display: 'block',
+                      userSelect: 'none',
+                      pointerEvents: 'none'
+                    }}
+                  />
+                </Box>
+              ))
+            ) : (
               <Box
-                key={photo.id || idx}
                 sx={{
-                  minWidth: '100%',
                   width: '100%',
                   height: '100%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  flexShrink: 0,
                   p: { xs: 1, sm: 2 }
                 }}
               >
                 <Box
                   component="img"
-                  src={photo.url}
-                  alt={photo.caption || device?.model}
+                  src={photos[0]?.url}
+                  alt={photos[0]?.caption || device?.model}
                   draggable={false}
-                  loading={Math.abs(idx - activePhotoIndex) <= 1 ? 'eager' : 'lazy'}
                   sx={{
                     maxWidth: '100%',
                     maxHeight: '75vh',
@@ -777,7 +831,7 @@ export default function DevicePhotoGallery({
                   }}
                 />
               </Box>
-            ))}
+            )}
           </Box>
         </DialogContent>
 

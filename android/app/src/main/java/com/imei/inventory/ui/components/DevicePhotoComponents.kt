@@ -426,11 +426,20 @@ fun PhotoLightboxDialog(
     onDismiss: () -> Unit,
     onPhotoDeleted: (Int) -> Unit
 ) {
+    val isLooping = photos.size > 1
+    val virtualCount = if (isLooping) photos.size * 500 else photos.size
+    val initialPage = if (isLooping) {
+        val middle = virtualCount / 2
+        middle - (middle % photos.size) + initialIndex.coerceIn(0, photos.size - 1)
+    } else {
+        0
+    }
+
     val pagerState = rememberPagerState(
-        initialPage = initialIndex.coerceIn(0, (photos.size - 1).coerceAtLeast(0)),
-        pageCount = { photos.size }
+        initialPage = initialPage,
+        pageCount = { virtualCount }
     )
-    val currentIndex = pagerState.currentPage
+    val currentIndex = if (photos.isNotEmpty()) pagerState.currentPage % photos.size else 0
     val currentPhoto = photos.getOrNull(currentIndex)
     var isCurrentPageZoomed by remember { mutableStateOf(false) }
 
@@ -549,13 +558,14 @@ fun PhotoLightboxDialog(
                         .weight(1f)
                         .fillMaxWidth()
                 ) { page ->
-                    val photo = photos.getOrNull(page)
+                    val actualIndex = if (photos.isNotEmpty()) page % photos.size else 0
+                    val photo = photos.getOrNull(actualIndex)
                     if (photo != null) {
                         ZoomableAsyncImage(
                             imageUrl = photo.url,
                             contentDescription = photo.caption,
                             onIsZoomedChanged = { isZoomed ->
-                                if (page == pagerState.currentPage) {
+                                if (actualIndex == currentIndex) {
                                     isCurrentPageZoomed = isZoomed
                                 }
                             }
@@ -587,7 +597,10 @@ fun PhotoLightboxDialog(
                                     )
                                     .clickable {
                                         scope.launch {
-                                            pagerState.animateScrollToPage(idx)
+                                            val currentActual = if (photos.isNotEmpty()) pagerState.currentPage % photos.size else 0
+                                            val diff = idx - currentActual
+                                            val targetPage = pagerState.currentPage + diff
+                                            pagerState.animateScrollToPage(targetPage)
                                         }
                                     }
                             ) {
