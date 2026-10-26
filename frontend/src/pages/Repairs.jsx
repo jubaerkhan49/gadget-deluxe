@@ -37,7 +37,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { repairApi, deviceApi } from '../api/client';
 import { apiCache } from '../utils/apiCache';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber, formatDate } from '../utils/formatters';
 import CopyableText from '../components/common/CopyableText';
 import AddRepairDialog from '../dialogs/AddRepairDialog';
 
@@ -507,13 +507,13 @@ export default function Repairs() {
 
                     <TableCell>
                       <Typography variant="body2">
-                        {r.sent_date || '—'}
+                        {r.sent_date ? formatDate(r.sent_date) : '—'}
                       </Typography>
                     </TableCell>
 
                     <TableCell>
                       <Typography variant="body2">
-                        {r.returned_date || '—'}
+                        {r.returned_date ? formatDate(r.returned_date) : '—'}
                       </Typography>
                     </TableCell>
 

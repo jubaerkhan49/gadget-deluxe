@@ -864,7 +864,7 @@ export default function DeviceDetailDrawer({
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">Received (CN)</Typography>
-                          <Typography variant="body2" fontWeight={600} sx={{ mt: 0.2 }}>{device.shipment_receive_date_cn || '—'}</Typography>
+                          <Typography variant="body2" fontWeight={600} sx={{ mt: 0.2 }}>{device.shipment_receive_date_cn ? formatDate(device.shipment_receive_date_cn) : '—'}</Typography>
                         </Grid>
                         <Grid item xs={6}>
                           <Typography variant="caption" color="text.secondary">Received (BD)</Typography>
@@ -990,7 +990,7 @@ export default function DeviceDetailDrawer({
                             {n.author_name || 'Admin'}
                           </Typography>
                           <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.72rem' }}>
-                            {n.created_at ? new Date(n.created_at).toLocaleDateString() : '—'}
+                            {n.created_at ? formatDate(n.created_at) : '—'}
                           </Typography>
                         </Box>
                         <Typography variant="body2" sx={{ fontSize: '0.82rem' }}>{n.content}</Typography>
@@ -1054,12 +1054,12 @@ export default function DeviceDetailDrawer({
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
-                              {a.assigned_date ? new Date(a.assigned_date).toLocaleDateString() : '—'}
+                              {a.assigned_date ? formatDate(a.assigned_date) : '—'}
                             </Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">
-                              {a.returned_date ? new Date(a.returned_date).toLocaleDateString() : '—'}
+                              {a.returned_date ? formatDate(a.returned_date) : '—'}
                             </Typography>
                           </TableCell>
                           <TableCell>
@@ -1176,11 +1176,11 @@ export default function DeviceDetailDrawer({
                       <Grid container spacing={1}>
                         <Grid item xs={4}>
                           <Typography variant="caption" color="text.secondary">Sent Date</Typography>
-                          <Typography variant="body2">{r.sent_date || '—'}</Typography>
+                          <Typography variant="body2">{r.sent_date ? formatDate(r.sent_date) : '—'}</Typography>
                         </Grid>
                         <Grid item xs={4}>
                           <Typography variant="caption" color="text.secondary">Return Date</Typography>
-                          <Typography variant="body2">{r.returned_date || '—'}</Typography>
+                          <Typography variant="body2">{r.returned_date ? formatDate(r.returned_date) : '—'}</Typography>
                         </Grid>
                         <Grid item xs={4}>
                           <Typography variant="caption" color="text.secondary">Repair Cost</Typography>
@@ -1221,7 +1221,7 @@ export default function DeviceDetailDrawer({
                           Invoice #{s.invoice_number}
                         </Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {s.sale_date ? new Date(s.sale_date).toLocaleDateString() : '—'}
+                          {s.sale_date ? formatDate(s.sale_date) : '—'}
                         </Typography>
                       </Box>
                       <Grid container spacing={2}>
@@ -2147,7 +2147,7 @@ export default function DeviceDetailDrawer({
                       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
                         <Typography variant="caption" fontWeight={700} color="primary">{n.author_name}</Typography>
                         <Typography variant="caption" color="text.secondary">
-                          {n.created_at ? new Date(n.created_at).toLocaleDateString() : '—'}
+                          {n.created_at ? formatDate(n.created_at) : '—'}
                         </Typography>
                       </Box>
                       <Typography variant="body2">{n.content}</Typography>

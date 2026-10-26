@@ -1458,7 +1458,7 @@ export default function Dashboard() {
                       </Box>
 
                       <Typography variant="caption" color="text.secondary">
-                        {dev.received_date_bd || formatDate(dev.created_at)}
+                        {formatDate(dev.received_date_bd || dev.created_at)}
                       </Typography>
                     </Box>
                   </Card>
@@ -1556,7 +1556,7 @@ export default function Dashboard() {
                         </TableCell>
                         <TableCell>
                           <Typography variant="caption" color="text.secondary">
-                            {dev.received_date_bd || formatDate(dev.created_at)}
+                            {formatDate(dev.received_date_bd || dev.created_at)}
                           </Typography>
                         </TableCell>
                       </TableRow>

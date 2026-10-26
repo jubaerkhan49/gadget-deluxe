@@ -50,9 +50,14 @@ fun formatIndianNumber(number: Number): String {
     return result.toString()
 }
 
+private val MONTH_NAMES = listOf(
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+)
+
 /**
  * Universal Date Formatter: converts any date string (ISO, timestamp, YYYY-MM-DD)
- * to DD-MM-YYYY format across both admin and employee modes.
+ * to "<day> <month_name>, <year>" format (e.g., "20 October, 2026") across both admin and employee modes.
  */
 fun formatDateToDDMMYYYY(dateStr: String?, defaultVal: String = ""): String {
     if (dateStr.isNullOrBlank()) return defaultVal
@@ -61,17 +66,19 @@ fun formatDateToDDMMYYYY(dateStr: String?, defaultVal: String = ""): String {
     val isoMatch = Regex("""^(\d{4})[-/](\d{1,2})[-/](\d{1,2})""").find(trimmed)
     if (isoMatch != null) {
         val year = isoMatch.groupValues[1]
-        val month = isoMatch.groupValues[2].padStart(2, '0')
-        val day = isoMatch.groupValues[3].padStart(2, '0')
-        return "$day-$month-$year"
+        val monthIdx = (isoMatch.groupValues[2].toIntOrNull() ?: 1) - 1
+        val day = (isoMatch.groupValues[3].toIntOrNull() ?: 1).toString()
+        val monthName = MONTH_NAMES.getOrElse(monthIdx) { "Unknown" }
+        return "$day $monthName, $year"
     }
-    // Already DD-MM-YYYY
+    // Match DD-MM-YYYY or DD/MM/YYYY
     val dmyMatch = Regex("""^(\d{1,2})[-/](\d{1,2})[-/](\d{4})""").find(trimmed)
     if (dmyMatch != null) {
-        val day = dmyMatch.groupValues[1].padStart(2, '0')
-        val month = dmyMatch.groupValues[2].padStart(2, '0')
+        val day = (dmyMatch.groupValues[1].toIntOrNull() ?: 1).toString()
+        val monthIdx = (dmyMatch.groupValues[2].toIntOrNull() ?: 1) - 1
         val year = dmyMatch.groupValues[3]
-        return "$day-$month-$year"
+        val monthName = MONTH_NAMES.getOrElse(monthIdx) { "Unknown" }
+        return "$day $monthName, $year"
     }
     return trimmed
 }

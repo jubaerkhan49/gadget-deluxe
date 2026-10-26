@@ -49,7 +49,7 @@ import api, { deviceSaleRequestApi } from '../api/client';
 import { apiCache } from '../utils/apiCache';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber, formatDate, formatDateTime } from '../utils/formatters';
 import ConfirmSaleApprovalDialog from './ConfirmSaleApprovalDialog';
 import ErrorBoundary from '../components/common/ErrorBoundary';
 
@@ -460,7 +460,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                             <strong>Address:</strong> {app.address}
                           </Typography>
                           <Typography variant="caption" color="text.disabled" display="block" sx={{ mt: 0.5 }}>
-                            Applied on: {new Date(app.created_at).toLocaleString()}
+                            Applied on: {formatDateTime(app.created_at)}
                           </Typography>
                         </Box>
                       </Box>
@@ -539,7 +539,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                                 @{updateReq.username}
                               </Typography>
                               <Typography variant="caption" color="text.secondary">
-                                Requested on: {new Date(updateReq.created_at).toLocaleString()}
+                                Requested on: {formatDateTime(updateReq.created_at)}
                               </Typography>
                             </Box>
                           </Box>
@@ -737,7 +737,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                               ) : null}
                             </Typography>
                             <Typography variant="caption" color="text.secondary" display="block">
-                              {saleReq.created_at ? new Date(saleReq.created_at).toLocaleString() : '—'}
+                              {saleReq.created_at ? formatDateTime(saleReq.created_at) : '—'}
                             </Typography>
                           </Box>
                         </Box>
@@ -981,7 +981,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                       </TableCell>
                       <TableCell>
                         <Typography variant="caption" color="text.secondary">
-                          {emp.date_joined ? new Date(emp.date_joined).toLocaleDateString() : '-'}
+                          {emp.date_joined ? formatDate(emp.date_joined) : '-'}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
@@ -1078,7 +1078,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                                 </TableCell>
                                 <TableCell>
                                   <Typography variant="caption" color="text.secondary">
-                                    {new Date(s.updated_at || s.created_at).toLocaleDateString()}
+                                    {formatDate(s.updated_at || s.created_at)}
                                   </Typography>
                                 </TableCell>
                               </TableRow>
@@ -1138,7 +1138,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                                 </TableCell>
                                 <TableCell>
                                   <Typography variant="caption" color="text.secondary">
-                                    {new Date(u.created_at).toLocaleDateString()}
+                                    {formatDate(u.created_at)}
                                   </Typography>
                                 </TableCell>
                               </TableRow>
@@ -1202,7 +1202,7 @@ export default function ManageEmployeesDialog({ open, onClose, onEmployeeUpdated
                                 </TableCell>
                                 <TableCell>
                                   <Typography variant="caption" color="text.secondary">
-                                    {new Date(app.created_at).toLocaleDateString()}
+                                    {formatDate(app.created_at)}
                                   </Typography>
                                 </TableCell>
                                 <TableCell align="right">

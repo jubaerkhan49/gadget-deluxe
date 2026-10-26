@@ -50,7 +50,7 @@ import { useSnackbar } from 'notistack';
 import { deviceApi } from '../api/client';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
-import { formatNumber } from '../utils/formatters';
+import { formatNumber, formatDate } from '../utils/formatters';
 import { apiCache } from '../utils/apiCache';
 import EditB2BDeviceDialog from '../dialogs/EditB2BDeviceDialog';
 import AddRepairDialog from '../dialogs/AddRepairDialog';
@@ -847,15 +847,15 @@ export default function B2B() {
 
                       {/* Receive Date (BD) */}
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace', fontSize: '0.82rem' }}>
-                          {dev.received_date_bd || '—'}
+                        <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.82rem' }}>
+                          {dev.received_date_bd ? formatDate(dev.received_date_bd) : '—'}
                         </Typography>
                       </TableCell>
 
                       {/* Delivery Date */}
                       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-                        <Typography variant="body2" fontWeight={600} sx={{ fontFamily: 'monospace', fontSize: '0.82rem' }}>
-                          {dev.b2b_delivery_date || '—'}
+                        <Typography variant="body2" fontWeight={600} sx={{ fontSize: '0.82rem' }}>
+                          {dev.b2b_delivery_date ? formatDate(dev.b2b_delivery_date) : '—'}
                         </Typography>
                       </TableCell>
 

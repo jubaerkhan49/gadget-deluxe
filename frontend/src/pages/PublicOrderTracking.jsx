@@ -40,6 +40,7 @@ import {
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
 import { otherGoodsApi } from '../api/client';
+import { formatDate, formatDateTime } from '../utils/formatters';
 
 const STAGES = [
   { id: 'ORDER_CONFIRMED', title: 'Order Confirmed', desc: 'Order placed & recorded', step: 0 },
@@ -328,7 +329,7 @@ export default function PublicOrderTracking() {
                     ORDER DATE
                   </Typography>
                   <Typography variant="body2" fontWeight={700}>
-                    {order.order_date || (order.created_at ? order.created_at.split('T')[0] : '—')}
+                    {formatDate(order.order_date || order.created_at)}
                   </Typography>
                 </Grid>
 
@@ -341,7 +342,7 @@ export default function PublicOrderTracking() {
                     fontWeight={700}
                     color={(order.estimated_delivery || order.estimated_delivery_date) ? 'primary.main' : 'text.secondary'}
                   >
-                    {order.estimated_delivery || order.estimated_delivery_date || 'In Progress / Sourcing'}
+                    {(order.estimated_delivery || order.estimated_delivery_date) ? formatDate(order.estimated_delivery || order.estimated_delivery_date) : 'In Progress / Sourcing'}
                   </Typography>
                 </Grid>
 
@@ -357,7 +358,7 @@ export default function PublicOrderTracking() {
                       sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                     >
                       <CheckIcon fontSize="small" sx={{ fontSize: '1rem' }} />
-                      Delivered: {order.actual_delivery || order.actual_delivery_date || 'Completed'}
+                      Delivered: {(order.actual_delivery || order.actual_delivery_date) ? formatDate(order.actual_delivery || order.actual_delivery_date) : 'Completed'}
                     </Typography>
                   ) : (
                     <Typography variant="body2" fontWeight={700} color="warning.main">
@@ -406,7 +407,7 @@ export default function PublicOrderTracking() {
                     </Typography>
                     {(order.actual_delivery || order.actual_delivery_date) && (
                       <Chip
-                        label={`Delivered on ${order.actual_delivery || order.actual_delivery_date}`}
+                        label={`Delivered on ${formatDate(order.actual_delivery || order.actual_delivery_date)}`}
                         size="small"
                         color="success"
                         sx={{ fontWeight: 800, fontSize: '0.72rem', color: '#ffffff' }}
@@ -565,7 +566,7 @@ export default function PublicOrderTracking() {
                           sx={{ display: 'block', mt: 0.2 }}
                         >
                           {isLastStep && (isCompleted || isCurrent) && (order.actual_delivery || order.actual_delivery_date)
-                            ? `Package successfully received by customer on ${order.actual_delivery || order.actual_delivery_date}`
+                            ? `Package successfully received by customer on ${formatDate(order.actual_delivery || order.actual_delivery_date)}`
                             : st.desc}
                         </Typography>
                       </Box>
@@ -748,7 +749,7 @@ export default function PublicOrderTracking() {
                       )}
                       {evt.timestamp && (
                         <Typography variant="caption" color="text.disabled" sx={{ mt: 0.5, display: 'block' }}>
-                          {new Date(evt.timestamp).toLocaleString()}
+                          {formatDateTime(evt.timestamp)}
                         </Typography>
                       )}
                     </Box>

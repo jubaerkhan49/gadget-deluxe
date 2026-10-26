@@ -42,6 +42,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { deviceApi, shipmentApi } from '../api/client';
 import { apiCache } from '../utils/apiCache';
+import { formatDate } from '../utils/formatters';
 import StatusBadge from '../components/common/StatusBadge';
 import { formatNumber } from '../utils/formatters';
 import VariantBadge from '../components/common/VariantBadge';
@@ -429,7 +430,7 @@ export default function ShipmentDetailDialog({
                   <Chip
                     size="small"
                     icon={<DateIcon sx={{ fontSize: '13px !important' }} />}
-                    label={`Receive (CN): ${shipment.receive_date}`}
+                    label={`Receive (CN): ${formatDate(shipment.receive_date)}`}
                     sx={{
                       mt: 1,
                       height: 22,

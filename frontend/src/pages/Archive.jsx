@@ -34,7 +34,7 @@ import {
   PhoneAndroid as PhoneIcon
 } from '@mui/icons-material';
 import { useSnackbar } from 'notistack';
-import { formatNumber, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
+import { formatNumber, formatDate, downloadCSVBlob, exportDevicesToCSV } from '../utils/formatters';
 import { deviceApi, saleApi } from '../api/client';
 import { apiCache } from '../utils/apiCache';
 import CopyableText from '../components/common/CopyableText';
@@ -540,7 +540,7 @@ export default function Archive() {
                               {sale.customer_name || 'Walk-in Customer'}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
-                              #{sale.invoice_number || 'N/A'} • {sale.sale_date?.split('T')[0] || '—'}
+                              #{sale.invoice_number || 'N/A'} • {sale.sale_date ? formatDate(sale.sale_date) : '—'}
                             </Typography>
                           </>
                         ) : (

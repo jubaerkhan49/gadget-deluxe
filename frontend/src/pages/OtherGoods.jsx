@@ -50,6 +50,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { otherGoodsApi } from '../api/client';
 import { apiCache } from '../utils/apiCache';
+import { formatDate } from '../utils/formatters';
 import CreateOtherGoodsDialog from '../dialogs/CreateOtherGoodsDialog';
 import UpdateOrderTrackingDialog, { TRACKING_STAGES } from '../dialogs/UpdateOrderTrackingDialog';
 
@@ -620,7 +621,7 @@ export default function OtherGoods() {
                           </Tooltip>
                         </Box>
                         <Typography variant="caption" color="text.secondary">
-                          {order.order_date || (order.created_at ? order.created_at.split('T')[0] : '—')}
+                          {formatDate(order.order_date || order.created_at)}
                         </Typography>
                       </TableCell>
 

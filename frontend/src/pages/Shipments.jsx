@@ -61,6 +61,7 @@ import {
 import { useSnackbar } from 'notistack';
 import { shipmentApi, deviceApi } from '../api/client';
 import { apiCache } from '../utils/apiCache';
+import { formatDate } from '../utils/formatters';
 import StatusBadge from '../components/common/StatusBadge';
 import VariantBadge from '../components/common/VariantBadge';
 import CopyableText from '../components/common/CopyableText';
@@ -835,7 +836,7 @@ export default function Shipments() {
                   <CopyableText text={trackingShipment.tracking_number} />
                 </Stack>
                 <Typography variant="caption" color="text.secondary">
-                  Supplier: <strong>{trackingShipment.supplier_name || 'Unknown'}</strong> • Agent: <strong>{trackingShipment.shipping_company || 'None'}</strong> • Received CN: <strong>{trackingShipment.receive_date || 'Pending'}</strong>
+                  Supplier: <strong>{trackingShipment.supplier_name || 'Unknown'}</strong> • Agent: <strong>{trackingShipment.shipping_company || 'None'}</strong> • Received CN: <strong>{trackingShipment.receive_date ? formatDate(trackingShipment.receive_date) : 'Pending'}</strong>
                 </Typography>
               </div>
             </Box>
@@ -1059,7 +1060,7 @@ export default function Shipments() {
                     Received Date (CN)
                   </Typography>
                   <Typography variant="body2" fontWeight={700} color="primary" sx={{ mt: 0.5 }}>
-                    {imeiDevice.shipment_receive_date_cn || 'Pending'}
+                    {imeiDevice.shipment_receive_date_cn ? formatDate(imeiDevice.shipment_receive_date_cn) : 'Pending'}
                   </Typography>
                 </Grid>
 
@@ -1278,7 +1279,7 @@ export default function Shipments() {
                               fontWeight={700}
                               color={shipment.receive_date ? 'primary.main' : 'text.secondary'}
                             >
-                              {shipment.receive_date || 'Pending'}
+                              {shipment.receive_date ? formatDate(shipment.receive_date) : 'Pending'}
                             </Typography>
                           </Box>
                         </TableCell>
@@ -1493,7 +1494,7 @@ export default function Shipments() {
                         <DateIcon fontSize="small" color="action" />
                         <Typography variant="body2" color="text.secondary">Received Date (CN):</Typography>
                         <Typography variant="body2" fontWeight={700} color="primary">
-                          {shipment.receive_date || 'Pending'}
+                          {shipment.receive_date ? formatDate(shipment.receive_date) : 'Pending'}
                         </Typography>
                       </Box>
                     </Stack>
