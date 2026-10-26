@@ -463,39 +463,7 @@ export default function DeviceDetailDrawer({
                   sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
                 />
               )}
-              <Tab
-                value={2}
-                icon={<TimelineIcon sx={{ fontSize: 17 }} />}
-                iconPosition="start"
-                label={
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                    Timeline
-                    {history.length > 0 && (
-                      <Box
-                        component="span"
-                        sx={{
-                          ml: 0.7,
-                          minWidth: 18,
-                          height: 18,
-                          px: 0.6,
-                          borderRadius: '9px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: currentTab === 2 ? '#8B5CF6' : 'rgba(139, 92, 246, 0.15)',
-                          color: currentTab === 2 ? '#ffffff' : '#8B5CF6',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          lineHeight: 1
-                        }}
-                      >
-                        {history.length}
-                      </Box>
-                    )}
-                  </Box>
-                }
-                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-              />
+
               {isAdmin && (
                 <Tab
                   value={3}
@@ -601,13 +569,7 @@ export default function DeviceDetailDrawer({
                   sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
                 />
               )}
-              <Tab
-                value={6}
-                icon={<NoteIcon sx={{ fontSize: 17 }} />}
-                iconPosition="start"
-                label="Notes"
-                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-              />
+
             </Tabs>
           </Box>
         )}
@@ -807,50 +769,6 @@ export default function DeviceDetailDrawer({
                     <Alert severity="warning" sx={{ mt: 1.5, py: 0.5, borderRadius: 2 }}>
                       <strong>Pending Sale Approval:</strong> A sale request for this device is awaiting Admin pricing review and confirmation.
                     </Alert>
-                  )}
-
-                  {/* If Service 103 has been fetched, employee can see verified Carrier & SIM Lock status */}
-                  {hasRun103 && (
-                    <Paper
-                      variant="outlined"
-                      sx={{
-                        p: 1.5,
-                        mt: 1.5,
-                        borderRadius: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.04)',
-                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.25)'
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                        {isSimUnlocked ? (
-                          <LockOpenIcon color="success" sx={{ fontSize: 22 }} />
-                        ) : isSimLocked ? (
-                          <LockIcon color="error" sx={{ fontSize: 22 }} />
-                        ) : (
-                          <SimCardIcon color="primary" sx={{ fontSize: 22 }} />
-                        )}
-                        <Box>
-                          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
-                            Carrier & SIM Lock Status (Verified by Admin)
-                          </Typography>
-                          <Typography variant="body2" fontWeight={700} color={isSimUnlocked ? 'success.main' : (isSimLocked ? 'error.main' : 'text.primary')}>
-                            {keySimLock || (isSimUnlocked ? 'Factory Unlocked' : 'Carrier Locked')}
-                          </Typography>
-                        </Box>
-                      </Box>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => setCurrentTab(5)}
-                        startIcon={<SickwIcon fontSize="small" />}
-                        sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', borderRadius: 1.5 }}
-                      >
-                        View Report
-                      </Button>
-                    </Paper>
                   )}
                 </Paper>
               )}
@@ -1083,7 +1001,7 @@ export default function DeviceDetailDrawer({
                       </Box>
                     )}
 
-                    {notes.slice(0, 3).map((n) => (
+                    {notes.map((n) => (
                       <Box
                         key={n.id}
                         sx={{
@@ -1105,15 +1023,6 @@ export default function DeviceDetailDrawer({
                         <Typography variant="body2" sx={{ fontSize: '0.82rem' }}>{n.content}</Typography>
                       </Box>
                     ))}
-                    {notes.length > 3 && (
-                      <Button
-                        size="small"
-                        onClick={() => setCurrentTab(6)}
-                        sx={{ fontSize: '0.75rem', py: 0.2, textTransform: 'none', alignSelf: 'flex-start' }}
-                      >
-                        + View all {notes.length} notes in Notes Tab
-                      </Button>
-                    )}
                   </Stack>
                 )}
               </Paper>
@@ -1531,10 +1440,7 @@ export default function DeviceDetailDrawer({
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1, mb: 2 }}>
                   <Box>
                     <Typography variant="subtitle1" fontWeight={700}>
-                      Sickw Diagnostic Reports
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Live GSX Apple specifications, warranty, serial & carrier lock lookup
+                      {isAdmin ? 'Sickw Diagnostic Reports' : 'Sickw Report'}
                     </Typography>
                   </Box>
                   <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
@@ -1882,362 +1788,90 @@ export default function DeviceDetailDrawer({
                     </Grid>
                   </Grid>
                   </Paper>
-                ) : (
-                  <Alert
-                    severity="success"
-                    icon={<ActiveCheckIcon fontSize="small" />}
-                    sx={{ mb: 3, borderRadius: 2, fontWeight: 500 }}
-                  >
-                    Official Carrier & SIM Lock report (Service 103) fetched and verified by Admin.
-                  </Alert>
-                )}
+                ) : null}
 
-                {/* HIGHLIGHTED KEY INFORMATION CARDS */}
-                <Box sx={{ mb: 3 }}>
-                  <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CheckIcon fontSize="small" color="primary" /> Key Information Highlight
-                  </Typography>
+                {/* COPIABLE RAW OUTPUT OF SICKW */}
+                <Box sx={{ mt: isAdmin ? 2 : 0 }}>
+                  {sickwReports.length === 0 ? (
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 4,
+                        textAlign: 'center',
+                        borderRadius: 2,
+                        backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.3)' : 'rgba(248, 250, 252, 0.5)'
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        No Sickw diagnostic reports available.
+                      </Typography>
+                    </Paper>
+                  ) : (
+                    <Stack spacing={2}>
+                      {sickwReports.map((sr, idx) => {
+                        const srvLabel =
+                          String(sr.service_id) === '103'
+                            ? 'Service 103 (Carrier & SIM Lock)'
+                            : String(sr.service_id) === '12'
+                            ? 'Service 12 (Model Specs)'
+                            : String(sr.service_id) === '92'
+                            ? 'Service 92 (Color Only)'
+                            : `Service ${sr.service_id || 'Report'}`;
 
-                  <Grid container spacing={1.5}>
-                    {/* 1. COLOR (OUTLOOK VS SICKW MOTHERBOARD COLOR COMPARISON) */}
-                    <Grid item xs={6} sm={4} md={2.4}>
-                      <Paper
-                        variant="outlined"
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff',
-                          borderColor: hasColorChecked
-                            ? (isColorMatch ? 'success.main' : 'error.main')
-                            : 'divider',
-                          transition: 'all 0.2s ease-in-out'
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <ColorIcon fontSize="small" color={hasColorChecked ? (isColorMatch ? 'success' : 'error') : 'action'} />
-                            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
-                              Color
-                            </Typography>
-                          </Box>
-
-                          {/* Done icon if match, Cross sign if mismatch */}
-                          {hasColorChecked && (
-                            <Tooltip title={isColorMatch ? `Motherboard matches outlook color (${baseManual})` : `MISMATCH! Outlook: ${manualOutlookColor} ≠ Motherboard: ${sickwMotherboardColor}`}>
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                {isColorMatch ? (
-                                  <ActiveCheckIcon fontSize="small" sx={{ color: '#10b981' }} />
-                                ) : (
-                                  <CancelIcon fontSize="small" sx={{ color: '#ef4444' }} />
-                                )}
-                              </Box>
-                            </Tooltip>
-                          )}
-                        </Box>
-
-                        <Box>
-                          <Typography variant="body2" fontWeight={700} noWrap title={manualOutlookColor || sickwMotherboardColor || '—'}>
-                            {manualOutlookColor || sickwMotherboardColor || <Typography component="span" variant="caption" color="text.secondary">Not fetched</Typography>}
-                          </Typography>
-                          {hasColorChecked && (
-                            <Typography variant="caption" sx={{ display: 'block', fontSize: '0.68rem', fontWeight: 600, color: isColorMatch ? 'success.main' : 'error.main', mt: 0.25 }} noWrap title={`Motherboard: ${sickwMotherboardColor}`}>
-                              {isColorMatch ? `MB: ${sickwMotherboardColor}` : `MB: ${sickwMotherboardColor}`}
-                            </Typography>
-                          )}
-                        </Box>
-                      </Paper>
-                    </Grid>
-
-                    {/* 2. MODEL NO (APPLE A-CODE FROM SERVICE 12 ONLY) */}
-                    <Grid item xs={6} sm={4} md={2.4}>
-                      <Paper
-                        variant="outlined"
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          justifyContent: 'space-between',
-                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff'
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <ModelCodeIcon fontSize="small" color={keyModelCode !== '—' ? 'primary' : 'action'} />
-                            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
-                              Model No
-                            </Typography>
-                          </Box>
-                          {keyModelCode !== '—' && (
-                            <IconButton size="small" onClick={() => handleCopyField(keyModelCode, 'Model No')} sx={{ p: 0.25 }}>
-                              {copiedField === 'Model No' ? <CheckmarkIcon fontSize="inherit" color="success" /> : <CopyIcon fontSize="inherit" />}
-                            </IconButton>
-                          )}
-                        </Box>
-                        <Box>
-                          {keyModelCode !== '—' ? (
-                            <Chip label={keyModelCode} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700, height: 22, fontSize: '0.75rem', fontFamily: 'monospace' }} />
-                          ) : (
-                            <Typography variant="body2" fontWeight={700} color="text.secondary">
-                              —
-                            </Typography>
-                          )}
-                        </Box>
-                      </Paper>
-                    </Grid>
-
-                    {/* 3. SERIAL NUMBER */}
-                    <Grid item xs={6} sm={4} md={2.4}>
-                      <Paper
-                        variant="outlined"
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff'
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.75 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <TagIcon fontSize="small" color="action" />
-                            <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
-                              Serial No
-                            </Typography>
-                          </Box>
-                          {keySerial !== '—' && (
-                            <IconButton size="small" onClick={() => handleCopyField(keySerial, 'Serial No')} sx={{ p: 0.25 }}>
-                              {copiedField === 'Serial No' ? <CheckmarkIcon fontSize="inherit" color="success" /> : <CopyIcon fontSize="inherit" />}
-                            </IconButton>
-                          )}
-                        </Box>
-                        <Typography variant="body2" fontWeight={700} sx={{ fontFamily: keySerial !== '—' ? 'monospace' : 'inherit' }} noWrap title={keySerial}>
-                          {keySerial !== '—' ? keySerial : <Typography component="span" variant="caption" color="text.secondary">Not fetched</Typography>}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-
-                    {/* 4. PURCHASE DATE */}
-                    <Grid item xs={6} sm={4} md={2.4}>
-                      <Paper
-                        variant="outlined"
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff'
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
-                          <DateIcon fontSize="small" color="action" />
-                          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
-                            Purchase Date
-                          </Typography>
-                        </Box>
-                        <Typography variant="body2" fontWeight={700} noWrap title={keyPurchaseDate}>
-                          {keyPurchaseDate !== '—' ? formatDate(keyPurchaseDate) : <Typography component="span" variant="caption" color="text.secondary">Not fetched</Typography>}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-
-                    {/* 5. SIM LOCK STATUS */}
-                    <Grid item xs={12} sm={4} md={2.4}>
-                      <Paper
-                        variant="outlined"
-                        sx={{
-                          p: 1.5,
-                          borderRadius: 2,
-                          height: '100%',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(30, 41, 59, 0.4)' : '#ffffff'
-                        }}
-                      >
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.75 }}>
-                          {isSimUnlocked ? (
-                            <LockOpenIcon fontSize="small" color="success" />
-                          ) : isSimLocked ? (
-                            <LockIcon fontSize="small" color="error" />
-                          ) : (
-                            <SimCardIcon fontSize="small" color="action" />
-                          )}
-                          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
-                            SIM Lock
-                          </Typography>
-                        </Box>
-                        <Box>
-                          {isSimUnlocked ? (
-                            <Chip icon={<LockOpenIcon fontSize="small" />} label="Unlocked" size="small" color="success" sx={{ fontWeight: 700, height: 22, fontSize: '0.72rem' }} />
-                          ) : isSimLocked ? (
-                            <Chip icon={<LockIcon fontSize="small" />} label="Locked" size="small" color="error" sx={{ fontWeight: 700, height: 22, fontSize: '0.72rem' }} />
-                          ) : keySimLock !== '—' ? (
-                            <Typography variant="body2" fontWeight={600} noWrap>{keySimLock}</Typography>
-                          ) : (
-                            <Typography component="span" variant="caption" color="text.secondary">Run Srv 103</Typography>
-                          )}
-                        </Box>
-                      </Paper>
-                    </Grid>
-                  </Grid>
-                </Box>
-
-                {/* RAW INFORMATION SECTION */}
-                <Box sx={{ mt: 3 }}>
-                  {(() => {
-                    const servicePriceMap = { '92': 0.022, '12': 0.025, '103': 0.060 };
-                    const totalBilled = sickwReports.reduce((sum, sr) => {
-                      const p = parseFloat(sr.parsed_data?.price) || servicePriceMap[String(sr.service_id)] || 0;
-                      return sum + p;
-                    }, 0);
-
-                    return (
-                      <>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
-                          <Box>
-                            <Typography variant="subtitle2" fontWeight={700}>
-                              Raw API Response Information
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              Exact diagnostic results returned by Sickw servers
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {isAdmin && totalBilled > 0 && (
-                              <Chip
-                                size="small"
-                                label={`Total Billed: $${totalBilled.toFixed(3)} USD`}
-                                sx={{
-                                  fontWeight: 700,
-                                  fontSize: '0.7rem',
-                                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.1)',
-                                  color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669',
-                                  height: 22
-                                }}
-                              />
-                            )}
-                            <Typography variant="caption" color="text.secondary">
-                              {sickwReports.length} {sickwReports.length === 1 ? 'report' : 'reports'} recorded
-                            </Typography>
-                          </Box>
-                        </Box>
-
-                        {sickwReports.length === 0 ? (
+                        return (
                           <Paper
+                            key={sr.id || idx}
                             variant="outlined"
                             sx={{
-                              p: 4,
-                              textAlign: 'center',
+                              p: 2,
                               borderRadius: 2,
-                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.3)' : 'rgba(248, 250, 252, 0.5)'
+                              backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : '#ffffff'
                             }}
                           >
-                            <SickwIcon sx={{ fontSize: 36, color: 'text.secondary', mb: 1, opacity: 0.6 }} />
-                            <Typography variant="body2" fontWeight={600} color="text.secondary">
-                              No Sickw diagnostic reports attached to this IMEI yet.
-                            </Typography>
-                            <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 0.5 }}>
-                              Click Service 12, 92, or 103 above to run a live lookup.
-                            </Typography>
-                          </Paper>
-                        ) : (
-                          <Stack spacing={2}>
-                            {sickwReports.map((sr, idx) => {
-                              const srvLabel =
-                                String(sr.service_id) === '12'
-                                  ? 'Service 12 (Model No & Specs)'
-                                  : String(sr.service_id) === '92'
-                                  ? 'Service 92 (Color Only)'
-                                  : String(sr.service_id) === '103'
-                                  ? 'Service 103 (Carrier & SIM Lock)'
-                                  : sr.service_id
-                                  ? `Service ${sr.service_id}`
-                                  : 'Diagnostic Report';
-
-                              const billedAmt = sr.parsed_data?.price || servicePriceMap[String(sr.service_id)] || '0.000';
-
-                              return (
-                                <Paper
-                                  key={sr.id || idx}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+                              <Chip label={srvLabel} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
+                              {sr.raw_text && (
+                                <Button
+                                  size="small"
                                   variant="outlined"
-                                  sx={{
-                                    p: 2,
-                                    borderRadius: 2,
-                                    backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : '#ffffff'
-                                  }}
+                                  startIcon={copiedReportId === sr.id ? <CheckmarkIcon fontSize="small" /> : <CopyIcon fontSize="small" />}
+                                  onClick={() => handleCopyRaw(sr.raw_text, sr.id)}
+                                  color={copiedReportId === sr.id ? 'success' : 'inherit'}
+                                  sx={{ textTransform: 'none', fontWeight: 600 }}
                                 >
-                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                                      <Chip label={srvLabel} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
-                                      {isAdmin && (
-                                        <Chip
-                                          label={`Billed: $${billedAmt} USD`}
-                                          size="small"
-                                          variant="outlined"
-                                          sx={{
-                                            fontWeight: 700,
-                                            fontSize: '0.68rem',
-                                            height: 20,
-                                            color: 'success.main',
-                                            borderColor: 'success.main',
-                                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)'
-                                          }}
-                                        />
-                                      )}
-                                      <Typography variant="caption" color="text.secondary">
-                                        {sr.created_at ? new Date(sr.created_at).toLocaleString() : '—'}
-                                      </Typography>
-                                    </Box>
-                                    <Button
-                                      size="small"
-                                      variant="outlined"
-                                      startIcon={copiedReportId === sr.id ? <CheckmarkIcon fontSize="small" /> : <CopyIcon fontSize="small" />}
-                                      onClick={() => handleCopyRaw(sr.raw_text, sr.id)}
-                                      color={copiedReportId === sr.id ? 'success' : 'inherit'}
-                                      sx={{ textTransform: 'none', fontWeight: 600 }}
-                                    >
-                                      {copiedReportId === sr.id ? 'Copied!' : 'Copy Raw Info'}
-                                    </Button>
-                                  </Box>
+                                  {copiedReportId === sr.id ? 'Copied!' : 'Copy Raw Output'}
+                                </Button>
+                              )}
+                            </Box>
 
-                                  {sr.raw_text ? (
-                                    <Paper
-                                      sx={{
-                                        p: 1.75,
-                                        backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#090d16' : '#1e293b',
-                                        color: '#38bdf8',
-                                        borderRadius: 1.5,
-                                        fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                                        fontSize: '0.78rem',
-                                        lineHeight: 1.5,
-                                        whiteSpace: 'pre-wrap',
-                                        wordBreak: 'break-word',
-                                        maxHeight: 280,
-                                        overflowY: 'auto'
-                                      }}
-                                    >
-                                      {sr.raw_text}
-                                    </Paper>
-                                  ) : (
-                                    <Typography variant="caption" color="text.secondary">
-                                      No raw payload text recorded.
-                                    </Typography>
-                                  )}
-                                </Paper>
-                              );
-                            })}
-                          </Stack>
-                        )}
-                      </>
-                    );
-                  })()}
+                            {sr.raw_text ? (
+                              <Paper
+                                sx={{
+                                  p: 2,
+                                  backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#090d16' : '#1e293b',
+                                  color: '#38bdf8',
+                                  borderRadius: 1.5,
+                                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+                                  fontSize: '0.8rem',
+                                  lineHeight: 1.55,
+                                  whiteSpace: 'pre-wrap',
+                                  wordBreak: 'break-word',
+                                  maxHeight: 400,
+                                  overflowY: 'auto'
+                                }}
+                              >
+                                {sr.raw_text}
+                              </Paper>
+                            ) : (
+                              <Typography variant="caption" color="text.secondary">
+                                No raw payload text recorded.
+                              </Typography>
+                            )}
+                          </Paper>
+                        );
+                      })}
+                    </Stack>
+                  )}
                 </Box>
               </Box>
             );
