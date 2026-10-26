@@ -1002,7 +1002,7 @@ export default function AdminCopilotDrawer({ open, onClose }) {
                 ml: 'auto'
               }}
             >
-              Google Gemini 3.5
+              Google Gemini Flash
             </Typography>
           </Box>
         </Box>

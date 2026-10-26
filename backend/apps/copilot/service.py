@@ -18,12 +18,12 @@ logger = logging.getLogger(__name__)
 # API Key from environment or Render secret
 DEFAULT_GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
 
-# Candidate models in priority order (flash-lite has high rate limits & sub-second latency)
+# Candidate models in priority order (official Google Gemini models with function calling & low latency)
 CANDIDATE_MODELS = [
-    'gemini-3.5-flash-lite',
-    'gemini-flash-lite-latest',
-    'gemini-3-flash-preview',
-    'gemini-flash-latest'
+    'gemini-1.5-flash',
+    'gemini-1.5-flash-8b',
+    'gemini-2.0-flash',
+    'gemini-1.5-pro'
 ]
 
 def get_system_prompt() -> str:
@@ -410,7 +410,7 @@ class CopilotService:
         start_time = time.time()
         for model_name in CANDIDATE_MODELS:
             # Prevent cumulative attempts from approaching request deadline
-            if time.time() - start_time > 45:
+            if time.time() - start_time > 18:
                 logger.warning("Approaching request deadline, stopping candidate model loop")
                 break
 
@@ -478,7 +478,7 @@ class CopilotService:
             body = json.dumps(payload).encode('utf-8')
             req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
 
-            with urllib.request.urlopen(req, timeout=30) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
 
             candidate = data.get("candidates", [{}])[0]
@@ -572,7 +572,7 @@ class CopilotService:
             }
             final_body = json.dumps(final_payload).encode('utf-8')
             final_req = urllib.request.Request(url, data=final_body, headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(final_req, timeout=10) as resp:
+            with urllib.request.urlopen(final_req, timeout=8) as resp:
                 final_data = json.loads(resp.read().decode('utf-8'))
             for part in final_data.get("candidates", [{}])[0].get("content", {}).get("parts", []):
                 if "text" in part:
