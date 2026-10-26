@@ -1437,7 +1437,16 @@ export default function DeviceDetailDrawer({
             return (
               <Box>
                 {/* Section Header */}
-                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1, mb: 2 }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: isAdmin ? { xs: 'column', sm: 'row' } : 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 2
+                  }}
+                >
                   <Box>
                     <Typography variant="subtitle1" fontWeight={700}>
                       {isAdmin ? 'Sickw Diagnostic Reports' : 'Sickw Report'}
@@ -1499,7 +1508,7 @@ export default function DeviceDetailDrawer({
                       label={`IMEI: ${device.imei}`}
                       variant="outlined"
                       size="small"
-                      sx={{ fontWeight: 600, fontFamily: 'monospace' }}
+                      sx={{ fontWeight: 600, fontFamily: 'monospace', height: 26, fontSize: { xs: '0.72rem', sm: '0.75rem' } }}
                     />
                   </Stack>
                 </Box>
@@ -1823,23 +1832,54 @@ export default function DeviceDetailDrawer({
                             key={sr.id || idx}
                             variant="outlined"
                             sx={{
-                              p: 2,
-                              borderRadius: 2,
+                              p: { xs: 1.5, sm: 2 },
+                              borderRadius: 2.5,
                               backgroundColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(15, 23, 42, 0.6)' : '#ffffff'
                             }}
                           >
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
-                              <Chip label={srvLabel} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                justifyContent: 'space-between',
+                                alignItems: { xs: 'stretch', sm: 'center' },
+                                gap: 1.25,
+                                mb: 1.5
+                              }}
+                            >
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Chip
+                                  label={srvLabel}
+                                  size="small"
+                                  color="primary"
+                                  variant="outlined"
+                                  sx={{
+                                    fontWeight: 700,
+                                    fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                                    height: { xs: 26, sm: 28 }
+                                  }}
+                                />
+                              </Box>
                               {sr.raw_text && (
                                 <Button
                                   size="small"
-                                  variant="outlined"
+                                  variant="contained"
                                   startIcon={copiedReportId === sr.id ? <CheckmarkIcon fontSize="small" /> : <CopyIcon fontSize="small" />}
                                   onClick={() => handleCopyRaw(sr.raw_text, sr.id)}
-                                  color={copiedReportId === sr.id ? 'success' : 'inherit'}
-                                  sx={{ textTransform: 'none', fontWeight: 600 }}
+                                  color={copiedReportId === sr.id ? 'success' : 'primary'}
+                                  sx={{
+                                    textTransform: 'none',
+                                    fontWeight: 600,
+                                    whiteSpace: 'nowrap',
+                                    py: { xs: 0.8, sm: 0.5 },
+                                    px: 2,
+                                    fontSize: '0.82rem',
+                                    borderRadius: 1.75,
+                                    boxShadow: 'none',
+                                    '&:hover': { boxShadow: 'none' }
+                                  }}
                                 >
-                                  {copiedReportId === sr.id ? 'Copied!' : 'Copy Raw Output'}
+                                  {copiedReportId === sr.id ? 'Copied to Clipboard!' : 'Copy Raw Output'}
                                 </Button>
                               )}
                             </Box>
@@ -1847,17 +1887,19 @@ export default function DeviceDetailDrawer({
                             {sr.raw_text ? (
                               <Paper
                                 sx={{
-                                  p: 2,
+                                  p: { xs: 1.5, sm: 2 },
                                   backgroundColor: (theme) => theme.palette.mode === 'dark' ? '#090d16' : '#1e293b',
                                   color: '#38bdf8',
-                                  borderRadius: 1.5,
+                                  borderRadius: 2,
                                   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                                  fontSize: '0.8rem',
-                                  lineHeight: 1.55,
+                                  fontSize: { xs: '0.75rem', sm: '0.8rem' },
+                                  lineHeight: 1.5,
                                   whiteSpace: 'pre-wrap',
                                   wordBreak: 'break-word',
-                                  maxHeight: 400,
-                                  overflowY: 'auto'
+                                  maxHeight: { xs: 420, sm: 500 },
+                                  overflowY: 'auto',
+                                  border: '1px solid',
+                                  borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(56, 189, 248, 0.15)'
                                 }}
                               >
                                 {sr.raw_text}
