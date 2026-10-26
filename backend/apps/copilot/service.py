@@ -1,7 +1,7 @@
 """
 Gemini Copilot Service:
-Handles multi-turn AI reasoning, function declaration schemas, autonomous tool execution,
-and fallback logic for Google Gemini models.
+Handles multi-turn AI reasoning, dynamic model discovery, function declaration schemas,
+autonomous tool execution, and fallback logic for Google Gemini models.
 """
 import os
 import json
@@ -10,7 +10,7 @@ import logging
 import urllib.request
 import urllib.error
 import time
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Tuple
 from . import tools
 
 logger = logging.getLogger(__name__)
@@ -18,30 +18,117 @@ logger = logging.getLogger(__name__)
 # API Key from environment or Render secret
 DEFAULT_GEMINI_KEY = os.environ.get('GEMINI_API_KEY', '')
 
-# Candidate models in priority order (official Google Gemini models with function calling & low latency)
-CANDIDATE_MODELS = [
-    'gemini-1.5-flash',
-    'gemini-1.5-flash-8b',
-    'gemini-2.0-flash',
-    'gemini-1.5-pro'
+# Fallback candidate models across API versions in priority order
+FALLBACK_MODELS: List[Tuple[str, str]] = [
+    ("gemini-2.5-flash", "v1beta"),
+    ("gemini-2.0-flash", "v1beta"),
+    ("gemini-2.0-flash-001", "v1beta"),
+    ("gemini-1.5-flash", "v1beta"),
+    ("gemini-1.5-flash-latest", "v1beta"),
+    ("gemini-1.5-flash-8b", "v1beta"),
+    ("gemini-2.5-flash", "v1"),
+    ("gemini-2.0-flash", "v1"),
+    ("gemini-1.5-flash", "v1"),
+    ("gemini-2.5-pro", "v1beta"),
+    ("gemini-1.5-pro", "v1beta"),
 ]
+
+# Cache dynamically discovered models for 1 hour to eliminate 404 errors permanently
+_CACHED_MODELS: List[Tuple[str, str]] = []
+_CACHED_MODELS_TIME: float = 0
+CACHE_TTL_SECONDS = 3600
+
+
+def discover_gemini_models(api_key: str) -> List[Tuple[str, str]]:
+    """
+    Dynamically discover available models supporting generateContent for this API key.
+    Queries Google Generative Language API ListModels endpoint.
+    Returns list of (clean_model_name, api_version) tuples sorted by capability and speed.
+    """
+    global _CACHED_MODELS, _CACHED_MODELS_TIME
+    now = time.time()
+    if _CACHED_MODELS and (now - _CACHED_MODELS_TIME < CACHE_TTL_SECONDS):
+        return _CACHED_MODELS
+
+    discovered = []
+    # Try v1beta first, then v1
+    for api_ver in ['v1beta', 'v1']:
+        list_url = f"https://generativelanguage.googleapis.com/{api_ver}/models?key={api_key}"
+        try:
+            req = urllib.request.Request(
+                list_url,
+                headers={"User-Agent": "GadgetDeluxeCopilot/2.0"}
+            )
+            with urllib.request.urlopen(req, timeout=3.5) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                models = data.get("models", [])
+                for m in models:
+                    methods = m.get("supportedGenerationMethods", [])
+                    if "generateContent" in methods:
+                        raw_name = m.get("name", "")
+                        clean_name = raw_name.replace("models/", "").strip()
+                        if clean_name:
+                            discovered.append((clean_name, api_ver))
+            if discovered:
+                break
+        except Exception as e:
+            logger.debug(f"Dynamic model discovery check failed on {api_ver}: {e}")
+
+    if discovered:
+        # Score models so fastest, most capable Flash models are preferred
+        def model_score(item: Tuple[str, str]) -> int:
+            name = item[0].lower()
+            if "2.5-flash" in name:
+                return 100
+            elif "2.0-flash" in name:
+                return 90
+            elif "1.5-flash-latest" in name or name == "gemini-1.5-flash":
+                return 80
+            elif "1.5-flash-8b" in name:
+                return 75
+            elif "flash" in name:
+                return 70
+            elif "2.5-pro" in name:
+                return 60
+            elif "2.0-pro" in name:
+                return 55
+            elif "1.5-pro" in name:
+                return 50
+            elif "pro" in name:
+                return 40
+            return 10
+
+        discovered.sort(key=model_score, reverse=True)
+        _CACHED_MODELS = discovered
+        _CACHED_MODELS_TIME = now
+        logger.info(f"Copilot discovered {len(discovered)} active models: {[m[0] for m in discovered[:5]]}")
+        return discovered
+
+    return FALLBACK_MODELS
+
 
 def get_system_prompt() -> str:
     from django.utils import timezone
     now_dhaka = timezone.localtime(timezone.now())
     today_str = now_dhaka.strftime("%A, %B %d, %Y (%I:%M %p %Z)")
+    current_date_iso = now_dhaka.strftime("%Y-%m-%d")
+    current_month_start = now_dhaka.strftime("%Y-%m-01")
+    current_month_name = now_dhaka.strftime("%B %Y")
     
     return f"""You are the intelligent Inventory & Operations Copilot for "Gadget Deluxe", a premium Apple smartphone inventory and electronics business.
 
 CURRENT SYSTEM TIME & DATE:
 - Current Date & Time: {today_str}
 - Local Timezone: Asia/Dhaka (GMT+6)
+- Current Date (ISO): {current_date_iso}
+- Current Month Start Date: {current_month_start}
+- Current Month Name: {current_month_name}
 
 YOUR ROLE & CAPABILITIES:
-You assist the business owner and administrators with real-time operations, inventory queries, sales analysis, diagnostics, and repairs.
+You assist the business owner and administrators with real-time operations, inventory queries, employee performance, sales analysis, diagnostics, and repairs.
 
 GENERALIZED REASONING & ARBITRARY QUERY CAPABILITY:
-You are NOT limited to preset questions. When the user asks a custom, analytical, cross-table, or specific question that convenience tools do not directly answer (for example: "how many devices are pending in shipment related to AB Group", "which seller made the most profit last month", "how many 256GB devices from China have battery health under 85%", etc.):
+You are NOT limited to preset questions. When the user asks a custom, analytical, cross-table, or specific question that convenience tools do not directly answer (for example: "how many devices are pending in shipment related to AB Group", "how many 256GB devices from China have battery health under 85%", etc.):
 -> YOU MUST USE `execute_safe_sql_query` to write and execute a custom SQL SELECT query to find the exact answer from the database!
 
 DATABASE SCHEMA FOR CUSTOM SQL QUERIES:
@@ -81,32 +168,30 @@ DATABASE SCHEMA FOR CUSTOM SQL QUERIES:
 8. `customers_customer`:
    - id, name, phone, email, address
 
-POSTGRESQL SYNTAX RULES FOR SQL QUERIES (CRITICAL):
+POSTGRESQL SYNTAX RULES FOR SQL QUERIES:
 - The database is PostgreSQL.
 - Always use standard PostgreSQL date syntax:
-  * For this month: `s.sale_date >= '2026-10-01' AND s.sale_date < '2026-11-01'` or `EXTRACT(MONTH FROM s.sale_date) = 10`
-  * For today: `s.sale_date >= CURRENT_DATE` or `s.sale_date >= '2026-10-22'`
+  * For this month: `s.sale_date >= '{current_month_start}'`
+  * For today: `s.sale_date >= CURRENT_DATE`
   * To rank employees by highest profit:
-    `SELECT u.username, u.first_name, SUM(s.profit) as total_profit, COUNT(s.id) as total_sales FROM sales_sale s JOIN accounts_user u ON s.seller_id = u.id WHERE s.sale_date >= '2026-10-01' GROUP BY u.id, u.username, u.first_name ORDER BY total_profit DESC LIMIT 1;`
-  * To rank employees by lowest or least profit:
-    `SELECT u.username, u.first_name, SUM(s.profit) as total_profit, COUNT(s.id) as total_sales FROM sales_sale s JOIN accounts_user u ON s.seller_id = u.id WHERE s.sale_date >= '2026-10-01' GROUP BY u.id, u.username, u.first_name ORDER BY total_profit ASC LIMIT 1;`
-  * To check devices that finished repair today:
-    `SELECT r.id, d.imei, d.model, r.repair_center, r.repair_cost, r.status, r.returned_date FROM repairs_repair r JOIN inventory_device d ON r.device_id = d.id WHERE r.returned_date >= CURRENT_DATE OR (r.status = 'COMPLETED' AND r.returned_date >= CURRENT_DATE);`
+    `SELECT u.username, u.first_name, SUM(s.profit) as total_profit, COUNT(s.id) as total_sales FROM sales_sale s JOIN accounts_user u ON s.seller_id = u.id WHERE s.sale_date >= '{current_month_start}' GROUP BY u.id, u.username, u.first_name ORDER BY total_profit DESC LIMIT 1;`
 - NEVER use SQLite `strftime()` functions! They do not exist in PostgreSQL and will fail.
 
 CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
 1. DIRECT, TO-THE-POINT ANSWERS (LIKE CHATGPT / GEMINI):
    - Answer the user's core question directly in the very FIRST sentence.
-   - For example: "This month, the employee with the highest profit is **emon** with **৳120,000**." (or "No sales records were found for this month, so no employee has recorded profits yet.")
+   - For example: "This month ({current_month_name}), the top-performing employee is **emon** with **৳120,000** in profit from 8 sales." (or "No sales records were logged yet for {current_month_name}.")
    - Do NOT dump a wall of unrelated historical data or all-time sold items unless explicitly asked.
 
-2. DO NOT LOOP OR QUERY REPEATEDLY:
-   - Execute at most ONE relevant tool or SQL query per user message.
-   - If a query returns 0 rows, empty results, or no matches, that is a factual answer! Immediately state that clearly to the user (e.g. "No sales have been recorded for this month yet.").
-   - NEVER query database metadata tables (like sqlite_master or pg_tables).
+2. EMPLOYEE PROFIT & PERFORMANCE QUERIES:
+   - When asked "Which employee generated most profits this month?", "top seller", "who made the most profit", "lowest performing employee", or employee rankings:
+     -> ALWAYS CALL `get_employee_performance_summary(period='this_month', metric='profit')`!
+   - State the top performer immediately with their profit in BDT and unit count.
+   - If no sales exist for the current month, clearly say so and mention the all-time leader reference provided in the tool output.
 
 3. SALES & ORDERS QUERIES:
-   - For "sold today", "yesterday's sales", "sales this week", "sales this month", call `get_sales_and_orders_summary` with `date_preset='today'` (or the requested period).
+   - For "sold today", "how many goods sold today", "yesterday's sales", "sales this week", "sales this month":
+     -> ALWAYS CALL `get_sales_and_orders_summary` with `date_preset='today'` (or the requested period).
    - NEVER call `search_devices(status='SOLD')` to answer a date-specific sales question. Total cumulative sold inventory is NOT "today's sales".
 
 4. STOCK & INVENTORY QUERIES:
@@ -114,20 +199,15 @@ CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
 
 5. SICKW & GSX LIVE API DIAGNOSTICS (CRITICAL):
    - You HAVE direct, active integration with the official Sickw API via `fetch_live_sickw_report` and `get_sickw_account_balance`.
-   - NEVER tell the user "The system does not have an active Sickw API integration" or "I cannot perform external lookups on demand". That is completely FALSE. You HAVE direct API access and you MUST use it!
+   - NEVER tell the user "The system does not have an active Sickw API integration" or "I cannot perform external lookups on demand". You HAVE direct API access and you MUST use it!
    - When the user asks to "fetch sickw", "check sickw", "run diagnostic", "get motherboard color", "check carrier/sim lock", or "do it through the system and give me the result", call `fetch_live_sickw_report(imei=...)`.
-   - If the user does not repeat the IMEI in their current message (e.g. "fetch the sickw for me", "you do it through the system and give me the result"), locate the 15-digit IMEI discussed in recent conversation turns and use that IMEI!
-   - After fetching, report:
-     1. Official Apple Model & Capacity
-     2. Motherboard Color vs Physical Outlook Color: If they mismatch (e.g. Blue Titanium motherboard vs Natural Titanium housing), prominently highlight a ⚠️ WARNING that this device's housing or motherboard has been swapped/replaced!
-     3. Carrier & SIM Lock status (Locked / Unlocked)
-     4. Serial Number, Purchase Country & Warranty status
-   - To check Sickw account funds/credits, call `get_sickw_account_balance`.
+   - If the user does not repeat the IMEI in their current message (e.g. "fetch the sickw for me"), locate the 15-digit IMEI discussed in recent conversation turns and use that IMEI!
+   - Prominently highlight a ⚠️ WARNING if motherboard factory color differs from physical housing color (housing swap / replaced shell).
 
 6. CLEAN, MOBILE-FRIENDLY MARKDOWN FORMATTING (CRITICAL):
    - Bold key numbers, currency in ৳ (BDT), and model names.
    - When mentioning IMEIs, output the exact 15-digit number so the UI renders it as an interactive clickable chip.
-   - NEVER create wide 5+ column markdown tables for transaction history or device lists! Wide tables get severely crushed and unreadable on phone screens.
+   - NEVER create wide 5+ column markdown tables for transaction history or device lists!
    - For lists of sales, transactions, or devices, ALWAYS format them as clean, elegant card bullets:
      Example:
      * **iPhone 15 Pro Max** (IMEI: `359824371933763`)
@@ -137,6 +217,23 @@ CRITICAL INSTRUCTIONS FOR ACCURACY (MUST FOLLOW):
 
 GEMINI_TOOLS_DECLARATION = [{
     "function_declarations": [
+        {
+            "name": "get_employee_performance_summary",
+            "description": "Get rankings, sales volume, and profit generated by employees/sellers for a specific time period ('today', 'yesterday', 'this_week', 'this_month', 'last_month', or 'all_time'). Always use this tool when the user asks which employee made the most or least profit, top salesperson, or staff rankings.",
+            "parameters": {
+                "type": "OBJECT",
+                "properties": {
+                    "period": {
+                        "type": "STRING",
+                        "description": "Time period to analyze: 'today', 'yesterday', 'this_week', 'this_month', 'last_month', or 'all_time'. Default is 'this_month'."
+                    },
+                    "metric": {
+                        "type": "STRING",
+                        "description": "Rank by 'profit' (default) or 'sales' (total units sold)."
+                    }
+                }
+            }
+        },
         {
             "name": "execute_safe_sql_query",
             "description": "Execute a custom read-only SQL SELECT query against the PostgreSQL/SQLite database to answer any arbitrary, complex, cross-table, or custom questions that standard tools cannot answer (e.g. cross-table joins, supplier-specific counts, custom date filters, rankings, profit aggregates).",
@@ -249,7 +346,7 @@ GEMINI_TOOLS_DECLARATION = [{
                 "properties": {
                     "imei": {
                         "type": "STRING",
-                        "description": "The 15-digit IMEI or Serial Number of the device to inspect. If the user does not specify an IMEI in their current message (e.g. 'fetch the sickw for me'), extract the IMEI from the recent conversation context."
+                        "description": "The 15-digit IMEI or Serial Number of the device to inspect. If the user does not specify an IMEI in their current message, extract the IMEI from the recent conversation context."
                     },
                     "service_id": {
                         "type": "STRING",
@@ -279,7 +376,12 @@ def execute_tool_call(func_name: str, args: Dict[str, Any], user_username: str =
     """Dispatches function calls from Gemini to actual Python inventory tools."""
     logger.info(f"Copilot executing tool: {func_name} with args: {args}")
     try:
-        if func_name == "fetch_live_sickw_report":
+        if func_name == "get_employee_performance_summary":
+            return tools.get_employee_performance_summary(
+                period=args.get("period", "this_month"),
+                metric=args.get("metric", "profit")
+            )
+        elif func_name == "fetch_live_sickw_report":
             return tools.fetch_live_sickw_report(
                 imei=args.get("imei"),
                 service_id=args.get("service_id"),
@@ -351,7 +453,7 @@ class CopilotService:
                 "suggestions": ["Check API Key in Render settings"]
             }
 
-        # Fast conversational pleasantry response (avoids burning model quota on pure greetings/thanks)
+        # Fast conversational pleasantry response (avoids burning quota on pure greetings/thanks)
         clean_msg = user_message.lower().strip()
         pure_pleasantries = [
             "very good", "good job", "thank you", "thanks", "thanks a lot",
@@ -385,7 +487,7 @@ class CopilotService:
                 if not raw_text:
                     continue
                 # Skip error messages from history so past failures don't poison subsequent turns
-                if "Unable to complete request" in raw_text or raw_text.startswith("⚠️"):
+                if "Unable to complete request" in raw_text or raw_text.startswith("⚠️") or "HTTP Error" in raw_text:
                     continue
                 role = "user" if h.get("role") == "user" else "model"
                 if sanitized_history and sanitized_history[-1]["role"] == role:
@@ -403,13 +505,17 @@ class CopilotService:
 
         contents = sanitized_history + [{"role": "user", "parts": [{"text": user_message}]}]
 
+        # Discover or load candidate models for this API key
+        candidate_models = discover_gemini_models(api_key)
+
         actions_taken = []
         referenced_imeis = set()
         final_reply = ""
         last_error = None
         start_time = time.time()
-        for model_name in CANDIDATE_MODELS:
-            # Prevent cumulative attempts from approaching request deadline
+
+        for model_name, api_ver in candidate_models:
+            # Prevent cumulative attempts from approaching Render gateway timeout (50s limit)
             if time.time() - start_time > 18:
                 logger.warning("Approaching request deadline, stopping candidate model loop")
                 break
@@ -418,6 +524,7 @@ class CopilotService:
                 model_contents = json.loads(json.dumps(contents))
                 final_reply = cls._run_agent_loop(
                     model_name=model_name,
+                    api_version=api_ver,
                     api_key=api_key,
                     contents=model_contents,
                     actions_taken=actions_taken,
@@ -427,14 +534,14 @@ class CopilotService:
                 if final_reply:
                     break
             except urllib.error.HTTPError as e:
-                logger.warning(f"Model {model_name} HTTP {e.code}: {e}")
+                logger.warning(f"Model {model_name} ({api_ver}) HTTP {e.code}: {e}")
                 if e.code == 429:
-                    last_error = "Gemini API free tier rate limit was temporarily reached (15 requests/min). Please wait a few seconds and try again."
+                    last_error = "Gemini API rate limit was temporarily reached. Please wait a few seconds and try again."
                 else:
                     last_error = e
                 continue
             except Exception as e:
-                logger.warning(f"Model {model_name} failed: {e}. Trying next candidate...")
+                logger.warning(f"Model {model_name} ({api_ver}) failed: {e}. Trying next candidate...")
                 last_error = e
                 continue
 
@@ -462,10 +569,11 @@ class CopilotService:
         }
 
     @classmethod
-    def _run_agent_loop(cls, model_name: str, api_key: str, contents: List[Dict[str, Any]], actions_taken: List[Dict[str, Any]], referenced_imeis: set, user_username: str) -> str:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+    def _run_agent_loop(cls, model_name: str, api_version: str, api_key: str, contents: List[Dict[str, Any]], actions_taken: List[Dict[str, Any]], referenced_imeis: set, user_username: str) -> str:
+        clean_model = model_name.replace("models/", "").strip()
+        url = f"https://generativelanguage.googleapis.com/{api_version}/models/{clean_model}:generateContent?key={api_key}"
 
-        # Up to 3 tool iterations (Execute Tool -> Follow-up/Diagnostics -> Formulate Final Answer)
+        # Up to 3 tool iterations (Execute Tool -> Diagnostics/Follow-up -> Formulate Final Answer)
         for iteration in range(3):
             payload = {
                 "contents": contents,
@@ -495,7 +603,7 @@ class CopilotService:
                     text_part += part["text"]
 
             if not function_call:
-                # No more tools needed, return text
+                # No tools requested, return text
                 return text_part.strip()
 
             # Execute the function call
@@ -539,7 +647,7 @@ class CopilotService:
                     for d in tool_result["devices"]:
                         if "imei" in d: referenced_imeis.add(str(d["imei"]))
 
-            # Append the model's exact response turn to contents (preserving thoughtSignature and call IDs)
+            # Append the model's exact response turn to contents (preserving call IDs)
             contents.append({"role": "model", "parts": parts})
 
             # Append functionResponse turn under role 'user'
@@ -555,19 +663,12 @@ class CopilotService:
                 "parts": [{"functionResponse": resp_body}]
             })
 
-        # If loop ended after executing tools but model didn't return final text yet,
-        # make one final request with tools and mode NONE so Gemini is forced to formulate the final answer immediately
+        # If loop completed tool execution, make one final call without tools so model outputs final text
         if not text_part.strip():
             final_payload = {
                 "contents": contents,
                 "system_instruction": {
                     "parts": [{"text": get_system_prompt()}]
-                },
-                "tools": GEMINI_TOOLS_DECLARATION,
-                "tool_config": {
-                    "function_calling_config": {
-                        "mode": "NONE"
-                    }
                 }
             }
             final_body = json.dumps(final_payload).encode('utf-8')
@@ -583,11 +684,17 @@ class CopilotService:
     @classmethod
     def _generate_suggestions(cls, query: str, actions_taken: List[Dict[str, Any]], reply: str) -> List[str]:
         q_lower = query.lower()
-        if "profit" in q_lower or "employee" in q_lower or "sale" in q_lower or "sold" in q_lower:
+        if "profit" in q_lower or "employee" in q_lower or "seller" in q_lower:
             return [
-                "Which employee generated most profits this month?",
+                "Which employee generated most profits all time?",
                 "How many goods sold today?",
                 "Give me an inventory summary"
+            ]
+        elif "sold" in q_lower or "sale" in q_lower or "revenue" in q_lower:
+            return [
+                "Which employee generated most profits this month?",
+                "Give me an inventory summary",
+                "Show recent sales list"
             ]
         elif "repair" in q_lower:
             return [

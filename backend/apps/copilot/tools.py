@@ -377,6 +377,104 @@ def get_sales_and_orders_summary(date_preset: str = 'today', limit: int = 10, **
         logger.exception("Error in get_sales_and_orders_summary")
         return {"error": str(e)}
 
+def get_employee_performance_summary(period: str = 'this_month', metric: str = 'profit', **kwargs) -> Dict[str, Any]:
+    """
+    Get rankings and performance stats of all employees by sales profit, volume, or revenue
+    for a given period ('today', 'yesterday', 'this_week', 'this_month', 'last_month', 'all_time').
+    """
+    try:
+        now = timezone.localtime(timezone.now())
+        preset = str(period or 'this_month').lower().strip()
+
+        if preset == 'today':
+            start_dt = now.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now
+            label = f"Today ({now.strftime('%Y-%m-%d')})"
+        elif preset == 'yesterday':
+            yesterday = now - timedelta(days=1)
+            start_dt = yesterday.replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = yesterday.replace(hour=23, minute=59, second=59, microsecond=999999)
+            label = f"Yesterday ({yesterday.strftime('%Y-%m-%d')})"
+        elif preset in ['this_week', 'week']:
+            start_dt = (now - timedelta(days=now.weekday())).replace(hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now
+            label = f"This Week (since {start_dt.strftime('%Y-%m-%d')})"
+        elif preset in ['this_month', 'month']:
+            start_dt = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_dt = now
+            label = f"This Month ({now.strftime('%B %Y')})"
+        elif preset in ['last_month']:
+            first_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            last_month_end = first_this_month - timedelta(microseconds=1)
+            start_dt = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            end_dt = last_month_end
+            label = f"Last Month ({start_dt.strftime('%B %Y')})"
+        else:
+            start_dt = None
+            end_dt = None
+            label = "All Time"
+
+        sales_qs = Sale.objects.select_related('seller').all()
+        if start_dt and end_dt:
+            sales_qs = sales_qs.filter(sale_date__gte=start_dt, sale_date__lte=end_dt)
+
+        rankings_data = (
+            sales_qs.values('seller__id', 'seller__username', 'seller__first_name', 'seller__last_name')
+            .annotate(
+                total_sales=Count('id'),
+                total_profit=Sum('profit'),
+                total_revenue=Sum('selling_price')
+            )
+            .order_by('-total_profit' if metric == 'profit' else '-total_sales')
+        )
+
+        rankings = []
+        for rank, r in enumerate(rankings_data, 1):
+            name = f"{r.get('seller__first_name') or ''} {r.get('seller__last_name') or ''}".strip()
+            rankings.append({
+                "rank": rank,
+                "username": r.get('seller__username') or 'Unknown',
+                "display_name": name or r.get('seller__username'),
+                "total_profit_bdt": float(r.get('total_profit') or 0),
+                "total_sales_count": r.get('total_sales') or 0,
+                "total_revenue_bdt": float(r.get('total_revenue') or 0)
+            })
+
+        total_store_profit = sum(item["total_profit_bdt"] for item in rankings)
+        total_store_sales = sum(item["total_sales_count"] for item in rankings)
+        top_performer = rankings[0] if rankings else None
+
+        # If no sales in current period, get all-time top performer for helpful context
+        all_time_top = None
+        if not rankings and preset != 'all_time':
+            all_time_data = (
+                Sale.objects.values('seller__username', 'seller__first_name', 'seller__last_name')
+                .annotate(total_profit=Sum('profit'), total_sales=Count('id'))
+                .order_by('-total_profit')
+                .first()
+            )
+            if all_time_data:
+                name = f"{all_time_data.get('seller__first_name') or ''} {all_time_data.get('seller__last_name') or ''}".strip()
+                all_time_top = {
+                    "username": all_time_data.get('seller__username'),
+                    "display_name": name or all_time_data.get('seller__username'),
+                    "all_time_profit_bdt": float(all_time_data.get('total_profit') or 0),
+                    "all_time_sales_count": all_time_data.get('total_sales') or 0
+                }
+
+        return {
+            "period": label,
+            "has_sales_data": bool(rankings),
+            "top_performer": top_performer,
+            "rankings": rankings,
+            "total_store_profit_bdt": total_store_profit,
+            "total_store_sales_count": total_store_sales,
+            "all_time_leader_reference": all_time_top
+        }
+    except Exception as e:
+        logger.exception("Error in get_employee_performance_summary")
+        return {"error": str(e)}
+
 def execute_safe_sql_query(query: str, **kwargs) -> Dict[str, Any]:
     """
     Execute a read-only SQL SELECT query against the PostgreSQL/SQLite database to answer any custom, cross-table, or arbitrary analytical questions.
