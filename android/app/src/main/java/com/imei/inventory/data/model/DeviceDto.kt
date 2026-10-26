@@ -30,6 +30,7 @@ data class DeviceDto(
     @SerializedName("current_owner_name") val currentOwnerName: String? = null,
     @SerializedName("icloud_status") val icloudStatus: String? = null,
     @SerializedName("sim_lock_status") val simLockStatus: String? = null,
+    @SerializedName("carrier_policy") val carrierPolicy: String? = null,
     @SerializedName("purchase_country") val purchaseCountry: String? = null,
     @SerializedName("current_shipment") val currentShipment: Int? = null,
     @SerializedName("received_date_bd") val receivedDateBd: String? = null,

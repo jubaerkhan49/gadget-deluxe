@@ -206,6 +206,15 @@ export default function DeviceDetailDrawer({
   }, [open, device, isAdmin]);
 
   useEffect(() => {
+    const reports = device?.sickw_reports || [];
+    const has103 = reports.some((r) => String(r.service_id) === '103') || Boolean(device?.sim_lock_status);
+    const canView = isAdmin || has103;
+    if (open && !canView && currentTab === 5) {
+      setCurrentTab(0);
+    }
+  }, [open, isAdmin, device, currentTab]);
+
+  useEffect(() => {
     if (open && isAdmin && currentTab === 5 && sickwBalance === null && !loadingBalance) {
       loadSickwBalance();
     }
@@ -310,12 +319,19 @@ export default function DeviceDetailDrawer({
     ? formatNumber(device.selling_price)
     : '—';
 
-  const assignments = device.assignments || [];
-  const history = device.history || [];
-  const repairs = device.repairs || [];
-  const sales = device.sales || [];
-  const sickwReports = device.sickw_reports || [];
-  const notes = device.device_notes || [];
+  const assignments = device?.assignments || [];
+  const history = device?.history || [];
+  const repairs = device?.repairs || [];
+  const sales = device?.sales || [];
+  const sickwReports = device?.sickw_reports || [];
+  const notes = device?.device_notes || [];
+
+  const hasRun103 = sickwReports.some((r) => String(r.service_id) === '103') || Boolean(device?.sim_lock_status);
+  const canViewSickwTab = isAdmin || hasRun103;
+
+  const keySimLock = device?.sim_lock_status || (sickwReports.find(r => r.sim_lock_status || r.locked_carrier)?.sim_lock_status) || (sickwReports.find(r => r.sim_lock_status || r.locked_carrier)?.locked_carrier) || '';
+  const isSimUnlocked = String(keySimLock).toLowerCase().includes('unlocked');
+  const isSimLocked = String(keySimLock).toLowerCase().includes('locked') && !isSimUnlocked;
 
   return (
     <>
@@ -388,8 +404,8 @@ export default function DeviceDetailDrawer({
           </Stack>
         </Box>
 
-        {/* Tab Navigation Header (Admin only) */}
-        {isAdmin && (
+        {/* Tab Navigation Header (Admin or when Service 103 has been fetched for staff) */}
+        {(isAdmin || hasRun103) && (
           <Box sx={{ borderBottom: 1, borderColor: 'divider', px: { xs: 1, sm: 2 }, bgcolor: 'background.paper' }}>
             <Tabs
               value={currentTab}
@@ -406,44 +422,49 @@ export default function DeviceDetailDrawer({
               }}
             >
               <Tab
+                value={0}
                 icon={<OverviewIcon sx={{ fontSize: 17 }} />}
                 iconPosition="start"
                 label="Overview"
                 sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
               />
+              {isAdmin && (
+                <Tab
+                  value={1}
+                  icon={<AssignmentIcon sx={{ fontSize: 17 }} />}
+                  iconPosition="start"
+                  label={
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                      Assignments
+                      {assignments.length > 0 && (
+                        <Box
+                          component="span"
+                          sx={{
+                            ml: 0.7,
+                            minWidth: 18,
+                            height: 18,
+                            px: 0.6,
+                            borderRadius: '9px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: currentTab === 1 ? 'primary.main' : 'rgba(59, 130, 246, 0.15)',
+                            color: currentTab === 1 ? '#ffffff' : 'primary.main',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            lineHeight: 1
+                          }}
+                        >
+                          {assignments.length}
+                        </Box>
+                      )}
+                    </Box>
+                  }
+                  sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+                />
+              )}
               <Tab
-                icon={<AssignmentIcon sx={{ fontSize: 17 }} />}
-                iconPosition="start"
-                label={
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                    Assignments
-                    {assignments.length > 0 && (
-                      <Box
-                        component="span"
-                        sx={{
-                          ml: 0.7,
-                          minWidth: 18,
-                          height: 18,
-                          px: 0.6,
-                          borderRadius: '9px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: currentTab === 1 ? 'primary.main' : 'rgba(59, 130, 246, 0.15)',
-                          color: currentTab === 1 ? '#ffffff' : 'primary.main',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          lineHeight: 1
-                        }}
-                      >
-                        {assignments.length}
-                      </Box>
-                    )}
-                  </Box>
-                }
-                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-              />
-              <Tab
+                value={2}
                 icon={<TimelineIcon sx={{ fontSize: 17 }} />}
                 iconPosition="start"
                 label={
@@ -475,77 +496,113 @@ export default function DeviceDetailDrawer({
                 }
                 sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
               />
+              {isAdmin && (
+                <Tab
+                  value={3}
+                  icon={<RepairIcon sx={{ fontSize: 17 }} />}
+                  iconPosition="start"
+                  label={
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                      Repairs
+                      {repairs.length > 0 && (
+                        <Box
+                          component="span"
+                          sx={{
+                            ml: 0.7,
+                            minWidth: 18,
+                            height: 18,
+                            px: 0.6,
+                            borderRadius: '9px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: currentTab === 3 ? '#F59E0B' : 'rgba(245, 158, 11, 0.15)',
+                            color: currentTab === 3 ? '#ffffff' : '#D97706',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            lineHeight: 1
+                          }}
+                        >
+                          {repairs.length}
+                        </Box>
+                      )}
+                    </Box>
+                  }
+                  sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+                />
+              )}
+              {isAdmin && (
+                <Tab
+                  value={4}
+                  icon={<SalesIcon sx={{ fontSize: 17 }} />}
+                  iconPosition="start"
+                  label={
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                      Sales
+                      {sales.length > 0 && (
+                        <Box
+                          component="span"
+                          sx={{
+                            ml: 0.7,
+                            minWidth: 18,
+                            height: 18,
+                            px: 0.6,
+                            borderRadius: '9px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: currentTab === 4 ? '#10B981' : 'rgba(16, 185, 129, 0.15)',
+                            color: currentTab === 4 ? '#ffffff' : '#10B981',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            lineHeight: 1
+                          }}
+                        >
+                          {sales.length}
+                        </Box>
+                      )}
+                    </Box>
+                  }
+                  sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+                />
+              )}
+              {canViewSickwTab && (
+                <Tab
+                  value={5}
+                  icon={<SickwIcon sx={{ fontSize: 17 }} />}
+                  iconPosition="start"
+                  label={
+                    <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
+                      Sickw Report
+                      {hasRun103 && (
+                        <Box
+                          component="span"
+                          sx={{
+                            ml: 0.7,
+                            minWidth: 18,
+                            height: 18,
+                            px: 0.6,
+                            borderRadius: '9px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: isSimUnlocked ? '#10B981' : '#F59E0B',
+                            color: '#ffffff',
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            lineHeight: 1
+                          }}
+                        >
+                          {isSimUnlocked ? 'Unlocked' : '103'}
+                        </Box>
+                      )}
+                    </Box>
+                  }
+                  sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
+                />
+              )}
               <Tab
-                icon={<RepairIcon sx={{ fontSize: 17 }} />}
-                iconPosition="start"
-                label={
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                    Repairs
-                    {repairs.length > 0 && (
-                      <Box
-                        component="span"
-                        sx={{
-                          ml: 0.7,
-                          minWidth: 18,
-                          height: 18,
-                          px: 0.6,
-                          borderRadius: '9px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: currentTab === 3 ? '#F59E0B' : 'rgba(245, 158, 11, 0.15)',
-                          color: currentTab === 3 ? '#ffffff' : '#D97706',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          lineHeight: 1
-                        }}
-                      >
-                        {repairs.length}
-                      </Box>
-                    )}
-                  </Box>
-                }
-                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-              />
-              <Tab
-                icon={<SalesIcon sx={{ fontSize: 17 }} />}
-                iconPosition="start"
-                label={
-                  <Box sx={{ display: 'inline-flex', alignItems: 'center' }}>
-                    Sales
-                    {sales.length > 0 && (
-                      <Box
-                        component="span"
-                        sx={{
-                          ml: 0.7,
-                          minWidth: 18,
-                          height: 18,
-                          px: 0.6,
-                          borderRadius: '9px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: currentTab === 4 ? '#10B981' : 'rgba(16, 185, 129, 0.15)',
-                          color: currentTab === 4 ? '#ffffff' : '#10B981',
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          lineHeight: 1
-                        }}
-                      >
-                        {sales.length}
-                      </Box>
-                    )}
-                  </Box>
-                }
-                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-              />
-              <Tab
-                icon={<SickwIcon sx={{ fontSize: 17 }} />}
-                iconPosition="start"
-                label="Sickw Report"
-                sx={{ minHeight: 46, minWidth: 0, px: 1.2, textTransform: 'none', fontWeight: 600, fontSize: '0.84rem' }}
-              />
-              <Tab
+                value={6}
                 icon={<NoteIcon sx={{ fontSize: 17 }} />}
                 iconPosition="start"
                 label="Notes"
@@ -751,6 +808,50 @@ export default function DeviceDetailDrawer({
                       <strong>Pending Sale Approval:</strong> A sale request for this device is awaiting Admin pricing review and confirmation.
                     </Alert>
                   )}
+
+                  {/* If Service 103 has been fetched, employee can see verified Carrier & SIM Lock status */}
+                  {hasRun103 && (
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 1.5,
+                        mt: 1.5,
+                        borderRadius: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.04)',
+                        borderColor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.25)'
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                        {isSimUnlocked ? (
+                          <LockOpenIcon color="success" sx={{ fontSize: 22 }} />
+                        ) : isSimLocked ? (
+                          <LockIcon color="error" sx={{ fontSize: 22 }} />
+                        ) : (
+                          <SimCardIcon color="primary" sx={{ fontSize: 22 }} />
+                        )}
+                        <Box>
+                          <Typography variant="caption" color="text.secondary" fontWeight={700} sx={{ textTransform: 'uppercase', fontSize: '0.68rem', letterSpacing: 0.5 }}>
+                            Carrier & SIM Lock Status (Verified by Admin)
+                          </Typography>
+                          <Typography variant="body2" fontWeight={700} color={isSimUnlocked ? 'success.main' : (isSimLocked ? 'error.main' : 'text.primary')}>
+                            {keySimLock || (isSimUnlocked ? 'Factory Unlocked' : 'Carrier Locked')}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => setCurrentTab(5)}
+                        startIcon={<SickwIcon fontSize="small" />}
+                        sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.75rem', borderRadius: 1.5 }}
+                      >
+                        View Report
+                      </Button>
+                    </Paper>
+                  )}
                 </Paper>
               )}
 
@@ -808,6 +909,14 @@ export default function DeviceDetailDrawer({
                           {device.battery_cycle ? `${device.battery_cycle} cycles` : '—'}
                         </Typography>
                       </Grid>
+                      {hasRun103 && (
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="caption" color="text.secondary">SIM Lock Status</Typography>
+                          <Typography variant="body2" fontWeight={700} color={isSimUnlocked ? 'success.main' : (isSimLocked ? 'error.main' : 'text.primary')} sx={{ mt: 0.2 }}>
+                            {isSimUnlocked ? 'Unlocked' : (isSimLocked ? 'Locked' : (keySimLock || 'Checked'))}
+                          </Typography>
+                        </Grid>
+                      )}
                     </Grid>
                   </Paper>
                 </Grid>
@@ -1256,11 +1365,11 @@ export default function DeviceDetailDrawer({
           )}
 
           {/* TAB 5: SICKW REPORT */}
-          {currentTab === 5 && (() => {
+          {currentTab === 5 && canViewSickwTab && (() => {
             // Check completed services from reports
             const hasRun92 = sickwReports.some((r) => String(r.service_id) === '92');
             const hasRun12 = sickwReports.some((r) => String(r.service_id) === '12');
-            const hasRun103 = sickwReports.some((r) => String(r.service_id) === '103');
+            const hasRun103 = sickwReports.some((r) => String(r.service_id) === '103') || Boolean(device?.sim_lock_status);
 
             // Button disable rules:
             // 1. If 103 is performed, both 103 & 92 are unclickable. Only 12 remains clickable.
@@ -1429,50 +1538,54 @@ export default function DeviceDetailDrawer({
                     </Typography>
                   </Box>
                   <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                    {/* Live Balance Chip */}
-                    <Tooltip title="Sickw Account Balance (Click to refresh)">
-                      <Chip
-                        icon={loadingBalance ? <CircularProgress size={13} color="inherit" /> : <BalanceIcon fontSize="small" sx={{ color: '#10b981 !important' }} />}
-                        label={sickwBalance !== null ? `Balance: $${sickwBalance} USD` : (loadingBalance ? 'Checking...' : 'Check Balance')}
-                        variant="outlined"
-                        size="small"
-                        onClick={loadSickwBalance}
-                        sx={{
-                          fontWeight: 700,
-                          cursor: 'pointer',
-                          borderColor: '#10b981',
-                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.08)',
-                          color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669',
-                          '&:hover': {
-                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.22)' : 'rgba(16, 185, 129, 0.16)'
-                          }
-                        }}
-                      />
-                    </Tooltip>
+                    {/* Live Balance Chip (Admin only) */}
+                    {isAdmin && (
+                      <>
+                        <Tooltip title="Sickw Account Balance (Click to refresh)">
+                          <Chip
+                            icon={loadingBalance ? <CircularProgress size={13} color="inherit" /> : <BalanceIcon fontSize="small" sx={{ color: '#10b981 !important' }} />}
+                            label={sickwBalance !== null ? `Balance: $${sickwBalance} USD` : (loadingBalance ? 'Checking...' : 'Check Balance')}
+                            variant="outlined"
+                            size="small"
+                            onClick={loadSickwBalance}
+                            sx={{
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              borderColor: '#10b981',
+                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.08)',
+                              color: (theme) => theme.palette.mode === 'dark' ? '#34d399' : '#059669',
+                              '&:hover': {
+                                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.22)' : 'rgba(16, 185, 129, 0.16)'
+                              }
+                            }}
+                          />
+                        </Tooltip>
 
-                    {/* Reset Icon Button */}
-                    <Tooltip title={sickwReports.length === 0 ? "No fetch data to reset" : "Reset all Sickw fetch reports & specs for this device"}>
-                      <span>
-                        <IconButton
-                          size="small"
-                          color="warning"
-                          disabled={resettingSickw || sickwReports.length === 0}
-                          onClick={() => setResetConfirmOpen(true)}
-                          sx={{
-                            border: 1,
-                            borderColor: 'divider',
-                            borderRadius: 1.5,
-                            p: 0.6,
-                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.06)',
-                            '&:hover': {
-                              bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.14)'
-                            }
-                          }}
-                        >
-                          {resettingSickw ? <CircularProgress size={16} color="inherit" /> : <ResetIcon fontSize="small" />}
-                        </IconButton>
-                      </span>
-                    </Tooltip>
+                        {/* Reset Icon Button */}
+                        <Tooltip title={sickwReports.length === 0 ? "No fetch data to reset" : "Reset all Sickw fetch reports & specs for this device"}>
+                          <span>
+                            <IconButton
+                              size="small"
+                              color="warning"
+                              disabled={resettingSickw || sickwReports.length === 0}
+                              onClick={() => setResetConfirmOpen(true)}
+                              sx={{
+                                border: 1,
+                                borderColor: 'divider',
+                                borderRadius: 1.5,
+                                p: 0.6,
+                                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(245, 158, 11, 0.06)',
+                                '&:hover': {
+                                  bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.14)'
+                                }
+                              }}
+                            >
+                              {resettingSickw ? <CircularProgress size={16} color="inherit" /> : <ResetIcon fontSize="small" />}
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </>
+                    )}
 
                     {/* IMEI Chip */}
                     <Chip
@@ -1485,9 +1598,10 @@ export default function DeviceDetailDrawer({
                   </Stack>
                 </Box>
 
-                {/* 3 FETCH SERVICE BUTTONS */}
-                <Paper
-                  variant="outlined"
+                {/* 3 FETCH SERVICE BUTTONS (Admin only) */}
+                {isAdmin ? (
+                  <Paper
+                    variant="outlined"
                   sx={{
                     p: 2,
                     mb: 3,
@@ -1767,7 +1881,16 @@ export default function DeviceDetailDrawer({
                       </Paper>
                     </Grid>
                   </Grid>
-                </Paper>
+                  </Paper>
+                ) : (
+                  <Alert
+                    severity="success"
+                    icon={<ActiveCheckIcon fontSize="small" />}
+                    sx={{ mb: 3, borderRadius: 2, fontWeight: 500 }}
+                  >
+                    Official Carrier & SIM Lock report (Service 103) fetched and verified by Admin.
+                  </Alert>
+                )}
 
                 {/* HIGHLIGHTED KEY INFORMATION CARDS */}
                 <Box sx={{ mb: 3 }}>
@@ -1987,7 +2110,7 @@ export default function DeviceDetailDrawer({
                             </Typography>
                           </Box>
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {totalBilled > 0 && (
+                            {isAdmin && totalBilled > 0 && (
                               <Chip
                                 size="small"
                                 label={`Total Billed: $${totalBilled.toFixed(3)} USD`}
@@ -2053,19 +2176,21 @@ export default function DeviceDetailDrawer({
                                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                                       <Chip label={srvLabel} size="small" color="primary" variant="outlined" sx={{ fontWeight: 700 }} />
-                                      <Chip
-                                        label={`Billed: $${billedAmt} USD`}
-                                        size="small"
-                                        variant="outlined"
-                                        sx={{
-                                          fontWeight: 700,
-                                          fontSize: '0.68rem',
-                                          height: 20,
-                                          color: 'success.main',
-                                          borderColor: 'success.main',
-                                          bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)'
-                                        }}
-                                      />
+                                      {isAdmin && (
+                                        <Chip
+                                          label={`Billed: $${billedAmt} USD`}
+                                          size="small"
+                                          variant="outlined"
+                                          sx={{
+                                            fontWeight: 700,
+                                            fontSize: '0.68rem',
+                                            height: 20,
+                                            color: 'success.main',
+                                            borderColor: 'success.main',
+                                            bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)'
+                                          }}
+                                        />
+                                      )}
                                       <Typography variant="caption" color="text.secondary">
                                         {sr.created_at ? new Date(sr.created_at).toLocaleString() : '—'}
                                       </Typography>

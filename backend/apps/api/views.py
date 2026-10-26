@@ -801,7 +801,14 @@ class DeviceViewSet(viewsets.ModelViewSet):
         Fetches official Sickw API diagnostic report for this device using service 92, 12, or 103.
         Automatically updates device specs (color, serial, model code/number, purchase date, sim lock)
         and creates a persistent SickwReport record.
+        Only Admin / Jubaer can initiate live Sickw API lookups.
         """
+        if not (request.user.is_staff or getattr(request.user, 'role', '') == 'ADMIN' or request.user.username.lower() in ['admin', 'jubaer']):
+            return Response(
+                {"error": "Permission denied: Only administrators can initiate live Sickw API lookups."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         device = self.get_object()
         service_id = str(request.data.get('service', '103')).strip()
 
@@ -1002,7 +1009,14 @@ class DeviceViewSet(viewsets.ModelViewSet):
     def sickw_balance(self, request):
         """
         Fetches the live Sickw API account balance in USD.
+        Only Admin / Jubaer can view account balance.
         """
+        if not (request.user.is_staff or getattr(request.user, 'role', '') == 'ADMIN' or request.user.username.lower() in ['admin', 'jubaer']):
+            return Response(
+                {"error": "Permission denied: Only administrators can view Sickw account balance."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         import os
         import urllib.request
         api_key = os.environ.get('SICKW_API_KEY', 'P0Z-Y5S-1SU-3JW-81N-BHV-9R7-RK1')
@@ -1036,7 +1050,14 @@ class DeviceViewSet(viewsets.ModelViewSet):
         """
         Resets all Sickw fetch reports for this device, clearing reports and specs populated by fetch.
         Allows re-fetching services cleanly.
+        Only Admin / Jubaer can reset Sickw reports.
         """
+        if not (request.user.is_staff or getattr(request.user, 'role', '') == 'ADMIN' or request.user.username.lower() in ['admin', 'jubaer']):
+            return Response(
+                {"error": "Permission denied: Only administrators can reset Sickw diagnostic reports."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
         device = self.get_object()
         count = device.sickw_reports.count()
         device.sickw_reports.all().delete()
@@ -1790,6 +1811,17 @@ class SickwViewSet(viewsets.ModelViewSet):
     queryset = SickwReport.objects.all()
     serializer_class = SickwReportSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user or not user.is_authenticated:
+            return SickwReport.objects.none()
+        is_admin = user.is_staff or getattr(user, 'role', '') == 'ADMIN' or user.username.lower() in ['admin', 'jubaer']
+        if is_admin:
+            return SickwReport.objects.all()
+        # For employees: ONLY devices where Service 103 has already been fetched!
+        devices_with_103 = SickwReport.objects.filter(service_id='103').values_list('device_id', flat=True)
+        return SickwReport.objects.filter(device_id__in=devices_with_103)
 
 class SickwParseAPIView(APIView):
     """API endpoint to parse raw Sickw text payload without saving."""

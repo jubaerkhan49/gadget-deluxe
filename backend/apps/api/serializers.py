@@ -227,6 +227,39 @@ class DeviceSerializer(serializers.ModelSerializer):
         model = Device
         fields = '__all__'
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        is_admin = False
+        if request and request.user and request.user.is_authenticated:
+            is_admin = (
+                request.user.is_staff or
+                getattr(request.user, 'role', '') == 'ADMIN' or
+                request.user.username.lower() in ['admin', 'jubaer']
+            )
+
+        if not is_admin:
+            # Check if Service 103 has already been fetched for this device
+            reports = data.get('sickw_reports') or []
+            has_103 = any(str(r.get('service_id')) == '103' for r in reports)
+            if not has_103:
+                # If this is not fetched from admin/jubaer side, employee should not see anything about it
+                data['sickw_reports'] = []
+                data['sim_lock_status'] = None
+                data['carrier_policy'] = None
+            else:
+                # Employee can see it, but strip sensitive billing prices
+                cleaned_reports = []
+                for r in reports:
+                    r_copy = dict(r)
+                    if isinstance(r_copy.get('parsed_data'), dict):
+                        parsed_copy = dict(r_copy['parsed_data'])
+                        parsed_copy.pop('price', None)
+                        r_copy['parsed_data'] = parsed_copy
+                    cleaned_reports.append(r_copy)
+                data['sickw_reports'] = cleaned_reports
+        return data
+
     def get_assigned_date(self, obj):
         try:
             if obj.current_owner:

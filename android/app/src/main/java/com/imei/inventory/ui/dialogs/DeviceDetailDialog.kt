@@ -134,6 +134,33 @@ fun DeviceDetailDialog(
                     }
                 }
 
+                if (!device.simLockStatus.isNullOrBlank()) {
+                    val isUnlocked = device.simLockStatus.contains("unlocked", ignoreCase = true)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("SIM Lock:", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text(
+                                device.simLockStatus,
+                                color = if (isUnlocked) AccentEmerald else AccentRose,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            )
+                        }
+                        if (!device.carrierPolicy.isNullOrBlank()) {
+                            Text(
+                                device.carrierPolicy,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 11.sp,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+
                 // Interactive Assigned to Row with Dropdown Picker (Admin only) or Read-only (Staff)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
