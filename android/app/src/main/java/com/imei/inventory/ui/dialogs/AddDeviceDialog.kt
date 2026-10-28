@@ -29,13 +29,11 @@ fun AddDeviceDialog(
     var buyingPrice by remember { mutableStateOf("") }
 
     val variants = listOf(
-        "Modified",
-        "USA eSim",
-        "Chinese",
+        "WIFI",
+        "USA",
         "Global",
-        "Korea",
-        "Singapore",
-        "WIFI"
+        "Modified",
+        "Chinese"
     )
     var variantMenuExpanded by remember { mutableStateOf(false) }
 

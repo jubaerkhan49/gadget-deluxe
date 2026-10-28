@@ -69,13 +69,11 @@ fun InventoryTab(
 
     val variantOptions = listOf(
         null to "All Variants",
-        "Modified" to "Modified",
-        "USA eSim" to "USA eSim",
-        "Chinese" to "Chinese",
+        "WIFI" to "WIFI",
+        "USA" to "USA",
         "Global" to "Global",
-        "Korea" to "Korea",
-        "Singapore" to "Singapore",
-        "WIFI" to "WIFI"
+        "Modified" to "Modified",
+        "Chinese" to "Chinese"
     )
 
     // Distinct owners extracted dynamically

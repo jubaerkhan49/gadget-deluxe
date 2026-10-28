@@ -29,13 +29,11 @@ import { useSnackbar } from 'notistack';
 import { deviceApi } from '../api/client';
 
 const VARIANTS = [
-  'Modified',
-  'USA eSim',
-  'Chinese',
-  'Global',
-  'Korea',
-  'Singapore',
   'WIFI',
+  'USA',
+  'Global',
+  'Modified',
+  'Chinese',
   'Other'
 ];
 
@@ -52,7 +50,7 @@ export default function EditB2BDeviceDialog({ open, onClose, device, onUpdated }
 
   const [formData, setFormData] = useState({
     model: '',
-    variant: 'USA eSim',
+    variant: 'USA',
     capacity: '',
     color: '',
     imei: '',
@@ -74,7 +72,7 @@ export default function EditB2BDeviceDialog({ open, onClose, device, onUpdated }
     if (device) {
       setFormData({
         model: device.model || '',
-        variant: device.variant || 'USA eSim',
+        variant: device.variant || 'USA',
         capacity: device.capacity || '',
         color: device.color || '',
         imei: device.imei || '',

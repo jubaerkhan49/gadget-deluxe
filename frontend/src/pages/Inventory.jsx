@@ -56,13 +56,11 @@ import DeviceDetailDrawer from '../dialogs/DeviceDetailDrawer';
 
 const VARIANTS = [
   'All',
-  'Modified',
-  'USA eSim',
-  'Chinese',
+  'WIFI',
+  'USA',
   'Global',
-  'Korea',
-  'Singapore',
-  'WIFI'
+  'Modified',
+  'Chinese'
 ];
 
 const STATUS_CHOICES = [

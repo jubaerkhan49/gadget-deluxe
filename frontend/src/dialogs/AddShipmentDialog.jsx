@@ -25,13 +25,11 @@ import { shipmentApi } from '../api/client';
 import { formatNumber } from '../utils/formatters';
 
 const VARIANTS = [
-  'Modified',
-  'USA eSim',
-  'Chinese',
+  'WIFI',
+  'USA',
   'Global',
-  'Korea',
-  'Singapore',
-  'WIFI'
+  'Modified',
+  'Chinese'
 ];
 
 export default function AddShipmentDialog({ open, onClose, onShipmentCreated }) {

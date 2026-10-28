@@ -92,7 +92,7 @@ export default function B2B() {
   // Quick Add State
   const [newDevice, setNewDevice] = useState({
     model: '',
-    variant: 'USA eSim',
+    variant: 'USA',
     capacity: '256GB',
     color: '',
     imei: '',
@@ -276,7 +276,7 @@ export default function B2B() {
       setAddDeviceOpen(false);
       setNewDevice({
         model: '',
-        variant: 'USA eSim',
+        variant: 'USA',
         capacity: '256GB',
         color: '',
         imei: '',
@@ -1041,7 +1041,7 @@ export default function B2B() {
                   value={newDevice.variant}
                   onChange={(e) => setNewDevice((p) => ({ ...p, variant: e.target.value }))}
                 >
-                  {['USA eSim', 'Modified', 'Chinese', 'Global', 'Korea', 'Singapore', 'WIFI', 'Other'].map((v) => (
+                  {['WIFI', 'USA', 'Global', 'Modified', 'Chinese', 'Other'].map((v) => (
                     <MenuItem key={v} value={v}>
                       {v}
                     </MenuItem>

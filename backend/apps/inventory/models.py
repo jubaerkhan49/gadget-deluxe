@@ -15,13 +15,11 @@ class DeviceStatus(models.TextChoices):
     LOST = 'LOST', 'Lost'
 
 class DeviceVariant(models.TextChoices):
-    MODIFIED = 'Modified', 'Modified'
-    USA_ESIM = 'USA eSim', 'USA eSim'
-    CHINESE = 'Chinese', 'Chinese'
-    GLOBAL = 'Global', 'Global'
-    KOREA = 'Korea', 'Korea'
-    SINGAPORE = 'Singapore', 'Singapore'
     WIFI = 'WIFI', 'WIFI'
+    USA = 'USA', 'USA'
+    GLOBAL = 'Global', 'Global'
+    MODIFIED = 'Modified', 'Modified'
+    CHINESE = 'Chinese', 'Chinese'
 
 class Device(TimeStampedModel):
     """Central Device entity representing a unique mobile phone in inventory."""

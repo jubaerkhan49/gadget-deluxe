@@ -2,13 +2,14 @@ import React from 'react';
 import { Chip } from '@mui/material';
 
 const VARIANT_CONFIG = {
-  'Modified': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' },
+  'WIFI': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
+  'USA': { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' },
   'USA eSim': { color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)' },
-  'Chinese': { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },
   'Global': { color: '#0284c7', bg: 'rgba(2, 132, 199, 0.15)' },
+  'Modified': { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.15)' },
+  'Chinese': { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },
   'Korea': { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)' },
   'Singapore': { color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)' },
-  'WIFI': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
   'Bypass': { color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)' },
   'Canada': { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)' },
   'Mexican': { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)' },
@@ -17,7 +18,7 @@ const VARIANT_CONFIG = {
 const VariantBadge = ({ variant, size = 'small', sx = {} }) => {
   if (!variant) return null;
 
-  const displayVariant = variant === 'Bypass' ? 'WIFI' : variant;
+  const displayVariant = variant === 'Bypass' ? 'WIFI' : (variant === 'USA eSim' ? 'USA' : variant);
   const config = VARIANT_CONFIG[displayVariant] || VARIANT_CONFIG[variant] || {
     color: '#3b82f6',
     bg: 'rgba(59, 130, 246, 0.15)',
