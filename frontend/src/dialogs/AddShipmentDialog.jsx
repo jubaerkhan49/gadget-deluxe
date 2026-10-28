@@ -27,8 +27,8 @@ import { formatNumber } from '../utils/formatters';
 const VARIANTS = [
   'Modified',
   'USA eSim',
-  'Canada',
-  'Mexican',
+  'Chinese',
+  'Global',
   'Korea',
   'Singapore',
   'WIFI'

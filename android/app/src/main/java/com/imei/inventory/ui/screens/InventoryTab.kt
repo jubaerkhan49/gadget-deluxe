@@ -71,11 +71,11 @@ fun InventoryTab(
         null to "All Variants",
         "Modified" to "Modified",
         "USA eSim" to "USA eSim",
-        "Canada" to "Canada",
-        "Mexican" to "Mexican",
+        "Chinese" to "Chinese",
+        "Global" to "Global",
         "Korea" to "Korea",
         "Singapore" to "Singapore",
-        "Bypass" to "Bypass"
+        "WIFI" to "WIFI"
     )
 
     // Distinct owners extracted dynamically

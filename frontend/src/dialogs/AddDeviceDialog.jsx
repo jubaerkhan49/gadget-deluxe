@@ -29,7 +29,7 @@ import {
 } from '@mui/icons-material';
 import api from '../api/client';
 
-const VARIANTS = ['Modified', 'USA eSim', 'Canada', 'Mexican', 'Korea', 'Singapore', 'WIFI'];
+const VARIANTS = ['Modified', 'USA eSim', 'Chinese', 'Global', 'Korea', 'Singapore', 'WIFI'];
 
 const STATUS_CHOICES = [
   { value: 'IN_STOCK', label: 'In Stock' },

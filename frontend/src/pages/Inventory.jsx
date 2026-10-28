@@ -58,8 +58,8 @@ const VARIANTS = [
   'All',
   'Modified',
   'USA eSim',
-  'Canada',
-  'Mexican',
+  'Chinese',
+  'Global',
   'Korea',
   'Singapore',
   'WIFI'

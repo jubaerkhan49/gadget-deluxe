@@ -1041,7 +1041,7 @@ export default function B2B() {
                   value={newDevice.variant}
                   onChange={(e) => setNewDevice((p) => ({ ...p, variant: e.target.value }))}
                 >
-                  {['USA eSim', 'Modified', 'Canada', 'Mexican', 'Korea', 'Singapore', 'WIFI', 'Other'].map((v) => (
+                  {['USA eSim', 'Modified', 'Chinese', 'Global', 'Korea', 'Singapore', 'WIFI', 'Other'].map((v) => (
                     <MenuItem key={v} value={v}>
                       {v}
                     </MenuItem>

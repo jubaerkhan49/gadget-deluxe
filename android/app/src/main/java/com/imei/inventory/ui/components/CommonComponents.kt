@@ -94,11 +94,13 @@ fun VariantBadge(variant: String?) {
     val (bgColor, textColor) = when (variant.trim()) {
         "Modified" -> Color(0x22F97316) to Color(0xFFF97316)
         "USA eSim" -> AccentEmerald.copy(alpha = 0.14f) to AccentEmerald
-        "Canada" -> AccentBlue.copy(alpha = 0.14f) to AccentBlue
-        "Mexican" -> AccentSky.copy(alpha = 0.14f) to AccentSky
+        "Chinese" -> Color(0x22DC2626) to Color(0xFFDC2626)
+        "Global" -> AccentBlue.copy(alpha = 0.14f) to AccentBlue
         "Korea" -> AccentPurple.copy(alpha = 0.14f) to AccentPurple
         "Singapore" -> AccentRose.copy(alpha = 0.14f) to AccentRose
-        "Bypass" -> AccentAmber.copy(alpha = 0.14f) to AccentAmber
+        "WIFI", "Bypass" -> AccentAmber.copy(alpha = 0.14f) to AccentAmber
+        "Canada" -> AccentBlue.copy(alpha = 0.14f) to AccentBlue
+        "Mexican" -> AccentSky.copy(alpha = 0.14f) to AccentSky
         else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.14f) to MaterialTheme.colorScheme.onSurfaceVariant
     }
 

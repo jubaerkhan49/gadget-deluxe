@@ -17,8 +17,8 @@ class DeviceStatus(models.TextChoices):
 class DeviceVariant(models.TextChoices):
     MODIFIED = 'Modified', 'Modified'
     USA_ESIM = 'USA eSim', 'USA eSim'
-    CANADA = 'Canada', 'Canada'
-    MEXICAN = 'Mexican', 'Mexican'
+    CHINESE = 'Chinese', 'Chinese'
+    GLOBAL = 'Global', 'Global'
     KOREA = 'Korea', 'Korea'
     SINGAPORE = 'Singapore', 'Singapore'
     WIFI = 'WIFI', 'WIFI'

@@ -31,8 +31,8 @@ import { deviceApi } from '../api/client';
 const VARIANTS = [
   'Modified',
   'USA eSim',
-  'Canada',
-  'Mexican',
+  'Chinese',
+  'Global',
   'Korea',
   'Singapore',
   'WIFI',

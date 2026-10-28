@@ -39,11 +39,11 @@ fun AddShipmentDialog(
     val variants = listOf(
         "Modified",
         "USA eSim",
-        "Canada",
-        "Mexican",
+        "Chinese",
+        "Global",
         "Korea",
         "Singapore",
-        "Bypass"
+        "WIFI"
     )
     var variantMenuExpanded by remember { mutableStateOf(false) }
 
